@@ -1,0 +1,524 @@
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780436316296}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780436317283}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780436317283}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780436327984}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780436330742}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780436368411}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780436369408}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780436369408}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780436374806}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780436477631}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":26},"timestamp":1780436479341}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780436482037}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780436482039}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780436493443}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780436551869}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780437359789}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437361520}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437361612}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437361618}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437367290}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437367344}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437367349}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437372900}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437372976}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437372980}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437380391}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437380452}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437380454}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437384547}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437384610}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437384613}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437389626}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437389668}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437389672}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437419944}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437420012}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437420014}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437430037}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437430075}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437430080}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437441403}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437441451}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437441454}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780437598220}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780437685149}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780437685214}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780437685218}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780437691754}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780437691816}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780437691817}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780437700569}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780437700624}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780437700626}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437708919}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437708973}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437708976}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437714526}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437714575}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437714579}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437724504}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437724554}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437724559}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437751490}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437751537}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437751541}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437836681}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437836708}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437836710}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437851083}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437851113}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437851116}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780437897189}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780437897236}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780437897239}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437905336}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437905370}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437905372}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437912883}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437912926}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437912928}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780437919779}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780437919829}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780437919833}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438069200}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438069262}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438069265}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438076929}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438076974}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438076978}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438090072}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438090142}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438090144}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438112103}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438112152}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438112154}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438145460}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438145491}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438145496}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438148040}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438148070}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438148071}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438230241}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438230294}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438230297}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780438236545}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780438236592}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780438236594}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780438245777}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780438245829}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780438245830}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780438423151}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780438425113}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780438465525}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780438467366}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780438467366}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780438494881}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780438532809}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438535603}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438535640}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438535642}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438541406}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438541444}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438541447}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438579501}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438579549}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438579552}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438586492}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438586539}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438586542}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438682002}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438682049}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438682054}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438687881}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780438687936}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780438687938}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780438693940}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780438693974}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780438693978}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780438699418}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780438699477}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780438699485}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780438859965}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780438861851}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780439396187}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780439398185}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780439470893}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:health", "message": "health check", "data": {"ollama_available": false, "grammar_available": true}, "timestamp": 1780439521387}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439523106}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439523162}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439523164}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439526378}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439526430}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439526433}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439534454}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439534492}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439534494}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439546130}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439546175}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439546178}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":33},"timestamp":1780439559074}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439559108}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439559110}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780439565645}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780439565688}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780439565691}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780439581517}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780439583400}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780439583401}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":32},"timestamp":1780439597955}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780439597990}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780439597992}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439648569}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439648621}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439648628}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439885960}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439886004}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439886006}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439911902}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439911952}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439911958}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780439943692}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780439943739}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780439943744}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":34},"timestamp":1780440005437}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780440005481}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780440005483}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":713},"timestamp":1780440008992}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780440009122}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780440009124}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":713},"timestamp":1780440012437}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780440012543}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780440012546}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":713},"timestamp":1780440020459}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780440020556}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780440020558}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":713},"timestamp":1780440056055}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780440056154}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780440056156}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780440059028}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440059168}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440059170}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780440089192}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440089283}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440089287}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780440233071}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440233152}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440233426}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780440236810}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440236903}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440236909}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780440260085}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440260168}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440260170}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780440410148}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440410226}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440410228}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780440413951}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440414032}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440414035}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":310},"timestamp":1780440446486}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780440446576}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780440446579}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":309},"timestamp":1780440452801}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 9}, "timestamp": 1780440452880}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":9},"timestamp":1780440452882}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":310},"timestamp":1780440455309}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 8}, "timestamp": 1780440455382}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":8},"timestamp":1780440455384}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780440457707}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 7}, "timestamp": 1780440457783}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":7},"timestamp":1780440457785}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780440461896}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 6}, "timestamp": 1780440461972}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":6},"timestamp":1780440461975}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780440464278}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 5}, "timestamp": 1780440464362}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":5},"timestamp":1780440464366}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":307},"timestamp":1780440469430}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780440469506}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780440469512}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":305},"timestamp":1780440474243}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780440474304}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780440474306}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":305},"timestamp":1780440478116}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780440478185}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780440478188}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":307},"timestamp":1780440484441}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780440484502}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780440484504}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780440486972}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780440487041}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780440487044}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780440494784}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780440494861}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780440494864}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780440619066}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780440619119}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780440619123}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780441350062}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780441351974}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780441351974}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780441373928}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780441375791}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780441375791}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":310},"timestamp":1780441571451}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780441571544}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780441571547}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":310},"timestamp":1780441579139}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780441579263}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780441579267}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":309},"timestamp":1780441591482}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 9}, "timestamp": 1780441591562}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":9},"timestamp":1780441591565}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":311},"timestamp":1780441601415}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 8}, "timestamp": 1780441601500}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":8},"timestamp":1780441601502}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":307},"timestamp":1780441608514}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780441608602}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780441608604}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":307},"timestamp":1780441641753}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780441641832}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780441641835}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":307},"timestamp":1780441646004}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780441646079}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780441646081}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780441650411}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 2}, "timestamp": 1780441650483}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":2},"timestamp":1780441650485}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":307},"timestamp":1780441652776}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780441652856}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780441652857}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780441655171}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780441655231}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780441655234}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780441658146}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780441658192}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780441658194}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780441662765}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780441662814}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780441662816}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780442007845}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780442009679}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780442009679}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":74},"timestamp":1780442050465}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780442050511}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780442050516}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":74},"timestamp":1780442057164}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780442057214}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780442057217}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780442147878}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780442149700}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780442149701}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":74},"timestamp":1780442155497}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780442155530}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780442155533}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":41},"timestamp":1780442184915}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780442184963}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780442184966}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":41},"timestamp":1780442204128}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780442204178}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780442204181}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780442354895}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780442356731}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780442356732}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780442583223}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780442585053}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780442585054}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780442709645}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780442711571}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780442711571}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":310},"timestamp":1780442753485}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780442753548}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780442753553}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":309},"timestamp":1780442764413}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 9}, "timestamp": 1780442764475}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":9},"timestamp":1780442764479}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780442784576}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 8}, "timestamp": 1780442784638}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":8},"timestamp":1780442784643}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780442900042}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780442901921}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780442901922}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780442913326}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 8}, "timestamp": 1780442913404}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":8},"timestamp":1780442913408}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":308},"timestamp":1780442917778}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 7}, "timestamp": 1780442917843}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":7},"timestamp":1780442917845}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":26},"timestamp":1780442964418}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780442964454}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780442964456}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":26},"timestamp":1780442980020}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780442980072}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780442980076}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":28},"timestamp":1780442982833}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780442982861}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780442982864}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780443119029}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780443120929}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780443120930}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":28},"timestamp":1780443127298}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780443127322}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780443127329}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":41},"timestamp":1780443130122}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780443130166}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780443130168}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780443219788}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780443221729}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780443221730}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780443233833}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780443236688}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780443236688}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":41},"timestamp":1780443293899}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "Ollama HTTP 500: {\"error\":\"error starting llama-server: llama-server binary not found (checked: /opt/homebrew/Cellar/ollama/0.30.0/libexec/lib/ollama/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/libexec/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/lib/ollama/llama-server, /opt/homebrew/Cella"}, "timestamp": 1780443294468}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780443297342}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780443297347}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":41},"timestamp":1780443300022}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "Ollama HTTP 500: {\"error\":\"error starting llama-server: llama-server binary not found (checked: /opt/homebrew/Cellar/ollama/0.30.0/libexec/lib/ollama/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/libexec/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/lib/ollama/llama-server, /opt/homebrew/Cella"}, "timestamp": 1780443300071}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780443300128}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780443300131}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":41},"timestamp":1780443304707}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "Ollama HTTP 500: {\"error\":\"error starting llama-server: llama-server binary not found (checked: /opt/homebrew/Cellar/ollama/0.30.0/libexec/lib/ollama/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/libexec/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/lib/ollama/llama-server, /opt/homebrew/Cella"}, "timestamp": 1780443304746}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780443304864}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780443304868}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780443520120}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780443522959}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780443522960}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":41},"timestamp":1780443529822}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "Ollama HTTP 500: {\"error\":\"error starting llama-server: llama-server binary not found (checked: /opt/homebrew/Cellar/ollama/0.30.0/libexec/lib/ollama/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/libexec/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/lib/ollama/llama-server, /opt/homebrew/Cella"}, "timestamp": 1780443529871}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 0}, "timestamp": 1780443529916}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":0},"timestamp":1780443529918}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780443540396}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "Ollama HTTP 500: {\"error\":\"error starting llama-server: llama-server binary not found (checked: /opt/homebrew/Cellar/ollama/0.30.0/libexec/lib/ollama/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/libexec/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/lib/ollama/llama-server, /opt/homebrew/Cella"}, "timestamp": 1780443540445}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780443540604}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780443540606}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780443600710}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "Ollama HTTP 500: {\"error\":\"error starting llama-server: llama-server binary not found (checked: /opt/homebrew/Cellar/ollama/0.30.0/libexec/lib/ollama/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/libexec/llama-server, /opt/homebrew/Cellar/ollama/0.30.0/lib/ollama/llama-server, /opt/homebrew/Cella"}, "timestamp": 1780443600752}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780443600866}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780443600868}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780443826704}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780443829499}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780443829499}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780443860246}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780443863100}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780443863101}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780443876073}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780443879950}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780443879950}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780443932389}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780443932444}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780443935521}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780443935524}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780443971726}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780443971773}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780443971892}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780443971894}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780443980775}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780443980828}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780443980942}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780443980945}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780443984038}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780443984098}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780443984194}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780443984197}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":377},"timestamp":1780443986288}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780443986328}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 9}, "timestamp": 1780443986442}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":9},"timestamp":1780443986448}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780444116559}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780444116606}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780444116700}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780444116702}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780444135340}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780444135405}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 10}, "timestamp": 1780444135489}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":10},"timestamp":1780444135493}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":377},"timestamp":1780444138495}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780444138536}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 9}, "timestamp": 1780444138618}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":9},"timestamp":1780444138622}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":375},"timestamp":1780444326625}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780444326689}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 7}, "timestamp": 1780444326776}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":7},"timestamp":1780444326780}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":372},"timestamp":1780444332790}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "500 Server Error: Internal Server Error for url: http://127.0.0.1:11434/api/generate"}, "timestamp": 1780444332828}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 5}, "timestamp": 1780444332905}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":5},"timestamp":1780444332910}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":372},"timestamp":1780444814728}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar failed","data":{"error":"Failed to fetch"},"timestamp":1780444814733}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780444861299}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar failed","data":{"error":"Failed to fetch"},"timestamp":1780444861306}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780444870700}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar failed","data":{"error":"Failed to fetch"},"timestamp":1780444870703}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "initializing LanguageTool", "data": {}, "timestamp": 1780444901048}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:_get_language_tool", "message": "LanguageTool ready", "data": {}, "timestamp": 1780444905009}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:startup", "message": "grammar ready", "data": {"ltp": "2.8.1"}, "timestamp": 1780444905009}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780444913489}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780444922555}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 12}, "timestamp": 1780444934284}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":12},"timestamp":1780444934289}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 12}, "timestamp": 1780444943210}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":12},"timestamp":1780444943213}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780445180955}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780445189077}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 12}, "timestamp": 1780445194068}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":12},"timestamp":1780445194071}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 11}, "timestamp": 1780445205833}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":11},"timestamp":1780445205836}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780445212780}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":378},"timestamp":1780445219596}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 12}, "timestamp": 1780445224989}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":12},"timestamp":1780445224992}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":384},"timestamp":1780445234606}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 13}, "timestamp": 1780445234891}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":13},"timestamp":1780445234902}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 9}, "timestamp": 1780445244472}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":9},"timestamp":1780445244475}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":384},"timestamp":1780445245962}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 7}, "timestamp": 1780445253835}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":7},"timestamp":1780445253837}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":383},"timestamp":1780445254874}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":386},"timestamp":1780445260161}
+{"sessionId": "2bb802", "hypothesisId": "H3", "location": "server.py:_call_mistral_for_grammar", "message": "mistral grammar failed", "data": {"error": "Expecting ',' delimiter: line 1 column 691 (char 690)"}, "timestamp": 1780445263064}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 1}, "timestamp": 1780445263145}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":1},"timestamp":1780445263147}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":384},"timestamp":1780445265470}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 8}, "timestamp": 1780445271005}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":8},"timestamp":1780445271010}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445277458}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 7}, "timestamp": 1780445280325}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":7},"timestamp":1780445280329}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445282791}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 6}, "timestamp": 1780445286450}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":6},"timestamp":1780445286453}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 8}, "timestamp": 1780445293698}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":8},"timestamp":1780445293701}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445302198}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445306849}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780445312815}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780445312817}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780445325400}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780445325404}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445357700}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780445372712}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780445372716}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445382503}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780445404942}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780445404945}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445455510}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 4}, "timestamp": 1780445466046}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":4},"timestamp":1780445466051}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445478090}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445481105}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 6}, "timestamp": 1780445483041}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":6},"timestamp":1780445483044}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445488408}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 7}, "timestamp": 1780445489937}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":7},"timestamp":1780445489942}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 6}, "timestamp": 1780445494057}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":6},"timestamp":1780445494059}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"request start","data":{"textLen":385},"timestamp":1780445497347}
+{"sessionId": "2bb802", "hypothesisId": "H1", "location": "server.py:grammar", "message": "grammar ok", "data": {"match_count": 9}, "timestamp": 1780445508143}
+{"sessionId":"2bb802","hypothesisId":"H2","location":"background.js:checkGrammar","message":"grammar ok","data":{"matchCount":9},"timestamp":1780445508147}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Humanize</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <main class="panels">
+        <section class="card">
+          <header class="card-header">
+            <h2 class="card-title">Input Text</h2>
+            <div class="card-actions">
+              <span id="word-count" class="word-count">0/1200 words</span>
+              <button type="button" id="btn-clear" class="btn-text">Clear</button>
+            </div>
+          </header>
+          <div class="editor-wrap">
+            <textarea
+              id="input-text"
+              class="editor"
+              placeholder="Paste your AI-generated text here to transform and humanize it…"
+              spellcheck="true"
+            ></textarea>
+            <div id="paste-overlay" class="paste-overlay">
+              <button type="button" id="btn-paste" class="btn-paste">
+                <span class="paste-icon">↑</span> Paste Text
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="card-header">
+            <h2 class="card-title">Human Output</h2>
+            <button type="button" id="btn-copy" class="btn-text btn-copy">Copy</button>
+          </header>
+          <div class="editor-wrap">
+            <textarea
+              id="output-text"
+              class="editor editor-readonly"
+              readonly
+              placeholder="Your humanized text will appear here…"
+            ></textarea>
+            <div id="empty-overlay" class="empty-overlay">
+              <div class="sparkles" aria-hidden="true">
+                <span>✦</span><span class="sparkle-lg">✦</span><span>✦</span>
+              </div>
+              <p>Processed text will appear here</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="controls">
+        <button type="button" id="btn-humanize" class="btn-humanize">
+          ✨ Humanize
+        </button>
+
+        <div class="intensity-block">
+          <span class="intensity-label">Intensity</span>
+          <div class="slider-row">
+            <span class="slider-hint">Mild</span>
+            <input
+              type="range"
+              id="intensity-slider"
+              class="slider"
+              min="0"
+              max="2"
+              step="1"
+              value="1"
+            />
+            <span class="slider-hint">Aggressive</span>
+          </div>
+          <span id="intensity-value" class="intensity-value">Moderate</span>
+        </div>
+
+        <p id="status" class="status" role="status">
+          AI score: — → — · Changes: 0
+        </p>
+      </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>

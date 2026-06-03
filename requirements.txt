@@ -1,0 +1,7 @@
+nltk
+textblob
+pywebview
+fastapi
+uvicorn[standard]
+language-tool-python==2.8.1
+requests

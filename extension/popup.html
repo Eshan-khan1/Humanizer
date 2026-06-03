@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Humanizer</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script src="popup.js" defer></script>
+  </head>
+  <body>
+    <h1>Humanizer</h1>
+    <p class="subtitle">Local writing assistant — like Grammarly, on your machine</p>
+
+    <div id="status" class="status">Checking server…</div>
+
+    <div class="row">
+      <label for="enabled-toggle">Check writing while I type</label>
+      <input type="checkbox" id="enabled-toggle" checked />
+    </div>
+
+    <ul class="legend">
+      <li><span class="swatch swatch-grammar"></span> Spelling &amp; grammar errors (pink underline)</li>
+    </ul>
+
+    <p class="hint">
+      Start the local server with <code>./start_server.sh</code> — grammar uses LanguageTool,
+      humanize uses Ollama (<code>llama3.2</code>).
+    </p>
+  </body>
+</html>
