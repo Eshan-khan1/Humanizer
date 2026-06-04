@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 dist/
 build/
+.cursor/
+auto_tune.log
+*.log

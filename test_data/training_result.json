@@ -1,0 +1,961 @@
+{
+  "status": "stopped_manually",
+  "target_accuracy_pct": 95,
+  "test_pairs_file": "test_data/pairs.json",
+  "pairs_count": 20,
+  "ground_truth_errors": 132,
+  "completed_attempts": [
+    {
+      "attempt": 1,
+      "fixed": 107,
+      "total": 132,
+      "accuracy_pct": 81.1,
+      "duration_s": 214.1,
+      "rules_added_count": 24,
+      "rules_added": [
+        {
+          "id": "auto-him-was",
+          "triggers": [
+            "him was"
+          ]
+        },
+        {
+          "id": "auto-her",
+          "triggers": [
+            "her"
+          ]
+        },
+        {
+          "id": "auto-me-dont",
+          "triggers": [
+            "me dont"
+          ]
+        },
+        {
+          "id": "auto-buyed-a",
+          "triggers": [
+            "buyed a"
+          ]
+        },
+        {
+          "id": "auto-cant",
+          "triggers": [
+            "cant"
+          ]
+        },
+        {
+          "id": "auto-theirselves",
+          "triggers": [
+            "theirselves."
+          ]
+        },
+        {
+          "id": "auto-fastly",
+          "triggers": [
+            "fastly"
+          ]
+        },
+        {
+          "id": "auto-dont-approved",
+          "triggers": [
+            "dont approved"
+          ]
+        },
+        {
+          "id": "auto-of-the-players-are",
+          "triggers": [
+            "of the players are"
+          ]
+        },
+        {
+          "id": "auto-good",
+          "triggers": [
+            "good."
+          ]
+        },
+        {
+          "id": "auto-scientifics-has-founded",
+          "triggers": [
+            "scientifics has founded"
+          ]
+        },
+        {
+          "id": "auto-nothing",
+          "triggers": [
+            "nothing"
+          ]
+        },
+        {
+          "id": "auto-happen",
+          "triggers": [
+            "happen"
+          ]
+        },
+        {
+          "id": "auto-its",
+          "triggers": [
+            "its"
+          ]
+        },
+        {
+          "id": "auto-to-loud",
+          "triggers": [
+            "to loud"
+          ]
+        },
+        {
+          "id": "auto-noises",
+          "triggers": [
+            "noises."
+          ]
+        },
+        {
+          "id": "auto-has-gave",
+          "triggers": [
+            "has gave"
+          ]
+        },
+        {
+          "id": "auto-peoples-was",
+          "triggers": [
+            "peoples was"
+          ]
+        },
+        {
+          "id": "auto-since",
+          "triggers": [
+            "since"
+          ]
+        },
+        {
+          "id": "auto-then",
+          "triggers": [
+            "then"
+          ]
+        },
+        {
+          "id": "auto-him",
+          "triggers": [
+            "him"
+          ]
+        },
+        {
+          "id": "auto-me-was",
+          "triggers": [
+            "me was"
+          ]
+        },
+        {
+          "id": "auto-traffics",
+          "triggers": [
+            "traffics."
+          ]
+        },
+        {
+          "id": "auto-my-sister-is",
+          "triggers": [
+            "my sister is"
+          ]
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "fixed": 119,
+      "total": 132,
+      "accuracy_pct": 90.2,
+      "duration_s": 218.6,
+      "rules_added_count": 6,
+      "rules_added": [
+        {
+          "id": "auto-didnt-showed",
+          "triggers": [
+            "didnt showed"
+          ]
+        },
+        {
+          "id": "auto-evidences",
+          "triggers": [
+            "evidences"
+          ]
+        },
+        {
+          "id": "auto-support",
+          "triggers": [
+            "support"
+          ]
+        },
+        {
+          "id": "auto-theories",
+          "triggers": [
+            "theories."
+          ]
+        },
+        {
+          "id": "auto-fare",
+          "triggers": [
+            "fare"
+          ]
+        },
+        {
+          "id": "auto-earns",
+          "triggers": [
+            "earns"
+          ]
+        }
+      ]
+    }
+  ],
+  "best_accuracy": {
+    "attempt": 2,
+    "fixed": 119,
+    "total": 132,
+    "accuracy_pct": 90.2
+  },
+  "attempt_3_partial": {
+    "pairs_completed": 14,
+    "pair_scores": [
+      {
+        "pair": 1,
+        "fixed": 9,
+        "total": 9,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 2,
+        "fixed": 9,
+        "total": 9,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 3,
+        "fixed": 6,
+        "total": 6,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 4,
+        "fixed": 6,
+        "total": 7,
+        "accuracy_pct": 86.0
+      },
+      {
+        "pair": 5,
+        "fixed": 9,
+        "total": 9,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 6,
+        "fixed": 5,
+        "total": 5,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 7,
+        "fixed": 6,
+        "total": 6,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 8,
+        "fixed": 6,
+        "total": 9,
+        "accuracy_pct": 67.0
+      },
+      {
+        "pair": 9,
+        "fixed": 6,
+        "total": 6,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 10,
+        "fixed": 6,
+        "total": 6,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 11,
+        "fixed": 5,
+        "total": 5,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 12,
+        "fixed": 6,
+        "total": 6,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 13,
+        "fixed": 7,
+        "total": 7,
+        "accuracy_pct": 100.0
+      },
+      {
+        "pair": 14,
+        "fixed": 7,
+        "total": 7,
+        "accuracy_pct": 100.0
+      }
+    ],
+    "note": "Interrupted during attempt 3 at pair-14; no overall score recorded."
+  },
+  "rules_summary": {
+    "auto_tuned_added_total": 59,
+    "manual_rules_count": 55,
+    "total_rules": 114
+  },
+  "auto_tuned_rules": [
+    {
+      "id": "auto-store-to-buy",
+      "title": "store; to buy → store to buy",
+      "triggers": [
+        "store; to buy"
+      ],
+      "example": {
+        "wrong": "store; to buy",
+        "correct": "store to buy"
+      }
+    },
+    {
+      "id": "auto-very-heavy",
+      "title": "very heavy → very heavily",
+      "triggers": [
+        "very heavy"
+      ],
+      "example": {
+        "wrong": "very heavy",
+        "correct": "very heavily"
+      }
+    },
+    {
+      "id": "auto-because-of-no-umbrella",
+      "title": "because of no umbrella → because we had no umbrella",
+      "triggers": [
+        "because of no umbrella"
+      ],
+      "example": {
+        "wrong": "because of no umbrella",
+        "correct": "because we had no umbrella"
+      }
+    },
+    {
+      "id": "auto-mailman-walk",
+      "title": "mailman walk → mailman walks",
+      "triggers": [
+        "mailman walk"
+      ],
+      "example": {
+        "wrong": "mailman walk",
+        "correct": "mailman walks"
+      }
+    },
+    {
+      "id": "auto-was-playing-good",
+      "title": "was playing good → were playing well",
+      "triggers": [
+        "was playing good"
+      ],
+      "example": {
+        "wrong": "was playing good",
+        "correct": "were playing well"
+      }
+    },
+    {
+      "id": "auto-runned-very-fastly",
+      "title": "runned very fastly → ran very fast",
+      "triggers": [
+        "runned very fastly"
+      ],
+      "example": {
+        "wrong": "runned very fastly",
+        "correct": "ran very fast"
+      }
+    },
+    {
+      "id": "auto-a-new-clothe",
+      "title": "a new clothe → new clothes",
+      "triggers": [
+        "a new clothe"
+      ],
+      "example": {
+        "wrong": "a new clothe",
+        "correct": "new clothes"
+      }
+    },
+    {
+      "id": "auto-working-good",
+      "title": "working good → working well",
+      "triggers": [
+        "working good"
+      ],
+      "example": {
+        "wrong": "working good",
+        "correct": "working well"
+      }
+    },
+    {
+      "id": "auto-players-are",
+      "title": "players are → players is",
+      "triggers": [
+        "players are"
+      ],
+      "example": {
+        "wrong": "players are",
+        "correct": "players is"
+      }
+    },
+    {
+      "id": "auto-broke",
+      "title": "broke → broken",
+      "triggers": [
+        "broke"
+      ],
+      "example": {
+        "wrong": "broke",
+        "correct": "broken"
+      }
+    },
+    {
+      "id": "auto-playing-bad",
+      "title": "playing bad → playing badly",
+      "triggers": [
+        "playing bad"
+      ],
+      "example": {
+        "wrong": "playing bad",
+        "correct": "playing badly"
+      }
+    },
+    {
+      "id": "auto-him-was",
+      "title": "him was → I were",
+      "triggers": [
+        "him was"
+      ],
+      "example": {
+        "wrong": "him was",
+        "correct": "I were"
+      }
+    },
+    {
+      "id": "auto-her",
+      "title": "Her → She",
+      "triggers": [
+        "her"
+      ],
+      "example": {
+        "wrong": "Her",
+        "correct": "She"
+      }
+    },
+    {
+      "id": "auto-me-dont",
+      "title": "me dont → I don't",
+      "triggers": [
+        "me dont"
+      ],
+      "example": {
+        "wrong": "me dont",
+        "correct": "I don't"
+      }
+    },
+    {
+      "id": "auto-buyed-a",
+      "title": "buyed a → bought",
+      "triggers": [
+        "buyed a"
+      ],
+      "example": {
+        "wrong": "buyed a",
+        "correct": "bought"
+      }
+    },
+    {
+      "id": "auto-cant",
+      "title": "cant → can't",
+      "triggers": [
+        "cant"
+      ],
+      "example": {
+        "wrong": "cant",
+        "correct": "can't"
+      }
+    },
+    {
+      "id": "auto-theirselves",
+      "title": "theirselves. → themselves.",
+      "triggers": [
+        "theirselves."
+      ],
+      "example": {
+        "wrong": "theirselves.",
+        "correct": "themselves."
+      }
+    },
+    {
+      "id": "auto-fastly",
+      "title": "fastly → fast",
+      "triggers": [
+        "fastly"
+      ],
+      "example": {
+        "wrong": "fastly",
+        "correct": "fast"
+      }
+    },
+    {
+      "id": "auto-dont-approved",
+      "title": "dont approved → didn't approve",
+      "triggers": [
+        "dont approved"
+      ],
+      "example": {
+        "wrong": "dont approved",
+        "correct": "didn't approve"
+      }
+    },
+    {
+      "id": "auto-of-the-players-are",
+      "title": "of the players are → player is",
+      "triggers": [
+        "of the players are"
+      ],
+      "example": {
+        "wrong": "of the players are",
+        "correct": "player is"
+      }
+    },
+    {
+      "id": "auto-good",
+      "title": "good. → well.",
+      "triggers": [
+        "good."
+      ],
+      "example": {
+        "wrong": "good.",
+        "correct": "well."
+      }
+    },
+    {
+      "id": "auto-scientifics-has-founded",
+      "title": "scientifics has founded → scientists have found",
+      "triggers": [
+        "scientifics has founded"
+      ],
+      "example": {
+        "wrong": "scientifics has founded",
+        "correct": "scientists have found"
+      }
+    },
+    {
+      "id": "auto-nothing",
+      "title": "nothing → anything",
+      "triggers": [
+        "nothing"
+      ],
+      "example": {
+        "wrong": "nothing",
+        "correct": "anything"
+      }
+    },
+    {
+      "id": "auto-happen",
+      "title": "happen → happens",
+      "triggers": [
+        "happen"
+      ],
+      "example": {
+        "wrong": "happen",
+        "correct": "happens"
+      }
+    },
+    {
+      "id": "auto-its",
+      "title": "Its → It's",
+      "triggers": [
+        "its"
+      ],
+      "example": {
+        "wrong": "Its",
+        "correct": "It's"
+      }
+    },
+    {
+      "id": "auto-to-loud",
+      "title": "to loud → too loudly",
+      "triggers": [
+        "to loud"
+      ],
+      "example": {
+        "wrong": "to loud",
+        "correct": "too loudly"
+      }
+    },
+    {
+      "id": "auto-noises",
+      "title": "noises. → noise.",
+      "triggers": [
+        "noises."
+      ],
+      "example": {
+        "wrong": "noises.",
+        "correct": "noise."
+      }
+    },
+    {
+      "id": "auto-has-gave",
+      "title": "has gave → have given",
+      "triggers": [
+        "has gave"
+      ],
+      "example": {
+        "wrong": "has gave",
+        "correct": "have given"
+      }
+    },
+    {
+      "id": "auto-peoples-was",
+      "title": "peoples was → people were",
+      "triggers": [
+        "peoples was"
+      ],
+      "example": {
+        "wrong": "peoples was",
+        "correct": "people were"
+      }
+    },
+    {
+      "id": "auto-since",
+      "title": "since → for",
+      "triggers": [
+        "since"
+      ],
+      "example": {
+        "wrong": "since",
+        "correct": "for"
+      }
+    },
+    {
+      "id": "auto-then",
+      "title": "then → than",
+      "triggers": [
+        "then"
+      ],
+      "example": {
+        "wrong": "then",
+        "correct": "than"
+      }
+    },
+    {
+      "id": "auto-him",
+      "title": "Him → He",
+      "triggers": [
+        "him"
+      ],
+      "example": {
+        "wrong": "Him",
+        "correct": "He"
+      }
+    },
+    {
+      "id": "auto-me-was",
+      "title": "me was → I were",
+      "triggers": [
+        "me was"
+      ],
+      "example": {
+        "wrong": "me was",
+        "correct": "I were"
+      }
+    },
+    {
+      "id": "auto-traffics",
+      "title": "traffics. → traffic.",
+      "triggers": [
+        "traffics."
+      ],
+      "example": {
+        "wrong": "traffics.",
+        "correct": "traffic."
+      }
+    },
+    {
+      "id": "auto-my-sister-is",
+      "title": "my sister is → I are",
+      "triggers": [
+        "my sister is"
+      ],
+      "example": {
+        "wrong": "my sister is",
+        "correct": "I are"
+      }
+    },
+    {
+      "id": "auto-didnt-showed",
+      "title": "didnt showed → didn't show",
+      "triggers": [
+        "didnt showed"
+      ],
+      "example": {
+        "wrong": "didnt showed",
+        "correct": "didn't show"
+      }
+    },
+    {
+      "id": "auto-evidences",
+      "title": "evidences → evidence",
+      "triggers": [
+        "evidences"
+      ],
+      "example": {
+        "wrong": "evidences",
+        "correct": "evidence"
+      }
+    },
+    {
+      "id": "auto-support",
+      "title": "support → supports",
+      "triggers": [
+        "support"
+      ],
+      "example": {
+        "wrong": "support",
+        "correct": "supports"
+      }
+    },
+    {
+      "id": "auto-theories",
+      "title": "theories. → theory.",
+      "triggers": [
+        "theories."
+      ],
+      "example": {
+        "wrong": "theories.",
+        "correct": "theory."
+      }
+    },
+    {
+      "id": "auto-fare",
+      "title": "fare → fair",
+      "triggers": [
+        "fare"
+      ],
+      "example": {
+        "wrong": "fare",
+        "correct": "fair"
+      }
+    },
+    {
+      "id": "auto-earns",
+      "title": "earns → earn",
+      "triggers": [
+        "earns"
+      ],
+      "example": {
+        "wrong": "earns",
+        "correct": "earn"
+      }
+    },
+    {
+      "id": "auto-have",
+      "title": "have → has",
+      "triggers": [
+        "have"
+      ],
+      "example": {
+        "wrong": "have",
+        "correct": "has"
+      }
+    },
+    {
+      "id": "auto-dont",
+      "title": "dont → doesn't",
+      "triggers": [
+        "dont"
+      ],
+      "example": {
+        "wrong": "dont",
+        "correct": "doesn't"
+      }
+    },
+    {
+      "id": "auto-deadlines",
+      "title": "deadlines → deadline",
+      "triggers": [
+        "deadlines"
+      ],
+      "example": {
+        "wrong": "deadlines",
+        "correct": "deadline"
+      }
+    },
+    {
+      "id": "auto-came",
+      "title": "came → come",
+      "triggers": [
+        "came"
+      ],
+      "example": {
+        "wrong": "came",
+        "correct": "come"
+      }
+    },
+    {
+      "id": "auto-lately",
+      "title": "lately. → late.",
+      "triggers": [
+        "lately."
+      ],
+      "example": {
+        "wrong": "lately.",
+        "correct": "late."
+      }
+    },
+    {
+      "id": "auto-clothe",
+      "title": "clothe. → clothes.",
+      "triggers": [
+        "clothe."
+      ],
+      "example": {
+        "wrong": "clothe.",
+        "correct": "clothes."
+      }
+    },
+    {
+      "id": "auto-bad",
+      "title": "bad → badly",
+      "triggers": [
+        "bad"
+      ],
+      "example": {
+        "wrong": "bad",
+        "correct": "badly"
+      }
+    },
+    {
+      "id": "auto-assignments",
+      "title": "assignments → assignment",
+      "triggers": [
+        "assignments"
+      ],
+      "example": {
+        "wrong": "assignments",
+        "correct": "assignment"
+      }
+    },
+    {
+      "id": "auto-leaved",
+      "title": "leaved → leave",
+      "triggers": [
+        "leaved"
+      ],
+      "example": {
+        "wrong": "leaved",
+        "correct": "leave"
+      }
+    },
+    {
+      "id": "auto-me",
+      "title": "Me → My friend",
+      "triggers": [
+        "me"
+      ],
+      "example": {
+        "wrong": "Me",
+        "correct": "My friend"
+      }
+    },
+    {
+      "id": "auto-were",
+      "title": "were → was",
+      "triggers": [
+        "were"
+      ],
+      "example": {
+        "wrong": "were",
+        "correct": "was"
+      }
+    },
+    {
+      "id": "auto-rain",
+      "title": "rain → rain,",
+      "triggers": [
+        "rain"
+      ],
+      "example": {
+        "wrong": "rain",
+        "correct": "rain,"
+      }
+    },
+    {
+      "id": "auto-heavy",
+      "title": "heavy → heavily",
+      "triggers": [
+        "heavy"
+      ],
+      "example": {
+        "wrong": "heavy",
+        "correct": "heavily"
+      }
+    },
+    {
+      "id": "auto-of",
+      "title": "of → we had",
+      "triggers": [
+        "of"
+      ],
+      "example": {
+        "wrong": "of",
+        "correct": "we had"
+      }
+    },
+    {
+      "id": "auto-went",
+      "title": "went → go",
+      "triggers": [
+        "went"
+      ],
+      "example": {
+        "wrong": "went",
+        "correct": "go"
+      }
+    },
+    {
+      "id": "auto-her-go",
+      "title": "Her go → She goes",
+      "triggers": [
+        "her go"
+      ],
+      "example": {
+        "wrong": "Her go",
+        "correct": "She goes"
+      }
+    },
+    {
+      "id": "auto-to",
+      "title": "to → too",
+      "triggers": [
+        "to"
+      ],
+      "example": {
+        "wrong": "to",
+        "correct": "too"
+      }
+    },
+    {
+      "id": "auto-she",
+      "title": "she → her",
+      "triggers": [
+        "she"
+      ],
+      "example": {
+        "wrong": "she",
+        "correct": "her"
+      }
+    }
+  ]
+}

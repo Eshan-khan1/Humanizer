@@ -1,0 +1,2860 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "homophone-to-too-two",
+      "category": "homophones",
+      "title": "to / too / two",
+      "keywords": [
+        "to",
+        "too",
+        "two",
+        "many",
+        "much",
+        "go",
+        "store"
+      ],
+      "triggers": [
+        "to many",
+        "to much",
+        "want to go",
+        "to buy"
+      ],
+      "rule": "Use 'to' for direction or infinitive (go to), 'too' for also or excess (too many), and 'two' for the number 2.",
+      "examples": [
+        {
+          "wrong": "to many people",
+          "correct": "too many people"
+        },
+        {
+          "wrong": "I want two go",
+          "correct": "I want to go"
+        }
+      ]
+    },
+    {
+      "id": "homophone-their-there-theyre",
+      "category": "homophones",
+      "title": "their / there / they're",
+      "keywords": [
+        "their",
+        "there",
+        "they're",
+        "theyre",
+        "house",
+        "was",
+        "going"
+      ],
+      "rule": "'Their' shows possession, 'there' is a place or intro (there is), 'they're' means they are.",
+      "examples": [
+        {
+          "wrong": "their was a problem",
+          "correct": "there was a problem"
+        },
+        {
+          "wrong": "There going home",
+          "correct": "They're going home"
+        }
+      ]
+    },
+    {
+      "id": "homophone-your-youre",
+      "category": "homophones",
+      "title": "your / you're",
+      "keywords": [
+        "your",
+        "you're",
+        "youre",
+        "welcome",
+        "right"
+      ],
+      "rule": "'Your' is possessive; 'you're' is a contraction of you are.",
+      "examples": [
+        {
+          "wrong": "Your welcome",
+          "correct": "You're welcome"
+        },
+        {
+          "wrong": "your going",
+          "correct": "you're going"
+        }
+      ]
+    },
+    {
+      "id": "homophone-its-its",
+      "category": "homophones",
+      "title": "its / it's",
+      "keywords": [
+        "its",
+        "it's",
+        "its",
+        "rain",
+        "dog",
+        "time"
+      ],
+      "rule": "'It's' always means it is or it has. 'Its' is possessive with no apostrophe.",
+      "examples": [
+        {
+          "wrong": "it's tail is long",
+          "correct": "its tail is long"
+        },
+        {
+          "wrong": "Its raining",
+          "correct": "It's raining"
+        }
+      ]
+    },
+    {
+      "id": "homophone-affect-effect",
+      "category": "homophones",
+      "title": "affect / effect",
+      "keywords": [
+        "affect",
+        "effect",
+        "change",
+        "result",
+        "impact"
+      ],
+      "rule": "Usually 'affect' is a verb (to influence); 'effect' is often a noun (the result).",
+      "examples": [
+        {
+          "wrong": "the affect of the drug",
+          "correct": "the effect of the drug"
+        },
+        {
+          "wrong": "This will effect you",
+          "correct": "This will affect you"
+        }
+      ]
+    },
+    {
+      "id": "homophone-accept-except",
+      "category": "homophones",
+      "title": "accept / except",
+      "keywords": [
+        "accept",
+        "except",
+        "all",
+        "everyone",
+        "but"
+      ],
+      "rule": "'Accept' means to receive or agree; 'except' means excluding.",
+      "examples": [
+        {
+          "wrong": "everyone excepted the offer",
+          "correct": "everyone accepted the offer"
+        }
+      ]
+    },
+    {
+      "id": "homophone-than-then",
+      "category": "homophones",
+      "title": "than / then",
+      "keywords": [
+        "than",
+        "then",
+        "better",
+        "after",
+        "more"
+      ],
+      "rule": "Use 'than' for comparisons; 'then' for time or what happens next.",
+      "examples": [
+        {
+          "wrong": "better then me",
+          "correct": "better than me"
+        },
+        {
+          "wrong": "Than we left",
+          "correct": "Then we left"
+        }
+      ]
+    },
+    {
+      "id": "homophone-lose-loose",
+      "category": "homophones",
+      "title": "lose / loose",
+      "keywords": [
+        "lose",
+        "loose",
+        "lost",
+        "weight",
+        "change"
+      ],
+      "rule": "'Lose' means to misplace or not win; 'loose' means not tight.",
+      "examples": [
+        {
+          "wrong": "loose the game",
+          "correct": "lose the game"
+        }
+      ]
+    },
+    {
+      "id": "homophone-whether-weather",
+      "category": "homophones",
+      "title": "whether / weather",
+      "keywords": [
+        "whether",
+        "weather",
+        "if",
+        "rain",
+        "sunny"
+      ],
+      "rule": "'Whether' introduces a choice; 'weather' is climate conditions.",
+      "examples": [
+        {
+          "wrong": "I don't know weather to go",
+          "correct": "I don't know whether to go"
+        }
+      ]
+    },
+    {
+      "id": "homophone-principal-principle",
+      "category": "homophones",
+      "title": "principal / principle",
+      "keywords": [
+        "principal",
+        "principle",
+        "school",
+        "moral",
+        "main"
+      ],
+      "rule": "'Principal' is the head of a school or main amount; 'principle' is a rule or belief.",
+      "examples": [
+        {
+          "wrong": "a moral principal",
+          "correct": "a moral principle"
+        }
+      ]
+    },
+    {
+      "id": "confused-specific-pacific",
+      "category": "confused_words",
+      "title": "specific / Pacific",
+      "keywords": [
+        "specific",
+        "pacific",
+        "detail",
+        "ocean",
+        "island",
+        "isle",
+        "aisle"
+      ],
+      "triggers": [
+        "pacific isle",
+        "pacific aisle",
+        "pacific island"
+      ],
+      "rule": "'Specific' means particular or exact; 'Pacific' is an ocean or region. Do not use 'pacific' when you mean 'specific'.",
+      "examples": [
+        {
+          "wrong": "pacific details",
+          "correct": "specific details"
+        },
+        {
+          "wrong": "pacific isle",
+          "correct": "specific aisle"
+        }
+      ]
+    },
+    {
+      "id": "confused-pacific-isle-specific-aisle",
+      "category": "confused_words",
+      "title": "pacific isle → specific aisle",
+      "keywords": [
+        "pacific",
+        "isle",
+        "aisle",
+        "specific",
+        "store",
+        "buy"
+      ],
+      "triggers": [
+        "pacific isle",
+        "the pacific isle",
+        "pacific aisle"
+      ],
+      "rule": "In a shopping context, 'pacific isle' is wrong: use 'specific aisle' (particular aisle). 'Isle' is an island; 'aisle' is a store walkway. 'Pacific' is not 'specific'.",
+      "examples": [
+        {
+          "wrong": "to the pacific isle",
+          "correct": "to the specific aisle"
+        },
+        {
+          "wrong": "pacific isle to buy",
+          "correct": "specific aisle to buy"
+        }
+      ]
+    },
+    {
+      "id": "confused-aisle-isle",
+      "category": "confused_words",
+      "title": "aisle / isle / I'll",
+      "keywords": [
+        "aisle",
+        "isle",
+        "island",
+        "walk",
+        "grocery"
+      ],
+      "rule": "'Aisle' is a walkway; 'isle' is a small island; 'I'll' means I will.",
+      "examples": [
+        {
+          "wrong": "walk down the isle",
+          "correct": "walk down the aisle"
+        }
+      ]
+    },
+    {
+      "id": "confused-definitely",
+      "category": "confused_words",
+      "title": "definitely",
+      "keywords": [
+        "definately",
+        "defiantly",
+        "definitely",
+        "sure"
+      ],
+      "rule": "The correct spelling is 'definitely' (not definately or defiantly).",
+      "examples": [
+        {
+          "wrong": "definately going",
+          "correct": "definitely going"
+        }
+      ]
+    },
+    {
+      "id": "confused-irregardless",
+      "category": "confused_words",
+      "title": "irregardless / regardless",
+      "keywords": [
+        "irregardless",
+        "regardless",
+        "rain",
+        "anyway"
+      ],
+      "rule": "'Irregardless' is nonstandard; use 'regardless' or 'regardless of'.",
+      "examples": [
+        {
+          "wrong": "Irregardless of the rain",
+          "correct": "Regardless of the rain"
+        }
+      ]
+    },
+    {
+      "id": "confused-could-of",
+      "category": "confused_words",
+      "title": "could of / could have",
+      "keywords": [
+        "could of",
+        "would of",
+        "should of",
+        "could've"
+      ],
+      "rule": "After could, would, should use 'have' not 'of' (could have / could've).",
+      "examples": [
+        {
+          "wrong": "could of been",
+          "correct": "could have been"
+        },
+        {
+          "wrong": "should of went",
+          "correct": "should have gone"
+        }
+      ]
+    },
+    {
+      "id": "confused-literally-figuratively",
+      "category": "confused_words",
+      "title": "literally",
+      "keywords": [
+        "literally",
+        "figuratively",
+        "actually"
+      ],
+      "rule": "Use 'literally' only for factual truth; avoid when you mean figuratively.",
+      "examples": [
+        {
+          "wrong": "I literally died laughing (figurative)",
+          "correct": "I laughed so hard"
+        }
+      ]
+    },
+    {
+      "id": "confused-less-fewer",
+      "category": "confused_words",
+      "title": "less / fewer",
+      "keywords": [
+        "less",
+        "fewer",
+        "people",
+        "items",
+        "many"
+      ],
+      "rule": "Use 'fewer' with countable nouns; 'less' with uncountable amounts.",
+      "examples": [
+        {
+          "wrong": "less people",
+          "correct": "fewer people"
+        }
+      ]
+    },
+    {
+      "id": "confused-who-whom",
+      "category": "confused_words",
+      "title": "who / whom",
+      "keywords": [
+        "who",
+        "whom",
+        "whoever",
+        "whomever"
+      ],
+      "rule": "Use 'who' as subject; 'whom' as object (To whom did you speak?).",
+      "examples": [
+        {
+          "wrong": "Who did you give it to?",
+          "correct": "Whom did you give it to?"
+        }
+      ]
+    },
+    {
+      "id": "confused-alot",
+      "category": "confused_words",
+      "title": "a lot",
+      "keywords": [
+        "alot",
+        "a lot",
+        "allot"
+      ],
+      "rule": "'A lot' is two words; 'allot' means to distribute.",
+      "examples": [
+        {
+          "wrong": "alot of work",
+          "correct": "a lot of work"
+        }
+      ]
+    },
+    {
+      "id": "confused-peoples",
+      "category": "confused_words",
+      "title": "people / peoples",
+      "keywords": [
+        "peoples",
+        "people",
+        "many",
+        "crowd",
+        "packages"
+      ],
+      "triggers": [
+        "peoples",
+        "many peoples",
+        "peoples packages",
+        "to many peoples"
+      ],
+      "rule": "Use 'people' for plural persons; 'peoples' only for ethnic/national groups. Never 'peoples packages' for shopping.",
+      "examples": [
+        {
+          "wrong": "to many peoples",
+          "correct": "too many people"
+        },
+        {
+          "wrong": "peoples packages",
+          "correct": "people's packages"
+        }
+      ]
+    },
+    {
+      "id": "punct-run-on-comma",
+      "category": "punctuation",
+      "title": "comma splice / run-on",
+      "keywords": [
+        "and",
+        "but",
+        "so",
+        "then",
+        "however",
+        "comma"
+      ],
+      "rule": "Do not join two independent clauses with only a comma; use a period, semicolon, or conjunction with comma.",
+      "examples": [
+        {
+          "wrong": "I went home, it was late.",
+          "correct": "I went home. It was late."
+        }
+      ]
+    },
+    {
+      "id": "punct-semicolon-clause",
+      "category": "punctuation",
+      "title": "semicolon misuse",
+      "keywords": [
+        ";",
+        "semicolon",
+        "however",
+        "therefore"
+      ],
+      "rule": "Use semicolons between related independent clauses, not to replace a comma before a dependent phrase.",
+      "examples": [
+        {
+          "wrong": "I went to the store; to buy apples.",
+          "correct": "I went to the store to buy apples."
+        }
+      ]
+    },
+    {
+      "id": "punct-apostrophe-plural",
+      "category": "punctuation",
+      "title": "apostrophe for plurals",
+      "keywords": [
+        "'s",
+        "apples",
+        "dogs",
+        "packages"
+      ],
+      "rule": "Do not use apostrophes for simple plurals; use apostrophes for possession or contractions.",
+      "examples": [
+        {
+          "wrong": "apple's for sale",
+          "correct": "apples for sale"
+        }
+      ]
+    },
+    {
+      "id": "punct-exclamation-overuse",
+      "category": "punctuation",
+      "title": "exclamation marks",
+      "keywords": [
+        "!",
+        "excited",
+        "house"
+      ],
+      "rule": "Use one exclamation mark sparingly; avoid multiple !!! in formal writing.",
+      "examples": [
+        {
+          "wrong": "To our house!!!",
+          "correct": "To our house."
+        }
+      ]
+    },
+    {
+      "id": "punct-question-period",
+      "category": "punctuation",
+      "title": "question mark",
+      "keywords": [
+        "?",
+        "who",
+        "what",
+        "why",
+        "how"
+      ],
+      "rule": "Direct questions end with ? not a period.",
+      "examples": [
+        {
+          "wrong": "Where are you going.",
+          "correct": "Where are you going?"
+        }
+      ]
+    },
+    {
+      "id": "punct-comma-intro",
+      "category": "punctuation",
+      "title": "comma after introductory phrase",
+      "keywords": [
+        "however",
+        "therefore",
+        "after",
+        "before",
+        "when"
+      ],
+      "rule": "Often use a comma after long introductory adverbs or clauses.",
+      "examples": [
+        {
+          "wrong": "However it rained",
+          "correct": "However, it rained"
+        }
+      ]
+    },
+    {
+      "id": "punct-oxford-comma",
+      "category": "punctuation",
+      "title": "lists and commas",
+      "keywords": [
+        "and",
+        "or",
+        "list",
+        ","
+      ],
+      "rule": "In a series of three or more, use commas between items; optional Oxford comma before and.",
+      "examples": [
+        {
+          "wrong": "red blue and green",
+          "correct": "red, blue, and green"
+        }
+      ]
+    },
+    {
+      "id": "punct-quote-period",
+      "category": "punctuation",
+      "title": "quotation punctuation",
+      "keywords": [
+        "\"",
+        "said",
+        "quote"
+      ],
+      "rule": "In American English, periods and commas go inside closing quotation marks.",
+      "examples": [
+        {
+          "wrong": "He said \"hello\".",
+          "correct": "He said, \"Hello.\""
+        }
+      ]
+    },
+    {
+      "id": "punct-capital-after-period",
+      "category": "punctuation",
+      "title": "capitalization after period",
+      "keywords": [
+        ".",
+        "sentence",
+        "to our"
+      ],
+      "rule": "Capitalize the first word of a new sentence after a period.",
+      "examples": [
+        {
+          "wrong": "we went back. to our house.",
+          "correct": "we went back. To our house."
+        }
+      ]
+    },
+    {
+      "id": "punct-fragment",
+      "category": "punctuation",
+      "title": "sentence fragments",
+      "keywords": [
+        "To our",
+        "Because",
+        "Although",
+        "fragment"
+      ],
+      "rule": "A standalone dependent phrase like 'To our house.' is a fragment unless connected to a main clause.",
+      "examples": [
+        {
+          "wrong": "To our house.",
+          "correct": "We went to our house."
+        }
+      ]
+    },
+    {
+      "id": "sv-agreement-singular-plural",
+      "category": "subject_verb_agreement",
+      "title": "subject-verb agreement (number)",
+      "keywords": [
+        "dogs",
+        "dog",
+        "barks",
+        "bark",
+        "was",
+        "were",
+        "is",
+        "are",
+        "going"
+      ],
+      "triggers": [
+        "was going",
+        "and him was",
+        "and me was",
+        "he and i was"
+      ],
+      "rule": "Singular subjects take singular verbs; plural subjects take plural verbs. 'He and I' is plural → use 'were'.",
+      "examples": [
+        {
+          "wrong": "The dogs barks",
+          "correct": "The dog barks"
+        },
+        {
+          "wrong": "He and I was",
+          "correct": "He and I were"
+        },
+        {
+          "wrong": "Me and him was going",
+          "correct": "He and I were going"
+        }
+      ]
+    },
+    {
+      "id": "sv-agreement-collective",
+      "category": "subject_verb_agreement",
+      "title": "collective nouns",
+      "keywords": [
+        "team",
+        "group",
+        "family",
+        "everyone",
+        "everybody"
+      ],
+      "rule": "Collective nouns and 'everyone' usually take singular verbs in American English.",
+      "examples": [
+        {
+          "wrong": "Everyone are ready",
+          "correct": "Everyone is ready"
+        }
+      ]
+    },
+    {
+      "id": "sv-agreement-there-is",
+      "category": "subject_verb_agreement",
+      "title": "there is / there are",
+      "keywords": [
+        "there is",
+        "there are",
+        "there's",
+        "their was"
+      ],
+      "rule": "Use 'there is' with singular and 'there are' with plural following nouns.",
+      "examples": [
+        {
+          "wrong": "there is many people",
+          "correct": "there are many people"
+        },
+        {
+          "wrong": "their was",
+          "correct": "there were"
+        }
+      ]
+    },
+    {
+      "id": "sv-agreement-indefinite",
+      "category": "subject_verb_agreement",
+      "title": "each / every / neither",
+      "keywords": [
+        "each",
+        "every",
+        "neither",
+        "either",
+        "student"
+      ],
+      "rule": "Singular indefinite pronouns (each, every, everyone) take singular verbs.",
+      "examples": [
+        {
+          "wrong": "Each of them are",
+          "correct": "Each of them is"
+        }
+      ]
+    },
+    {
+      "id": "sv-agreement-mailman",
+      "category": "subject_verb_agreement",
+      "title": "third person singular -s",
+      "keywords": [
+        "walk",
+        "walks",
+        "give",
+        "gives",
+        "mailman",
+        "he",
+        "she"
+      ],
+      "rule": "Present tense third-person singular adds -s or -es (he walks, she gives).",
+      "examples": [
+        {
+          "wrong": "the mailman walk",
+          "correct": "the mailman walks"
+        },
+        {
+          "wrong": "he give us",
+          "correct": "he gives us"
+        }
+      ]
+    },
+    {
+      "id": "sv-agreement-dont-doesnt",
+      "category": "subject_verb_agreement",
+      "title": "don't vs doesn't",
+      "keywords": [
+        "don't",
+        "doesn't",
+        "he",
+        "she",
+        "it"
+      ],
+      "rule": "Use doesn't with he/she/it; don't with I/you/we/they.",
+      "examples": [
+        {
+          "wrong": "He don't know",
+          "correct": "He doesn't know"
+        }
+      ]
+    },
+    {
+      "id": "pronoun-order-subject",
+      "category": "pronoun_order",
+      "title": "subject pronoun order",
+      "keywords": [
+        "me and",
+        "him and",
+        "her and",
+        "I and",
+        "he and",
+        "me",
+        "him",
+        "was",
+        "were"
+      ],
+      "triggers": [
+        "me and him",
+        "me and her",
+        "him and me",
+        "me and him was",
+        "me and him were"
+      ],
+      "rule": "Put yourself last and use subject pronouns (I, he, she) as subjects: 'He and I went', NEVER 'Me and him went'. Compound subjects take 'were' not 'was'.",
+      "examples": [
+        {
+          "wrong": "Me and him was going",
+          "correct": "He and I were going"
+        },
+        {
+          "wrong": "Me and him",
+          "correct": "He and I"
+        },
+        {
+          "wrong": "Me and John went",
+          "correct": "John and I went"
+        }
+      ]
+    },
+    {
+      "id": "pronoun-order-object",
+      "category": "pronoun_order",
+      "title": "object pronoun order",
+      "keywords": [
+        "between you and I",
+        "for he and I",
+        "to we"
+      ],
+      "rule": "After prepositions use object pronouns: between you and me, for him and her.",
+      "examples": [
+        {
+          "wrong": "between you and I",
+          "correct": "between you and me"
+        }
+      ]
+    },
+    {
+      "id": "pronoun-reflexive",
+      "category": "pronoun_order",
+      "title": "reflexive pronouns",
+      "keywords": [
+        "myself",
+        "himself",
+        "theirself",
+        "ourselves"
+      ],
+      "rule": "Use reflexive pronouns only when subject and object are the same; no 'theirself'.",
+      "examples": [
+        {
+          "wrong": "contact theirself",
+          "correct": "contact them"
+        }
+      ]
+    },
+    {
+      "id": "grammar-article-a-an",
+      "category": "grammar",
+      "title": "a / an articles",
+      "keywords": [
+        "a",
+        "an",
+        "apple",
+        "hour",
+        "umbrella"
+      ],
+      "rule": "Use 'an' before vowel sounds; 'a' before consonant sounds.",
+      "examples": [
+        {
+          "wrong": "a apple",
+          "correct": "an apple"
+        },
+        {
+          "wrong": "an university",
+          "correct": "a university"
+        }
+      ]
+    },
+    {
+      "id": "grammar-adverb-heavy",
+      "category": "grammar",
+      "title": "adverb vs adjective",
+      "keywords": [
+        "heavy",
+        "heavily",
+        "quick",
+        "quickly",
+        "rain",
+        "raining"
+      ],
+      "rule": "Adverbs modify verbs (rains heavily); adjectives modify nouns (heavy rain).",
+      "examples": [
+        {
+          "wrong": "raining very heavy",
+          "correct": "raining very heavily"
+        },
+        {
+          "wrong": "it raining",
+          "correct": "it is raining"
+        }
+      ]
+    },
+    {
+      "id": "grammar-past-tense-goed",
+      "category": "grammar",
+      "title": "irregular past tense",
+      "keywords": [
+        "goed",
+        "catched",
+        "buyed",
+        "runned",
+        "went",
+        "caught"
+      ],
+      "rule": "Common irregular verbs: go→went, catch→caught, buy→bought, run→ran.",
+      "examples": [
+        {
+          "wrong": "we goed back",
+          "correct": "we went back"
+        },
+        {
+          "wrong": "we catched",
+          "correct": "we caught"
+        }
+      ]
+    },
+    {
+      "id": "grammar-double-negative",
+      "category": "grammar",
+      "title": "double negatives",
+      "keywords": [
+        "don't",
+        "no",
+        "nothing",
+        "never",
+        "ain't"
+      ],
+      "rule": "Avoid double negatives in standard English (don't have no → don't have any).",
+      "examples": [
+        {
+          "wrong": "don't have no",
+          "correct": "don't have any"
+        }
+      ]
+    },
+    {
+      "id": "grammar-gerund-infinitive",
+      "category": "grammar",
+      "title": "gerund vs infinitive",
+      "keywords": [
+        "enjoy",
+        "to go",
+        "going",
+        "stop",
+        "remember"
+      ],
+      "rule": "Some verbs take gerund (-ing) or infinitive (to) depending on meaning; check common patterns.",
+      "examples": [
+        {
+          "wrong": "enjoy to go",
+          "correct": "enjoy going"
+        }
+      ]
+    },
+    {
+      "id": "grammar-modal-could",
+      "category": "grammar",
+      "title": "modal verbs",
+      "keywords": [
+        "can",
+        "could",
+        "should",
+        "would",
+        "may",
+        "might"
+      ],
+      "rule": "After modals use base verb without 'to' (should go, not should to go).",
+      "examples": [
+        {
+          "wrong": "should to go",
+          "correct": "should go"
+        }
+      ]
+    },
+    {
+      "id": "grammar-comparative-superlative",
+      "category": "grammar",
+      "title": "comparatives",
+      "keywords": [
+        "more better",
+        "most fastest",
+        "gooder",
+        "worse"
+      ],
+      "rule": "Do not double comparatives (more better → better; more fast → faster).",
+      "examples": [
+        {
+          "wrong": "more better",
+          "correct": "better"
+        }
+      ]
+    },
+    {
+      "id": "grammar-plural-package",
+      "category": "grammar",
+      "title": "plural nouns",
+      "keywords": [
+        "packages",
+        "package",
+        "childs",
+        "children"
+      ],
+      "rule": "Use correct plural forms (packages, children, not childs or package for plural).",
+      "examples": [
+        {
+          "wrong": "a packages",
+          "correct": "a package"
+        },
+        {
+          "wrong": "he give us a packages",
+          "correct": "he gave us a package"
+        }
+      ]
+    },
+    {
+      "id": "grammar-preposition-because",
+      "category": "grammar",
+      "title": "because / because of",
+      "keywords": [
+        "because",
+        "because of",
+        "reason",
+        "umbrella"
+      ],
+      "rule": "'Because' introduces a clause (because we had); 'because of' + noun phrase (because of rain).",
+      "examples": [
+        {
+          "wrong": "because of no umbrella",
+          "correct": "because we had no umbrella"
+        }
+      ]
+    },
+    {
+      "id": "grammar-stairs-upstairs",
+      "category": "grammar",
+      "title": "upstairs / up the stairs",
+      "keywords": [
+        "stairs",
+        "upstairs",
+        "up the stairs",
+        "walk"
+      ],
+      "rule": "'Upstairs' is an adverb; 'up the stairs' is preposition + noun when movement is explicit.",
+      "examples": [
+        {
+          "wrong": "walk up the stairs (when adverb intended)",
+          "correct": "walk upstairs"
+        }
+      ]
+    },
+    {
+      "id": "spelling-separate",
+      "category": "spelling",
+      "title": "separate",
+      "keywords": [
+        "seperate",
+        "separate"
+      ],
+      "rule": "Correct spelling is separate (not seperate).",
+      "examples": [
+        {
+          "wrong": "seperate rooms",
+          "correct": "separate rooms"
+        }
+      ]
+    },
+    {
+      "id": "spelling-occurred",
+      "category": "spelling",
+      "title": "occurred / occurring",
+      "keywords": [
+        "occured",
+        "occurred",
+        "occurring"
+      ],
+      "rule": "Double r in occurred and occurring.",
+      "examples": [
+        {
+          "wrong": "it occured",
+          "correct": "it occurred"
+        }
+      ]
+    },
+    {
+      "id": "spelling-accommodate",
+      "category": "spelling",
+      "title": "accommodate",
+      "keywords": [
+        "accomodate",
+        "accommodate"
+      ],
+      "rule": "Correct spelling is accommodate (double c and double m).",
+      "examples": [
+        {
+          "wrong": "accomodate",
+          "correct": "accommodate"
+        }
+      ]
+    },
+    {
+      "id": "spelling-receive",
+      "category": "spelling",
+      "title": "i before e",
+      "keywords": [
+        "recieve",
+        "receive",
+        "believe",
+        "ceiling"
+      ],
+      "rule": "i before e except after c: receive, believe (watch weird exceptions).",
+      "examples": [
+        {
+          "wrong": "recieve",
+          "correct": "receive"
+        }
+      ]
+    },
+    {
+      "id": "spelling-tomorrow",
+      "category": "spelling",
+      "title": "tomorrow",
+      "keywords": [
+        "tommorow",
+        "tomorrow",
+        "tommorrow"
+      ],
+      "rule": "Correct spelling is tomorrow (one m, two r's).",
+      "examples": [
+        {
+          "wrong": "tommorow",
+          "correct": "tomorrow"
+        }
+      ]
+    },
+    {
+      "id": "auto-store-to-buy",
+      "category": "auto_tuned",
+      "title": "store; to buy → store to buy",
+      "keywords": [
+        "store",
+        "to",
+        "buy"
+      ],
+      "triggers": [
+        "store; to buy"
+      ],
+      "rule": "When the text contains \"store; to buy\", correct it to \"store to buy\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "store; to buy",
+          "correct": "store to buy"
+        }
+      ]
+    },
+    {
+      "id": "auto-very-heavy",
+      "category": "auto_tuned",
+      "title": "very heavy → very heavily",
+      "keywords": [
+        "very",
+        "heavy"
+      ],
+      "triggers": [
+        "very heavy"
+      ],
+      "rule": "When the text contains \"very heavy\", correct it to \"very heavily\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "very heavy",
+          "correct": "very heavily"
+        }
+      ]
+    },
+    {
+      "id": "auto-because-of-no-umbrella",
+      "category": "auto_tuned",
+      "title": "because of no umbrella → because we had no umbrella",
+      "keywords": [
+        "because",
+        "of",
+        "no",
+        "umbrella"
+      ],
+      "triggers": [
+        "because of no umbrella"
+      ],
+      "rule": "When the text contains \"because of no umbrella\", correct it to \"because we had no umbrella\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "because of no umbrella",
+          "correct": "because we had no umbrella"
+        }
+      ]
+    },
+    {
+      "id": "auto-mailman-walk",
+      "category": "auto_tuned",
+      "title": "mailman walk → mailman walks",
+      "keywords": [
+        "mailman",
+        "walk"
+      ],
+      "triggers": [
+        "mailman walk"
+      ],
+      "rule": "When the text contains \"mailman walk\", correct it to \"mailman walks\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "mailman walk",
+          "correct": "mailman walks"
+        }
+      ]
+    },
+    {
+      "id": "auto-was-playing-good",
+      "category": "auto_tuned",
+      "title": "was playing good → were playing well",
+      "keywords": [
+        "was",
+        "playing",
+        "good"
+      ],
+      "triggers": [
+        "was playing good"
+      ],
+      "rule": "When the text contains \"was playing good\", correct it to \"were playing well\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "was playing good",
+          "correct": "were playing well"
+        }
+      ]
+    },
+    {
+      "id": "auto-runned-very-fastly",
+      "category": "auto_tuned",
+      "title": "runned very fastly → ran very fast",
+      "keywords": [
+        "runned",
+        "very",
+        "fastly"
+      ],
+      "triggers": [
+        "runned very fastly"
+      ],
+      "rule": "When the text contains \"runned very fastly\", correct it to \"ran very fast\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "runned very fastly",
+          "correct": "ran very fast"
+        }
+      ]
+    },
+    {
+      "id": "auto-a-new-clothe",
+      "category": "auto_tuned",
+      "title": "a new clothe → new clothes",
+      "keywords": [
+        "a",
+        "new",
+        "clothe"
+      ],
+      "triggers": [
+        "a new clothe"
+      ],
+      "rule": "When the text contains \"a new clothe\", correct it to \"new clothes\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "a new clothe",
+          "correct": "new clothes"
+        }
+      ]
+    },
+    {
+      "id": "auto-working-good",
+      "category": "auto_tuned",
+      "title": "working good → working well",
+      "keywords": [
+        "working",
+        "good"
+      ],
+      "triggers": [
+        "working good"
+      ],
+      "rule": "When the text contains \"working good\", correct it to \"working well\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "working good",
+          "correct": "working well"
+        }
+      ]
+    },
+    {
+      "id": "auto-players-are",
+      "category": "auto_tuned",
+      "title": "players are → players is",
+      "keywords": [
+        "players",
+        "are"
+      ],
+      "triggers": [
+        "players are"
+      ],
+      "rule": "When the text contains \"players are\", correct it to \"players is\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "players are",
+          "correct": "players is"
+        }
+      ]
+    },
+    {
+      "id": "auto-broke",
+      "category": "auto_tuned",
+      "title": "broke → broken",
+      "keywords": [
+        "broke"
+      ],
+      "triggers": [
+        "broke"
+      ],
+      "rule": "When the text contains \"broke\", correct it to \"broken\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "broke",
+          "correct": "broken"
+        }
+      ]
+    },
+    {
+      "id": "auto-playing-bad",
+      "category": "auto_tuned",
+      "title": "playing bad → playing badly",
+      "keywords": [
+        "playing",
+        "bad"
+      ],
+      "triggers": [
+        "playing bad"
+      ],
+      "rule": "When the text contains \"playing bad\", correct it to \"playing badly\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "playing bad",
+          "correct": "playing badly"
+        }
+      ]
+    },
+    {
+      "id": "auto-him-was",
+      "category": "auto_tuned",
+      "title": "him was → I were",
+      "keywords": [
+        "him",
+        "was"
+      ],
+      "triggers": [
+        "him was"
+      ],
+      "rule": "When the text contains \"him was\", correct it to \"I were\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "him was",
+          "correct": "I were"
+        }
+      ]
+    },
+    {
+      "id": "auto-her",
+      "category": "auto_tuned",
+      "title": "Her → She",
+      "keywords": [
+        "her"
+      ],
+      "triggers": [
+        "her"
+      ],
+      "rule": "When the text contains \"Her\", correct it to \"She\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "Her",
+          "correct": "She"
+        }
+      ]
+    },
+    {
+      "id": "auto-me-dont",
+      "category": "auto_tuned",
+      "title": "me dont → I don't",
+      "keywords": [
+        "me",
+        "dont"
+      ],
+      "triggers": [
+        "me dont"
+      ],
+      "rule": "When the text contains \"me dont\", correct it to \"I don't\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "me dont",
+          "correct": "I don't"
+        }
+      ]
+    },
+    {
+      "id": "auto-buyed-a",
+      "category": "auto_tuned",
+      "title": "buyed a → bought",
+      "keywords": [
+        "buyed",
+        "a"
+      ],
+      "triggers": [
+        "buyed a"
+      ],
+      "rule": "When the text contains \"buyed a\", correct it to \"bought\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "buyed a",
+          "correct": "bought"
+        }
+      ]
+    },
+    {
+      "id": "auto-cant",
+      "category": "auto_tuned",
+      "title": "cant → can't",
+      "keywords": [
+        "cant"
+      ],
+      "triggers": [
+        "cant"
+      ],
+      "rule": "When the text contains \"cant\", correct it to \"can't\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "cant",
+          "correct": "can't"
+        }
+      ]
+    },
+    {
+      "id": "auto-theirselves",
+      "category": "auto_tuned",
+      "title": "theirselves. → themselves.",
+      "keywords": [
+        "theirselves"
+      ],
+      "triggers": [
+        "theirselves."
+      ],
+      "rule": "When the text contains \"theirselves.\", correct it to \"themselves.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "theirselves.",
+          "correct": "themselves."
+        }
+      ]
+    },
+    {
+      "id": "auto-fastly",
+      "category": "auto_tuned",
+      "title": "fastly → fast",
+      "keywords": [
+        "fastly"
+      ],
+      "triggers": [
+        "fastly"
+      ],
+      "rule": "When the text contains \"fastly\", correct it to \"fast\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "fastly",
+          "correct": "fast"
+        }
+      ]
+    },
+    {
+      "id": "auto-dont-approved",
+      "category": "auto_tuned",
+      "title": "dont approved → didn't approve",
+      "keywords": [
+        "dont",
+        "approved"
+      ],
+      "triggers": [
+        "dont approved"
+      ],
+      "rule": "When the text contains \"dont approved\", correct it to \"didn't approve\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "dont approved",
+          "correct": "didn't approve"
+        }
+      ]
+    },
+    {
+      "id": "auto-of-the-players-are",
+      "category": "auto_tuned",
+      "title": "of the players are → player is",
+      "keywords": [
+        "of",
+        "the",
+        "players",
+        "are"
+      ],
+      "triggers": [
+        "of the players are"
+      ],
+      "rule": "When the text contains \"of the players are\", correct it to \"player is\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "of the players are",
+          "correct": "player is"
+        }
+      ]
+    },
+    {
+      "id": "auto-good",
+      "category": "auto_tuned",
+      "title": "good. → well.",
+      "keywords": [
+        "good"
+      ],
+      "triggers": [
+        "good."
+      ],
+      "rule": "When the text contains \"good.\", correct it to \"well.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "good.",
+          "correct": "well."
+        }
+      ]
+    },
+    {
+      "id": "auto-scientifics-has-founded",
+      "category": "auto_tuned",
+      "title": "scientifics has founded → scientists have found",
+      "keywords": [
+        "scientifics",
+        "has",
+        "founded"
+      ],
+      "triggers": [
+        "scientifics has founded"
+      ],
+      "rule": "When the text contains \"scientifics has founded\", correct it to \"scientists have found\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "scientifics has founded",
+          "correct": "scientists have found"
+        }
+      ]
+    },
+    {
+      "id": "auto-nothing",
+      "category": "auto_tuned",
+      "title": "nothing → anything",
+      "keywords": [
+        "nothing"
+      ],
+      "triggers": [
+        "nothing"
+      ],
+      "rule": "When the text contains \"nothing\", correct it to \"anything\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "nothing",
+          "correct": "anything"
+        }
+      ]
+    },
+    {
+      "id": "auto-happen",
+      "category": "auto_tuned",
+      "title": "happen → happens",
+      "keywords": [
+        "happen"
+      ],
+      "triggers": [
+        "happen"
+      ],
+      "rule": "When the text contains \"happen\", correct it to \"happens\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "happen",
+          "correct": "happens"
+        }
+      ]
+    },
+    {
+      "id": "auto-its",
+      "category": "auto_tuned",
+      "title": "Its → It's",
+      "keywords": [
+        "its"
+      ],
+      "triggers": [
+        "its"
+      ],
+      "rule": "When the text contains \"Its\", correct it to \"It's\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "Its",
+          "correct": "It's"
+        }
+      ]
+    },
+    {
+      "id": "auto-to-loud",
+      "category": "auto_tuned",
+      "title": "to loud → too loudly",
+      "keywords": [
+        "to",
+        "loud"
+      ],
+      "triggers": [
+        "to loud"
+      ],
+      "rule": "When the text contains \"to loud\", correct it to \"too loudly\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "to loud",
+          "correct": "too loudly"
+        }
+      ]
+    },
+    {
+      "id": "auto-noises",
+      "category": "auto_tuned",
+      "title": "noises. → noise.",
+      "keywords": [
+        "noises"
+      ],
+      "triggers": [
+        "noises."
+      ],
+      "rule": "When the text contains \"noises.\", correct it to \"noise.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "noises.",
+          "correct": "noise."
+        }
+      ]
+    },
+    {
+      "id": "auto-has-gave",
+      "category": "auto_tuned",
+      "title": "has gave → have given",
+      "keywords": [
+        "has",
+        "gave"
+      ],
+      "triggers": [
+        "has gave"
+      ],
+      "rule": "When the text contains \"has gave\", correct it to \"have given\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "has gave",
+          "correct": "have given"
+        }
+      ]
+    },
+    {
+      "id": "auto-peoples-was",
+      "category": "auto_tuned",
+      "title": "peoples was → people were",
+      "keywords": [
+        "peoples",
+        "was"
+      ],
+      "triggers": [
+        "peoples was"
+      ],
+      "rule": "When the text contains \"peoples was\", correct it to \"people were\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "peoples was",
+          "correct": "people were"
+        }
+      ]
+    },
+    {
+      "id": "auto-since",
+      "category": "auto_tuned",
+      "title": "since → for",
+      "keywords": [
+        "since"
+      ],
+      "triggers": [
+        "since"
+      ],
+      "rule": "When the text contains \"since\", correct it to \"for\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "since",
+          "correct": "for"
+        }
+      ]
+    },
+    {
+      "id": "auto-then",
+      "category": "auto_tuned",
+      "title": "then → than",
+      "keywords": [
+        "then"
+      ],
+      "triggers": [
+        "then"
+      ],
+      "rule": "When the text contains \"then\", correct it to \"than\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "then",
+          "correct": "than"
+        }
+      ]
+    },
+    {
+      "id": "auto-him",
+      "category": "auto_tuned",
+      "title": "Him → He",
+      "keywords": [
+        "him"
+      ],
+      "triggers": [
+        "him"
+      ],
+      "rule": "When the text contains \"Him\", correct it to \"He\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "Him",
+          "correct": "He"
+        }
+      ]
+    },
+    {
+      "id": "auto-me-was",
+      "category": "auto_tuned",
+      "title": "me was → I were",
+      "keywords": [
+        "me",
+        "was"
+      ],
+      "triggers": [
+        "me was"
+      ],
+      "rule": "When the text contains \"me was\", correct it to \"I were\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "me was",
+          "correct": "I were"
+        }
+      ]
+    },
+    {
+      "id": "auto-traffics",
+      "category": "auto_tuned",
+      "title": "traffics. → traffic.",
+      "keywords": [
+        "traffics"
+      ],
+      "triggers": [
+        "traffics."
+      ],
+      "rule": "When the text contains \"traffics.\", correct it to \"traffic.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "traffics.",
+          "correct": "traffic."
+        }
+      ]
+    },
+    {
+      "id": "auto-my-sister-is",
+      "category": "auto_tuned",
+      "title": "my sister is → I are",
+      "keywords": [
+        "my",
+        "sister",
+        "is"
+      ],
+      "triggers": [
+        "my sister is"
+      ],
+      "rule": "When the text contains \"my sister is\", correct it to \"I are\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "my sister is",
+          "correct": "I are"
+        }
+      ]
+    },
+    {
+      "id": "auto-didnt-showed",
+      "category": "auto_tuned",
+      "title": "didnt showed → didn't show",
+      "keywords": [
+        "didnt",
+        "showed"
+      ],
+      "triggers": [
+        "didnt showed"
+      ],
+      "rule": "When the text contains \"didnt showed\", correct it to \"didn't show\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "didnt showed",
+          "correct": "didn't show"
+        }
+      ]
+    },
+    {
+      "id": "auto-evidences",
+      "category": "auto_tuned",
+      "title": "evidences → evidence",
+      "keywords": [
+        "evidences"
+      ],
+      "triggers": [
+        "evidences"
+      ],
+      "rule": "When the text contains \"evidences\", correct it to \"evidence\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "evidences",
+          "correct": "evidence"
+        }
+      ]
+    },
+    {
+      "id": "auto-support",
+      "category": "auto_tuned",
+      "title": "support → supports",
+      "keywords": [
+        "support"
+      ],
+      "triggers": [
+        "support"
+      ],
+      "rule": "When the text contains \"support\", correct it to \"supports\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "support",
+          "correct": "supports"
+        }
+      ]
+    },
+    {
+      "id": "auto-theories",
+      "category": "auto_tuned",
+      "title": "theories. → theory.",
+      "keywords": [
+        "theories"
+      ],
+      "triggers": [
+        "theories."
+      ],
+      "rule": "When the text contains \"theories.\", correct it to \"theory.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "theories.",
+          "correct": "theory."
+        }
+      ]
+    },
+    {
+      "id": "auto-fare",
+      "category": "auto_tuned",
+      "title": "fare → fair",
+      "keywords": [
+        "fare"
+      ],
+      "triggers": [
+        "fare"
+      ],
+      "rule": "When the text contains \"fare\", correct it to \"fair\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "fare",
+          "correct": "fair"
+        }
+      ]
+    },
+    {
+      "id": "auto-earns",
+      "category": "auto_tuned",
+      "title": "earns → earn",
+      "keywords": [
+        "earns"
+      ],
+      "triggers": [
+        "earns"
+      ],
+      "rule": "When the text contains \"earns\", correct it to \"earn\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "earns",
+          "correct": "earn"
+        }
+      ]
+    },
+    {
+      "id": "auto-have",
+      "category": "auto_tuned",
+      "title": "have → has",
+      "keywords": [
+        "have"
+      ],
+      "triggers": [
+        "have"
+      ],
+      "rule": "When the text contains \"have\", correct it to \"has\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "have",
+          "correct": "has"
+        }
+      ]
+    },
+    {
+      "id": "auto-dont",
+      "category": "auto_tuned",
+      "title": "dont → doesn't",
+      "keywords": [
+        "dont"
+      ],
+      "triggers": [
+        "dont"
+      ],
+      "rule": "When the text contains \"dont\", correct it to \"doesn't\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "dont",
+          "correct": "doesn't"
+        }
+      ]
+    },
+    {
+      "id": "auto-deadlines",
+      "category": "auto_tuned",
+      "title": "deadlines → deadline",
+      "keywords": [
+        "deadlines"
+      ],
+      "triggers": [
+        "deadlines"
+      ],
+      "rule": "When the text contains \"deadlines\", correct it to \"deadline\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "deadlines",
+          "correct": "deadline"
+        }
+      ]
+    },
+    {
+      "id": "auto-came",
+      "category": "auto_tuned",
+      "title": "came → come",
+      "keywords": [
+        "came"
+      ],
+      "triggers": [
+        "came"
+      ],
+      "rule": "When the text contains \"came\", correct it to \"come\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "came",
+          "correct": "come"
+        }
+      ]
+    },
+    {
+      "id": "auto-lately",
+      "category": "auto_tuned",
+      "title": "lately. → late.",
+      "keywords": [
+        "lately"
+      ],
+      "triggers": [
+        "lately."
+      ],
+      "rule": "When the text contains \"lately.\", correct it to \"late.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "lately.",
+          "correct": "late."
+        }
+      ]
+    },
+    {
+      "id": "auto-clothe",
+      "category": "auto_tuned",
+      "title": "clothe. → clothes.",
+      "keywords": [
+        "clothe"
+      ],
+      "triggers": [
+        "clothe."
+      ],
+      "rule": "When the text contains \"clothe.\", correct it to \"clothes.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "clothe.",
+          "correct": "clothes."
+        }
+      ]
+    },
+    {
+      "id": "auto-bad",
+      "category": "auto_tuned",
+      "title": "bad → badly",
+      "keywords": [
+        "bad"
+      ],
+      "triggers": [
+        "bad"
+      ],
+      "rule": "When the text contains \"bad\", correct it to \"badly\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "bad",
+          "correct": "badly"
+        }
+      ]
+    },
+    {
+      "id": "auto-assignments",
+      "category": "auto_tuned",
+      "title": "assignments → assignment",
+      "keywords": [
+        "assignments"
+      ],
+      "triggers": [
+        "assignments"
+      ],
+      "rule": "When the text contains \"assignments\", correct it to \"assignment\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "assignments",
+          "correct": "assignment"
+        }
+      ]
+    },
+    {
+      "id": "auto-leaved",
+      "category": "auto_tuned",
+      "title": "leaved → leave",
+      "keywords": [
+        "leaved"
+      ],
+      "triggers": [
+        "leaved"
+      ],
+      "rule": "When the text contains \"leaved\", correct it to \"leave\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "leaved",
+          "correct": "leave"
+        }
+      ]
+    },
+    {
+      "id": "auto-me",
+      "category": "auto_tuned",
+      "title": "Me → My friend",
+      "keywords": [
+        "me"
+      ],
+      "triggers": [
+        "me"
+      ],
+      "rule": "When the text contains \"Me\", correct it to \"My friend\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "Me",
+          "correct": "My friend"
+        }
+      ]
+    },
+    {
+      "id": "auto-were",
+      "category": "auto_tuned",
+      "title": "were → was",
+      "keywords": [
+        "were"
+      ],
+      "triggers": [
+        "were"
+      ],
+      "rule": "When the text contains \"were\", correct it to \"was\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "were",
+          "correct": "was"
+        }
+      ]
+    },
+    {
+      "id": "auto-rain",
+      "category": "auto_tuned",
+      "title": "rain → rain,",
+      "keywords": [
+        "rain"
+      ],
+      "triggers": [
+        "rain"
+      ],
+      "rule": "When the text contains \"rain\", correct it to \"rain,\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "rain",
+          "correct": "rain,"
+        }
+      ]
+    },
+    {
+      "id": "auto-heavy",
+      "category": "auto_tuned",
+      "title": "heavy → heavily",
+      "keywords": [
+        "heavy"
+      ],
+      "triggers": [
+        "heavy"
+      ],
+      "rule": "When the text contains \"heavy\", correct it to \"heavily\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "heavy",
+          "correct": "heavily"
+        }
+      ]
+    },
+    {
+      "id": "auto-of",
+      "category": "auto_tuned",
+      "title": "of → we had",
+      "keywords": [
+        "of"
+      ],
+      "triggers": [
+        "of"
+      ],
+      "rule": "When the text contains \"of\", correct it to \"we had\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "of",
+          "correct": "we had"
+        }
+      ]
+    },
+    {
+      "id": "auto-went",
+      "category": "auto_tuned",
+      "title": "went → go",
+      "keywords": [
+        "went"
+      ],
+      "triggers": [
+        "went"
+      ],
+      "rule": "When the text contains \"went\", correct it to \"go\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "went",
+          "correct": "go"
+        }
+      ]
+    },
+    {
+      "id": "auto-her-go",
+      "category": "auto_tuned",
+      "title": "Her go → She goes",
+      "keywords": [
+        "her",
+        "go"
+      ],
+      "triggers": [
+        "her go"
+      ],
+      "rule": "When the text contains \"Her go\", correct it to \"She goes\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "Her go",
+          "correct": "She goes"
+        }
+      ]
+    },
+    {
+      "id": "auto-to",
+      "category": "auto_tuned",
+      "title": "to → too",
+      "keywords": [
+        "to"
+      ],
+      "triggers": [
+        "to"
+      ],
+      "rule": "When the text contains \"to\", correct it to \"too\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "to",
+          "correct": "too"
+        }
+      ]
+    },
+    {
+      "id": "auto-she",
+      "category": "auto_tuned",
+      "title": "she → her",
+      "keywords": [
+        "she"
+      ],
+      "triggers": [
+        "she"
+      ],
+      "rule": "When the text contains \"she\", correct it to \"her\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "she",
+          "correct": "her"
+        }
+      ]
+    },
+    {
+      "id": "auto-it",
+      "category": "auto_tuned",
+      "title": "it → it.",
+      "keywords": [
+        "it"
+      ],
+      "triggers": [
+        "it"
+      ],
+      "rule": "When the text contains \"it\", correct it to \"it.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "it",
+          "correct": "it."
+        }
+      ]
+    },
+    {
+      "id": "auto-no",
+      "category": "auto_tuned",
+      "title": "no → any",
+      "keywords": [
+        "no"
+      ],
+      "triggers": [
+        "no"
+      ],
+      "rule": "When the text contains \"no\", correct it to \"any\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "no",
+          "correct": "any"
+        }
+      ]
+    },
+    {
+      "id": "auto-nobody",
+      "category": "auto_tuned",
+      "title": "nobody → anyone",
+      "keywords": [
+        "nobody"
+      ],
+      "triggers": [
+        "nobody"
+      ],
+      "rule": "When the text contains \"nobody\", correct it to \"anyone\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "nobody",
+          "correct": "anyone"
+        }
+      ]
+    },
+    {
+      "id": "auto-it-2",
+      "category": "auto_tuned",
+      "title": "it. → them.",
+      "keywords": [
+        "it"
+      ],
+      "triggers": [
+        "it."
+      ],
+      "rule": "When the text contains \"it.\", correct it to \"them.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "it.",
+          "correct": "them."
+        }
+      ]
+    },
+    {
+      "id": "auto-years-earns",
+      "category": "auto_tuned",
+      "title": "years,earns → years, earns",
+      "keywords": [
+        "years",
+        "earns"
+      ],
+      "triggers": [
+        "years,earns"
+      ],
+      "rule": "When the text contains \"years,earns\", correct it to \"years, earns\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "years,earns",
+          "correct": "years, earns"
+        }
+      ]
+    },
+    {
+      "id": "auto-peoples-and",
+      "category": "auto_tuned",
+      "title": "peoples,and → people, and",
+      "keywords": [
+        "peoples",
+        "and"
+      ],
+      "triggers": [
+        "peoples,and"
+      ],
+      "rule": "When the text contains \"peoples,and\", correct it to \"people, and\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "peoples,and",
+          "correct": "people, and"
+        }
+      ]
+    },
+    {
+      "id": "auto-theories-2",
+      "category": "auto_tuned",
+      "title": "theories → theory",
+      "keywords": [
+        "theories"
+      ],
+      "triggers": [
+        "theories"
+      ],
+      "rule": "When the text contains \"theories\", correct it to \"theory\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "theories",
+          "correct": "theory"
+        }
+      ]
+    },
+    {
+      "id": "auto-cinema-the",
+      "category": "auto_tuned",
+      "title": "cinema,the → cinema, the",
+      "keywords": [
+        "cinema",
+        "the"
+      ],
+      "triggers": [
+        "cinema,the"
+      ],
+      "rule": "When the text contains \"cinema,the\", correct it to \"cinema, the\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "cinema,the",
+          "correct": "cinema, the"
+        }
+      ]
+    },
+    {
+      "id": "auto-morning-me-and",
+      "category": "auto_tuned",
+      "title": "morning,me and → the morning,",
+      "keywords": [
+        "morning",
+        "me",
+        "and"
+      ],
+      "triggers": [
+        "morning,me and"
+      ],
+      "rule": "When the text contains \"morning,me and\", correct it to \"the morning,\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "morning,me and",
+          "correct": "the morning,"
+        }
+      ]
+    },
+    {
+      "id": "auto-is",
+      "category": "auto_tuned",
+      "title": "is → and I are",
+      "keywords": [
+        "is"
+      ],
+      "triggers": [
+        "is"
+      ],
+      "rule": "When the text contains \"is\", correct it to \"and I are\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "is",
+          "correct": "and I are"
+        }
+      ]
+    },
+    {
+      "id": "auto-time-telled",
+      "category": "auto_tuned",
+      "title": "time,telled → time, told",
+      "keywords": [
+        "time",
+        "telled"
+      ],
+      "triggers": [
+        "time,telled"
+      ],
+      "rule": "When the text contains \"time,telled\", correct it to \"time, told\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "time,telled",
+          "correct": "time, told"
+        }
+      ]
+    },
+    {
+      "id": "auto-umbrella-the-traffics",
+      "category": "auto_tuned",
+      "title": "umbrella,the traffics → umbrella, the traffic",
+      "keywords": [
+        "umbrella",
+        "the",
+        "traffics"
+      ],
+      "triggers": [
+        "umbrella,the traffics"
+      ],
+      "rule": "When the text contains \"umbrella,the traffics\", correct it to \"umbrella, the traffic\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "umbrella,the traffics",
+          "correct": "umbrella, the traffic"
+        }
+      ]
+    },
+    {
+      "id": "auto-again",
+      "category": "auto_tuned",
+      "title": "again → again.",
+      "keywords": [
+        "again"
+      ],
+      "triggers": [
+        "again"
+      ],
+      "rule": "When the text contains \"again\", correct it to \"again.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "again",
+          "correct": "again."
+        }
+      ]
+    },
+    {
+      "id": "auto-time",
+      "category": "auto_tuned",
+      "title": "time → time.",
+      "keywords": [
+        "time"
+      ],
+      "triggers": [
+        "time"
+      ],
+      "rule": "When the text contains \"time\", correct it to \"time.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "time",
+          "correct": "time."
+        }
+      ]
+    },
+    {
+      "id": "auto-its-to",
+      "category": "auto_tuned",
+      "title": "its to → it's too",
+      "keywords": [
+        "its",
+        "to"
+      ],
+      "triggers": [
+        "its to"
+      ],
+      "rule": "When the text contains \"its to\", correct it to \"it's too\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "its to",
+          "correct": "it's too"
+        }
+      ]
+    },
+    {
+      "id": "auto-then-her",
+      "category": "auto_tuned",
+      "title": "then her → than her.",
+      "keywords": [
+        "then",
+        "her"
+      ],
+      "triggers": [
+        "then her"
+      ],
+      "rule": "When the text contains \"then her\", correct it to \"than her.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "then her",
+          "correct": "than her."
+        }
+      ]
+    },
+    {
+      "id": "auto-raise-its",
+      "category": "auto_tuned",
+      "title": "raise,its → raise, it's",
+      "keywords": [
+        "raise",
+        "its"
+      ],
+      "triggers": [
+        "raise,its"
+      ],
+      "rule": "When the text contains \"raise,its\", correct it to \"raise, it's\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "raise,its",
+          "correct": "raise, it's"
+        }
+      ]
+    },
+    {
+      "id": "auto-traffics-the",
+      "category": "auto_tuned",
+      "title": "traffics,the → traffic, the",
+      "keywords": [
+        "traffics",
+        "the"
+      ],
+      "triggers": [
+        "traffics,the"
+      ],
+      "rule": "When the text contains \"traffics,the\", correct it to \"traffic, the\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "traffics,the",
+          "correct": "traffic, the"
+        }
+      ]
+    },
+    {
+      "id": "auto-scientifics",
+      "category": "auto_tuned",
+      "title": "scientifics → scientists have found new evidence that supports the theory, each student",
+      "keywords": [
+        "scientifics"
+      ],
+      "triggers": [
+        "scientifics"
+      ],
+      "rule": "When the text contains \"scientifics\", correct it to \"scientists have found new evidence that supports the theory, each student\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "scientifics",
+          "correct": "scientists have found new evidence that supports the theory, each student"
+        }
+      ]
+    },
+    {
+      "id": "auto-speaks-english",
+      "category": "auto_tuned",
+      "title": "speaks english → speak English",
+      "keywords": [
+        "speaks",
+        "english"
+      ],
+      "triggers": [
+        "speaks english"
+      ],
+      "rule": "When the text contains \"speaks english\", correct it to \"speak English\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "speaks english",
+          "correct": "speak English"
+        }
+      ]
+    },
+    {
+      "id": "auto-neither-since",
+      "category": "auto_tuned",
+      "title": "neither since → either for",
+      "keywords": [
+        "neither",
+        "since"
+      ],
+      "triggers": [
+        "neither since"
+      ],
+      "rule": "When the text contains \"neither since\", correct it to \"either for\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "neither since",
+          "correct": "either for"
+        }
+      ]
+    },
+    {
+      "id": "auto-ate",
+      "category": "auto_tuned",
+      "title": "ate → eat",
+      "keywords": [
+        "ate"
+      ],
+      "triggers": [
+        "ate"
+      ],
+      "rule": "When the text contains \"ate\", correct it to \"eat\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "ate",
+          "correct": "eat"
+        }
+      ]
+    },
+    {
+      "id": "auto-ahead-dont",
+      "category": "auto_tuned",
+      "title": "ahead,dont → ahead, not to",
+      "keywords": [
+        "ahead",
+        "dont"
+      ],
+      "triggers": [
+        "ahead,dont"
+      ],
+      "rule": "When the text contains \"ahead,dont\", correct it to \"ahead, not to\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "ahead,dont",
+          "correct": "ahead, not to"
+        }
+      ]
+    },
+    {
+      "id": "auto-dont-gave",
+      "category": "auto_tuned",
+      "title": "dont gave → didn't give",
+      "keywords": [
+        "dont",
+        "gave"
+      ],
+      "triggers": [
+        "dont gave"
+      ],
+      "rule": "When the text contains \"dont gave\", correct it to \"didn't give\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "dont gave",
+          "correct": "didn't give"
+        }
+      ]
+    },
+    {
+      "id": "auto-was",
+      "category": "auto_tuned",
+      "title": "was → were",
+      "keywords": [
+        "was"
+      ],
+      "triggers": [
+        "was"
+      ],
+      "rule": "When the text contains \"was\", correct it to \"were\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "was",
+          "correct": "were"
+        }
+      ]
+    },
+    {
+      "id": "auto-submitted",
+      "category": "auto_tuned",
+      "title": "submitted → submit",
+      "keywords": [
+        "submitted"
+      ],
+      "triggers": [
+        "submitted"
+      ],
+      "rule": "When the text contains \"submitted\", correct it to \"submit\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "submitted",
+          "correct": "submit"
+        }
+      ]
+    },
+    {
+      "id": "auto-good-he-need",
+      "category": "auto_tuned",
+      "title": "good,he need → well, he needs",
+      "keywords": [
+        "good",
+        "he",
+        "need"
+      ],
+      "triggers": [
+        "good,he need"
+      ],
+      "rule": "When the text contains \"good,he need\", correct it to \"well, he needs\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "good,he need",
+          "correct": "well, he needs"
+        }
+      ]
+    },
+    {
+      "id": "auto-reports",
+      "category": "auto_tuned",
+      "title": "reports . → reports.",
+      "keywords": [
+        "reports"
+      ],
+      "triggers": [
+        "reports ."
+      ],
+      "rule": "When the text contains \"reports .\", correct it to \"reports.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "reports .",
+          "correct": "reports."
+        }
+      ]
+    },
+    {
+      "id": "auto-dont-do-nothing",
+      "category": "auto_tuned",
+      "title": "dont do nothing → does anything",
+      "keywords": [
+        "dont",
+        "do",
+        "nothing"
+      ],
+      "triggers": [
+        "dont do nothing"
+      ],
+      "rule": "When the text contains \"dont do nothing\", correct it to \"does anything\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "dont do nothing",
+          "correct": "does anything"
+        }
+      ]
+    },
+    {
+      "id": "auto-angrily",
+      "category": "auto_tuned",
+      "title": "angrily → angry",
+      "keywords": [
+        "angrily"
+      ],
+      "triggers": [
+        "angrily"
+      ],
+      "rule": "When the text contains \"angrily\", correct it to \"angry\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "angrily",
+          "correct": "angry"
+        }
+      ]
+    },
+    {
+      "id": "auto-dont-helped",
+      "category": "auto_tuned",
+      "title": "dont helped → doesn't help",
+      "keywords": [
+        "dont",
+        "helped"
+      ],
+      "triggers": [
+        "dont helped"
+      ],
+      "rule": "When the text contains \"dont helped\", correct it to \"doesn't help\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "dont helped",
+          "correct": "doesn't help"
+        }
+      ]
+    },
+    {
+      "id": "auto-neither",
+      "category": "auto_tuned",
+      "title": "neither. → either.",
+      "keywords": [
+        "neither"
+      ],
+      "triggers": [
+        "neither."
+      ],
+      "rule": "When the text contains \"neither.\", correct it to \"either.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "neither.",
+          "correct": "either."
+        }
+      ]
+    },
+    {
+      "id": "auto-fare-2",
+      "category": "auto_tuned",
+      "title": "fare. → fair.",
+      "keywords": [
+        "fare"
+      ],
+      "triggers": [
+        "fare."
+      ],
+      "rule": "When the text contains \"fare.\", correct it to \"fair.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "fare.",
+          "correct": "fair."
+        }
+      ]
+    }
+  ]
+}

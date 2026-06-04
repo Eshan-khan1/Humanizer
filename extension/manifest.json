@@ -1,22 +1,24 @@
 {
   "manifest_version": 3,
   "name": "Humanizer — Local Writing Assistant",
-  "version": "1.3.2",
-  "description": "Grammarly-style grammar, spelling, and humanize — fully local via your own server",
+  "version": "1.5.7",
+  "description": "Grammarly-style grammar and spelling on any site — Google, Docs, Gmail, search bars, and more",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["http://127.0.0.1:8000/*"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Humanizer — open writing suggestions"
+    "default_title": "Humanizer",
+    "default_popup": "popup.html"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "css": ["content.css"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ]
 }

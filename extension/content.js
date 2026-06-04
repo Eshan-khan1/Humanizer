@@ -1,7 +1,7 @@
 console.log("✅ Grammar checker loaded on:", window.location.href);
 
 (() => {
-  const CHECK_DELAY_MS = 2000;
+  const CHECK_IDLE_MS = 2000;
   const MIN_TEXT_LENGTH = 2;
 
   const IGNORED_INPUT_TYPES = new Set([
@@ -25,8 +25,9 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
   let activeField = null;
   let activeMirror = null;
-  let debounceTimer = null;
-  let lastRequestId = 0;
+  let checkDebounceTimer = null;
+  let fullCheckDelayTimer = null;
+  let pendingFullCheckText = "";
   let suggestionPopup = null;
   let suggestionPopupAnchor = null;
   let ignoreNextFocusOut = false;
@@ -37,12 +38,32 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   let floatingPositionHandler = null;
   let enabled = true;
   let checkerStarted = false;
-  let sidePanelRoot = null;
-  let sidePanelOpen = false;
   let overlaySetupInProgress = false;
   let suppressGrammarEvents = false;
+  /** Ranges the user accepted — never re-suggest until that slice is edited. */
+  let acceptedFixes = [];
   let lastCheckedText = "";
-  let fieldMutationDebounceTimer = null;
+  let lastQuickRequestId = 0;
+  let lastFullRequestId = 0;
+  let scrollParentListeners = [];
+  let fieldClickHandler = null;
+  let suppressPopupUntil = 0;
+  let popupEscapeHandler = null;
+
+  const BLOCK_TAGS = new Set([
+    "DIV",
+    "P",
+    "LI",
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "BLOCKQUOTE",
+    "PRE",
+    "TD",
+  ]);
 
   const PUNCTUATION_ONLY_RE =
     /^[\s"'‘’“”`´.,!?;:—–\-…()\[\]{}\\/|@#$%^&*+=<>~]+$/;
@@ -81,6 +102,8 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   init();
 
   function init() {
+    document.querySelectorAll(".humanizer-side-panel").forEach((el) => el.remove());
+
     waitForBody(() => startGrammarChecker());
 
     loadEnabledSetting();
@@ -91,7 +114,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
         enabled = changes.enabled.newValue !== false;
         if (!enabled) {
           deactivateField();
-          closeSidePanel();
         } else {
           startGrammarChecker();
           scanForEditableFields();
@@ -104,15 +126,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
     document.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onWindowChange);
-
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (message?.type === "toggleSidePanel") {
-        toggleSidePanel();
-        sendResponse({ ok: true });
-        return true;
-      }
-      return false;
-    });
   }
 
   function startGrammarChecker() {
@@ -139,7 +152,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       enabled = result.enabled !== false;
       if (!enabled) {
         deactivateField();
-        closeSidePanel();
         return;
       }
       waitForBody(() => {
@@ -167,8 +179,13 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     return el instanceof Element && el.isConnected;
   }
 
+  function usesNativeHighlights() {
+    return typeof CSS !== "undefined" && !!CSS.highlights;
+  }
+
   function ensureActiveSession() {
-    if (!activeField || !activeMirror) return false;
+    if (!activeField) return false;
+    if (!usesNativeHighlights() && !activeMirror) return false;
     if (!isConnectedElement(activeField)) {
       deactivateField();
       return false;
@@ -183,41 +200,90 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     }
   }
 
+  function queryAllDeep(selector) {
+    const results = new Set();
+
+    function walk(root) {
+      if (!(root instanceof Document || root instanceof DocumentFragment || root instanceof Element)) {
+        return;
+      }
+      try {
+        root.querySelectorAll(selector).forEach((node) => {
+          if (node instanceof HTMLElement) results.add(node);
+        });
+      } catch {
+        /* invalid selector in some contexts */
+      }
+      const children =
+        root instanceof Document
+          ? [root.documentElement]
+          : root instanceof DocumentFragment
+            ? [...root.children]
+            : root instanceof Element
+              ? [...root.children]
+              : [];
+      for (const child of children) {
+        if (!(child instanceof Element)) continue;
+        walk(child);
+        if (child.shadowRoot) walk(child.shadowRoot);
+      }
+    }
+
+    walk(document);
+    return [...results];
+  }
+
   function findEditableFields() {
     const fields = new Set();
 
-    document.querySelectorAll("textarea").forEach((node) => {
-      if (node instanceof HTMLElement && isVisibleField(node)) {
-        fields.add(node);
-      }
-    });
+    for (const node of queryAllDeep("textarea")) {
+      if (isVisibleField(node)) fields.add(node);
+    }
 
-    document.querySelectorAll("input").forEach((node) => {
+    for (const node of queryAllDeep("input")) {
       if (node instanceof HTMLInputElement && isTextInput(node) && isVisibleField(node)) {
         fields.add(node);
       }
-    });
+    }
 
-    document
-      .querySelectorAll('[contenteditable]:not([contenteditable="false"])')
-      .forEach((node) => {
-        if (node instanceof HTMLElement && isEditableElement(node) && isVisibleField(node)) {
-          fields.add(node);
-        }
-      });
+    for (const node of queryAllDeep('[contenteditable]:not([contenteditable="false"])')) {
+      if (!isEditableElement(node) || !isVisibleField(node)) continue;
+      if (isNestedTextbox(node)) continue;
+      fields.add(normalizeEditableField(node));
+    }
+
+    for (const node of queryAllDeep('[role="textbox"], [role="searchbox"]')) {
+      if (!isEditableElement(node) || !isVisibleField(node)) continue;
+      if (isNestedTextbox(node)) continue;
+      fields.add(node);
+    }
 
     return [...fields];
+  }
+
+  function isNestedTextbox(el) {
+    const parent = el.parentElement?.closest(
+      '[role="textbox"][contenteditable="true"], [role="searchbox"][contenteditable="true"]'
+    );
+    return parent && parent !== el;
+  }
+
+  function normalizeEditableField(field) {
+    if (!(field instanceof HTMLElement)) return field;
+    const root = field.closest(
+      '[role="textbox"][contenteditable="true"], [role="searchbox"][contenteditable="true"]'
+    );
+    return root instanceof HTMLElement ? root : field;
   }
 
   function isEditableElement(el) {
     if (el instanceof HTMLTextAreaElement) return true;
     if (el instanceof HTMLInputElement) return isTextInput(el);
-    return (
-      el instanceof HTMLElement &&
-      el.tagName !== "INPUT" &&
-      el.tagName !== "TEXTAREA" &&
-      el.isContentEditable
-    );
+    if (!(el instanceof HTMLElement)) return false;
+    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") return false;
+    if (el.isContentEditable) return true;
+    const role = (el.getAttribute("role") || "").toLowerCase();
+    return (role === "textbox" || role === "searchbox") && el.isContentEditable;
   }
 
   function resolveEditableField(node) {
@@ -234,16 +300,15 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       if (el instanceof HTMLInputElement && isTextInput(el) && isVisibleField(el)) {
         return el;
       }
-      if (
-        el instanceof HTMLElement &&
-        el.tagName !== "INPUT" &&
-        el.tagName !== "TEXTAREA" &&
-        el.isContentEditable &&
-        isVisibleField(el)
-      ) {
-        return el;
+      if (isEditableElement(el) && isVisibleField(el)) {
+        return normalizeEditableField(el);
       }
       el = el.parentElement;
+    }
+
+    const root = node.getRootNode?.();
+    if (root instanceof ShadowRoot && root.host instanceof HTMLElement) {
+      return resolveEditableField(root.host);
     }
     return null;
   }
@@ -280,15 +345,11 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   }
 
   function isContentEditableField(field) {
-    return (
-      field instanceof HTMLElement &&
-      field.tagName !== "INPUT" &&
-      field.tagName !== "TEXTAREA" &&
-      field.isContentEditable
-    );
+    return isEditableElement(field) && field.tagName !== "INPUT" && field.tagName !== "TEXTAREA";
   }
 
   function attachGrammarChecker(field) {
+    field = normalizeEditableField(field);
     if (attachedFields.has(field)) return;
     attachedFields.add(field);
 
@@ -319,7 +380,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       const focused = document.activeElement;
       if (focused && field.contains(focused)) return;
       if (suggestionPopup?.contains(focused)) return;
-      if (sidePanelRoot?.contains(focused)) return;
       deactivateField();
     }, 150);
   }
@@ -341,18 +401,24 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     }
 
     if (fromUser) {
-      lastCheckedText = "";
+      reconcileAcceptedFixes(field);
+      const { trimmed } = getGrammarTextContext(field);
+      if (trimmed.length >= MIN_TEXT_LENGTH && trimmed === lastCheckedText) {
+        return;
+      }
+      markTextDirty(field);
+      return;
     }
 
-    syncMirrorText(field, currentMatches);
-    scheduleCheck(field);
+    syncGrammarDisplay(field, currentMatches);
   }
 
   function activateField(field) {
     if (!isValid() || !enabled) return;
+    field = normalizeEditableField(field);
     if (!isConnectedElement(field)) return;
 
-    if (activeField === field && activeMirror) {
+    if (activeField === field && (activeMirror || usesNativeHighlights())) {
       scheduleCheck(field);
       return;
     }
@@ -361,20 +427,18 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     overlaySetupInProgress = true;
     activeField = field;
     setupFloatingOverlay(field);
+    overlaySetupInProgress = false;
     scheduleCheck(field);
-    if (sidePanelOpen) {
-      updateSidePanel(currentMatches);
-    }
-    setTimeout(() => {
-      overlaySetupInProgress = false;
-    }, 200);
   }
 
   function deactivateField() {
     hideSuggestionPopup();
+    acceptedFixes = [];
     detachFieldMutationObserver();
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
+    cancelScheduledCheck();
+    detachScrollListeners();
+    clearGrammarHighlights();
+    detachFieldClickHandler();
 
     if (floatingPositionHandler) {
       window.removeEventListener("scroll", floatingPositionHandler, true);
@@ -387,29 +451,34 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     currentMatches = [];
     lastCheckedText = "";
     clearActiveHighlight();
-    updateSidePanel([]);
     updateBadge(0);
   }
 
   function setupFloatingOverlay(field) {
-    const mirror = document.createElement("div");
-    mirror.className = "grammar-overlay grammar-overlay-floating";
-    mirror.setAttribute("aria-hidden", "true");
-    document.body.appendChild(mirror);
+    ensureHighlightStyles();
 
-    activeMirror = mirror;
+    if (usesNativeHighlights()) {
+      activeMirror = null;
+      attachFieldClickHandler(field);
+    } else {
+      const mirror = document.createElement("div");
+      mirror.className = "grammar-overlay grammar-overlay-floating";
+      mirror.setAttribute("aria-hidden", "true");
+      document.body.appendChild(mirror);
+      activeMirror = mirror;
+      copyFieldStyles(field, mirror);
+      mirror.addEventListener("mousedown", onMirrorMouseDown, true);
+      mirror.addEventListener("click", onMirrorClick, true);
+    }
 
-    copyFieldStyles(field, mirror);
-    positionFloatingOverlay();
-    syncMirrorText(field, currentMatches);
-    mirror.addEventListener("mousedown", onMirrorMouseDown, true);
-    mirror.addEventListener("click", onMirrorClick, true);
+    attachScrollListeners(field);
+    syncGrammarDisplay(field, currentMatches);
 
     if (isContentEditableField(field)) {
       attachFieldMutationObserver(field);
     }
 
-    floatingPositionHandler = () => positionFloatingOverlay();
+    floatingPositionHandler = () => positionOverlay();
     window.addEventListener("scroll", floatingPositionHandler, true);
     window.addEventListener("resize", floatingPositionHandler);
   }
@@ -421,8 +490,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     activeMirror.removeEventListener("click", onMirrorClick, true);
     activeMirror.remove();
 
-    clearTimeout(fieldMutationDebounceTimer);
-    fieldMutationDebounceTimer = null;
     activeMirror = null;
   }
 
@@ -434,15 +501,12 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       if (field !== activeField) return;
       if (!ensureActiveSession()) return;
 
-      clearTimeout(fieldMutationDebounceTimer);
-      fieldMutationDebounceTimer = setTimeout(() => {
-        if (field !== activeField || suppressGrammarEvents) return;
-        const { trimmed } = getGrammarTextContext(field);
-        syncMirrorText(field, currentMatches);
-        positionFloatingOverlay();
-        if (trimmed === lastCheckedText) return;
-        scheduleCheck(field);
-      }, 400);
+      syncGrammarDisplay(field, currentMatches);
+      positionOverlay();
+
+      const { trimmed } = getGrammarTextContext(field);
+      if (trimmed === lastCheckedText) return;
+      markTextDirty(field);
     });
 
     fieldMutationObserver.observe(field, {
@@ -475,6 +539,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   }
 
   function positionOverlay() {
+    if (usesNativeHighlights()) return;
     positionFloatingOverlay();
   }
 
@@ -554,7 +619,281 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     if (field.tagName === "INPUT" || field.tagName === "TEXTAREA") {
       return field.value;
     }
-    return field.innerText || field.textContent || "";
+    return extractContentEditableText(field) || field.innerText || field.textContent || "";
+  }
+
+  /** Plain text aligned with findTextRange / CSS Highlight offsets (Gmail-safe). */
+  function extractContentEditableText(field) {
+    let text = "";
+
+    function visit(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.textContent || "";
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const el = node;
+      if (el.tagName === "BR") {
+        text += "\n";
+        return;
+      }
+
+      const isBlock = BLOCK_TAGS.has(el.tagName);
+      if (isBlock && text && !text.endsWith("\n")) {
+        text += "\n";
+      }
+
+      for (const child of el.childNodes) {
+        visit(child);
+      }
+    }
+
+    for (const child of field.childNodes) {
+      visit(child);
+    }
+
+    return text.replace(/\u200b/g, "");
+  }
+
+  function findPhraseInText(text, phrase, hintOffset = 0) {
+    if (!phrase || !text) return null;
+
+    const searchFrom = Math.max(0, hintOffset - 80);
+    let idx = text.indexOf(phrase, searchFrom);
+    if (idx !== -1) {
+      return { offset: idx, length: phrase.length };
+    }
+
+    idx = text.toLowerCase().indexOf(phrase.toLowerCase(), searchFrom);
+    if (idx !== -1) {
+      return { offset: idx, length: phrase.length };
+    }
+
+    const compact = phrase.replace(/\s+/g, " ").trim();
+    if (compact.length >= 2) {
+      const escaped = compact.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
+      const re = new RegExp(escaped, "i");
+      const slice = text.slice(searchFrom);
+      const match = slice.match(re);
+      if (match && match.index != null) {
+        return { offset: searchFrom + match.index, length: match[0].length };
+      }
+    }
+
+    return null;
+  }
+
+  function remapMatchesToFieldText(matches, text) {
+    return matches
+      .map((match) => {
+        const word = getMatchWord(match, text);
+        if (!word) return null;
+
+        let offset = match.offset ?? 0;
+        let length = match.length ?? word.length;
+
+        if (text.slice(offset, offset + length) === word) {
+          return { ...match, offset, length, word };
+        }
+
+        const found = findPhraseInText(text, word, offset);
+        if (!found) return null;
+
+        return {
+          ...match,
+          offset: found.offset,
+          length: found.length,
+          word: text.slice(found.offset, found.offset + found.length),
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function ensureHighlightStyles() {
+    const id = "humanizer-highlight-styles";
+    if (document.getElementById(id)) return;
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = `
+      ::highlight(humanizer-grammar) {
+        text-decoration: underline wavy #e53e3e;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+        background-color: rgba(229, 62, 62, 0.12);
+      }
+      ::highlight(humanizer-grammar-active) {
+        text-decoration: underline wavy #e53e3e;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+        background-color: rgba(229, 62, 62, 0.22);
+      }
+    `;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function clearGrammarHighlights() {
+    if (!usesNativeHighlights()) return;
+    try {
+      CSS.highlights.delete("humanizer-grammar");
+      CSS.highlights.delete("humanizer-grammar-active");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function matchToDomRange(field, match, text) {
+    const word = getMatchWord(match, text);
+    const start = match.offset ?? 0;
+    const end = start + (match.length ?? 0);
+
+    let range = findTextRange(field, start, end);
+    if (range && word && range.toString() !== word) {
+      range = null;
+    }
+    if (!range && word) {
+      range = findTextRangeBySearch(field, word, start);
+    }
+    if (!range && word) {
+      const found = findPhraseInText(text, word, start);
+      if (found) {
+        range = findTextRange(field, found.offset, found.offset + found.length);
+      }
+    }
+    return range;
+  }
+
+  function syncGrammarHighlights(field, matches) {
+    if (!usesNativeHighlights()) return false;
+
+    clearGrammarHighlights();
+    const text = getFieldText(field);
+    const ranges = [];
+
+    for (const match of matches) {
+      const range = matchToDomRange(field, match, text);
+      if (range) {
+        ranges.push(range);
+      }
+    }
+
+    if (ranges.length) {
+      try {
+        CSS.highlights.set("humanizer-grammar", new Highlight(...ranges));
+      } catch {
+        for (const range of ranges) {
+          try {
+            const existing = CSS.highlights.get("humanizer-grammar");
+            if (existing) {
+              existing.add(range);
+            } else {
+              CSS.highlights.set("humanizer-grammar", new Highlight(range));
+            }
+          } catch {
+            /* skip invalid range */
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  function attachScrollListeners(field) {
+    detachScrollListeners();
+    const handler = () => positionOverlay();
+    const parents = getScrollParents(field);
+    parents.push(window);
+    for (const parent of parents) {
+      parent.addEventListener("scroll", handler, { passive: true });
+      scrollParentListeners.push({ parent, handler });
+    }
+  }
+
+  function detachScrollListeners() {
+    for (const { parent, handler } of scrollParentListeners) {
+      parent.removeEventListener("scroll", handler);
+    }
+    scrollParentListeners = [];
+  }
+
+  function getScrollParents(el) {
+    const parents = [];
+    let node = el.parentElement;
+    while (node && node !== document.documentElement) {
+      const style = window.getComputedStyle(node);
+      const overflow = `${style.overflow} ${style.overflowY} ${style.overflowX}`;
+      if (/(auto|scroll|overlay)/.test(overflow)) {
+        parents.push(node);
+      }
+      node = node.parentElement;
+    }
+    return parents;
+  }
+
+  function attachFieldClickHandler(field) {
+    detachFieldClickHandler();
+    fieldClickHandler = (event) => onFieldGrammarClick(event, field);
+    field.addEventListener("click", fieldClickHandler, true);
+  }
+
+  function detachFieldClickHandler() {
+    if (activeField && fieldClickHandler) {
+      activeField.removeEventListener("click", fieldClickHandler, true);
+    }
+    fieldClickHandler = null;
+  }
+
+  function isPointInRange(range, x, y) {
+    for (const rect of range.getClientRects()) {
+      if (
+        x >= rect.left - 2 &&
+        x <= rect.right + 2 &&
+        y >= rect.top - 2 &&
+        y <= rect.bottom + 2
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function onFieldGrammarClick(event, field) {
+    if (!ensureActiveSession() || field !== activeField) return;
+    if (Date.now() < suppressPopupUntil) return;
+    if (suggestionPopup?.contains(event.target)) return;
+    if (!currentMatches.length) return;
+
+    const text = getFieldText(field);
+    let hitMatch = null;
+    let hitRange = null;
+
+    for (const match of currentMatches) {
+      const range = matchToDomRange(field, match, text);
+      if (!range || !isPointInRange(range, event.clientX, event.clientY)) continue;
+      hitMatch = match;
+      hitRange = range;
+      break;
+    }
+
+    if (!hitMatch) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const anchor = hitRange
+      ? { getBoundingClientRect: () => hitRange.getBoundingClientRect() }
+      : field;
+
+    showSuggestionPopup(anchor, hitMatch, field);
+  }
+
+  function syncGrammarDisplay(field, matches) {
+    if (usesNativeHighlights()) {
+      syncGrammarHighlights(field, matches);
+      positionOverlay();
+      return;
+    }
+    syncMirrorText(field, matches);
   }
 
   /** Server checks trimmed text; map match offsets back onto raw field text. */
@@ -711,9 +1050,13 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     if (!startNode || !endNode) return null;
 
     const range = document.createRange();
-    range.setStart(startNode, startOffset);
-    range.setEnd(endNode, endOffset);
-    return range;
+    try {
+      range.setStart(startNode, Math.max(0, startOffset));
+      range.setEnd(endNode, Math.max(0, endOffset));
+      return range;
+    } catch {
+      return null;
+    }
   }
 
   function getMatchSuggestions(match) {
@@ -751,100 +1094,213 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   }
 
   function isFalsePositiveMatch(match, text) {
+    const ruleId = String(match.rule_id || "");
+    if (ruleId === "OLLAMA_GRAMMAR") return false;
+
     const word = getMatchWord(match, text).trim();
     if (!word) return true;
-    if (PUNCTUATION_ONLY_RE.test(word)) return true;
-    if (word.length === 1 && /['"''""`´]/.test(word)) return true;
-
-    const category = String(match.category || "").toUpperCase();
-    const ruleId = String(match.rule_id || "").toUpperCase();
-    if (
-      category.includes("PUNCTUATION") ||
-      category.includes("TYPOGRAPHY") ||
-      /UNPAIRED|QUOTE|APOSTROPHE|COMMA_PAREN|WHITESPACE/i.test(ruleId)
-    ) {
-      if (PUNCTUATION_ONLY_RE.test(word)) return true;
-    }
 
     const suggestions = getMatchSuggestions(match);
-    if (
-      suggestions.length > 0 &&
-      suggestions.every((s) => PUNCTUATION_ONLY_RE.test(String(s).trim()))
-    ) {
-      return true;
-    }
+    if (!suggestions.length) return true;
+
+    if (PUNCTUATION_ONLY_RE.test(word) && word.length <= 2) return true;
 
     return false;
   }
 
+  function rangesOverlap(startA, endA, startB, endB) {
+    return startA < endB && startB < endA;
+  }
+
+  function matchOverlapsAcceptedFix(match) {
+    const start = match.offset ?? 0;
+    const end = start + (match.length ?? 0);
+    return acceptedFixes.some((fix) =>
+      rangesOverlap(start, end, fix.start, fix.end)
+    );
+  }
+
   function filterMatches(matches, text) {
-    return matches.filter((m) => !isFalsePositiveMatch(m, text));
+    return matches.filter(
+      (m) => !isFalsePositiveMatch(m, text) && !matchOverlapsAcceptedFix(m)
+    );
+  }
+
+  function recordAcceptedFix(offset, removedLength, replacement) {
+    const removedEnd = offset + removedLength;
+    const delta = replacement.length - removedLength;
+
+    acceptedFixes = acceptedFixes
+      .filter((fix) => !rangesOverlap(fix.start, fix.end, offset, removedEnd))
+      .map((fix) => {
+        if (fix.start >= removedEnd) {
+          return {
+            ...fix,
+            start: fix.start + delta,
+            end: fix.end + delta,
+          };
+        }
+        return fix;
+      });
+
+    acceptedFixes.push({
+      start: offset,
+      end: offset + replacement.length,
+      text: replacement,
+    });
+  }
+
+  /** Drop or re-anchor fixes the user edited; keep fixes whose text is still intact. */
+  function reconcileAcceptedFixes(field) {
+    if (!isConnectedElement(field)) {
+      acceptedFixes = [];
+      return;
+    }
+
+    const raw = getFieldText(field);
+    acceptedFixes = acceptedFixes.flatMap((fix) => {
+      if (fix.end > raw.length) return [];
+
+      if (raw.slice(fix.start, fix.end) === fix.text) {
+        return [fix];
+      }
+
+      const windowStart = Math.max(0, fix.start - 80);
+      const idx = raw.indexOf(fix.text, windowStart);
+      if (idx === -1) return [];
+
+      return [{ start: idx, end: idx + fix.text.length, text: fix.text }];
+    });
+  }
+
+  function filterMatchesForDisplay(matches) {
+    return matches.filter((m) => !matchOverlapsAcceptedFix(m));
+  }
+
+  function cancelScheduledCheck() {
+    clearTimeout(checkDebounceTimer);
+    checkDebounceTimer = null;
+    clearTimeout(fullCheckDelayTimer);
+    fullCheckDelayTimer = null;
+    pendingFullCheckText = "";
+  }
+
+  /** User edited text — allow a new check after idle period. */
+  function markTextDirty(field) {
+    reconcileAcceptedFixes(field);
+    lastCheckedText = "";
+    syncGrammarDisplay(field, currentMatches);
+    scheduleCheck(field);
   }
 
   function scheduleCheck(field) {
-    if (!isValid() || suppressGrammarEvents || overlaySetupInProgress) return;
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => checkGrammar(field), CHECK_DELAY_MS);
+    if (!isValid() || !enabled || suppressGrammarEvents) return;
+    if (!(field instanceof HTMLElement) || field !== activeField) return;
+
+    const { trimmed } = getGrammarTextContext(field);
+    if (trimmed.length >= MIN_TEXT_LENGTH && trimmed === lastCheckedText) {
+      return;
+    }
+
+    cancelScheduledCheck();
+    checkDebounceTimer = setTimeout(() => {
+      checkDebounceTimer = null;
+      runCheckOnce(field);
+    }, CHECK_IDLE_MS);
   }
 
-  function checkGrammar(field) {
-    if (!isValid()) return;
+  function runCheckOnce(field) {
+    if (!isValid() || !enabled) return;
     if (!ensureActiveSession() || field !== activeField) return;
-    if (suppressGrammarEvents || overlaySetupInProgress) return;
+    if (suppressGrammarEvents) return;
 
     const { trimmed, trimStart } = getGrammarTextContext(field);
     if (trimmed.length < MIN_TEXT_LENGTH) {
       lastCheckedText = "";
       currentMatches = [];
-      syncMirrorText(field, []);
-      updateSidePanel([]);
+      syncGrammarDisplay(field, []);
       updateBadge(0);
       return;
     }
 
     if (trimmed === lastCheckedText) return;
 
-    const requestId = ++lastRequestId;
+    pendingFullCheckText = trimmed;
+    checkGrammar(field, trimmed, trimStart, { quick: true });
 
-    chrome.runtime.sendMessage({ type: "checkGrammar", text: trimmed }, (response) => {
-      if (!isValid()) return;
-      if (requestId !== lastRequestId || field !== activeField) return;
-      if (!ensureActiveSession()) return;
+    clearTimeout(fullCheckDelayTimer);
+    fullCheckDelayTimer = setTimeout(() => {
+      fullCheckDelayTimer = null;
+      if (!isValid() || !enabled || field !== activeField) return;
+      const { trimmed: currentTrimmed, trimStart: currentTrimStart } =
+        getGrammarTextContext(field);
+      if (currentTrimmed !== pendingFullCheckText) return;
+      if (currentTrimmed === lastCheckedText) return;
+      checkGrammar(field, currentTrimmed, currentTrimStart, { quick: false });
+    }, 500);
+  }
 
-      if (chrome.runtime.lastError || !response?.ok) {
-        // #region agent log
-        debugLog("H2", "content.js:checkGrammar", "client grammar failed", {
-          lastError: chrome.runtime.lastError?.message || null,
-          error: response?.error || null,
-        });
-        // #endregion
-        currentMatches = [];
-        syncMirrorText(field, []);
-        updateSidePanel([]);
-        updateBadge(0);
-        return;
+  function applyGrammarMatches(field, matches, trimmed, trimStart) {
+    const { raw } = getGrammarTextContext(field);
+    const filtered = filterMatches(matches, trimmed);
+    const onRaw = mapMatchesToRawOffsets(
+      remapMatchesToFieldText(filtered, trimmed),
+      trimStart
+    );
+    currentMatches = remapMatchesToFieldText(onRaw, raw);
+    suppressGrammarEvents = true;
+    try {
+      syncGrammarDisplay(field, currentMatches);
+    } finally {
+      suppressGrammarEvents = false;
+    }
+    updateBadge(currentMatches.length);
+  }
+
+  function checkGrammar(field, trimmed, trimStart, { quick = false } = {}) {
+    const requestId = quick ? ++lastQuickRequestId : ++lastFullRequestId;
+
+    chrome.runtime.sendMessage(
+      { type: "checkGrammar", text: trimmed, quick },
+      (response) => {
+        if (!isValid()) return;
+        const expectedId = quick ? lastQuickRequestId : lastFullRequestId;
+        if (requestId !== expectedId || field !== activeField) return;
+        if (!ensureActiveSession()) return;
+
+        const { trimmed: currentTrimmed } = getGrammarTextContext(field);
+        if (currentTrimmed !== trimmed) return;
+
+        if (chrome.runtime.lastError || !response?.ok) {
+          if (!quick) {
+            debugLog("H2", "content.js:checkGrammar", "client grammar failed", {
+              lastError: chrome.runtime.lastError?.message || null,
+              error: response?.error || null,
+            });
+          }
+          if (!quick && !currentMatches.length) {
+            syncGrammarDisplay(field, []);
+            updateBadge(0);
+          }
+          return;
+        }
+
+        if (quick && trimmed === lastCheckedText) {
+          return;
+        }
+
+        applyGrammarMatches(
+          field,
+          response.data.matches || [],
+          trimmed,
+          trimStart
+        );
+
+        if (!quick) {
+          lastCheckedText = trimmed;
+        }
       }
-
-      currentMatches = mapMatchesToRawOffsets(
-        filterMatches(response.data.matches || [], trimmed),
-        trimStart
-      );
-      lastCheckedText = trimmed;
-      // #region agent log
-      debugLog("H5", "content.js:checkGrammar", "client grammar ok", {
-        matchCount: currentMatches.length,
-        fieldTag: activeField?.tagName || null,
-      });
-      // #endregion
-      suppressGrammarEvents = true;
-      try {
-        syncMirrorText(field, currentMatches);
-      } finally {
-        suppressGrammarEvents = false;
-      }
-      updateSidePanel(currentMatches);
-      updateBadge(currentMatches.length);
-    });
+    );
   }
 
   function syncMirrorText(field, matches) {
@@ -865,20 +1321,24 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     let cursor = 0;
 
     for (const match of sorted) {
-      if (match.offset < cursor) continue;
       const start = match.offset;
       const end = match.offset + match.length;
-      if (start > text.length) continue;
+      if (start >= text.length) continue;
+      if (end <= cursor) continue;
 
-      html += escapeHtml(text.slice(cursor, start));
-      const snippet = getMatchWord(match, text);
+      if (start > cursor) {
+        html += escapeHtml(text.slice(cursor, start));
+      }
+
+      const spanStart = Math.max(start, cursor);
+      const snippet = text.slice(spanStart, Math.min(end, text.length));
+      if (!snippet) continue;
       const matchType = getMatchType(match);
-      const typeClass = matchType === "spelling" ? "spelling-match" : "grammar-match";
       const suggestions = JSON.stringify(getMatchSuggestions(match)).replace(/'/g, "&#39;");
       const message = escapeHtml(match.message || "Suggestion").replace(/'/g, "&#39;");
 
-      html += `<span class="grammar-error ${typeClass}" data-offset="${start}" data-length="${match.length}" data-match-type="${matchType}" data-replacements='${suggestions}' data-message='${message}' title="Click for suggestion">${escapeHtml(snippet)}</span>`;
-      cursor = end;
+      html += `<span class="grammar-error grm-highlight grm-highlight--${matchType}" data-offset="${start}" data-length="${match.length}" data-match-type="${matchType}" data-replacements='${suggestions}' data-message='${message}' title="Click for suggestion">${escapeHtml(snippet)}</span>`;
+      cursor = Math.max(cursor, end);
     }
 
     html += escapeHtml(text.slice(cursor));
@@ -940,62 +1400,174 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     showSuggestionPopup(errorEl, match, activeField);
   }
 
+  function getCategoryMeta(match) {
+    const type = getMatchType(match);
+    if (type === "spelling") {
+      return {
+        typeLabel: "Correctness",
+        hint: "Correct your spelling",
+      };
+    }
+    const message = (match.message || "").trim();
+    return {
+      typeLabel: "Correctness",
+      hint: message || "Fix grammar or punctuation",
+    };
+  }
+
+  function buildSuggestionPreview(field, match, replacement) {
+    const text = getFieldText(field);
+    const start = match.offset;
+    const end = start + match.length;
+    const wrong = getMatchWord(match, text);
+    const before = text.slice(Math.max(0, start - 28), start);
+    const after = text.slice(end, Math.min(text.length, end + 28));
+    const prefix = start > 28 ? "…" : "";
+    const suffix = end + 28 < text.length ? "…" : "";
+    return { prefix, before, wrong, replacement, after, suffix };
+  }
+
+  function correctnessIconSvg() {
+    return `<svg class="grm-card__icon grm-icon--correctness" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="#E53E3E" d="M10 2L3 5v5c0 4.2 3 7.9 7 9 4-1.1 7-4.8 7-9V5l-7-3z"/></svg>`;
+  }
+
+  function bindCloseControl(element, onClose) {
+    element.addEventListener(
+      "mousedown",
+      (event) => {
+        event.stopPropagation();
+      },
+      true
+    );
+    element.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        suppressPopupUntil = Date.now() + 400;
+        onClose();
+      },
+      true
+    );
+  }
+
+  function shouldKeepEditorFocus(event) {
+    return !event.target.closest("button, a, input, label, select, textarea");
+  }
+
   function showSuggestionPopup(anchor, match, field) {
     hideSuggestionPopup();
     setActiveHighlight(match.offset);
 
     const popup = document.createElement("div");
-    popup.className = "grammar-inline-card";
+    popup.className = "grm-card grammar-inline-card";
     popup.setAttribute("role", "dialog");
-    popup.setAttribute("aria-label", "Grammar suggestion");
+    popup.setAttribute("aria-label", "Writing suggestion");
 
-    const header = document.createElement("div");
-    header.className = "grammar-inline-card-header";
-
-    const dismissBtn = document.createElement("button");
-    dismissBtn.type = "button";
-    dismissBtn.className = "grammar-inline-dismiss";
-    dismissBtn.setAttribute("aria-label", "Dismiss");
-    dismissBtn.textContent = "×";
-    dismissBtn.addEventListener("mousedown", (event) => event.preventDefault());
-    dismissBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      hideSuggestionPopup();
-    });
-    header.appendChild(dismissBtn);
-    popup.appendChild(header);
-
+    const meta = getCategoryMeta(match);
     const suggestions = getMatchSuggestions(match);
     const primary = suggestions[0];
 
+    const header = document.createElement("div");
+    header.className = "grm-card__header";
+    header.innerHTML = `
+      ${correctnessIconSvg()}
+      <span class="grm-category-type">${escapeHtml(meta.typeLabel)}</span>
+      <span class="grm-separator" aria-hidden="true">·</span>
+      <span class="grm-category-label">${escapeHtml(meta.hint)}</span>
+      <button type="button" class="grm-info-btn" aria-label="Suggestion info" title="Local grammar check">ⓘ</button>
+    `;
+
+    const headerClose = document.createElement("button");
+    headerClose.type = "button";
+    headerClose.className = "grm-card__close";
+    headerClose.setAttribute("aria-label", "Dismiss suggestion");
+    headerClose.textContent = "×";
+    bindCloseControl(headerClose, hideSuggestionPopup);
+    header.appendChild(headerClose);
+    popup.appendChild(header);
+
     if (primary) {
-      const applyBtn = document.createElement("button");
-      applyBtn.type = "button";
-      applyBtn.className = "grammar-inline-suggestion";
-      applyBtn.textContent = primary;
-      applyBtn.title = `Replace with “${primary}”`;
-      applyBtn.addEventListener("mousedown", (event) => event.preventDefault());
-      applyBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!isValid()) return;
-        const anchorEl = suggestionPopupAnchor;
-        hideSuggestionPopup();
-        applySuggestionReplacement(field, anchorEl, match, primary);
-        scheduleCheck(field);
-      });
-      popup.appendChild(applyBtn);
+      const preview = buildSuggestionPreview(field, match, primary);
+      const previewEl = document.createElement("p");
+      previewEl.className = "grm-card__preview";
+      previewEl.innerHTML = `
+        <span class="grm-context">${escapeHtml(preview.prefix)}${escapeHtml(preview.before)}</span>
+        <span class="grm-error">${escapeHtml(preview.wrong)}</span>
+        <span class="grm-replacement">${escapeHtml(preview.replacement)}</span>
+        <span class="grm-context">${escapeHtml(preview.after)}${escapeHtml(preview.suffix)}</span>
+      `;
+      popup.appendChild(previewEl);
+
+      const actions = document.createElement("div");
+      actions.className = "grm-card__actions";
+
+      const acceptBtn = document.createElement("button");
+      acceptBtn.type = "button";
+      acceptBtn.className = "grm-btn--accept";
+      acceptBtn.textContent = "Accept";
+      acceptBtn.addEventListener(
+        "mousedown",
+        (event) => {
+          event.stopPropagation();
+        },
+        true
+      );
+      acceptBtn.addEventListener(
+        "click",
+        (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          suppressPopupUntil = Date.now() + 400;
+          if (!isValid()) return;
+          const anchorEl = suggestionPopupAnchor;
+          hideSuggestionPopup();
+          applySuggestionReplacement(field, anchorEl, match, primary);
+        },
+        true
+      );
+
+      const dismissBtn = document.createElement("button");
+      dismissBtn.type = "button";
+      dismissBtn.className = "grm-btn--dismiss";
+      dismissBtn.textContent = "Dismiss";
+      bindCloseControl(dismissBtn, hideSuggestionPopup);
+
+      actions.appendChild(acceptBtn);
+      actions.appendChild(dismissBtn);
+      popup.appendChild(actions);
     } else {
       const empty = document.createElement("p");
-      empty.className = "grammar-inline-empty";
+      empty.className = "grm-card__empty";
       empty.textContent = "No suggestion found";
       popup.appendChild(empty);
+
+      const actions = document.createElement("div");
+      actions.className = "grm-card__actions";
+      const dismissBtn = document.createElement("button");
+      dismissBtn.type = "button";
+      dismissBtn.className = "grm-btn--dismiss";
+      dismissBtn.textContent = "Dismiss";
+      bindCloseControl(dismissBtn, hideSuggestionPopup);
+      actions.appendChild(dismissBtn);
+      popup.appendChild(actions);
     }
 
     popup.addEventListener("mousedown", (event) => {
+      if (!shouldKeepEditorFocus(event)) return;
       event.preventDefault();
     });
+
+    popupEscapeHandler = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressPopupUntil = Date.now() + 400;
+      hideSuggestionPopup();
+    };
+    document.addEventListener("keydown", popupEscapeHandler, true);
 
     document.body.appendChild(popup);
     suggestionPopup = popup;
@@ -1006,19 +1578,22 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   function positionSuggestionPopup(popup, anchor) {
     const rect = anchor.getBoundingClientRect();
     const popupRect = popup.getBoundingClientRect();
-    const gap = 6;
+    const gap = 8;
 
-    let left = rect.left + rect.width / 2 - popupRect.width / 2;
-    let top = rect.top - popupRect.height - gap;
+    let left = rect.left;
+    let top = rect.bottom + gap;
 
-    if (top < 8) {
-      top = rect.bottom + gap;
+    if (top + popupRect.height > window.innerHeight - 8) {
+      top = rect.top - popupRect.height - gap;
+    }
+    if (left + popupRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - popupRect.width - 8;
     }
     if (left < 8) {
       left = 8;
     }
-    if (left + popupRect.width > window.innerWidth - 8) {
-      left = window.innerWidth - popupRect.width - 8;
+    if (top < 8) {
+      top = 8;
     }
 
     popup.style.top = `${top}px`;
@@ -1026,6 +1601,10 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   }
 
   function hideSuggestionPopup() {
+    if (popupEscapeHandler) {
+      document.removeEventListener("keydown", popupEscapeHandler, true);
+      popupEscapeHandler = null;
+    }
     suggestionPopup?.remove();
     suggestionPopup = null;
     suggestionPopupAnchor = null;
@@ -1033,47 +1612,46 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   }
 
   function setActiveHighlight(offset) {
+    if (usesNativeHighlights()) {
+      try {
+        CSS.highlights.delete("humanizer-grammar-active");
+      } catch {
+        /* ignore */
+      }
+      if (offset == null || !activeField) return;
+      const text = getFieldText(activeField);
+      const match = currentMatches.find((m) => m.offset === offset);
+      if (!match) return;
+      const range = matchToDomRange(activeField, match, text);
+      if (range) {
+        CSS.highlights.set("humanizer-grammar-active", new Highlight(range));
+      }
+      return;
+    }
+
     if (!activeMirror) return;
-    activeMirror.querySelectorAll(".grammar-error-active").forEach((el) => {
-      el.classList.remove("grammar-error-active");
+    activeMirror.querySelectorAll(".grammar-error-active, .grm-highlight--active").forEach((el) => {
+      el.classList.remove("grammar-error-active", "grm-highlight--active");
     });
     if (offset == null) return;
     const span = activeMirror.querySelector(
       `.grammar-error[data-offset="${offset}"]`
     );
-    span?.classList.add("grammar-error-active");
+    span?.classList.add("grammar-error-active", "grm-highlight--active");
   }
 
   function clearActiveHighlight() {
-    activeMirror?.querySelectorAll(".grammar-error-active").forEach((el) => {
-      el.classList.remove("grammar-error-active");
-    });
-  }
-
-  function jumpToMatch(match) {
-    if (!ensureActiveSession() || !activeField) return;
-
-    activeField.focus();
-    positionOverlay();
-
-    const span = activeMirror?.querySelector(
-      `.grammar-error[data-offset="${match.offset}"][data-length="${match.length}"]`
-    );
-    if (!span) return;
-
-    try {
-      const fieldRect = activeField.getBoundingClientRect();
-      const spanRect = span.getBoundingClientRect();
-      const lineOffset = spanRect.top - fieldRect.top;
-      if (typeof activeField.scrollTop === "number") {
-        activeField.scrollTop += lineOffset - fieldRect.height / 3;
+    if (usesNativeHighlights()) {
+      try {
+        CSS.highlights.delete("humanizer-grammar-active");
+      } catch {
+        /* ignore */
       }
-      span.scrollIntoView({ block: "nearest", inline: "nearest" });
-    } catch {
-      /* scroll not supported */
+      return;
     }
-
-    showSuggestionPopup(span, match, activeField);
+    activeMirror?.querySelectorAll(".grammar-error-active, .grm-highlight--active").forEach((el) => {
+      el.classList.remove("grammar-error-active", "grm-highlight--active");
+    });
   }
 
   function applySuggestionReplacement(field, mirrorSpan, match, replacement) {
@@ -1086,8 +1664,10 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       match.word ||
       getFieldText(field).slice(offset, offset + length);
 
+    cancelScheduledCheck();
+    lastQuickRequestId += 1;
+    lastFullRequestId += 1;
     suppressGrammarEvents = true;
-    lastCheckedText = "";
     try {
       if (isContentEditableField(field)) {
         replaceTextInContentEditable(field, offset, length, replacement, wrongText);
@@ -1104,18 +1684,24 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
     field.focus();
 
-    const delta = replacement.length - length;
-    currentMatches = currentMatches
-      .filter((m) => m.offset < offset || m.offset >= offset + length)
-      .map((m) => {
-        if (m.offset > offset) {
-          return { ...m, offset: m.offset + delta };
-        }
-        return m;
-      });
+    recordAcceptedFix(offset, length, replacement);
 
-    syncMirrorText(field, currentMatches);
-    updateSidePanel(currentMatches);
+    const delta = replacement.length - length;
+    currentMatches = filterMatchesForDisplay(
+      currentMatches
+        .filter((m) => m.offset < offset || m.offset >= offset + length)
+        .map((m) => {
+          if (m.offset > offset) {
+            return { ...m, offset: m.offset + delta };
+          }
+          return m;
+        })
+    );
+
+    const { trimmed } = getGrammarTextContext(field);
+    lastCheckedText = trimmed;
+
+    syncGrammarDisplay(field, currentMatches);
     updateBadge(currentMatches.length);
   }
 
@@ -1131,136 +1717,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   function updateBadge(count) {
     if (!isValid()) return;
     chrome.runtime.sendMessage({ type: "updateBadge", count });
-  }
-
-  function ensureSidePanel() {
-    if (sidePanelRoot?.isConnected) return;
-
-    sidePanelRoot = document.createElement("div");
-    sidePanelRoot.className = "humanizer-side-panel";
-    sidePanelRoot.hidden = true;
-    sidePanelRoot.innerHTML = `
-      <header class="humanizer-side-header">
-        <div class="humanizer-side-title">
-          <strong>Humanizer</strong>
-          <span class="humanizer-side-count">0 issues</span>
-        </div>
-        <button type="button" class="humanizer-side-dismiss" aria-label="Dismiss panel">×</button>
-      </header>
-      <p class="humanizer-side-hint"></p>
-      <ul class="humanizer-side-issues"></ul>
-      <footer class="humanizer-side-footer">
-        <label class="humanizer-side-toggle">
-          <input type="checkbox" class="humanizer-enabled-toggle" checked />
-          Check writing while I type
-        </label>
-        <p class="humanizer-side-status">All checks run locally on your machine.</p>
-      </footer>
-    `;
-
-    document.body.appendChild(sidePanelRoot);
-
-    sidePanelRoot.addEventListener("mousedown", (event) => {
-      event.preventDefault();
-    });
-
-    sidePanelRoot
-      .querySelector(".humanizer-side-dismiss")
-      ?.addEventListener("click", () => closeSidePanel());
-
-    const toggle = sidePanelRoot.querySelector(".humanizer-enabled-toggle");
-    if (toggle && chrome.storage?.sync) {
-      chrome.storage.sync.get({ enabled: true }, (result) => {
-        toggle.checked = result.enabled !== false;
-      });
-      toggle.addEventListener("change", () => {
-        enabled = toggle.checked;
-        chrome.storage.sync.set({ enabled: toggle.checked });
-        if (!enabled) {
-          deactivateField();
-          closeSidePanel();
-        } else {
-          startGrammarChecker();
-          scanForEditableFields();
-        }
-      });
-    }
-  }
-
-  function toggleSidePanel() {
-    sidePanelOpen = !sidePanelOpen;
-    ensureSidePanel();
-    if (!sidePanelRoot) return;
-
-    if (sidePanelOpen) {
-      sidePanelRoot.hidden = false;
-      updateSidePanel(currentMatches);
-      if (activeField) {
-        scheduleCheck(activeField);
-      }
-    } else {
-      sidePanelRoot.hidden = true;
-      hideSuggestionPopup();
-    }
-  }
-
-  function closeSidePanel() {
-    sidePanelOpen = false;
-    if (sidePanelRoot) {
-      sidePanelRoot.hidden = true;
-    }
-    hideSuggestionPopup();
-  }
-
-  function updateSidePanel(matches) {
-    if (!sidePanelOpen) return;
-    ensureSidePanel();
-    if (!sidePanelRoot) return;
-
-    const countEl = sidePanelRoot.querySelector(".humanizer-side-count");
-    const hintEl = sidePanelRoot.querySelector(".humanizer-side-hint");
-    const list = sidePanelRoot.querySelector(".humanizer-side-issues");
-    const total = matches.length;
-
-    if (countEl) {
-      countEl.textContent = `${total} ${total === 1 ? "issue" : "issues"}`;
-    }
-
-    if (!activeField) {
-      if (hintEl) {
-        hintEl.textContent = "Click in a text field and start typing to check your writing.";
-      }
-      if (list) list.innerHTML = "";
-      return;
-    }
-
-    if (hintEl) {
-      hintEl.textContent =
-        total === 0
-          ? "Looking good — no issues found in this field."
-          : "Click an issue to jump to it in your text.";
-    }
-
-    if (!list) return;
-    list.innerHTML = "";
-
-    const fieldText = getFieldText(activeField);
-    matches.forEach((match) => {
-      const wrong = getMatchWord(match, fieldText) || "…";
-      const correct = getMatchSuggestions(match)[0] || "—";
-      const li = document.createElement("li");
-      li.className = "humanizer-side-issue";
-      li.innerHTML = `
-        <span class="humanizer-side-wrong">${escapeHtml(wrong)}</span>
-        <span class="humanizer-side-arrow" aria-hidden="true">→</span>
-        <span class="humanizer-side-correct">${escapeHtml(correct)}</span>
-      `;
-      li.addEventListener("click", () => {
-        if (!isValid() || !activeField) return;
-        jumpToMatch(match);
-      });
-      list.appendChild(li);
-    });
   }
 
   function escapeHtml(value) {

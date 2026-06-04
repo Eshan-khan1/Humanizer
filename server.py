@@ -7,7 +7,10 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
+import warnings
+from contextlib import asynccontextmanager
 import urllib.error
 import urllib.request
 from functools import lru_cache
@@ -16,7 +19,9 @@ from typing import Any
 import language_tool_python
 import requests
 import uvicorn
-from fastapi import FastAPI, HTTPException
+
+import rag
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -26,6 +31,10 @@ OLLAMA_TEMPERATURE = 0.9
 OLLAMA_GRAMMAR_TEMPERATURE = 0.2
 OLLAMA_START_TIMEOUT_SEC = 30.0
 OLLAMA_REQUEST_TIMEOUT_SEC = 120.0
+OLLAMA_KEEP_ALIVE = os.environ.get("OLLAMA_KEEP_ALIVE", "30m")
+OLLAMA_GRAMMAR_NUM_PREDICT = int(os.environ.get("OLLAMA_GRAMMAR_NUM_PREDICT", "768"))
+OLLAMA_GRAMMAR_NUM_CTX = int(os.environ.get("OLLAMA_GRAMMAR_NUM_CTX", "4096"))
+DEBUG_OLLAMA = os.environ.get("HUMANIZER_DEBUG_OLLAMA", "").lower() in ("1", "true", "yes")
 
 HOST = "127.0.0.1"
 PORT = 8000
@@ -202,9 +211,28 @@ def _find_ollama_binary() -> str:
     )
 
 
+def _ollama_gpu_env_defaults(env: dict[str, str]) -> dict[str, str]:
+    """Apply Metal + unified-memory limits for Apple Silicon (see scripts/ollama_gpu_env.sh)."""
+    fraction = float(env.get("OLLAMA_GPU_MEMORY_FRACTION") or "0.75")
+    env.setdefault("OLLAMA_GPU_MEMORY_FRACTION", str(fraction))
+    env.setdefault("OLLAMA_FLASH_ATTENTION", "1")
+    env.setdefault("OLLAMA_LLM_LIBRARY", "metal")
+    if sys.platform == "darwin" and not env.get("OLLAMA_GPU_OVERHEAD"):
+        try:
+            total_mem = int(
+                subprocess.check_output(
+                    ["sysctl", "-n", "hw.memsize"], text=True
+                ).strip()
+            )
+            env["OLLAMA_GPU_OVERHEAD"] = str(int(total_mem * (1 - fraction)))
+        except (OSError, ValueError, subprocess.SubprocessError):
+            pass
+    return env
+
+
 def _ollama_subprocess_env() -> dict[str, str]:
     """Environment for `ollama serve` so GGUF models find llama-server."""
-    env = os.environ.copy()
+    env = _ollama_gpu_env_defaults(os.environ.copy())
     llama_server = _find_llama_server_binary()
     if llama_server:
         env["LLAMA_SERVER_PATH"] = llama_server
@@ -248,28 +276,36 @@ def _ollama_generate(
     prompt: str,
     *,
     temperature: float = OLLAMA_TEMPERATURE,
+    grammar: bool = False,
 ) -> str:
     """Send a prompt to Ollama and return the model response text."""
     ensure_ollama_running()
 
-    payload = {
+    options: dict[str, Any] = {"temperature": temperature}
+    if grammar:
+        options["num_predict"] = OLLAMA_GRAMMAR_NUM_PREDICT
+        options["num_ctx"] = OLLAMA_GRAMMAR_NUM_CTX
+
+    payload: dict[str, Any] = {
         "model": OLLAMA_MODEL,
         "prompt": prompt,
         "stream": False,
-        "options": {"temperature": temperature},
+        "keep_alive": OLLAMA_KEEP_ALIVE,
+        "options": options,
     }
 
-    print("=== OLLAMA URL ===", "http://127.0.0.1:11434/api/generate", flush=True)
-    print("=== OLLAMA PAYLOAD ===", payload, flush=True)
+    if DEBUG_OLLAMA:
+        print("=== OLLAMA PAYLOAD ===", payload, flush=True)
 
     try:
         response = requests.post(
             "http://127.0.0.1:11434/api/generate",
             json=payload,
-            timeout=60,
+            timeout=OLLAMA_REQUEST_TIMEOUT_SEC,
         )
-        print("=== OLLAMA STATUS ===", response.status_code, flush=True)
-        print("=== OLLAMA RESPONSE ===", response.text, flush=True)
+        if DEBUG_OLLAMA:
+            print("=== OLLAMA STATUS ===", response.status_code, flush=True)
+            print("=== OLLAMA RESPONSE ===", response.text, flush=True)
         response.raise_for_status()
         body = response.json()
     except Exception as e:
@@ -307,16 +343,19 @@ def humanize_text(text: str) -> str:
 
 
 def _build_ollama_grammar_prompt(text: str) -> str:
-    return f"""You are a strict English grammar and spelling checker. Analyze the text below in three passes and find ALL errors.
+    rag_block = rag.get_relevant_rules_prompt_block(text, top_k=8)
+    rag_section = f"\n{rag_block}\n\n" if rag_block else "\n"
 
-Pass 1 - Spelling & Word Choice:
+    return f"""You are a strict English grammar and spelling checker. Find EVERY error in the text.
+
+{rag_section}Pass 1 - Spelling & Word Choice:
 - Misspelled words
 - Homophones (to/too/two, their/there/they're, your/you're)
 - Confused words (specific/pacific, aisle/isle, people/peoples)
 
 Pass 2 - Grammar Rules:
-- Pronoun order (He and I, never Me and him)
-- Subject-verb agreement (mailman walks, He and I were)
+- Pronoun order: He and I / She and I — NEVER Me and him / Me and her
+- Subject-verb agreement: compound subjects need were (He and I were)
 - Adverb vs adjective (heavily not heavy)
 - Plural vs singular mistakes
 
@@ -353,12 +392,22 @@ def _find_text_offset(text: str, fragment: str, start_at: int = 0) -> tuple[int,
     if not fragment:
         return None
 
-    idx = text.find(fragment, start_at)
+    search_from = max(0, start_at - 80)
+    idx = text.find(fragment, search_from)
     if idx == -1:
-        idx = text.lower().find(fragment.lower(), start_at)
-    if idx == -1:
-        return None
-    return idx, len(fragment)
+        idx = text.lower().find(fragment.lower(), search_from)
+    if idx != -1:
+        return idx, len(fragment)
+
+    compact = re.sub(r"\s+", " ", fragment).strip()
+    if len(compact) >= 2:
+        pattern = re.escape(compact).replace(r"\ ", r"\s+")
+        match = re.search(pattern, text[search_from:], flags=re.IGNORECASE)
+        if match:
+            start = search_from + match.start()
+            return start, match.end() - match.start()
+
+    return None
 
 
 def _ranges_overlap(
@@ -473,7 +522,9 @@ def _call_mistral_for_grammar(
     existing = existing or []
     try:
         prompt = _build_ollama_grammar_prompt(text)
-        raw_response = _ollama_generate(prompt, temperature=OLLAMA_GRAMMAR_TEMPERATURE)
+        raw_response = _ollama_generate(
+            prompt, temperature=OLLAMA_GRAMMAR_TEMPERATURE, grammar=True
+        )
         errors = _parse_ollama_grammar_response(raw_response)
         return (
             _ollama_errors_to_matches(text, errors, existing),
@@ -544,12 +595,6 @@ def _is_low_confidence_match(match: Any, match_type: str) -> bool:
     issue_type = (getattr(match, "ruleIssueType", "") or "").lower()
     if issue_type in LOW_CONFIDENCE_ISSUE_TYPES:
         return True
-
-    sure = getattr(match, "contextForSureMatch", None)
-    if sure == 0 and match_type == "grammar":
-        category = (getattr(match, "category", "") or "").upper()
-        if category in UNCERTAIN_GRAMMAR_CATEGORIES:
-            return True
 
     return False
 
@@ -640,11 +685,11 @@ def check_grammar(
                 "languagetool merge skipped",
                 {"error": str(exc)[:300]},
             )
-        corrected = _get_corrected_text(text, formatted_matches)
+        corrected = _lightweight_corrected_text(text, formatted_matches)
     else:
         print("=== MISTRAL FAILED, LANGUAGETOOL FALLBACK ===", flush=True)
         formatted_matches = _check_grammar_languagetool(text)
-        corrected = _get_corrected_text(text, formatted_matches)
+        corrected = _lightweight_corrected_text(text, formatted_matches)
 
     formatted_matches.sort(key=lambda m: m["offset"])
 
@@ -662,26 +707,47 @@ def _get_corrected_text(text: str, matches: list[dict[str, Any]]) -> str:
         return _apply_suggestions_to_text(text, matches)
 
 
+def _lightweight_corrected_text(text: str, matches: list[dict[str, Any]]) -> str:
+    """Fast correction for API clients that only use matches (not full LT rewrite)."""
+    if not matches:
+        return text
+    return _apply_suggestions_to_text(text, matches)
+
+
 _grammar_available = False
 
-app = FastAPI(title="Humanizer API", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+warnings.filterwarnings(
+    "ignore",
+    message="urllib3 v2 only supports OpenSSL",
+    module="urllib3",
 )
 
 
-@app.on_event("startup")
+def _warm_ollama_model() -> None:
+    """Preload mistral so the first user grammar check is faster."""
+    if not is_ollama_running():
+        return
+    try:
+        _ollama_generate('{"errors":[]}', temperature=0, grammar=True)
+        _debug_log("H3", "server.py:_warm_ollama_model", "ollama model warm", {})
+    except (OllamaError, json.JSONDecodeError, requests.RequestException) as exc:
+        _debug_log(
+            "H3",
+            "server.py:_warm_ollama_model",
+            "ollama warm skipped",
+            {"error": str(exc)[:200]},
+        )
+
+
 def startup_warm_grammar() -> None:
     """Initialize LanguageTool once at startup (Java 8 compatible via LTP 2.8.1)."""
     global _grammar_available
     _get_language_tool.cache_clear()
     try:
         _get_language_tool()
+        rag.load_rules()
+        _grammar_quick_response("Warmup.")
+        _warm_ollama_model()
         _grammar_available = True
         _debug_log("H1", "server.py:startup", "grammar ready", {"ltp": "2.8.1"})
     except Exception as exc:  # noqa: BLE001
@@ -692,6 +758,23 @@ def startup_warm_grammar() -> None:
             "grammar init failed",
             {"error": str(exc)[:300]},
         )
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    startup_warm_grammar()
+    yield
+
+
+app = FastAPI(title="Humanizer API", version="1.0.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -718,18 +801,42 @@ def health() -> HealthResponse:
     )
 
 
-@app.post("/grammar", response_model=GrammarResponse)
-def grammar(body: TextRequest) -> GrammarResponse:
-    print("=== GRAMMAR ENDPOINT HIT ===", flush=True)
-    print("=== CALLING MISTRAL ===", flush=True)
+def _grammar_quick_response(text: str) -> GrammarResponse:
+    """LanguageTool-only — used for fast inline underlines."""
+    matches = _check_grammar_languagetool(text)
+    return GrammarResponse(text=text, matches=matches, corrected=text)
 
+
+# Register /grammar/quick before /grammar so routing is unambiguous.
+@app.post("/grammar/quick", response_model=GrammarResponse)
+def grammar_quick(body: TextRequest) -> GrammarResponse:
+    """Fast LanguageTool-only check for snappy inline underlines."""
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text must not be empty")
+    try:
+        return _grammar_quick_response(text)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/grammar", response_model=GrammarResponse)
+def grammar(
+    body: TextRequest,
+    quick: bool = Query(False, description="Fast LanguageTool-only check"),
+) -> GrammarResponse:
     text = body.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="text must not be empty")
 
-    print("=== SENDING TO MISTRAL ===", text, flush=True)
+    if quick:
+        return _grammar_quick_response(text)
+
+    if DEBUG_OLLAMA:
+        print("=== GRAMMAR (Mistral) ===", text[:200], flush=True)
     ollama_matches, ollama_ok, raw_response, _errors = _call_mistral_for_grammar(text)
-    print("=== MISTRAL RETURNED ===", raw_response, flush=True)
+    if DEBUG_OLLAMA:
+        print("=== MISTRAL RETURNED ===", (raw_response or "")[:500], flush=True)
 
     try:
         result = check_grammar(text, ollama_matches=ollama_matches, ollama_ok=ollama_ok)
@@ -768,4 +875,4 @@ def humanize(body: TextRequest) -> HumanizeResponse:
 
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host=HOST, port=PORT, reload=False)
+    uvicorn.run(app, host=HOST, port=PORT, reload=False)

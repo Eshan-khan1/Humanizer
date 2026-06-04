@@ -1,0 +1,347 @@
+{
+  "meta": {
+    "name": "Grammarly Inline Suggestion Design System",
+    "version": "1.0.0",
+    "source": "Grammarly Web Extension / Editor UI",
+    "description": "Design token and component profile for replicating Grammarly's inline writing suggestion UI. Covers correctness cards, highlight states, typography, iconography, and interaction patterns.",
+    "intended_use": "Feed into Cursor or any AI coding assistant to replicate Grammarly-style inline suggestion components with design accuracy."
+  },
+
+  "color_palette": {
+    "brand": {
+      "primary_green": "#15C39A",
+      "primary_green_dark": "#0FA882",
+      "description": "Grammarly's signature green. Used for primary CTAs, active states, and brand accents."
+    },
+    "suggestion_categories": {
+      "correctness": {
+        "color": "#E53E3E",
+        "hex_alternatives": ["#F56565", "#C53030"],
+        "usage": "Underline highlight, category icon fill, strikethrough text color"
+      },
+      "clarity": {
+        "color": "#D69E2E",
+        "usage": "Yellow/amber for clarity suggestions"
+      },
+      "engagement": {
+        "color": "#805AD5",
+        "usage": "Purple for engagement suggestions"
+      },
+      "delivery": {
+        "color": "#3182CE",
+        "usage": "Blue for delivery/tone suggestions"
+      }
+    },
+    "text": {
+      "primary": "#1A1A2E",
+      "secondary": "#4A5568",
+      "muted": "#718096",
+      "on_dark": "#FFFFFF"
+    },
+    "surface": {
+      "background": "#FFFFFF",
+      "card_background": "#FFFFFF",
+      "card_border": "#E2E8F0",
+      "highlight_red_tint": "rgba(229, 62, 62, 0.12)",
+      "highlight_red_underline": "#E53E3E"
+    },
+    "interactive": {
+      "accept_button_bg": "#3B5BDB",
+      "accept_button_bg_hover": "#364FC7",
+      "accept_button_text": "#FFFFFF",
+      "dismiss_text": "#718096",
+      "dismiss_text_hover": "#4A5568"
+    }
+  },
+
+  "typography": {
+    "font_family": {
+      "primary": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "description": "System UI stack; Grammarly uses native system fonts for seamless editor integration."
+    },
+    "scales": {
+      "editor_body": {
+        "font_size": "17px",
+        "line_height": "1.6",
+        "font_weight": "400",
+        "color": "#1A1A2E"
+      },
+      "suggestion_card_preview": {
+        "font_size": "15px",
+        "line_height": "1.5",
+        "font_weight": "400",
+        "color": "#2D3748"
+      },
+      "category_label": {
+        "font_size": "12px",
+        "line_height": "1.4",
+        "font_weight": "500",
+        "color": "#718096",
+        "letter_spacing": "0.01em"
+      },
+      "button_label": {
+        "font_size": "14px",
+        "font_weight": "600",
+        "letter_spacing": "0.01em"
+      }
+    },
+    "text_decorations": {
+      "error_highlight": {
+        "background": "rgba(229, 62, 62, 0.12)",
+        "border_radius": "2px",
+        "padding": "1px 2px"
+      },
+      "strikethrough": {
+        "text_decoration": "line-through",
+        "color": "#E53E3E",
+        "font_weight": "600"
+      },
+      "replacement": {
+        "color": "#E53E3E",
+        "font_weight": "700",
+        "text_decoration": "none"
+      },
+      "wavy_underline": {
+        "style": "text-decoration: underline wavy #E53E3E",
+        "alternative_css": "border-bottom: 2px solid #E53E3E; text-decoration: none"
+      }
+    }
+  },
+
+  "spacing": {
+    "scale": "4px base unit",
+    "tokens": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "12px",
+      "lg": "16px",
+      "xl": "20px",
+      "2xl": "24px",
+      "3xl": "32px"
+    },
+    "component_specific": {
+      "card_padding": "16px 20px",
+      "card_inner_gap": "12px",
+      "category_row_gap": "8px",
+      "button_padding": "8px 20px",
+      "button_gap": "12px",
+      "preview_text_margin_top": "8px"
+    }
+  },
+
+  "border_radius": {
+    "card": "12px",
+    "button_primary": "8px",
+    "button_dismiss": "8px",
+    "highlight_inline": "2px",
+    "icon_container": "50%"
+  },
+
+  "shadows": {
+    "card": "0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06)",
+    "card_hover": "0 8px 24px rgba(0, 0, 0, 0.13)",
+    "button_primary": "none",
+    "description": "Card shadow is soft and layered — not harsh. Suggests floating UI element over editor canvas."
+  },
+
+  "components": {
+    "inline_highlight": {
+      "description": "Text inside the editor that has an error or suggestion flagged.",
+      "structure": "<span class='grm-highlight grm-highlight--correctness'>word</span>",
+      "styles": {
+        "background": "rgba(229, 62, 62, 0.12)",
+        "border_radius": "2px",
+        "padding": "1px 2px",
+        "cursor": "pointer",
+        "text_decoration": "underline wavy #E53E3E",
+        "transition": "background 150ms ease"
+      },
+      "states": {
+        "default": "Subtle red tint background + wavy underline",
+        "hover": "Slightly deeper tint",
+        "active_card_open": "Maintained highlight while card is visible"
+      }
+    },
+
+    "suggestion_card": {
+      "description": "Floating card that appears below/near the highlighted word. Contains category label, preview of correction, and action buttons.",
+      "layout": "Vertical flex column, fixed width, floating above content layer",
+      "width": "320px–360px",
+      "min_width": "280px",
+      "structure": {
+        "root": "div.grm-card",
+        "children": [
+          "div.grm-card__header  → category icon + category name + info icon",
+          "div.grm-card__preview → correction preview text with strikethrough/replacement",
+          "div.grm-card__actions → Accept button + Dismiss button"
+        ]
+      },
+      "styles": {
+        "background": "#FFFFFF",
+        "border": "1px solid #E2E8F0",
+        "border_radius": "12px",
+        "padding": "16px 20px",
+        "box_shadow": "0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)",
+        "display": "flex",
+        "flex_direction": "column",
+        "gap": "12px",
+        "position": "absolute",
+        "z_index": "9999"
+      }
+    },
+
+    "card_header": {
+      "description": "Top row of the suggestion card. Shows category icon, category name, and an info (ⓘ) icon.",
+      "layout": "Horizontal flex row, align-items center, space between icon+label group and info icon",
+      "styles": {
+        "display": "flex",
+        "align_items": "center",
+        "gap": "8px",
+        "font_size": "12px",
+        "font_weight": "500",
+        "color": "#718096"
+      },
+      "category_icon": {
+        "shape": "Shield with a checkmark or category-specific icon",
+        "size": "20px × 20px",
+        "style": "Duotone / half-filled shield icon. Left half filled with category color, right half outline.",
+        "colors": {
+          "correctness": { "filled": "#E53E3E", "outline": "#FC8181" }
+        },
+        "container": "No background container — icon floats inline"
+      },
+      "separator": "· (middle dot character) between category type and label text",
+      "info_icon": {
+        "style": "Circle with 'i' inside",
+        "size": "16px",
+        "color": "#A0AEC0",
+        "margin_left": "auto"
+      }
+    },
+
+    "card_preview": {
+      "description": "Shows the before/after text inline. Strikethrough = original error, bold colored = suggestion.",
+      "layout": "Inline text paragraph with mixed spans",
+      "styles": {
+        "font_size": "15px",
+        "line_height": "1.6",
+        "color": "#2D3748"
+      },
+      "context_text": {
+        "style": "Normal weight, muted — surrounding context words shown in grey to frame the correction",
+        "color": "#718096",
+        "prefix": "…"
+      },
+      "error_word": {
+        "text_decoration": "line-through",
+        "color": "#E53E3E",
+        "font_weight": "600"
+      },
+      "replacement_word": {
+        "color": "#E53E3E",
+        "font_weight": "700",
+        "margin_left": "4px"
+      }
+    },
+
+    "card_actions": {
+      "description": "Bottom row of the card. Primary CTA on left, ghost dismiss on right.",
+      "layout": "Horizontal flex row, align-items center, gap 12px",
+      "accept_button": {
+        "label": "Accept",
+        "style": "Filled pill/rounded rectangle",
+        "background": "#3B5BDB",
+        "color": "#FFFFFF",
+        "font_size": "14px",
+        "font_weight": "600",
+        "padding": "8px 20px",
+        "border_radius": "8px",
+        "border": "none",
+        "cursor": "pointer",
+        "hover": {
+          "background": "#364FC7",
+          "transform": "none"
+        },
+        "transition": "background 150ms ease"
+      },
+      "dismiss_button": {
+        "label": "Dismiss",
+        "style": "Ghost/text button — no background, no border",
+        "background": "transparent",
+        "color": "#718096",
+        "font_size": "14px",
+        "font_weight": "500",
+        "padding": "8px 8px",
+        "border_radius": "8px",
+        "border": "none",
+        "cursor": "pointer",
+        "hover": {
+          "color": "#4A5568",
+          "background": "rgba(0,0,0,0.04)"
+        }
+      }
+    }
+  },
+
+  "interaction_patterns": {
+    "trigger": "User clicks or hovers on an inline highlight",
+    "card_position": "Below the highlighted word, aligned to its left edge. Falls back to above if near viewport bottom.",
+    "animation": {
+      "card_enter": {
+        "type": "fade + translate up",
+        "keyframes": "opacity 0→1, translateY 4px→0",
+        "duration": "180ms",
+        "easing": "cubic-bezier(0.16, 1, 0.3, 1)"
+      },
+      "card_exit": {
+        "type": "fade out",
+        "duration": "120ms",
+        "easing": "ease-in"
+      }
+    },
+    "dismiss_behavior": "Click Dismiss or click outside card closes it without making changes",
+    "accept_behavior": "Replaces highlighted text with suggestion, removes highlight, closes card"
+  },
+
+  "design_principles": {
+    "non_intrusive": "The UI never covers the user's content aggressively. Cards are compact, shadows are soft.",
+    "color_as_signal": "Red = error/correctness. Color is semantic, not decorative.",
+    "clear_hierarchy": "Category label → Preview → Action. Each layer has distinct visual weight.",
+    "inline_context": "Corrections are shown in-place with surrounding context, not in a sidebar.",
+    "minimal_chrome": "No headers, no logos inside the card. Pure utility UI.",
+    "accessible_contrast": "Accept button uses deep blue (#3B5BDB) on white for strong contrast ratio."
+  },
+
+  "css_variables_template": {
+    "comment": "Paste into :root {} for instant theming",
+    "variables": {
+      "--grm-color-correctness": "#E53E3E",
+      "--grm-color-clarity": "#D69E2E",
+      "--grm-color-engagement": "#805AD5",
+      "--grm-color-delivery": "#3182CE",
+      "--grm-color-accept": "#3B5BDB",
+      "--grm-color-accept-hover": "#364FC7",
+      "--grm-color-text-primary": "#1A1A2E",
+      "--grm-color-text-secondary": "#4A5568",
+      "--grm-color-text-muted": "#718096",
+      "--grm-color-surface": "#FFFFFF",
+      "--grm-color-border": "#E2E8F0",
+      "--grm-highlight-bg": "rgba(229, 62, 62, 0.12)",
+      "--grm-card-shadow": "0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)",
+      "--grm-card-radius": "12px",
+      "--grm-btn-radius": "8px",
+      "--grm-font-family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "--grm-font-size-body": "17px",
+      "--grm-font-size-card": "15px",
+      "--grm-font-size-label": "12px",
+      "--grm-font-size-btn": "14px",
+      "--grm-spacing-card-padding": "16px 20px",
+      "--grm-spacing-gap": "12px"
+    }
+  },
+
+  "html_structure_reference": {
+    "comment": "Minimal DOM structure to replicate the component",
+    "template": "<span class='grm-highlight grm-highlight--correctness' data-suggestion-id='...'>\n  effect\n  <div class='grm-card' role='tooltip'>\n    <div class='grm-card__header'>\n      <svg class='grm-icon grm-icon--correctness' />  <!-- shield icon -->\n      <span class='grm-category-type'>Correctness</span>\n      <span class='grm-separator'>·</span>\n      <span class='grm-category-label'>Correct your spelling</span>\n      <button class='grm-info-btn' aria-label='Learn more'>ⓘ</button>\n    </div>\n    <p class='grm-card__preview'>\n      <span class='grm-context'>…assure you this won't </span>\n      <span class='grm-error'>effect</span>\n      <span class='grm-replacement'>affect</span>\n      <span class='grm-context'> our timeline.</span>\n    </p>\n    <div class='grm-card__actions'>\n      <button class='grm-btn grm-btn--accept'>Accept</button>\n      <button class='grm-btn grm-btn--dismiss'>Dismiss</button>\n    </div>\n  </div>\n</span>"
+  }
+}
