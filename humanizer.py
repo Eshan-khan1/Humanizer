@@ -886,7 +886,7 @@ def is_ollama_running() -> bool:
 
 def humanize_via_ollama(text: str) -> str:
     """
-    Rewrite text via the local Humanizer server (Ollama / mistral).
+    Rewrite text via the local Humanizer server (Ollama / qwen2.5:7b).
 
     Raises OllamaError if the server or Ollama is unavailable.
     """
@@ -911,7 +911,7 @@ def humanize(text: str, intensity: Intensity = "moderate") -> str:
     """
     Transform AI-style text into more natural, human-sounding writing.
 
-    Uses the local Humanizer server (Ollama / mistral) when available.
+    Uses the local Humanizer server (Ollama / qwen2.5:7b) when available.
     falls back to the rule-based pipeline controlled by ``intensity``:
 
     - mild: clichés + simpler words + contractions

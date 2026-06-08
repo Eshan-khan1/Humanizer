@@ -62,13 +62,13 @@ if ! curl -sf http://127.0.0.1:11434/api/tags >/dev/null; then
   exit 1
 fi
 
-echo "Pulling mistral (if needed)…"
-"$OLLAMA_BIN" pull mistral || true
+echo "Pulling qwen2.5:7b (if needed)…"
+"$OLLAMA_BIN" pull qwen2.5:7b || true
 
 echo "Testing /api/generate…"
 TEST=$(curl -sf -X POST http://127.0.0.1:11434/api/generate \
   -H "Content-Type: application/json" \
-  -d '{"model":"mistral","prompt":"Say OK","stream":false}' 2>&1) || TEST="FAILED: $TEST"
+  -d '{"model":"qwen2.5:7b","prompt":"Say OK","stream":false}' 2>&1) || TEST="FAILED: $TEST"
 
 if echo "$TEST" | grep -q '"error".*llama-server'; then
   echo "Generate still failing with llama-server error:" >&2

@@ -1380,24 +1380,6 @@
       ]
     },
     {
-      "id": "auto-her",
-      "category": "auto_tuned",
-      "title": "Her → She",
-      "keywords": [
-        "her"
-      ],
-      "triggers": [
-        "her"
-      ],
-      "rule": "When the text contains \"Her\", correct it to \"She\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "Her",
-          "correct": "She"
-        }
-      ]
-    },
-    {
       "id": "auto-me-dont",
       "category": "auto_tuned",
       "title": "me dont → I don't",
@@ -1697,60 +1679,6 @@
       ]
     },
     {
-      "id": "auto-since",
-      "category": "auto_tuned",
-      "title": "since → for",
-      "keywords": [
-        "since"
-      ],
-      "triggers": [
-        "since"
-      ],
-      "rule": "When the text contains \"since\", correct it to \"for\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "since",
-          "correct": "for"
-        }
-      ]
-    },
-    {
-      "id": "auto-then",
-      "category": "auto_tuned",
-      "title": "then → than",
-      "keywords": [
-        "then"
-      ],
-      "triggers": [
-        "then"
-      ],
-      "rule": "When the text contains \"then\", correct it to \"than\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "then",
-          "correct": "than"
-        }
-      ]
-    },
-    {
-      "id": "auto-him",
-      "category": "auto_tuned",
-      "title": "Him → He",
-      "keywords": [
-        "him"
-      ],
-      "triggers": [
-        "him"
-      ],
-      "rule": "When the text contains \"Him\", correct it to \"He\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "Him",
-          "correct": "He"
-        }
-      ]
-    },
-    {
       "id": "auto-me-was",
       "category": "auto_tuned",
       "title": "me was → I were",
@@ -1917,40 +1845,27 @@
       ]
     },
     {
-      "id": "auto-have",
-      "category": "auto_tuned",
-      "title": "have → has",
-      "keywords": [
-        "have"
-      ],
-      "triggers": [
-        "have"
-      ],
-      "rule": "When the text contains \"have\", correct it to \"has\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "have",
-          "correct": "has"
-        }
-      ]
-    },
-    {
       "id": "auto-dont",
       "category": "auto_tuned",
-      "title": "dont → doesn't",
+      "title": "dont → not to",
       "keywords": [
         "dont"
       ],
       "triggers": [
         "dont"
       ],
-      "rule": "When the text contains \"dont\", correct it to \"doesn't\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "rule": "When the text contains \"dont\", correct it to \"not to\". Learned from auto_tune (priority 1).",
       "examples": [
         {
           "wrong": "dont",
           "correct": "doesn't"
+        },
+        {
+          "wrong": "dont",
+          "correct": "not to"
         }
-      ]
+      ],
+      "training_priority": 1
     },
     {
       "id": "auto-deadlines",
@@ -2079,42 +1994,6 @@
       ]
     },
     {
-      "id": "auto-me",
-      "category": "auto_tuned",
-      "title": "Me → My friend",
-      "keywords": [
-        "me"
-      ],
-      "triggers": [
-        "me"
-      ],
-      "rule": "When the text contains \"Me\", correct it to \"My friend\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "Me",
-          "correct": "My friend"
-        }
-      ]
-    },
-    {
-      "id": "auto-were",
-      "category": "auto_tuned",
-      "title": "were → was",
-      "keywords": [
-        "were"
-      ],
-      "triggers": [
-        "were"
-      ],
-      "rule": "When the text contains \"were\", correct it to \"was\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "were",
-          "correct": "was"
-        }
-      ]
-    },
-    {
       "id": "auto-rain",
       "category": "auto_tuned",
       "title": "rain → rain,",
@@ -2147,24 +2026,6 @@
         {
           "wrong": "heavy",
           "correct": "heavily"
-        }
-      ]
-    },
-    {
-      "id": "auto-of",
-      "category": "auto_tuned",
-      "title": "of → we had",
-      "keywords": [
-        "of"
-      ],
-      "triggers": [
-        "of"
-      ],
-      "rule": "When the text contains \"of\", correct it to \"we had\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "of",
-          "correct": "we had"
         }
       ]
     },
@@ -2202,78 +2063,6 @@
         {
           "wrong": "Her go",
           "correct": "She goes"
-        }
-      ]
-    },
-    {
-      "id": "auto-to",
-      "category": "auto_tuned",
-      "title": "to → too",
-      "keywords": [
-        "to"
-      ],
-      "triggers": [
-        "to"
-      ],
-      "rule": "When the text contains \"to\", correct it to \"too\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "to",
-          "correct": "too"
-        }
-      ]
-    },
-    {
-      "id": "auto-she",
-      "category": "auto_tuned",
-      "title": "she → her",
-      "keywords": [
-        "she"
-      ],
-      "triggers": [
-        "she"
-      ],
-      "rule": "When the text contains \"she\", correct it to \"her\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "she",
-          "correct": "her"
-        }
-      ]
-    },
-    {
-      "id": "auto-it",
-      "category": "auto_tuned",
-      "title": "it → it.",
-      "keywords": [
-        "it"
-      ],
-      "triggers": [
-        "it"
-      ],
-      "rule": "When the text contains \"it\", correct it to \"it.\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "it",
-          "correct": "it."
-        }
-      ]
-    },
-    {
-      "id": "auto-no",
-      "category": "auto_tuned",
-      "title": "no → any",
-      "keywords": [
-        "no"
-      ],
-      "triggers": [
-        "no"
-      ],
-      "rule": "When the text contains \"no\", correct it to \"any\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "no",
-          "correct": "any"
         }
       ]
     },
@@ -2405,24 +2194,6 @@
         {
           "wrong": "morning,me and",
           "correct": "the morning,"
-        }
-      ]
-    },
-    {
-      "id": "auto-is",
-      "category": "auto_tuned",
-      "title": "is → and I are",
-      "keywords": [
-        "is"
-      ],
-      "triggers": [
-        "is"
-      ],
-      "rule": "When the text contains \"is\", correct it to \"and I are\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "is",
-          "correct": "and I are"
         }
       ]
     },
@@ -2690,24 +2461,6 @@
       ]
     },
     {
-      "id": "auto-was",
-      "category": "auto_tuned",
-      "title": "was → were",
-      "keywords": [
-        "was"
-      ],
-      "triggers": [
-        "was"
-      ],
-      "rule": "When the text contains \"was\", correct it to \"were\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "was",
-          "correct": "were"
-        }
-      ]
-    },
-    {
       "id": "auto-submitted",
       "category": "auto_tuned",
       "title": "submitted → submit",
@@ -2853,6 +2606,4531 @@
         {
           "wrong": "fare.",
           "correct": "fair."
+        }
+      ]
+    },
+    {
+      "id": "auto-were-close",
+      "category": "auto_tuned",
+      "title": "were close. → was closed.",
+      "keywords": [
+        "were",
+        "close"
+      ],
+      "triggers": [
+        "were close."
+      ],
+      "rule": "When the text contains \"were close.\", correct it to \"was closed.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "were close.",
+          "correct": "was closed."
+        }
+      ]
+    },
+    {
+      "id": "auto-happened",
+      "category": "auto_tuned",
+      "title": "happened → happen",
+      "keywords": [
+        "happened"
+      ],
+      "triggers": [
+        "happened"
+      ],
+      "rule": "When the text contains \"happened\", correct it to \"happen\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "happened",
+          "correct": "happen"
+        }
+      ]
+    },
+    {
+      "id": "auto-me-seen-it",
+      "category": "auto_tuned",
+      "title": "me seen it → I saw it.",
+      "keywords": [
+        "me",
+        "seen",
+        "it"
+      ],
+      "triggers": [
+        "me seen it"
+      ],
+      "rule": "When the text contains \"me seen it\", correct it to \"I saw it.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "me seen it",
+          "correct": "I saw it."
+        }
+      ]
+    },
+    {
+      "id": "auto-traffics-2",
+      "category": "auto_tuned",
+      "title": "traffics → traffic",
+      "keywords": [
+        "traffics"
+      ],
+      "triggers": [
+        "traffics"
+      ],
+      "rule": "When the text contains \"traffics\", correct it to \"traffic\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "traffics",
+          "correct": "traffic"
+        }
+      ]
+    },
+    {
+      "id": "auto-dont-approved-it",
+      "category": "auto_tuned",
+      "title": "dont approved it → didn't approve of it.",
+      "keywords": [
+        "dont",
+        "approved",
+        "it"
+      ],
+      "triggers": [
+        "dont approved it"
+      ],
+      "rule": "When the text contains \"dont approved it\", correct it to \"didn't approve of it.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "dont approved it",
+          "correct": "didn't approve of it."
+        }
+      ]
+    },
+    {
+      "id": "auto-nothing-2",
+      "category": "auto_tuned",
+      "title": "nothing. → anything.",
+      "keywords": [
+        "nothing"
+      ],
+      "triggers": [
+        "nothing."
+      ],
+      "rule": "When the text contains \"nothing.\", correct it to \"anything.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "nothing.",
+          "correct": "anything."
+        }
+      ]
+    },
+    {
+      "id": "auto-himandme-was-late-theboss-warentappy-het",
+      "category": "auto_tuned",
+      "title": "himandme was late,theboss warentappy,hetelled → He and I were late, the boss wasn't happy, he told",
+      "keywords": [
+        "himandme",
+        "was",
+        "late",
+        "theboss",
+        "warentappy",
+        "hetelled"
+      ],
+      "triggers": [
+        "himandme was late,theboss warentappy,hetelled"
+      ],
+      "rule": "When the text contains \"himandme was late,theboss warentappy,hetelled\", correct it to \"He and I were late, the boss wasn't happy, he told\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "himandme was late,theboss warentappy,hetelled",
+          "correct": "He and I were late, the boss wasn't happy, he told"
+        }
+      ]
+    },
+    {
+      "id": "auto-weshouldof-called",
+      "category": "auto_tuned",
+      "title": "weshouldof called → we should have called.",
+      "keywords": [
+        "weshouldof",
+        "called"
+      ],
+      "triggers": [
+        "weshouldof called"
+      ],
+      "rule": "When the text contains \"weshouldof called\", correct it to \"we should have called.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "weshouldof called",
+          "correct": "we should have called."
+        }
+      ]
+    },
+    {
+      "id": "auto-andcatched",
+      "category": "auto_tuned",
+      "title": "andcatched → and caught",
+      "keywords": [
+        "andcatched"
+      ],
+      "triggers": [
+        "andcatched"
+      ],
+      "rule": "When the text contains \"andcatched\", correct it to \"and caught\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "andcatched",
+          "correct": "and caught"
+        }
+      ]
+    },
+    {
+      "id": "auto-cold",
+      "category": "auto_tuned",
+      "title": "cold → cold.",
+      "keywords": [
+        "cold"
+      ],
+      "triggers": [
+        "cold"
+      ],
+      "rule": "When the text contains \"cold\", correct it to \"cold.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "cold",
+          "correct": "cold."
+        }
+      ]
+    },
+    {
+      "id": "auto-practiced",
+      "category": "auto_tuned",
+      "title": "practiced → practice",
+      "keywords": [
+        "practiced"
+      ],
+      "triggers": [
+        "practiced"
+      ],
+      "rule": "When the text contains \"practiced\", correct it to \"practice\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "practiced",
+          "correct": "practice"
+        }
+      ]
+    },
+    {
+      "id": "auto-me-2",
+      "category": "auto_tuned",
+      "title": "me. → I.",
+      "keywords": [
+        "me"
+      ],
+      "triggers": [
+        "me."
+      ],
+      "rule": "When the text contains \"me.\", correct it to \"I.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "me.",
+          "correct": "I."
+        }
+      ]
+    },
+    {
+      "id": "auto-them-was",
+      "category": "auto_tuned",
+      "title": "them was → They were",
+      "keywords": [
+        "them",
+        "was"
+      ],
+      "triggers": [
+        "them was"
+      ],
+      "rule": "When the text contains \"them was\", correct it to \"They were\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "them was",
+          "correct": "They were"
+        }
+      ]
+    },
+    {
+      "id": "auto-dont-woke",
+      "category": "auto_tuned",
+      "title": "dont woke → didn't wake",
+      "keywords": [
+        "dont",
+        "woke"
+      ],
+      "triggers": [
+        "dont woke"
+      ],
+      "rule": "When the text contains \"dont woke\", correct it to \"didn't wake\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "dont woke",
+          "correct": "didn't wake"
+        }
+      ]
+    },
+    {
+      "id": "gc-would-will",
+      "category": "grammar-correction",
+      "title": "would → will",
+      "keywords": [
+        "would"
+      ],
+      "triggers": [
+        "would"
+      ],
+      "rule": "Common grammar-correction pattern (seen 205x in agentlans/grammar-correction): replace \"would\" with \"will\".",
+      "examples": [
+        {
+          "wrong": "would",
+          "correct": "will"
+        }
+      ],
+      "frequency": 205
+    },
+    {
+      "id": "gc-could-can",
+      "category": "grammar-correction",
+      "title": "could → can",
+      "keywords": [
+        "could"
+      ],
+      "triggers": [
+        "could"
+      ],
+      "rule": "Common grammar-correction pattern (seen 193x in agentlans/grammar-correction): replace \"could\" with \"can\".",
+      "examples": [
+        {
+          "wrong": "could",
+          "correct": "can"
+        }
+      ],
+      "frequency": 193
+    },
+    {
+      "id": "gc-will-would",
+      "category": "grammar-correction",
+      "title": "will → would",
+      "keywords": [
+        "will"
+      ],
+      "triggers": [
+        "will"
+      ],
+      "rule": "Common grammar-correction pattern (seen 155x in agentlans/grammar-correction): replace \"will\" with \"would\".",
+      "examples": [
+        {
+          "wrong": "will",
+          "correct": "would"
+        }
+      ],
+      "frequency": 155
+    },
+    {
+      "id": "gc-it-s-its",
+      "category": "grammar-correction",
+      "title": "it's → its",
+      "keywords": [
+        "it's"
+      ],
+      "triggers": [
+        "it's"
+      ],
+      "rule": "Common grammar-correction pattern (seen 91x in agentlans/grammar-correction): replace \"it's\" with \"its\".",
+      "examples": [
+        {
+          "wrong": "it's",
+          "correct": "its"
+        }
+      ],
+      "frequency": 91
+    },
+    {
+      "id": "gc-can-could",
+      "category": "grammar-correction",
+      "title": "can → could",
+      "keywords": [
+        "can"
+      ],
+      "triggers": [
+        "can"
+      ],
+      "rule": "Common grammar-correction pattern (seen 86x in agentlans/grammar-correction): replace \"can\" with \"could\".",
+      "examples": [
+        {
+          "wrong": "can",
+          "correct": "could"
+        }
+      ],
+      "frequency": 86
+    },
+    {
+      "id": "gc-service-services",
+      "category": "grammar-correction",
+      "title": "service → services",
+      "keywords": [
+        "service"
+      ],
+      "triggers": [
+        "service"
+      ],
+      "rule": "Common grammar-correction pattern (seen 85x in agentlans/grammar-correction): replace \"service\" with \"services\".",
+      "examples": [
+        {
+          "wrong": "service",
+          "correct": "services"
+        }
+      ],
+      "frequency": 85
+    },
+    {
+      "id": "gc-form-from",
+      "category": "grammar-correction",
+      "title": "libary ,the informations → library, the information",
+      "keywords": [
+        "libary",
+        "the",
+        "informations"
+      ],
+      "triggers": [
+        "libary ,the informations",
+        "form"
+      ],
+      "rule": "When the text contains \"libary ,the informations\", correct it to \"library, the information\". Learned from auto_tune (priority 1).",
+      "examples": [
+        {
+          "wrong": "form",
+          "correct": "from"
+        },
+        {
+          "wrong": "libary ,the informations",
+          "correct": "library, the information"
+        }
+      ],
+      "frequency": 83,
+      "training_priority": 1
+    },
+    {
+      "id": "gc-result-results",
+      "category": "grammar-correction",
+      "title": "result → results",
+      "keywords": [
+        "result"
+      ],
+      "triggers": [
+        "result"
+      ],
+      "rule": "Common grammar-correction pattern (seen 70x in agentlans/grammar-correction): replace \"result\" with \"results\".",
+      "examples": [
+        {
+          "wrong": "result",
+          "correct": "results"
+        }
+      ],
+      "frequency": 70
+    },
+    {
+      "id": "gc-need-needs",
+      "category": "grammar-correction",
+      "title": "need → needs",
+      "keywords": [
+        "need"
+      ],
+      "triggers": [
+        "need"
+      ],
+      "rule": "Common grammar-correction pattern (seen 68x in agentlans/grammar-correction): replace \"need\" with \"needs\".",
+      "examples": [
+        {
+          "wrong": "need",
+          "correct": "needs"
+        }
+      ],
+      "frequency": 68
+    },
+    {
+      "id": "gc-years-year",
+      "category": "grammar-correction",
+      "title": "years → year",
+      "keywords": [
+        "years"
+      ],
+      "triggers": [
+        "years"
+      ],
+      "rule": "Common grammar-correction pattern (seen 67x in agentlans/grammar-correction): replace \"years\" with \"year\".",
+      "examples": [
+        {
+          "wrong": "years",
+          "correct": "year"
+        }
+      ],
+      "frequency": 67
+    },
+    {
+      "id": "gc-area-areas",
+      "category": "grammar-correction",
+      "title": "area → areas",
+      "keywords": [
+        "area"
+      ],
+      "triggers": [
+        "area"
+      ],
+      "rule": "Common grammar-correction pattern (seen 65x in agentlans/grammar-correction): replace \"area\" with \"areas\".",
+      "examples": [
+        {
+          "wrong": "area",
+          "correct": "areas"
+        }
+      ],
+      "frequency": 65
+    },
+    {
+      "id": "gc-but-but",
+      "category": "grammar-correction",
+      "title": "but → . But",
+      "keywords": [
+        "but"
+      ],
+      "triggers": [
+        "but"
+      ],
+      "rule": "Common grammar-correction pattern (seen 59x in agentlans/grammar-correction): replace \"but\" with \". But\".",
+      "examples": [
+        {
+          "wrong": "but",
+          "correct": ". But"
+        }
+      ],
+      "frequency": 59
+    },
+    {
+      "id": "gc-another-other",
+      "category": "grammar-correction",
+      "title": "another → other",
+      "keywords": [
+        "another"
+      ],
+      "triggers": [
+        "another"
+      ],
+      "rule": "Common grammar-correction pattern (seen 59x in agentlans/grammar-correction): replace \"another\" with \"other\".",
+      "examples": [
+        {
+          "wrong": "another",
+          "correct": "other"
+        }
+      ],
+      "frequency": 59
+    },
+    {
+      "id": "gc-he-he-2",
+      "category": "grammar-correction",
+      "title": "; he → . He",
+      "keywords": [
+        ";",
+        "he"
+      ],
+      "triggers": [
+        "; he"
+      ],
+      "rule": "Common grammar-correction pattern (seen 54x in agentlans/grammar-correction): replace \"; he\" with \". He\".",
+      "examples": [
+        {
+          "wrong": "; he",
+          "correct": ". He"
+        }
+      ],
+      "frequency": 54
+    },
+    {
+      "id": "gc-provide-provides",
+      "category": "grammar-correction",
+      "title": "provide → provides",
+      "keywords": [
+        "provide"
+      ],
+      "triggers": [
+        "provide"
+      ],
+      "rule": "Common grammar-correction pattern (seen 54x in agentlans/grammar-correction): replace \"provide\" with \"provides\".",
+      "examples": [
+        {
+          "wrong": "provide",
+          "correct": "provides"
+        }
+      ],
+      "frequency": 54
+    },
+    {
+      "id": "gc-found-find",
+      "category": "grammar-correction",
+      "title": "found → find",
+      "keywords": [
+        "found"
+      ],
+      "triggers": [
+        "found"
+      ],
+      "rule": "Common grammar-correction pattern (seen 53x in agentlans/grammar-correction): replace \"found\" with \"find\".",
+      "examples": [
+        {
+          "wrong": "found",
+          "correct": "find"
+        }
+      ],
+      "frequency": 53
+    },
+    {
+      "id": "gc-come-comes",
+      "category": "grammar-correction",
+      "title": "come → comes",
+      "keywords": [
+        "come"
+      ],
+      "triggers": [
+        "come"
+      ],
+      "rule": "Common grammar-correction pattern (seen 53x in agentlans/grammar-correction): replace \"come\" with \"comes\".",
+      "examples": [
+        {
+          "wrong": "come",
+          "correct": "comes"
+        }
+      ],
+      "frequency": 53
+    },
+    {
+      "id": "gc-a-a",
+      "category": "grammar-correction",
+      "title": "; a → . A",
+      "keywords": [
+        ";",
+        "a"
+      ],
+      "triggers": [
+        "; a"
+      ],
+      "rule": "Common grammar-correction pattern (seen 50x in agentlans/grammar-correction): replace \"; a\" with \". A\".",
+      "examples": [
+        {
+          "wrong": "; a",
+          "correct": ". A"
+        }
+      ],
+      "frequency": 50
+    },
+    {
+      "id": "gc-other-another",
+      "category": "grammar-correction",
+      "title": "other → another",
+      "keywords": [
+        "other"
+      ],
+      "triggers": [
+        "other"
+      ],
+      "rule": "Common grammar-correction pattern (seen 49x in agentlans/grammar-correction): replace \"other\" with \"another\".",
+      "examples": [
+        {
+          "wrong": "other",
+          "correct": "another"
+        }
+      ],
+      "frequency": 49
+    },
+    {
+      "id": "gc-in-in-2",
+      "category": "grammar-correction",
+      "title": "; in → . In",
+      "keywords": [
+        ";",
+        "in"
+      ],
+      "triggers": [
+        "; in"
+      ],
+      "rule": "Common grammar-correction pattern (seen 45x in agentlans/grammar-correction): replace \"; in\" with \". In\".",
+      "examples": [
+        {
+          "wrong": "; in",
+          "correct": ". In"
+        }
+      ],
+      "frequency": 45
+    },
+    {
+      "id": "gc-how-what",
+      "category": "grammar-correction",
+      "title": "How → What",
+      "keywords": [
+        "how"
+      ],
+      "triggers": [
+        "how"
+      ],
+      "rule": "Common grammar-correction pattern (seen 45x in agentlans/grammar-correction): replace \"How\" with \"What\".",
+      "examples": [
+        {
+          "wrong": "How",
+          "correct": "What"
+        }
+      ],
+      "frequency": 45
+    },
+    {
+      "id": "gc-makes-make",
+      "category": "grammar-correction",
+      "title": "makes → make",
+      "keywords": [
+        "makes"
+      ],
+      "triggers": [
+        "makes"
+      ],
+      "rule": "Common grammar-correction pattern (seen 44x in agentlans/grammar-correction): replace \"makes\" with \"make\".",
+      "examples": [
+        {
+          "wrong": "makes",
+          "correct": "make"
+        }
+      ],
+      "frequency": 44
+    },
+    {
+      "id": "gc-take-takes",
+      "category": "grammar-correction",
+      "title": "take → takes",
+      "keywords": [
+        "take"
+      ],
+      "triggers": [
+        "take"
+      ],
+      "rule": "Common grammar-correction pattern (seen 43x in agentlans/grammar-correction): replace \"take\" with \"takes\".",
+      "examples": [
+        {
+          "wrong": "take",
+          "correct": "takes"
+        }
+      ],
+      "frequency": 43
+    },
+    {
+      "id": "gc-we-we-2",
+      "category": "grammar-correction",
+      "title": "; we → . We",
+      "keywords": [
+        ";",
+        "we"
+      ],
+      "triggers": [
+        "; we"
+      ],
+      "rule": "Common grammar-correction pattern (seen 43x in agentlans/grammar-correction): replace \"; we\" with \". We\".",
+      "examples": [
+        {
+          "wrong": "; we",
+          "correct": ". We"
+        }
+      ],
+      "frequency": 43
+    },
+    {
+      "id": "gc-will-be-is",
+      "category": "grammar-correction",
+      "title": "will be → is",
+      "keywords": [
+        "will",
+        "be"
+      ],
+      "triggers": [
+        "will be"
+      ],
+      "rule": "Common grammar-correction pattern (seen 43x in agentlans/grammar-correction): replace \"will be\" with \"is\".",
+      "examples": [
+        {
+          "wrong": "will be",
+          "correct": "is"
+        }
+      ],
+      "frequency": 43
+    },
+    {
+      "id": "gc-question-questions",
+      "category": "grammar-correction",
+      "title": "question → questions",
+      "keywords": [
+        "question"
+      ],
+      "triggers": [
+        "question"
+      ],
+      "rule": "Common grammar-correction pattern (seen 43x in agentlans/grammar-correction): replace \"question\" with \"questions\".",
+      "examples": [
+        {
+          "wrong": "question",
+          "correct": "questions"
+        }
+      ],
+      "frequency": 43
+    },
+    {
+      "id": "gc-this-this-2",
+      "category": "grammar-correction",
+      "title": "; this → . This",
+      "keywords": [
+        ";",
+        "this"
+      ],
+      "triggers": [
+        "; this"
+      ],
+      "rule": "Common grammar-correction pattern (seen 42x in agentlans/grammar-correction): replace \"; this\" with \". This\".",
+      "examples": [
+        {
+          "wrong": "; this",
+          "correct": ". This"
+        }
+      ],
+      "frequency": 42
+    },
+    {
+      "id": "gc-include-includes",
+      "category": "grammar-correction",
+      "title": "include → includes",
+      "keywords": [
+        "include"
+      ],
+      "triggers": [
+        "include"
+      ],
+      "rule": "Common grammar-correction pattern (seen 42x in agentlans/grammar-correction): replace \"include\" with \"includes\".",
+      "examples": [
+        {
+          "wrong": "include",
+          "correct": "includes"
+        }
+      ],
+      "frequency": 42
+    },
+    {
+      "id": "gc-make-made",
+      "category": "grammar-correction",
+      "title": "make → made",
+      "keywords": [
+        "make"
+      ],
+      "triggers": [
+        "make"
+      ],
+      "rule": "Common grammar-correction pattern (seen 41x in agentlans/grammar-correction): replace \"make\" with \"made\".",
+      "examples": [
+        {
+          "wrong": "make",
+          "correct": "made"
+        }
+      ],
+      "frequency": 41
+    },
+    {
+      "id": "gc-idea-ideas",
+      "category": "grammar-correction",
+      "title": "idea → ideas",
+      "keywords": [
+        "idea"
+      ],
+      "triggers": [
+        "idea"
+      ],
+      "rule": "Common grammar-correction pattern (seen 41x in agentlans/grammar-correction): replace \"idea\" with \"ideas\".",
+      "examples": [
+        {
+          "wrong": "idea",
+          "correct": "ideas"
+        }
+      ],
+      "frequency": 41
+    },
+    {
+      "id": "gc-member-members",
+      "category": "grammar-correction",
+      "title": "member → members",
+      "keywords": [
+        "member"
+      ],
+      "triggers": [
+        "member"
+      ],
+      "rule": "Common grammar-correction pattern (seen 41x in agentlans/grammar-correction): replace \"member\" with \"members\".",
+      "examples": [
+        {
+          "wrong": "member",
+          "correct": "members"
+        }
+      ],
+      "frequency": 41
+    },
+    {
+      "id": "gc-skill-skills",
+      "category": "grammar-correction",
+      "title": "skill → skills",
+      "keywords": [
+        "skill"
+      ],
+      "triggers": [
+        "skill"
+      ],
+      "rule": "Common grammar-correction pattern (seen 41x in agentlans/grammar-correction): replace \"skill\" with \"skills\".",
+      "examples": [
+        {
+          "wrong": "skill",
+          "correct": "skills"
+        }
+      ],
+      "frequency": 41
+    },
+    {
+      "id": "gc-time-times",
+      "category": "grammar-correction",
+      "title": "Time → Times",
+      "keywords": [
+        "time"
+      ],
+      "triggers": [
+        "time"
+      ],
+      "rule": "Common grammar-correction pattern (seen 41x in agentlans/grammar-correction): replace \"Time\" with \"Times\".",
+      "examples": [
+        {
+          "wrong": "Time",
+          "correct": "Times"
+        }
+      ],
+      "frequency": 41
+    },
+    {
+      "id": "gc-works-work",
+      "category": "grammar-correction",
+      "title": "works → work",
+      "keywords": [
+        "works"
+      ],
+      "triggers": [
+        "works"
+      ],
+      "rule": "Common grammar-correction pattern (seen 40x in agentlans/grammar-correction): replace \"works\" with \"work\".",
+      "examples": [
+        {
+          "wrong": "works",
+          "correct": "work"
+        }
+      ],
+      "frequency": 40
+    },
+    {
+      "id": "gc-use-used",
+      "category": "grammar-correction",
+      "title": "use → used",
+      "keywords": [
+        "use"
+      ],
+      "triggers": [
+        "use"
+      ],
+      "rule": "Common grammar-correction pattern (seen 39x in agentlans/grammar-correction): replace \"use\" with \"used\".",
+      "examples": [
+        {
+          "wrong": "use",
+          "correct": "used"
+        }
+      ],
+      "frequency": 39
+    },
+    {
+      "id": "gc-made-make",
+      "category": "grammar-correction",
+      "title": "made → make",
+      "keywords": [
+        "made"
+      ],
+      "triggers": [
+        "made"
+      ],
+      "rule": "Common grammar-correction pattern (seen 39x in agentlans/grammar-correction): replace \"made\" with \"make\".",
+      "examples": [
+        {
+          "wrong": "made",
+          "correct": "make"
+        }
+      ],
+      "frequency": 39
+    },
+    {
+      "id": "gc-got-get",
+      "category": "grammar-correction",
+      "title": "got → get",
+      "keywords": [
+        "got"
+      ],
+      "triggers": [
+        "got"
+      ],
+      "rule": "Common grammar-correction pattern (seen 39x in agentlans/grammar-correction): replace \"got\" with \"get\".",
+      "examples": [
+        {
+          "wrong": "got",
+          "correct": "get"
+        }
+      ],
+      "frequency": 39
+    },
+    {
+      "id": "gc-business-businesses",
+      "category": "grammar-correction",
+      "title": "business → businesses",
+      "keywords": [
+        "business"
+      ],
+      "triggers": [
+        "business"
+      ],
+      "rule": "Common grammar-correction pattern (seen 39x in agentlans/grammar-correction): replace \"business\" with \"businesses\".",
+      "examples": [
+        {
+          "wrong": "business",
+          "correct": "businesses"
+        }
+      ],
+      "frequency": 39
+    },
+    {
+      "id": "gc-year-years",
+      "category": "grammar-correction",
+      "title": "year → years",
+      "keywords": [
+        "year"
+      ],
+      "triggers": [
+        "year"
+      ],
+      "rule": "Common grammar-correction pattern (seen 38x in agentlans/grammar-correction): replace \"year\" with \"years\".",
+      "examples": [
+        {
+          "wrong": "year",
+          "correct": "years"
+        }
+      ],
+      "frequency": 38
+    },
+    {
+      "id": "gc-customer-customers",
+      "category": "grammar-correction",
+      "title": "customer → customers",
+      "keywords": [
+        "customer"
+      ],
+      "triggers": [
+        "customer"
+      ],
+      "rule": "Common grammar-correction pattern (seen 38x in agentlans/grammar-correction): replace \"customer\" with \"customers\".",
+      "examples": [
+        {
+          "wrong": "customer",
+          "correct": "customers"
+        }
+      ],
+      "frequency": 38
+    },
+    {
+      "id": "gc-times-time",
+      "category": "grammar-correction",
+      "title": "times → time",
+      "keywords": [
+        "times"
+      ],
+      "triggers": [
+        "times"
+      ],
+      "rule": "Common grammar-correction pattern (seen 38x in agentlans/grammar-correction): replace \"times\" with \"time\".",
+      "examples": [
+        {
+          "wrong": "times",
+          "correct": "time"
+        }
+      ],
+      "frequency": 38
+    },
+    {
+      "id": "gc-company-companies",
+      "category": "grammar-correction",
+      "title": "company → companies",
+      "keywords": [
+        "company"
+      ],
+      "triggers": [
+        "company"
+      ],
+      "rule": "Common grammar-correction pattern (seen 38x in agentlans/grammar-correction): replace \"company\" with \"companies\".",
+      "examples": [
+        {
+          "wrong": "company",
+          "correct": "companies"
+        }
+      ],
+      "frequency": 38
+    },
+    {
+      "id": "gc-which-what",
+      "category": "grammar-correction",
+      "title": "Which → What",
+      "keywords": [
+        "which"
+      ],
+      "triggers": [
+        "which"
+      ],
+      "rule": "Common grammar-correction pattern (seen 37x in agentlans/grammar-correction): replace \"Which\" with \"What\".",
+      "examples": [
+        {
+          "wrong": "Which",
+          "correct": "What"
+        }
+      ],
+      "frequency": 37
+    },
+    {
+      "id": "gc-became-become",
+      "category": "grammar-correction",
+      "title": "became → become",
+      "keywords": [
+        "became"
+      ],
+      "triggers": [
+        "became"
+      ],
+      "rule": "Common grammar-correction pattern (seen 36x in agentlans/grammar-correction): replace \"became\" with \"become\".",
+      "examples": [
+        {
+          "wrong": "became",
+          "correct": "become"
+        }
+      ],
+      "frequency": 36
+    },
+    {
+      "id": "gc-work-works",
+      "category": "grammar-correction",
+      "title": "work → works",
+      "keywords": [
+        "work"
+      ],
+      "triggers": [
+        "work"
+      ],
+      "rule": "Common grammar-correction pattern (seen 36x in agentlans/grammar-correction): replace \"work\" with \"works\".",
+      "examples": [
+        {
+          "wrong": "work",
+          "correct": "works"
+        }
+      ],
+      "frequency": 36
+    },
+    {
+      "id": "gc-others-other",
+      "category": "grammar-correction",
+      "title": "others → other",
+      "keywords": [
+        "others"
+      ],
+      "triggers": [
+        "others"
+      ],
+      "rule": "Common grammar-correction pattern (seen 36x in agentlans/grammar-correction): replace \"others\" with \"other\".",
+      "examples": [
+        {
+          "wrong": "others",
+          "correct": "other"
+        }
+      ],
+      "frequency": 36
+    },
+    {
+      "id": "gc-show-shows",
+      "category": "grammar-correction",
+      "title": "show → shows",
+      "keywords": [
+        "show"
+      ],
+      "triggers": [
+        "show"
+      ],
+      "rule": "Common grammar-correction pattern (seen 36x in agentlans/grammar-correction): replace \"show\" with \"shows\".",
+      "examples": [
+        {
+          "wrong": "show",
+          "correct": "shows"
+        }
+      ],
+      "frequency": 36
+    },
+    {
+      "id": "gc-product-products",
+      "category": "grammar-correction",
+      "title": "product → products",
+      "keywords": [
+        "product"
+      ],
+      "triggers": [
+        "product"
+      ],
+      "rule": "Common grammar-correction pattern (seen 36x in agentlans/grammar-correction): replace \"product\" with \"products\".",
+      "examples": [
+        {
+          "wrong": "product",
+          "correct": "products"
+        }
+      ],
+      "frequency": 36
+    },
+    {
+      "id": "gc-which-who",
+      "category": "grammar-correction",
+      "title": "which → who",
+      "keywords": [
+        "which"
+      ],
+      "triggers": [
+        "which"
+      ],
+      "rule": "Common grammar-correction pattern (seen 36x in agentlans/grammar-correction): replace \"which\" with \"who\".",
+      "examples": [
+        {
+          "wrong": "which",
+          "correct": "who"
+        }
+      ],
+      "frequency": 36
+    },
+    {
+      "id": "gc-web-site-website",
+      "category": "grammar-correction",
+      "title": "web site → website",
+      "keywords": [
+        "web",
+        "site"
+      ],
+      "triggers": [
+        "web site"
+      ],
+      "rule": "Common grammar-correction pattern (seen 35x in agentlans/grammar-correction): replace \"web site\" with \"website\".",
+      "examples": [
+        {
+          "wrong": "web site",
+          "correct": "website"
+        }
+      ],
+      "frequency": 35
+    },
+    {
+      "id": "gc-can-may",
+      "category": "grammar-correction",
+      "title": "can → may",
+      "keywords": [
+        "can"
+      ],
+      "triggers": [
+        "can"
+      ],
+      "rule": "Common grammar-correction pattern (seen 35x in agentlans/grammar-correction): replace \"can\" with \"may\".",
+      "examples": [
+        {
+          "wrong": "can",
+          "correct": "may"
+        }
+      ],
+      "frequency": 35
+    },
+    {
+      "id": "gc-make-makes",
+      "category": "grammar-correction",
+      "title": "make → makes",
+      "keywords": [
+        "make"
+      ],
+      "triggers": [
+        "make"
+      ],
+      "rule": "Common grammar-correction pattern (seen 35x in agentlans/grammar-correction): replace \"make\" with \"makes\".",
+      "examples": [
+        {
+          "wrong": "make",
+          "correct": "makes"
+        }
+      ],
+      "frequency": 35
+    },
+    {
+      "id": "gc-his-its",
+      "category": "grammar-correction",
+      "title": "his → its",
+      "keywords": [
+        "his"
+      ],
+      "triggers": [
+        "his"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"his\" with \"its\".",
+      "examples": [
+        {
+          "wrong": "his",
+          "correct": "its"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-base-based",
+      "category": "grammar-correction",
+      "title": "base → based",
+      "keywords": [
+        "base"
+      ],
+      "triggers": [
+        "base"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"base\" with \"based\".",
+      "examples": [
+        {
+          "wrong": "base",
+          "correct": "based"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-project-projects",
+      "category": "grammar-correction",
+      "title": "project → projects",
+      "keywords": [
+        "project"
+      ],
+      "triggers": [
+        "project"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"project\" with \"projects\".",
+      "examples": [
+        {
+          "wrong": "project",
+          "correct": "projects"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-month-months",
+      "category": "grammar-correction",
+      "title": "month → months",
+      "keywords": [
+        "month"
+      ],
+      "triggers": [
+        "month"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"month\" with \"months\".",
+      "examples": [
+        {
+          "wrong": "month",
+          "correct": "months"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-feature-features",
+      "category": "grammar-correction",
+      "title": "feature → features",
+      "keywords": [
+        "feature"
+      ],
+      "triggers": [
+        "feature"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"feature\" with \"features\".",
+      "examples": [
+        {
+          "wrong": "feature",
+          "correct": "features"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-offer-offers",
+      "category": "grammar-correction",
+      "title": "offer → offers",
+      "keywords": [
+        "offer"
+      ],
+      "triggers": [
+        "offer"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"offer\" with \"offers\".",
+      "examples": [
+        {
+          "wrong": "offer",
+          "correct": "offers"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-about-with",
+      "category": "grammar-correction",
+      "title": "about → with",
+      "keywords": [
+        "about"
+      ],
+      "triggers": [
+        "about"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"about\" with \"with\".",
+      "examples": [
+        {
+          "wrong": "about",
+          "correct": "with"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-equipments-equipment",
+      "category": "grammar-correction",
+      "title": "equipments → equipment",
+      "keywords": [
+        "equipments"
+      ],
+      "triggers": [
+        "equipments"
+      ],
+      "rule": "Common grammar-correction pattern (seen 34x in agentlans/grammar-correction): replace \"equipments\" with \"equipment\".",
+      "examples": [
+        {
+          "wrong": "equipments",
+          "correct": "equipment"
+        }
+      ],
+      "frequency": 34
+    },
+    {
+      "id": "gc-used-use",
+      "category": "grammar-correction",
+      "title": "used → use",
+      "keywords": [
+        "used"
+      ],
+      "triggers": [
+        "used"
+      ],
+      "rule": "Common grammar-correction pattern (seen 33x in agentlans/grammar-correction): replace \"used\" with \"use\".",
+      "examples": [
+        {
+          "wrong": "used",
+          "correct": "use"
+        }
+      ],
+      "frequency": 33
+    },
+    {
+      "id": "gc-has-been-was",
+      "category": "grammar-correction",
+      "title": "has been → was",
+      "keywords": [
+        "has",
+        "been"
+      ],
+      "triggers": [
+        "has been"
+      ],
+      "rule": "Common grammar-correction pattern (seen 33x in agentlans/grammar-correction): replace \"has been\" with \"was\".",
+      "examples": [
+        {
+          "wrong": "has been",
+          "correct": "was"
+        }
+      ],
+      "frequency": 33
+    },
+    {
+      "id": "gc-site-sites",
+      "category": "grammar-correction",
+      "title": "site → sites",
+      "keywords": [
+        "site"
+      ],
+      "triggers": [
+        "site"
+      ],
+      "rule": "Common grammar-correction pattern (seen 32x in agentlans/grammar-correction): replace \"site\" with \"sites\".",
+      "examples": [
+        {
+          "wrong": "site",
+          "correct": "sites"
+        }
+      ],
+      "frequency": 32
+    },
+    {
+      "id": "gc-with-while",
+      "category": "grammar-correction",
+      "title": "with → while",
+      "keywords": [
+        "with"
+      ],
+      "triggers": [
+        "with"
+      ],
+      "rule": "Common grammar-correction pattern (seen 32x in agentlans/grammar-correction): replace \"with\" with \"while\".",
+      "examples": [
+        {
+          "wrong": "with",
+          "correct": "while"
+        }
+      ],
+      "frequency": 32
+    },
+    {
+      "id": "gc-level-levels",
+      "category": "grammar-correction",
+      "title": "level → levels",
+      "keywords": [
+        "level"
+      ],
+      "triggers": [
+        "level"
+      ],
+      "rule": "Common grammar-correction pattern (seen 32x in agentlans/grammar-correction): replace \"level\" with \"levels\".",
+      "examples": [
+        {
+          "wrong": "level",
+          "correct": "levels"
+        }
+      ],
+      "frequency": 32
+    },
+    {
+      "id": "gc-student-students",
+      "category": "grammar-correction",
+      "title": "Student → Students",
+      "keywords": [
+        "student"
+      ],
+      "triggers": [
+        "student"
+      ],
+      "rule": "Common grammar-correction pattern (seen 32x in agentlans/grammar-correction): replace \"Student\" with \"Students\".",
+      "examples": [
+        {
+          "wrong": "Student",
+          "correct": "Students"
+        }
+      ],
+      "frequency": 32
+    },
+    {
+      "id": "gc-get-got",
+      "category": "grammar-correction",
+      "title": "get → got",
+      "keywords": [
+        "get"
+      ],
+      "triggers": [
+        "get"
+      ],
+      "rule": "Common grammar-correction pattern (seen 32x in agentlans/grammar-correction): replace \"get\" with \"got\".",
+      "examples": [
+        {
+          "wrong": "get",
+          "correct": "got"
+        }
+      ],
+      "frequency": 32
+    },
+    {
+      "id": "gc-contents-content",
+      "category": "grammar-correction",
+      "title": "contents → content",
+      "keywords": [
+        "contents"
+      ],
+      "triggers": [
+        "contents"
+      ],
+      "rule": "Common grammar-correction pattern (seen 32x in agentlans/grammar-correction): replace \"contents\" with \"content\".",
+      "examples": [
+        {
+          "wrong": "contents",
+          "correct": "content"
+        }
+      ],
+      "frequency": 32
+    },
+    {
+      "id": "gc-game-games",
+      "category": "grammar-correction",
+      "title": "game → games",
+      "keywords": [
+        "game"
+      ],
+      "triggers": [
+        "game"
+      ],
+      "rule": "Common grammar-correction pattern (seen 31x in agentlans/grammar-correction): replace \"game\" with \"games\".",
+      "examples": [
+        {
+          "wrong": "game",
+          "correct": "games"
+        }
+      ],
+      "frequency": 31
+    },
+    {
+      "id": "gc-point-points",
+      "category": "grammar-correction",
+      "title": "point → points",
+      "keywords": [
+        "point"
+      ],
+      "triggers": [
+        "point"
+      ],
+      "rule": "Common grammar-correction pattern (seen 31x in agentlans/grammar-correction): replace \"point\" with \"points\".",
+      "examples": [
+        {
+          "wrong": "point",
+          "correct": "points"
+        }
+      ],
+      "frequency": 31
+    },
+    {
+      "id": "gc-use-using",
+      "category": "grammar-correction",
+      "title": "use → using",
+      "keywords": [
+        "use"
+      ],
+      "triggers": [
+        "use"
+      ],
+      "rule": "Common grammar-correction pattern (seen 31x in agentlans/grammar-correction): replace \"use\" with \"using\".",
+      "examples": [
+        {
+          "wrong": "use",
+          "correct": "using"
+        }
+      ],
+      "frequency": 31
+    },
+    {
+      "id": "gc-group-groups",
+      "category": "grammar-correction",
+      "title": "group → groups",
+      "keywords": [
+        "group"
+      ],
+      "triggers": [
+        "group"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"group\" with \"groups\".",
+      "examples": [
+        {
+          "wrong": "group",
+          "correct": "groups"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-build-built",
+      "category": "grammar-correction",
+      "title": "build → built",
+      "keywords": [
+        "build"
+      ],
+      "triggers": [
+        "build"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"build\" with \"built\".",
+      "examples": [
+        {
+          "wrong": "build",
+          "correct": "built"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-staffs-staff",
+      "category": "grammar-correction",
+      "title": "staffs → staff",
+      "keywords": [
+        "staffs"
+      ],
+      "triggers": [
+        "staffs"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"staffs\" with \"staff\".",
+      "examples": [
+        {
+          "wrong": "staffs",
+          "correct": "staff"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-can-will",
+      "category": "grammar-correction",
+      "title": "can → will",
+      "keywords": [
+        "can"
+      ],
+      "triggers": [
+        "can"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"can\" with \"will\".",
+      "examples": [
+        {
+          "wrong": "can",
+          "correct": "will"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-from-since",
+      "category": "grammar-correction",
+      "title": "from → since",
+      "keywords": [
+        "from"
+      ],
+      "triggers": [
+        "from"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"from\" with \"since\".",
+      "examples": [
+        {
+          "wrong": "from",
+          "correct": "since"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-allow-allows",
+      "category": "grammar-correction",
+      "title": "allow → allows",
+      "keywords": [
+        "allow"
+      ],
+      "triggers": [
+        "allow"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"allow\" with \"allows\".",
+      "examples": [
+        {
+          "wrong": "allow",
+          "correct": "allows"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-please-please",
+      "category": "grammar-correction",
+      "title": "please → . Please",
+      "keywords": [
+        "please"
+      ],
+      "triggers": [
+        "please"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"please\" with \". Please\".",
+      "examples": [
+        {
+          "wrong": "please",
+          "correct": ". Please"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-it-it-2",
+      "category": "grammar-correction",
+      "title": "; it → . It",
+      "keywords": [
+        ";",
+        "it"
+      ],
+      "triggers": [
+        "; it"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"; it\" with \". It\".",
+      "examples": [
+        {
+          "wrong": "; it",
+          "correct": ". It"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-right-rights",
+      "category": "grammar-correction",
+      "title": "Right → Rights",
+      "keywords": [
+        "right"
+      ],
+      "triggers": [
+        "right"
+      ],
+      "rule": "Common grammar-correction pattern (seen 30x in agentlans/grammar-correction): replace \"Right\" with \"Rights\".",
+      "examples": [
+        {
+          "wrong": "Right",
+          "correct": "Rights"
+        }
+      ],
+      "frequency": 30
+    },
+    {
+      "id": "gc-want-wanted",
+      "category": "grammar-correction",
+      "title": "want → wanted",
+      "keywords": [
+        "want"
+      ],
+      "triggers": [
+        "want"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"want\" with \"wanted\".",
+      "examples": [
+        {
+          "wrong": "want",
+          "correct": "wanted"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-benefit-benefits",
+      "category": "grammar-correction",
+      "title": "benefit → benefits",
+      "keywords": [
+        "benefit"
+      ],
+      "triggers": [
+        "benefit"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"benefit\" with \"benefits\".",
+      "examples": [
+        {
+          "wrong": "benefit",
+          "correct": "benefits"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-what-which",
+      "category": "grammar-correction",
+      "title": "what → which",
+      "keywords": [
+        "what"
+      ],
+      "triggers": [
+        "what"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"what\" with \"which\".",
+      "examples": [
+        {
+          "wrong": "what",
+          "correct": "which"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-has-been-is",
+      "category": "grammar-correction",
+      "title": "has been → is",
+      "keywords": [
+        "has",
+        "been"
+      ],
+      "triggers": [
+        "has been"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"has been\" with \"is\".",
+      "examples": [
+        {
+          "wrong": "has been",
+          "correct": "is"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-plan-plans",
+      "category": "grammar-correction",
+      "title": "plan → plans",
+      "keywords": [
+        "plan"
+      ],
+      "triggers": [
+        "plan"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"plan\" with \"plans\".",
+      "examples": [
+        {
+          "wrong": "plan",
+          "correct": "plans"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-wants-want",
+      "category": "grammar-correction",
+      "title": "wants → want",
+      "keywords": [
+        "wants"
+      ],
+      "triggers": [
+        "wants"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"wants\" with \"want\".",
+      "examples": [
+        {
+          "wrong": "wants",
+          "correct": "want"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-from-with",
+      "category": "grammar-correction",
+      "title": "from → with",
+      "keywords": [
+        "from"
+      ],
+      "triggers": [
+        "from"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"from\" with \"with\".",
+      "examples": [
+        {
+          "wrong": "from",
+          "correct": "with"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-issue-issues",
+      "category": "grammar-correction",
+      "title": "issue → issues",
+      "keywords": [
+        "issue"
+      ],
+      "triggers": [
+        "issue"
+      ],
+      "rule": "Common grammar-correction pattern (seen 29x in agentlans/grammar-correction): replace \"issue\" with \"issues\".",
+      "examples": [
+        {
+          "wrong": "issue",
+          "correct": "issues"
+        }
+      ],
+      "frequency": 29
+    },
+    {
+      "id": "gc-price-prices",
+      "category": "grammar-correction",
+      "title": "price → prices",
+      "keywords": [
+        "price"
+      ],
+      "triggers": [
+        "price"
+      ],
+      "rule": "Common grammar-correction pattern (seen 28x in agentlans/grammar-correction): replace \"price\" with \"prices\".",
+      "examples": [
+        {
+          "wrong": "price",
+          "correct": "prices"
+        }
+      ],
+      "frequency": 28
+    },
+    {
+      "id": "gc-with-with",
+      "category": "grammar-correction",
+      "title": "with → . With",
+      "keywords": [
+        "with"
+      ],
+      "triggers": [
+        "with"
+      ],
+      "rule": "Common grammar-correction pattern (seen 28x in agentlans/grammar-correction): replace \"with\" with \". With\".",
+      "examples": [
+        {
+          "wrong": "with",
+          "correct": ". With"
+        }
+      ],
+      "frequency": 28
+    },
+    {
+      "id": "gc-resource-resources",
+      "category": "grammar-correction",
+      "title": "RESOURCE → RESOURCES",
+      "keywords": [
+        "resource"
+      ],
+      "triggers": [
+        "resource"
+      ],
+      "rule": "Common grammar-correction pattern (seen 28x in agentlans/grammar-correction): replace \"RESOURCE\" with \"RESOURCES\".",
+      "examples": [
+        {
+          "wrong": "RESOURCE",
+          "correct": "RESOURCES"
+        }
+      ],
+      "frequency": 28
+    },
+    {
+      "id": "gc-days-day",
+      "category": "grammar-correction",
+      "title": "days → day",
+      "keywords": [
+        "days"
+      ],
+      "triggers": [
+        "days"
+      ],
+      "rule": "Common grammar-correction pattern (seen 28x in agentlans/grammar-correction): replace \"days\" with \"day\".",
+      "examples": [
+        {
+          "wrong": "days",
+          "correct": "day"
+        }
+      ],
+      "frequency": 28
+    },
+    {
+      "id": "gc-gets-get",
+      "category": "grammar-correction",
+      "title": "gets → get",
+      "keywords": [
+        "gets"
+      ],
+      "triggers": [
+        "gets"
+      ],
+      "rule": "Common grammar-correction pattern (seen 28x in agentlans/grammar-correction): replace \"gets\" with \"get\".",
+      "examples": [
+        {
+          "wrong": "gets",
+          "correct": "get"
+        }
+      ],
+      "frequency": 28
+    },
+    {
+      "id": "gc-view-views",
+      "category": "grammar-correction",
+      "title": "view → views",
+      "keywords": [
+        "view"
+      ],
+      "triggers": [
+        "view"
+      ],
+      "rule": "Common grammar-correction pattern (seen 28x in agentlans/grammar-correction): replace \"view\" with \"views\".",
+      "examples": [
+        {
+          "wrong": "view",
+          "correct": "views"
+        }
+      ],
+      "frequency": 28
+    },
+    {
+      "id": "gc-after-after",
+      "category": "grammar-correction",
+      "title": "after → . After",
+      "keywords": [
+        "after"
+      ],
+      "triggers": [
+        "after"
+      ],
+      "rule": "Common grammar-correction pattern (seen 28x in agentlans/grammar-correction): replace \"after\" with \". After\".",
+      "examples": [
+        {
+          "wrong": "after",
+          "correct": ". After"
+        }
+      ],
+      "frequency": 28
+    },
+    {
+      "id": "gc-with-from",
+      "category": "grammar-correction",
+      "title": "with → from",
+      "keywords": [
+        "with"
+      ],
+      "triggers": [
+        "with"
+      ],
+      "rule": "Common grammar-correction pattern (seen 27x in agentlans/grammar-correction): replace \"with\" with \"from\".",
+      "examples": [
+        {
+          "wrong": "with",
+          "correct": "from"
+        }
+      ],
+      "frequency": 27
+    },
+    {
+      "id": "gc-application-applications",
+      "category": "grammar-correction",
+      "title": "application → applications",
+      "keywords": [
+        "application"
+      ],
+      "triggers": [
+        "application"
+      ],
+      "rule": "Common grammar-correction pattern (seen 27x in agentlans/grammar-correction): replace \"application\" with \"applications\".",
+      "examples": [
+        {
+          "wrong": "application",
+          "correct": "applications"
+        }
+      ],
+      "frequency": 27
+    },
+    {
+      "id": "gc-client-clients",
+      "category": "grammar-correction",
+      "title": "client → clients",
+      "keywords": [
+        "client"
+      ],
+      "triggers": [
+        "client"
+      ],
+      "rule": "Common grammar-correction pattern (seen 27x in agentlans/grammar-correction): replace \"client\" with \"clients\".",
+      "examples": [
+        {
+          "wrong": "client",
+          "correct": "clients"
+        }
+      ],
+      "frequency": 27
+    },
+    {
+      "id": "gc-peoples-people",
+      "category": "grammar-correction",
+      "title": "peoples → people",
+      "keywords": [
+        "peoples"
+      ],
+      "triggers": [
+        "peoples"
+      ],
+      "rule": "Common grammar-correction pattern (seen 27x in agentlans/grammar-correction): replace \"peoples\" with \"people\".",
+      "examples": [
+        {
+          "wrong": "peoples",
+          "correct": "people"
+        }
+      ],
+      "frequency": 27
+    },
+    {
+      "id": "gc-way-ways",
+      "category": "grammar-correction",
+      "title": "way → ways",
+      "keywords": [
+        "way"
+      ],
+      "triggers": [
+        "way"
+      ],
+      "rule": "Common grammar-correction pattern (seen 27x in agentlans/grammar-correction): replace \"way\" with \"ways\".",
+      "examples": [
+        {
+          "wrong": "way",
+          "correct": "ways"
+        }
+      ],
+      "frequency": 27
+    },
+    {
+      "id": "gc-detail-details",
+      "category": "grammar-correction",
+      "title": "detail → details",
+      "keywords": [
+        "detail"
+      ],
+      "triggers": [
+        "detail"
+      ],
+      "rule": "Common grammar-correction pattern (seen 27x in agentlans/grammar-correction): replace \"detail\" with \"details\".",
+      "examples": [
+        {
+          "wrong": "detail",
+          "correct": "details"
+        }
+      ],
+      "frequency": 27
+    },
+    {
+      "id": "gc-solution-solutions",
+      "category": "grammar-correction",
+      "title": "Solution → Solutions",
+      "keywords": [
+        "solution"
+      ],
+      "triggers": [
+        "solution"
+      ],
+      "rule": "Common grammar-correction pattern (seen 27x in agentlans/grammar-correction): replace \"Solution\" with \"Solutions\".",
+      "examples": [
+        {
+          "wrong": "Solution",
+          "correct": "Solutions"
+        }
+      ],
+      "frequency": 27
+    },
+    {
+      "id": "gc-look-looking",
+      "category": "grammar-correction",
+      "title": "look → looking",
+      "keywords": [
+        "look"
+      ],
+      "triggers": [
+        "look"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"look\" with \"looking\".",
+      "examples": [
+        {
+          "wrong": "look",
+          "correct": "looking"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-wich-which",
+      "category": "grammar-correction",
+      "title": "wich → which",
+      "keywords": [
+        "wich"
+      ],
+      "triggers": [
+        "wich"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"wich\" with \"which\".",
+      "examples": [
+        {
+          "wrong": "wich",
+          "correct": "which"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-get-gets",
+      "category": "grammar-correction",
+      "title": "get → gets",
+      "keywords": [
+        "get"
+      ],
+      "triggers": [
+        "get"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"get\" with \"gets\".",
+      "examples": [
+        {
+          "wrong": "get",
+          "correct": "gets"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-other-others",
+      "category": "grammar-correction",
+      "title": "other → others",
+      "keywords": [
+        "other"
+      ],
+      "triggers": [
+        "other"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"other\" with \"others\".",
+      "examples": [
+        {
+          "wrong": "other",
+          "correct": "others"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-in-to-into",
+      "category": "grammar-correction",
+      "title": "in to → into",
+      "keywords": [
+        "in",
+        "to"
+      ],
+      "triggers": [
+        "in to"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"in to\" with \"into\".",
+      "examples": [
+        {
+          "wrong": "in to",
+          "correct": "into"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-operation-operations",
+      "category": "grammar-correction",
+      "title": "operation → operations",
+      "keywords": [
+        "operation"
+      ],
+      "triggers": [
+        "operation"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"operation\" with \"operations\".",
+      "examples": [
+        {
+          "wrong": "operation",
+          "correct": "operations"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-process-processes",
+      "category": "grammar-correction",
+      "title": "process → processes",
+      "keywords": [
+        "process"
+      ],
+      "triggers": [
+        "process"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"process\" with \"processes\".",
+      "examples": [
+        {
+          "wrong": "process",
+          "correct": "processes"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-condition-conditions",
+      "category": "grammar-correction",
+      "title": "condition → conditions",
+      "keywords": [
+        "condition"
+      ],
+      "triggers": [
+        "condition"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"condition\" with \"conditions\".",
+      "examples": [
+        {
+          "wrong": "condition",
+          "correct": "conditions"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-give-gives",
+      "category": "grammar-correction",
+      "title": "give → gives",
+      "keywords": [
+        "give"
+      ],
+      "triggers": [
+        "give"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"give\" with \"gives\".",
+      "examples": [
+        {
+          "wrong": "give",
+          "correct": "gives"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-event-events",
+      "category": "grammar-correction",
+      "title": "event → events",
+      "keywords": [
+        "event"
+      ],
+      "triggers": [
+        "event"
+      ],
+      "rule": "Common grammar-correction pattern (seen 26x in agentlans/grammar-correction): replace \"event\" with \"events\".",
+      "examples": [
+        {
+          "wrong": "event",
+          "correct": "events"
+        }
+      ],
+      "frequency": 26
+    },
+    {
+      "id": "gc-to-be-is",
+      "category": "grammar-correction",
+      "title": "to be → is",
+      "keywords": [
+        "to",
+        "be"
+      ],
+      "triggers": [
+        "to be"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"to be\" with \"is\".",
+      "examples": [
+        {
+          "wrong": "to be",
+          "correct": "is"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-change-changes",
+      "category": "grammar-correction",
+      "title": "change → changes",
+      "keywords": [
+        "change"
+      ],
+      "triggers": [
+        "change"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"change\" with \"changes\".",
+      "examples": [
+        {
+          "wrong": "change",
+          "correct": "changes"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-friend-friends",
+      "category": "grammar-correction",
+      "title": "friend → friends",
+      "keywords": [
+        "friend"
+      ],
+      "triggers": [
+        "friend"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"friend\" with \"friends\".",
+      "examples": [
+        {
+          "wrong": "friend",
+          "correct": "friends"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-which-where",
+      "category": "grammar-correction",
+      "title": "which → where",
+      "keywords": [
+        "which"
+      ],
+      "triggers": [
+        "which"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"which\" with \"where\".",
+      "examples": [
+        {
+          "wrong": "which",
+          "correct": "where"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-work-working",
+      "category": "grammar-correction",
+      "title": "work → working",
+      "keywords": [
+        "work"
+      ],
+      "triggers": [
+        "work"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"work\" with \"working\".",
+      "examples": [
+        {
+          "wrong": "work",
+          "correct": "working"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-continue-continues",
+      "category": "grammar-correction",
+      "title": "continue → continues",
+      "keywords": [
+        "continue"
+      ],
+      "triggers": [
+        "continue"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"continue\" with \"continues\".",
+      "examples": [
+        {
+          "wrong": "continue",
+          "correct": "continues"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-take-took",
+      "category": "grammar-correction",
+      "title": "take → took",
+      "keywords": [
+        "take"
+      ],
+      "triggers": [
+        "take"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"take\" with \"took\".",
+      "examples": [
+        {
+          "wrong": "take",
+          "correct": "took"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-minutes-minute",
+      "category": "grammar-correction",
+      "title": "minutes → minute",
+      "keywords": [
+        "minutes"
+      ],
+      "triggers": [
+        "minutes"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"minutes\" with \"minute\".",
+      "examples": [
+        {
+          "wrong": "minutes",
+          "correct": "minute"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-built-build",
+      "category": "grammar-correction",
+      "title": "built → build",
+      "keywords": [
+        "built"
+      ],
+      "triggers": [
+        "built"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"built\" with \"build\".",
+      "examples": [
+        {
+          "wrong": "built",
+          "correct": "build"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-professional-professionals",
+      "category": "grammar-correction",
+      "title": "Professional → Professionals",
+      "keywords": [
+        "professional"
+      ],
+      "triggers": [
+        "professional"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"Professional\" with \"Professionals\".",
+      "examples": [
+        {
+          "wrong": "Professional",
+          "correct": "Professionals"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-school-schools",
+      "category": "grammar-correction",
+      "title": "school → schools",
+      "keywords": [
+        "school"
+      ],
+      "triggers": [
+        "school"
+      ],
+      "rule": "Common grammar-correction pattern (seen 25x in agentlans/grammar-correction): replace \"school\" with \"schools\".",
+      "examples": [
+        {
+          "wrong": "school",
+          "correct": "schools"
+        }
+      ],
+      "frequency": 25
+    },
+    {
+      "id": "gc-had-been-was",
+      "category": "grammar-correction",
+      "title": "had been → was",
+      "keywords": [
+        "had",
+        "been"
+      ],
+      "triggers": [
+        "had been"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"had been\" with \"was\".",
+      "examples": [
+        {
+          "wrong": "had been",
+          "correct": "was"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-during-while",
+      "category": "grammar-correction",
+      "title": "during → while",
+      "keywords": [
+        "during"
+      ],
+      "triggers": [
+        "during"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"during\" with \"while\".",
+      "examples": [
+        {
+          "wrong": "during",
+          "correct": "while"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-working-work",
+      "category": "grammar-correction",
+      "title": "working → work",
+      "keywords": [
+        "working"
+      ],
+      "triggers": [
+        "working"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"working\" with \"work\".",
+      "examples": [
+        {
+          "wrong": "working",
+          "correct": "work"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-one-of-a",
+      "category": "grammar-correction",
+      "title": "one of → a",
+      "keywords": [
+        "one",
+        "of"
+      ],
+      "triggers": [
+        "one of"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"one of\" with \"a\".",
+      "examples": [
+        {
+          "wrong": "one of",
+          "correct": "a"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-on-line-online",
+      "category": "grammar-correction",
+      "title": "on line → online",
+      "keywords": [
+        "on",
+        "line"
+      ],
+      "triggers": [
+        "on line"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"on line\" with \"online\".",
+      "examples": [
+        {
+          "wrong": "on line",
+          "correct": "online"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-foods-food",
+      "category": "grammar-correction",
+      "title": "foods → food",
+      "keywords": [
+        "foods"
+      ],
+      "triggers": [
+        "foods"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"foods\" with \"food\".",
+      "examples": [
+        {
+          "wrong": "foods",
+          "correct": "food"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-job-jobs",
+      "category": "grammar-correction",
+      "title": "job → jobs",
+      "keywords": [
+        "job"
+      ],
+      "triggers": [
+        "job"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"job\" with \"jobs\".",
+      "examples": [
+        {
+          "wrong": "job",
+          "correct": "jobs"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-she-she-2",
+      "category": "grammar-correction",
+      "title": "; she → . She",
+      "keywords": [
+        ";",
+        "she"
+      ],
+      "triggers": [
+        "; she"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"; she\" with \". She\".",
+      "examples": [
+        {
+          "wrong": "; she",
+          "correct": ". She"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-image-images",
+      "category": "grammar-correction",
+      "title": "Image → Images",
+      "keywords": [
+        "image"
+      ],
+      "triggers": [
+        "image"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"Image\" with \"Images\".",
+      "examples": [
+        {
+          "wrong": "Image",
+          "correct": "Images"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-experiences-experience",
+      "category": "grammar-correction",
+      "title": "Experiences → Experience",
+      "keywords": [
+        "experiences"
+      ],
+      "triggers": [
+        "experiences"
+      ],
+      "rule": "Common grammar-correction pattern (seen 24x in agentlans/grammar-correction): replace \"Experiences\" with \"Experience\".",
+      "examples": [
+        {
+          "wrong": "Experiences",
+          "correct": "Experience"
+        }
+      ],
+      "frequency": 24
+    },
+    {
+      "id": "gc-send-sent",
+      "category": "grammar-correction",
+      "title": "send → sent",
+      "keywords": [
+        "send"
+      ],
+      "triggers": [
+        "send"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"send\" with \"sent\".",
+      "examples": [
+        {
+          "wrong": "send",
+          "correct": "sent"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-say-says",
+      "category": "grammar-correction",
+      "title": "say → says",
+      "keywords": [
+        "say"
+      ],
+      "triggers": [
+        "say"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"say\" with \"says\".",
+      "examples": [
+        {
+          "wrong": "say",
+          "correct": "says"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-party-parties",
+      "category": "grammar-correction",
+      "title": "Party → Parties",
+      "keywords": [
+        "party"
+      ],
+      "triggers": [
+        "party"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"Party\" with \"Parties\".",
+      "examples": [
+        {
+          "wrong": "Party",
+          "correct": "Parties"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-mean-means",
+      "category": "grammar-correction",
+      "title": "mean → means",
+      "keywords": [
+        "mean"
+      ],
+      "triggers": [
+        "mean"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"mean\" with \"means\".",
+      "examples": [
+        {
+          "wrong": "mean",
+          "correct": "means"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-which-this",
+      "category": "grammar-correction",
+      "title": "which → . This",
+      "keywords": [
+        "which"
+      ],
+      "triggers": [
+        "which"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"which\" with \". This\".",
+      "examples": [
+        {
+          "wrong": "which",
+          "correct": ". This"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-include-including",
+      "category": "grammar-correction",
+      "title": "include → including",
+      "keywords": [
+        "include"
+      ],
+      "triggers": [
+        "include"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"include\" with \"including\".",
+      "examples": [
+        {
+          "wrong": "include",
+          "correct": "including"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-will-be-are",
+      "category": "grammar-correction",
+      "title": "will be → are",
+      "keywords": [
+        "will",
+        "be"
+      ],
+      "triggers": [
+        "will be"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"will be\" with \"are\".",
+      "examples": [
+        {
+          "wrong": "will be",
+          "correct": "are"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-till-until",
+      "category": "grammar-correction",
+      "title": "till → until",
+      "keywords": [
+        "till"
+      ],
+      "triggers": [
+        "till"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"till\" with \"until\".",
+      "examples": [
+        {
+          "wrong": "till",
+          "correct": "until"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-would-be-is",
+      "category": "grammar-correction",
+      "title": "would be → is",
+      "keywords": [
+        "would",
+        "be"
+      ],
+      "triggers": [
+        "would be"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"would be\" with \"is\".",
+      "examples": [
+        {
+          "wrong": "would be",
+          "correct": "is"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-what-what",
+      "category": "grammar-correction",
+      "title": "what → . What",
+      "keywords": [
+        "what"
+      ],
+      "triggers": [
+        "what"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"what\" with \". What\".",
+      "examples": [
+        {
+          "wrong": "what",
+          "correct": ". What"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-fee-fees",
+      "category": "grammar-correction",
+      "title": "fee → fees",
+      "keywords": [
+        "fee"
+      ],
+      "triggers": [
+        "fee"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"fee\" with \"fees\".",
+      "examples": [
+        {
+          "wrong": "fee",
+          "correct": "fees"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-knew-know",
+      "category": "grammar-correction",
+      "title": "knew → know",
+      "keywords": [
+        "knew"
+      ],
+      "triggers": [
+        "knew"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"knew\" with \"know\".",
+      "examples": [
+        {
+          "wrong": "knew",
+          "correct": "know"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-will-can",
+      "category": "grammar-correction",
+      "title": "will → can",
+      "keywords": [
+        "will"
+      ],
+      "triggers": [
+        "will"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"will\" with \"can\".",
+      "examples": [
+        {
+          "wrong": "will",
+          "correct": "can"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-says-said",
+      "category": "grammar-correction",
+      "title": "says → said",
+      "keywords": [
+        "says"
+      ],
+      "triggers": [
+        "says"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"says\" with \"said\".",
+      "examples": [
+        {
+          "wrong": "says",
+          "correct": "said"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-start-started",
+      "category": "grammar-correction",
+      "title": "start → started",
+      "keywords": [
+        "start"
+      ],
+      "triggers": [
+        "start"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"start\" with \"started\".",
+      "examples": [
+        {
+          "wrong": "start",
+          "correct": "started"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-receive-received",
+      "category": "grammar-correction",
+      "title": "receive → received",
+      "keywords": [
+        "receive"
+      ],
+      "triggers": [
+        "receive"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"receive\" with \"received\".",
+      "examples": [
+        {
+          "wrong": "receive",
+          "correct": "received"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-hour-hours",
+      "category": "grammar-correction",
+      "title": "hour → hours",
+      "keywords": [
+        "hour"
+      ],
+      "triggers": [
+        "hour"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"hour\" with \"hours\".",
+      "examples": [
+        {
+          "wrong": "hour",
+          "correct": "hours"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-as-well-as-and",
+      "category": "grammar-correction",
+      "title": "as well as → and",
+      "keywords": [
+        "as",
+        "well"
+      ],
+      "triggers": [
+        "as well as"
+      ],
+      "rule": "Common grammar-correction pattern (seen 23x in agentlans/grammar-correction): replace \"as well as\" with \"and\".",
+      "examples": [
+        {
+          "wrong": "as well as",
+          "correct": "and"
+        }
+      ],
+      "frequency": 23
+    },
+    {
+      "id": "gc-effect-effects",
+      "category": "grammar-correction",
+      "title": "effect → effects",
+      "keywords": [
+        "effect"
+      ],
+      "triggers": [
+        "effect"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"effect\" with \"effects\".",
+      "examples": [
+        {
+          "wrong": "effect",
+          "correct": "effects"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-goverment-government",
+      "category": "grammar-correction",
+      "title": "Goverment → Government",
+      "keywords": [
+        "goverment"
+      ],
+      "triggers": [
+        "goverment"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"Goverment\" with \"Government\".",
+      "examples": [
+        {
+          "wrong": "Goverment",
+          "correct": "Government"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-require-required",
+      "category": "grammar-correction",
+      "title": "require → required",
+      "keywords": [
+        "require"
+      ],
+      "triggers": [
+        "require"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"require\" with \"required\".",
+      "examples": [
+        {
+          "wrong": "require",
+          "correct": "required"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-more-more",
+      "category": "grammar-correction",
+      "title": "more → . More",
+      "keywords": [
+        "more"
+      ],
+      "triggers": [
+        "more"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"more\" with \". More\".",
+      "examples": [
+        {
+          "wrong": "more",
+          "correct": ". More"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-lead-led",
+      "category": "grammar-correction",
+      "title": "lead → led",
+      "keywords": [
+        "lead"
+      ],
+      "triggers": [
+        "lead"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"lead\" with \"led\".",
+      "examples": [
+        {
+          "wrong": "lead",
+          "correct": "led"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-takes-take",
+      "category": "grammar-correction",
+      "title": "takes → take",
+      "keywords": [
+        "takes"
+      ],
+      "triggers": [
+        "takes"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"takes\" with \"take\".",
+      "examples": [
+        {
+          "wrong": "takes",
+          "correct": "take"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-when-when",
+      "category": "grammar-correction",
+      "title": "when → . When",
+      "keywords": [
+        "when"
+      ],
+      "triggers": [
+        "when"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"when\" with \". When\".",
+      "examples": [
+        {
+          "wrong": "when",
+          "correct": ". When"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-player-players",
+      "category": "grammar-correction",
+      "title": "player → players",
+      "keywords": [
+        "player"
+      ],
+      "triggers": [
+        "player"
+      ],
+      "rule": "Common grammar-correction pattern (seen 22x in agentlans/grammar-correction): replace \"player\" with \"players\".",
+      "examples": [
+        {
+          "wrong": "player",
+          "correct": "players"
+        }
+      ],
+      "frequency": 22
+    },
+    {
+      "id": "gc-adress-address",
+      "category": "grammar-correction",
+      "title": "adress → address",
+      "keywords": [
+        "adress"
+      ],
+      "triggers": [
+        "adress"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"adress\" with \"address\".",
+      "examples": [
+        {
+          "wrong": "adress",
+          "correct": "address"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-include-included",
+      "category": "grammar-correction",
+      "title": "include → included",
+      "keywords": [
+        "include"
+      ],
+      "triggers": [
+        "include"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"include\" with \"included\".",
+      "examples": [
+        {
+          "wrong": "include",
+          "correct": "included"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-advices-advice",
+      "category": "grammar-correction",
+      "title": "advices → advice",
+      "keywords": [
+        "advices"
+      ],
+      "triggers": [
+        "advices"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"advices\" with \"advice\".",
+      "examples": [
+        {
+          "wrong": "advices",
+          "correct": "advice"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-all-all",
+      "category": "grammar-correction",
+      "title": "all → . All",
+      "keywords": [
+        "all"
+      ],
+      "triggers": [
+        "all"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"all\" with \". All\".",
+      "examples": [
+        {
+          "wrong": "all",
+          "correct": ". All"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-family-families",
+      "category": "grammar-correction",
+      "title": "family → families",
+      "keywords": [
+        "family"
+      ],
+      "triggers": [
+        "family"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"family\" with \"families\".",
+      "examples": [
+        {
+          "wrong": "family",
+          "correct": "families"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-standard-standards",
+      "category": "grammar-correction",
+      "title": "standard → standards",
+      "keywords": [
+        "standard"
+      ],
+      "triggers": [
+        "standard"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"standard\" with \"standards\".",
+      "examples": [
+        {
+          "wrong": "standard",
+          "correct": "standards"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-part-parts",
+      "category": "grammar-correction",
+      "title": "Part → Parts",
+      "keywords": [
+        "part"
+      ],
+      "triggers": [
+        "part"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"Part\" with \"Parts\".",
+      "examples": [
+        {
+          "wrong": "Part",
+          "correct": "Parts"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-with-within",
+      "category": "grammar-correction",
+      "title": "with → within",
+      "keywords": [
+        "with"
+      ],
+      "triggers": [
+        "with"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"with\" with \"within\".",
+      "examples": [
+        {
+          "wrong": "with",
+          "correct": "within"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-making-make",
+      "category": "grammar-correction",
+      "title": "making → make",
+      "keywords": [
+        "making"
+      ],
+      "triggers": [
+        "making"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"making\" with \"make\".",
+      "examples": [
+        {
+          "wrong": "making",
+          "correct": "make"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-what-how",
+      "category": "grammar-correction",
+      "title": "What → How",
+      "keywords": [
+        "what"
+      ],
+      "triggers": [
+        "what"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"What\" with \"How\".",
+      "examples": [
+        {
+          "wrong": "What",
+          "correct": "How"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-add-added",
+      "category": "grammar-correction",
+      "title": "add → added",
+      "keywords": [
+        "add"
+      ],
+      "triggers": [
+        "add"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"add\" with \"added\".",
+      "examples": [
+        {
+          "wrong": "add",
+          "correct": "added"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-try-trying",
+      "category": "grammar-correction",
+      "title": "try → trying",
+      "keywords": [
+        "try"
+      ],
+      "triggers": [
+        "try"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"try\" with \"trying\".",
+      "examples": [
+        {
+          "wrong": "try",
+          "correct": "trying"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-reading-read",
+      "category": "grammar-correction",
+      "title": "reading → read",
+      "keywords": [
+        "reading"
+      ],
+      "triggers": [
+        "reading"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"reading\" with \"read\".",
+      "examples": [
+        {
+          "wrong": "reading",
+          "correct": "read"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-rate-rates",
+      "category": "grammar-correction",
+      "title": "rate → rates",
+      "keywords": [
+        "rate"
+      ],
+      "triggers": [
+        "rate"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"rate\" with \"rates\".",
+      "examples": [
+        {
+          "wrong": "rate",
+          "correct": "rates"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-may-can",
+      "category": "grammar-correction",
+      "title": "may → can",
+      "keywords": [
+        "may"
+      ],
+      "triggers": [
+        "may"
+      ],
+      "rule": "Common grammar-correction pattern (seen 21x in agentlans/grammar-correction): replace \"may\" with \"can\".",
+      "examples": [
+        {
+          "wrong": "may",
+          "correct": "can"
+        }
+      ],
+      "frequency": 21
+    },
+    {
+      "id": "gc-only-just",
+      "category": "grammar-correction",
+      "title": "only → just",
+      "keywords": [
+        "only"
+      ],
+      "triggers": [
+        "only"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"only\" with \"just\".",
+      "examples": [
+        {
+          "wrong": "only",
+          "correct": "just"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-call-called",
+      "category": "grammar-correction",
+      "title": "call → called",
+      "keywords": [
+        "call"
+      ],
+      "triggers": [
+        "call"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"call\" with \"called\".",
+      "examples": [
+        {
+          "wrong": "call",
+          "correct": "called"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-minute-minutes",
+      "category": "grammar-correction",
+      "title": "minute → minutes",
+      "keywords": [
+        "minute"
+      ],
+      "triggers": [
+        "minute"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"minute\" with \"minutes\".",
+      "examples": [
+        {
+          "wrong": "minute",
+          "correct": "minutes"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-review-reviews",
+      "category": "grammar-correction",
+      "title": "review → reviews",
+      "keywords": [
+        "review"
+      ],
+      "triggers": [
+        "review"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"review\" with \"reviews\".",
+      "examples": [
+        {
+          "wrong": "review",
+          "correct": "reviews"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-hold-held",
+      "category": "grammar-correction",
+      "title": "hold → held",
+      "keywords": [
+        "hold"
+      ],
+      "triggers": [
+        "hold"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"hold\" with \"held\".",
+      "examples": [
+        {
+          "wrong": "hold",
+          "correct": "held"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-helps-help",
+      "category": "grammar-correction",
+      "title": "helps → help",
+      "keywords": [
+        "helps"
+      ],
+      "triggers": [
+        "helps"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"helps\" with \"help\".",
+      "examples": [
+        {
+          "wrong": "helps",
+          "correct": "help"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-what-s-what",
+      "category": "grammar-correction",
+      "title": "what's → what",
+      "keywords": [
+        "what's"
+      ],
+      "triggers": [
+        "what's"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"what's\" with \"what\".",
+      "examples": [
+        {
+          "wrong": "what's",
+          "correct": "what"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-you-you-2",
+      "category": "grammar-correction",
+      "title": "; you → . You",
+      "keywords": [
+        ";",
+        "you"
+      ],
+      "triggers": [
+        "; you"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"; you\" with \". You\".",
+      "examples": [
+        {
+          "wrong": "; you",
+          "correct": ". You"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-help-helps",
+      "category": "grammar-correction",
+      "title": "help → helps",
+      "keywords": [
+        "help"
+      ],
+      "triggers": [
+        "help"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"help\" with \"helps\".",
+      "examples": [
+        {
+          "wrong": "help",
+          "correct": "helps"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-create-created",
+      "category": "grammar-correction",
+      "title": "Create → Created",
+      "keywords": [
+        "create"
+      ],
+      "triggers": [
+        "create"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"Create\" with \"Created\".",
+      "examples": [
+        {
+          "wrong": "Create",
+          "correct": "Created"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-country-countries",
+      "category": "grammar-correction",
+      "title": "country → countries",
+      "keywords": [
+        "country"
+      ],
+      "triggers": [
+        "country"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"country\" with \"countries\".",
+      "examples": [
+        {
+          "wrong": "country",
+          "correct": "countries"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-using-use",
+      "category": "grammar-correction",
+      "title": "using → use",
+      "keywords": [
+        "using"
+      ],
+      "triggers": [
+        "using"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"using\" with \"use\".",
+      "examples": [
+        {
+          "wrong": "using",
+          "correct": "use"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-organization-organizations",
+      "category": "grammar-correction",
+      "title": "organization → organizations",
+      "keywords": [
+        "organization"
+      ],
+      "triggers": [
+        "organization"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"organization\" with \"organizations\".",
+      "examples": [
+        {
+          "wrong": "organization",
+          "correct": "organizations"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-getting-get",
+      "category": "grammar-correction",
+      "title": "getting → get",
+      "keywords": [
+        "getting"
+      ],
+      "triggers": [
+        "getting"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"getting\" with \"get\".",
+      "examples": [
+        {
+          "wrong": "getting",
+          "correct": "get"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-much-many",
+      "category": "grammar-correction",
+      "title": "much → many",
+      "keywords": [
+        "much"
+      ],
+      "triggers": [
+        "much"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"much\" with \"many\".",
+      "examples": [
+        {
+          "wrong": "much",
+          "correct": "many"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-activity-activities",
+      "category": "grammar-correction",
+      "title": "activity → activities",
+      "keywords": [
+        "activity"
+      ],
+      "triggers": [
+        "activity"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"activity\" with \"activities\".",
+      "examples": [
+        {
+          "wrong": "activity",
+          "correct": "activities"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-e-mail-email",
+      "category": "grammar-correction",
+      "title": "E - mail → email",
+      "keywords": [
+        "e",
+        "-",
+        "mail"
+      ],
+      "triggers": [
+        "e - mail"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"E - mail\" with \"email\".",
+      "examples": [
+        {
+          "wrong": "E - mail",
+          "correct": "email"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-place-places",
+      "category": "grammar-correction",
+      "title": "place → places",
+      "keywords": [
+        "place"
+      ],
+      "triggers": [
+        "place"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"place\" with \"places\".",
+      "examples": [
+        {
+          "wrong": "place",
+          "correct": "places"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-through-out-throughout",
+      "category": "grammar-correction",
+      "title": "Through out → Throughout",
+      "keywords": [
+        "through",
+        "out"
+      ],
+      "triggers": [
+        "through out"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"Through out\" with \"Throughout\".",
+      "examples": [
+        {
+          "wrong": "Through out",
+          "correct": "Throughout"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-however-however",
+      "category": "grammar-correction",
+      "title": "however → . However ,",
+      "keywords": [
+        "however"
+      ],
+      "triggers": [
+        "however"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"however\" with \". However ,\".",
+      "examples": [
+        {
+          "wrong": "however",
+          "correct": ". However ,"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-uses-use",
+      "category": "grammar-correction",
+      "title": "Uses → Use",
+      "keywords": [
+        "uses"
+      ],
+      "triggers": [
+        "uses"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"Uses\" with \"Use\".",
+      "examples": [
+        {
+          "wrong": "Uses",
+          "correct": "Use"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-item-items",
+      "category": "grammar-correction",
+      "title": "Item → Items",
+      "keywords": [
+        "item"
+      ],
+      "triggers": [
+        "item"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"Item\" with \"Items\".",
+      "examples": [
+        {
+          "wrong": "Item",
+          "correct": "Items"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-set-sets",
+      "category": "grammar-correction",
+      "title": "set → sets",
+      "keywords": [
+        "set"
+      ],
+      "triggers": [
+        "set"
+      ],
+      "rule": "Common grammar-correction pattern (seen 20x in agentlans/grammar-correction): replace \"set\" with \"sets\".",
+      "examples": [
+        {
+          "wrong": "set",
+          "correct": "sets"
+        }
+      ],
+      "frequency": 20
+    },
+    {
+      "id": "gc-thanks-thank",
+      "category": "grammar-correction",
+      "title": "Thanks → Thank",
+      "keywords": [
+        "thanks"
+      ],
+      "triggers": [
+        "thanks"
+      ],
+      "rule": "Common grammar-correction pattern (seen 19x in agentlans/grammar-correction): replace \"Thanks\" with \"Thank\".",
+      "examples": [
+        {
+          "wrong": "Thanks",
+          "correct": "Thank"
+        }
+      ],
+      "frequency": 19
+    },
+    {
+      "id": "gc-provide-providing",
+      "category": "grammar-correction",
+      "title": "provide → providing",
+      "keywords": [
+        "provide"
+      ],
+      "triggers": [
+        "provide"
+      ],
+      "rule": "Common grammar-correction pattern (seen 19x in agentlans/grammar-correction): replace \"provide\" with \"providing\".",
+      "examples": [
+        {
+          "wrong": "provide",
+          "correct": "providing"
+        }
+      ],
+      "frequency": 19
+    },
+    {
+      "id": "gc-needs-need",
+      "category": "grammar-correction",
+      "title": "needs → need",
+      "keywords": [
+        "needs"
+      ],
+      "triggers": [
+        "needs"
+      ],
+      "rule": "Common grammar-correction pattern (seen 19x in agentlans/grammar-correction): replace \"needs\" with \"need\".",
+      "examples": [
+        {
+          "wrong": "needs",
+          "correct": "need"
+        }
+      ],
+      "frequency": 19
+    },
+    {
+      "id": "gc-gave-give",
+      "category": "grammar-correction",
+      "title": "gave → give",
+      "keywords": [
+        "gave"
+      ],
+      "triggers": [
+        "gave"
+      ],
+      "rule": "Common grammar-correction pattern (seen 19x in agentlans/grammar-correction): replace \"gave\" with \"give\".",
+      "examples": [
+        {
+          "wrong": "gave",
+          "correct": "give"
+        }
+      ],
+      "frequency": 19
+    },
+    {
+      "id": "gc-how-how",
+      "category": "grammar-correction",
+      "title": "how → . How",
+      "keywords": [
+        "how"
+      ],
+      "triggers": [
+        "how"
+      ],
+      "rule": "Common grammar-correction pattern (seen 19x in agentlans/grammar-correction): replace \"how\" with \". How\".",
+      "examples": [
+        {
+          "wrong": "how",
+          "correct": ". How"
+        }
+      ],
+      "frequency": 19
+    },
+    {
+      "id": "auto-clothe-2",
+      "category": "auto_tuned",
+      "title": "clothe → clothes",
+      "keywords": [
+        "clothe"
+      ],
+      "triggers": [
+        "clothe"
+      ],
+      "rule": "When the text contains \"clothe\", correct it to \"clothes\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "clothe",
+          "correct": "clothes"
+        }
+      ]
+    },
+    {
+      "id": "auto-deadlines-2",
+      "category": "auto_tuned",
+      "title": "deadlines. → deadline.",
+      "keywords": [
+        "deadlines"
+      ],
+      "triggers": [
+        "deadlines."
+      ],
+      "rule": "When the text contains \"deadlines.\", correct it to \"deadline.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "deadlines.",
+          "correct": "deadline."
+        }
+      ]
+    },
+    {
+      "id": "auto-him",
+      "category": "auto_tuned",
+      "title": "him → He",
+      "keywords": [
+        "him"
+      ],
+      "triggers": [
+        "him"
+      ],
+      "rule": "When the text contains \"him\", correct it to \"He\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "him",
+          "correct": "He"
+        }
+      ]
+    },
+    {
+      "id": "auto-it",
+      "category": "auto_tuned",
+      "title": "it → it.",
+      "keywords": [
+        "it"
+      ],
+      "triggers": [
+        "it"
+      ],
+      "rule": "When the text contains \"it\", correct it to \"it.\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "it",
+          "correct": "it."
+        }
+      ]
+    },
+    {
+      "id": "auto-no",
+      "category": "auto_tuned",
+      "title": "no → any",
+      "keywords": [
+        "no"
+      ],
+      "triggers": [
+        "no"
+      ],
+      "rule": "When the text contains \"no\", correct it to \"any\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "no",
+          "correct": "any"
+        }
+      ]
+    },
+    {
+      "id": "auto-since",
+      "category": "auto_tuned",
+      "title": "since → for",
+      "keywords": [
+        "since"
+      ],
+      "triggers": [
+        "since"
+      ],
+      "rule": "When the text contains \"since\", correct it to \"for\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "since",
+          "correct": "for"
+        }
+      ]
+    },
+    {
+      "id": "auto-me",
+      "category": "auto_tuned",
+      "title": "Me → My friend",
+      "keywords": [
+        "me"
+      ],
+      "triggers": [
+        "me"
+      ],
+      "rule": "When the text contains \"Me\", correct it to \"My friend\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "Me",
+          "correct": "My friend"
+        }
+      ]
+    },
+    {
+      "id": "auto-were",
+      "category": "auto_tuned",
+      "title": "were → was",
+      "keywords": [
+        "were"
+      ],
+      "triggers": [
+        "were"
+      ],
+      "rule": "When the text contains \"were\", correct it to \"was\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "were",
+          "correct": "was"
+        }
+      ]
+    },
+    {
+      "id": "auto-is",
+      "category": "auto_tuned",
+      "title": "is → and I are",
+      "keywords": [
+        "is"
+      ],
+      "triggers": [
+        "is"
+      ],
+      "rule": "When the text contains \"is\", correct it to \"and I are\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "is",
+          "correct": "and I are"
+        }
+      ]
+    },
+    {
+      "id": "auto-of",
+      "category": "auto_tuned",
+      "title": "of → we had",
+      "keywords": [
+        "of"
+      ],
+      "triggers": [
+        "of"
+      ],
+      "rule": "When the text contains \"of\", correct it to \"we had\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "of",
+          "correct": "we had"
+        }
+      ]
+    },
+    {
+      "id": "auto-peoples-talks-to-loud",
+      "category": "auto_tuned",
+      "title": "peoples talks to loud → people talk too loudly",
+      "keywords": [
+        "peoples",
+        "talks",
+        "to",
+        "loud"
+      ],
+      "triggers": [
+        "peoples talks to loud"
+      ],
+      "rule": "When the text contains \"peoples talks to loud\", correct it to \"people talk too loudly\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "peoples talks to loud",
+          "correct": "people talk too loudly"
+        }
+      ]
+    },
+    {
+      "id": "auto-are",
+      "category": "auto_tuned",
+      "title": "are → is",
+      "keywords": [
+        "are"
+      ],
+      "triggers": [
+        "are"
+      ],
+      "rule": "When the text contains \"are\", correct it to \"is\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "are",
+          "correct": "is"
+        }
+      ]
+    },
+    {
+      "id": "auto-have",
+      "category": "auto_tuned",
+      "title": "have → has",
+      "keywords": [
+        "have"
+      ],
+      "triggers": [
+        "have"
+      ],
+      "rule": "When the text contains \"have\", correct it to \"has\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "have",
+          "correct": "has"
+        }
+      ]
+    },
+    {
+      "id": "auto-irregardless",
+      "category": "auto_tuned",
+      "title": "irregardless → Regardless",
+      "keywords": [
+        "irregardless"
+      ],
+      "triggers": [
+        "irregardless"
+      ],
+      "rule": "When the text contains \"irregardless\", correct it to \"Regardless\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "irregardless",
+          "correct": "Regardless"
+        }
+      ]
+    },
+    {
+      "id": "auto-industry-they-needs",
+      "category": "auto_tuned",
+      "title": "industry,they needs → industry, they need",
+      "keywords": [
+        "industry",
+        "they",
+        "needs"
+      ],
+      "triggers": [
+        "industry,they needs"
+      ],
+      "rule": "When the text contains \"industry,they needs\", correct it to \"industry, they need\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "industry,they needs",
+          "correct": "industry, they need"
+        }
+      ]
+    },
+    {
+      "id": "auto-umbrella-the-traffics-2",
+      "category": "auto_tuned",
+      "title": "umbrella ,the traffics → umbrella, the traffic",
+      "keywords": [
+        "umbrella",
+        "the",
+        "traffics"
+      ],
+      "triggers": [
+        "umbrella ,the traffics"
+      ],
+      "rule": "When the text contains \"umbrella ,the traffics\", correct it to \"umbrella, the traffic\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "umbrella ,the traffics",
+          "correct": "umbrella, the traffic"
+        }
+      ]
+    },
+    {
+      "id": "auto-deadlines-if",
+      "category": "auto_tuned",
+      "title": "deadlines,if → deadline, if",
+      "keywords": [
+        "deadlines",
+        "if"
+      ],
+      "triggers": [
+        "deadlines,if"
+      ],
+      "rule": "When the text contains \"deadlines,if\", correct it to \"deadline, if\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "deadlines,if",
+          "correct": "deadline, if"
+        }
+      ]
+    },
+    {
+      "id": "auto-took",
+      "category": "auto_tuned",
+      "title": "took → take",
+      "keywords": [
+        "took"
+      ],
+      "triggers": [
+        "took"
+      ],
+      "rule": "When the text contains \"took\", correct it to \"take\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "took",
+          "correct": "take"
+        }
+      ]
+    },
+    {
+      "id": "auto-her-was-suppose",
+      "category": "auto_tuned",
+      "title": "her was suppose → she were supposed",
+      "keywords": [
+        "her",
+        "was",
+        "suppose"
+      ],
+      "triggers": [
+        "her was suppose"
+      ],
+      "training_priority": 1,
+      "rule": "When the text contains \"her was suppose\", correct it to \"she were supposed\". Learned from auto_tune after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "her was suppose",
+          "correct": "she were supposed"
+        }
+      ]
+    },
+    {
+      "id": "auto-their",
+      "category": "auto_tuned",
+      "title": "their → They're",
+      "keywords": [
+        "their"
+      ],
+      "triggers": [
+        "their"
+      ],
+      "training_priority": 1,
+      "rule": "When the text contains \"their\", correct it to \"They're\". Learned from auto_tune after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "their",
+          "correct": "They're"
+        }
+      ]
+    },
+    {
+      "id": "auto-drived",
+      "category": "auto_tuned",
+      "title": "drived → drive",
+      "keywords": [
+        "drived"
+      ],
+      "triggers": [
+        "drived"
+      ],
+      "training_priority": 1,
+      "rule": "When the text contains \"drived\", correct it to \"drive\". Learned from auto_tune after a missed grammar check.",
+      "examples": [
+        {
+          "wrong": "drived",
+          "correct": "drive"
         }
       ]
     }

@@ -25,15 +25,22 @@
       <input type="checkbox" id="enabled-toggle" checked />
     </div>
 
+    <div class="row">
+      <label for="autofix-toggle">Fix all mistakes automatically</label>
+      <input type="checkbox" id="autofix-toggle" checked />
+    </div>
+
     <ul class="legend">
       <li>
         <span class="swatch swatch-correctness" aria-hidden="true"></span>
-        Correctness — wavy red underline on mistakes
+        Correctness — solid red underline on mistakes
       </li>
     </ul>
 
     <p class="hint">
-      Type in any text field — mistakes show red underlines. Click an underline for suggestions.
+      Type in any text field — mistakes show red underlines. With auto-fix on, the checker
+      keeps applying corrections until the text is clean (up to 12 passes). Click an underline
+      to review or accept a single fix.
       Start the server with <code>./start_server.sh</code>.
     </p>
   </body>

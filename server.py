@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
 import re
@@ -26,7 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-OLLAMA_MODEL = "mistral"
+OLLAMA_MODEL = "qwen2.5:7b"
 OLLAMA_TEMPERATURE = 0.9
 OLLAMA_GRAMMAR_TEMPERATURE = 0.2
 OLLAMA_START_TIMEOUT_SEC = 30.0
@@ -158,6 +159,241 @@ def _split_paragraphs(text: str) -> list[str]:
     return [part.strip() for part in parts if part.strip()]
 
 
+_SENTENCE_SPLIT_RE = re.compile(r"[^.!?]+[.!?]+|[^.!?]+$")
+_WORD_TOKEN_RE = re.compile(r"[A-Za-z0-9']+|\S")
+_GAP_HINT_RE = re.compile(r'^"([^"]*)"\s*→\s*"([^"]*)"$')
+
+
+def _split_sentences(text: str) -> list[tuple[int, int, str]]:
+    """Return (start, end, sentence_text) spans covering the full text."""
+    spans: list[tuple[int, int, str]] = []
+    for match in _SENTENCE_SPLIT_RE.finditer(text):
+        sentence = match.group().strip()
+        if sentence:
+            spans.append((match.start(), match.end(), sentence))
+    if not spans and text.strip():
+        spans.append((0, len(text), text.strip()))
+    return spans
+
+
+def _matches_in_span(
+    matches: list[dict[str, Any]], start: int, end: int
+) -> list[dict[str, Any]]:
+    return [
+        match
+        for match in matches
+        if start <= match.get("offset", -1) < end
+    ]
+
+
+def _phrase_overlaps_match(
+    phrase: str, text: str, match: dict[str, Any]
+) -> bool:
+    phrase_lower = phrase.lower().strip()
+    if not phrase_lower:
+        return False
+    offset = match.get("offset", -1)
+    length = match.get("length", 0)
+    if not isinstance(offset, int) or not isinstance(length, int):
+        return False
+    span = text[offset : offset + length].lower()
+    return phrase_lower in span or span in phrase_lower
+
+
+def _lt_covers_phrase(
+    phrase: str, text: str, lt_matches: list[dict[str, Any]]
+) -> bool:
+    return any(_phrase_overlaps_match(phrase, text, match) for match in lt_matches)
+
+
+def _parse_gap_hint(hint: str) -> tuple[str, str] | None:
+    match = _GAP_HINT_RE.match((hint or "").strip())
+    if not match:
+        return None
+    return match.group(1), match.group(2)
+
+
+def _gap_hints_for_sentence(
+    sentence: str, gap_hints: list[str]
+) -> list[tuple[str, str]]:
+    sentence_lower = sentence.lower()
+    found: list[tuple[str, str]] = []
+    for hint in gap_hints:
+        parsed = _parse_gap_hint(hint)
+        if parsed and parsed[0].lower() in sentence_lower:
+            found.append(parsed)
+    return found
+
+
+def _sentence_needs_deep_fix(
+    sentence: str,
+    sentence_start: int,
+    sentence_end: int,
+    lt_high: list[dict[str, Any]],
+    lt_all: list[dict[str, Any]],
+    gap_hints: list[str],
+    full_text: str,
+) -> bool:
+    """Route hard sentences to Agent 2 when Agent 1 lacks high-confidence coverage."""
+    sent_high = _matches_in_span(lt_high, sentence_start, sentence_end)
+    sent_all = _matches_in_span(lt_all, sentence_start, sentence_end)
+
+    for wrong, _correct in _gap_hints_for_sentence(sentence, gap_hints):
+        if not _lt_covers_phrase(wrong, full_text, sent_high):
+            return True
+
+    if len(sent_all) >= 2:
+        return True
+
+    if len(sent_all) > len(sent_high):
+        return True
+
+    return False
+
+
+def _build_deep_fix_prompt(sentence: str, hints: list[str] | None = None) -> str:
+    hints = hints or []
+    hints_block = ""
+    if hints:
+        joined = "\n".join(f"- {hint}" for hint in hints)
+        hints_block = (
+            "Apply these learned corrections where they apply:\n"
+            f"{joined}\n\n"
+        )
+
+    return (
+        "Rewrite this sentence with perfect grammar.\n"
+        f"{hints_block}"
+        "Return only the corrected sentence, nothing else.\n\n"
+        f"{sentence}"
+    )
+
+
+def _clean_deep_fix_response(raw: str) -> str:
+    cleaned = (raw or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:\w+)?\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*```$", "", cleaned).strip()
+    if len(cleaned) >= 2 and cleaned[0] == cleaned[-1] and cleaned[0] in {'"', "'"}:
+        cleaned = cleaned[1:-1].strip()
+    return cleaned
+
+
+def _tokenize_for_diff(text: str) -> list[str]:
+    return _WORD_TOKEN_RE.findall(text)
+
+
+def _extract_replace_pairs(source: str, reference: str) -> list[tuple[str, str]]:
+    source_tokens = _tokenize_for_diff(source)
+    reference_tokens = _tokenize_for_diff(reference)
+    pairs: list[tuple[str, str]] = []
+
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+        None, source_tokens, reference_tokens
+    ).get_opcodes():
+        if tag != "replace":
+            continue
+        wrong = " ".join(source_tokens[i1:i2]).strip()
+        correct = " ".join(reference_tokens[j1:j2]).strip()
+        if wrong and correct and wrong.lower() != correct.lower():
+            pairs.append((wrong, correct))
+
+    return pairs
+
+
+def _rewrite_to_matches(
+    original: str,
+    corrected: str,
+    base_offset: int,
+    existing: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Turn a full-sentence rewrite into word/phrase-level matches."""
+    errors = [
+        {"wrong": wrong, "correct": correct, "reason": "Deep sentence rewrite"}
+        for wrong, correct in _extract_replace_pairs(original, corrected)
+    ]
+    return _ollama_errors_to_matches(
+        original,
+        errors,
+        existing=existing,
+        base_offset=base_offset,
+        rule_id="DEEP_FIXER",
+        category="AGENT2",
+    )
+
+
+def _offset_matches_to_sentence(
+    matches: list[dict[str, Any]], base_offset: int
+) -> list[dict[str, Any]]:
+    shifted: list[dict[str, Any]] = []
+    for match in matches:
+        item = dict(match)
+        item["offset"] = int(item.get("offset", 0)) + base_offset
+        shifted.append(item)
+    return shifted
+
+
+def _call_deep_fixer(
+    sentence: str, *, gap_hints: list[str] | None = None
+) -> tuple[str | None, bool]:
+    try:
+        learned_hints = rag.get_deep_fix_hints(sentence)
+        combined_hints: list[str] = []
+        seen_hints: set[str] = set()
+        for hint in (gap_hints or []) + learned_hints:
+            if hint and hint not in seen_hints:
+                seen_hints.add(hint)
+                combined_hints.append(hint)
+
+        raw = _ollama_generate(
+            _build_deep_fix_prompt(sentence, combined_hints),
+            temperature=OLLAMA_GRAMMAR_TEMPERATURE,
+            grammar=False,
+        )
+        corrected = _clean_deep_fix_response(raw)
+        if corrected and corrected.lower() != sentence.strip().lower():
+            return corrected, True
+        return corrected or sentence, True
+    except (OllamaError, requests.RequestException) as exc:
+        _debug_log(
+            "H3",
+            "server.py:_call_deep_fixer",
+            "deep fixer failed",
+            {"error": str(exc)[:300]},
+        )
+        return None, False
+
+
+def _build_corrected_two_agent(
+    text: str,
+    sentences: list[tuple[int, int, str]],
+    agent1_matches: list[dict[str, Any]],
+    deep_fixes: dict[int, str],
+) -> str:
+    if not agent1_matches and not deep_fixes:
+        return text
+
+    parts: list[str] = []
+    cursor = 0
+    for index, (start, end, sentence) in enumerate(sentences):
+        parts.append(text[cursor:start])
+        if index in deep_fixes:
+            parts.append(deep_fixes[index])
+        else:
+            sent_matches = _offset_matches_to_sentence(
+                [
+                    match
+                    for match in agent1_matches
+                    if start <= match.get("offset", -1) < end
+                ],
+                -start,
+            )
+            parts.append(_apply_suggestions_to_text(sentence, sent_matches))
+        cursor = end
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
 def _ollama_url(path: str) -> str:
     return f"{OLLAMA_BASE_URL.rstrip('/')}{path}"
 
@@ -207,7 +443,7 @@ def _find_ollama_binary() -> str:
     raise OllamaError(
         "Ollama is not installed or not on PATH. "
         "Run: ./scripts/fix_ollama.sh  (or install from https://ollama.com) "
-        "then: ollama pull mistral"
+        "then: ollama pull qwen2.5:7b"
     )
 
 
@@ -323,7 +559,7 @@ def _ollama_generate(
 
 def humanize_text(text: str) -> str:
     """
-    Humanize text via Ollama (mistral).
+    Humanize text via Ollama (qwen2.5:7b).
 
     Each paragraph is rewritten with the main prompt, combined, then passed
     through a second casual/personal pass.
@@ -342,13 +578,57 @@ def humanize_text(text: str) -> str:
     return _ollama_generate(second_pass_prompt)
 
 
-def _build_ollama_grammar_prompt(text: str) -> str:
-    rag_block = rag.get_relevant_rules_prompt_block(text, top_k=8)
+def _log_rag_injection(text: str, info: dict[str, Any]) -> None:
+    """Print RAG rule selection for each qwen2.5:7b grammar request."""
+    preview = text[:80].replace("\n", " ")
+    print("=== RAG INJECTION ===", flush=True)
+    print(
+        f"  grammar_rules.json: {info['total_rules']} total, "
+        f"{info.get('eligible_rules', info['total_rules'])} injectable",
+        flush=True,
+    )
+    print(
+        f"  selected: {info['selected_count']} rules (top_k=5, mode={info['mode']})",
+        flush=True,
+    )
+    if info.get("gap_hint_count"):
+        print(f"  LT gap hints: {info['gap_hint_count']}", flush=True)
+    print(
+        f"  prompt block: {info['prompt_block_chars']} chars, "
+        f"injected={info['injected']}",
+        flush=True,
+    )
+    for rule in info.get("selected_rules") or []:
+        category = rule.get("category") or "uncategorized"
+        print(
+            f"    - [{rule.get('id')}] ({category}) {rule.get('title')}",
+            flush=True,
+        )
+    if not info.get("selected_rules"):
+        print("    - (no rules selected — prompt has no RAG block)", flush=True)
+    print(f"  text: {preview!r}", flush=True)
+
+
+def _build_ollama_grammar_prompt(
+    text: str, lt_matches: list[dict[str, Any]] | None = None
+) -> str:
+    lt_matches = lt_matches or []
+    rag_block, rag_info = rag.prepare_grammar_rag_for_prompt(
+        text, lt_matches, top_k=rag.DEFAULT_TOP_K
+    )
+    _log_rag_injection(text, rag_info)
     rag_section = f"\n{rag_block}\n\n" if rag_block else "\n"
+
+    focus_note = ""
+    if lt_matches:
+        focus_note = (
+            "LanguageTool has already flagged some issues (listed above). "
+            "Find ADDITIONAL errors it missed — especially those marked MUST find.\n\n"
+        )
 
     return f"""You are a strict English grammar and spelling checker. Find EVERY error in the text.
 
-{rag_section}Pass 1 - Spelling & Word Choice:
+{rag_section}{focus_note}Pass 1 - Spelling & Word Choice:
 - Misspelled words
 - Homophones (to/too/two, their/there/they're, your/you're)
 - Confused words (specific/pacific, aisle/isle, people/peoples)
@@ -459,7 +739,13 @@ def _resolve_error_span(
 
 
 def _ollama_errors_to_matches(
-    text: str, errors: list[dict[str, Any]], existing: list[dict[str, Any]]
+    text: str,
+    errors: list[dict[str, Any]],
+    existing: list[dict[str, Any]],
+    *,
+    base_offset: int = 0,
+    rule_id: str = "OLLAMA_GRAMMAR",
+    category: str = "OLLAMA",
 ) -> list[dict[str, Any]]:
     """Convert Ollama error objects to GrammarMatch dicts, skipping overlaps."""
     matches: list[dict[str, Any]] = []
@@ -475,9 +761,15 @@ def _ollama_errors_to_matches(
 
         offset, length = span
         search_from = offset + length
+        absolute_offset = base_offset + offset
 
         if any(
-            _ranges_overlap(offset, length, m["offset"], m["length"])
+            _ranges_overlap(
+                absolute_offset,
+                length,
+                m["offset"],
+                m["length"],
+            )
             for m in existing + matches
         ):
             continue
@@ -498,30 +790,34 @@ def _ollama_errors_to_matches(
         matches.append(
             GrammarMatch(
                 word=text[offset : offset + length],
-                offset=offset,
+                offset=absolute_offset,
                 length=length,
                 suggestions=suggestions,
                 type=match_type,
                 message=message,
-                rule_id="OLLAMA_GRAMMAR",
-                category="OLLAMA",
+                rule_id=rule_id,
+                category=category,
             ).model_dump()
         )
 
     return matches
 
 
-def _call_mistral_for_grammar(
-    text: str, existing: list[dict[str, Any]] | None = None
+def _call_ollama_for_grammar(
+    text: str,
+    existing: list[dict[str, Any]] | None = None,
+    *,
+    lt_matches: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], bool, str | None, list[dict[str, Any]] | None]:
     """
-    Always attempt a Mistral/Ollama grammar check (no pre-check skip).
+    qwen2.5:7b grammar check with RAG context (including LanguageTool gaps).
 
     Returns (matches, success, raw_response, parsed_errors).
     """
     existing = existing or []
+    lt_matches = lt_matches or []
     try:
-        prompt = _build_ollama_grammar_prompt(text)
+        prompt = _build_ollama_grammar_prompt(text, lt_matches)
         raw_response = _ollama_generate(
             prompt, temperature=OLLAMA_GRAMMAR_TEMPERATURE, grammar=True
         )
@@ -535,18 +831,11 @@ def _call_mistral_for_grammar(
     except (OllamaError, json.JSONDecodeError, KeyError, TypeError) as exc:
         _debug_log(
             "H3",
-            "server.py:_call_mistral_for_grammar",
-            "mistral grammar failed",
+            "server.py:_call_ollama_for_grammar",
+            "qwen2.5:7b grammar failed",
             {"error": str(exc)[:300]},
         )
         return [], False, None, None
-
-
-def _check_grammar_ollama(
-    text: str, existing: list[dict[str, Any]]
-) -> tuple[list[dict[str, Any]], bool, str | None, list[dict[str, Any]] | None]:
-    """Primary grammar check via Ollama (always tries Mistral first)."""
-    return _call_mistral_for_grammar(text, existing)
 
 
 class HumanizerLanguageTool(language_tool_python.LanguageTool):
@@ -608,35 +897,45 @@ def _get_language_tool() -> HumanizerLanguageTool:
     return tool
 
 
-def _check_grammar_languagetool(text: str) -> list[dict[str, Any]]:
-    """Fallback grammar check via LanguageTool."""
+def _lt_raw_to_match(text: str, match: Any) -> dict[str, Any]:
+    match_type = _classify_match(match.category, match.ruleId)
+    offset = match.offset
+    length = match.errorLength
+    return GrammarMatch(
+        word=_extract_word(text, offset, length, match),
+        offset=offset,
+        length=length,
+        suggestions=_format_suggestions(match.replacements),
+        type=match_type,
+        message=match.message,
+        rule_id=match.ruleId,
+        category=match.category,
+    ).model_dump()
+
+
+def _check_grammar_languagetool_split(
+    text: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return (high_confidence, all) LanguageTool matches."""
     tool = _get_language_tool()
     raw_matches = tool.check(text)
 
-    formatted_matches: list[dict[str, Any]] = []
+    high_confidence: list[dict[str, Any]] = []
+    all_matches: list[dict[str, Any]] = []
     for match in raw_matches:
-        match_type = _classify_match(match.category, match.ruleId)
-        if _is_low_confidence_match(match, match_type):
-            continue
+        formatted = _lt_raw_to_match(text, match)
+        all_matches.append(formatted)
+        match_type = formatted["type"]
+        if not _is_low_confidence_match(match, match_type):
+            high_confidence.append(formatted)
 
-        offset = match.offset
-        length = match.errorLength
-        suggestions = _format_suggestions(match.replacements)
+    return high_confidence, all_matches
 
-        formatted_matches.append(
-            GrammarMatch(
-                word=_extract_word(text, offset, length, match),
-                offset=offset,
-                length=length,
-                suggestions=suggestions,
-                type=match_type,
-                message=match.message,
-                rule_id=match.ruleId,
-                category=match.category,
-            ).model_dump()
-        )
 
-    return formatted_matches
+def _check_grammar_languagetool(text: str) -> list[dict[str, Any]]:
+    """High-confidence LanguageTool matches (Agent 1 fast checker)."""
+    high_confidence, _all_matches = _check_grammar_languagetool_split(text)
+    return high_confidence
 
 
 def _apply_suggestions_to_text(
@@ -654,44 +953,114 @@ def _apply_suggestions_to_text(
     return result
 
 
-def check_grammar(
-    text: str,
-    *,
-    ollama_matches: list[dict[str, Any]] | None = None,
-    ollama_ok: bool | None = None,
-) -> dict[str, Any]:
+def check_grammar(text: str) -> dict[str, Any]:
     """
-    Check grammar: Ollama primary, LanguageTool fallback when Ollama is offline.
+    Two-agent grammar pipeline.
 
-    When both are available, results are merged (non-overlapping).
+    Agent 1 (fast): LanguageTool high-confidence matches + RAG gap routing.
+    Agent 2 (deep): qwen2.5:7b full-sentence rewrite for hard sentences.
     """
     text = text.strip()
 
-    if ollama_matches is None or ollama_ok is None:
-        ollama_matches, ollama_ok, _, _ = _check_grammar_ollama(text, [])
+    try:
+        lt_high, lt_all = _check_grammar_languagetool_split(text)
+        print(
+            "=== AGENT 1 (LT + RAG) ===",
+            f"{len(lt_high)} high-confidence matches",
+            f"({len(lt_all)} total LT)",
+            flush=True,
+        )
+    except Exception as exc:  # noqa: BLE001
+        lt_high, lt_all = [], []
+        _debug_log(
+            "H1",
+            "server.py:check_grammar",
+            "languagetool failed",
+            {"error": str(exc)[:300]},
+        )
 
-    if ollama_ok:
-        formatted_matches = list(ollama_matches)
-        print("=== MISTRAL OK, MERGING LANGUAGETOOL ===", flush=True)
-        try:
-            lt_matches = _check_grammar_languagetool(text)
-            formatted_matches = _merge_grammar_matches(
-                formatted_matches, lt_matches
+    rag_block, rag_info = rag.prepare_grammar_rag_for_prompt(text, lt_high)
+    _log_rag_injection(text, rag_info)
+
+    gap_hints, _gap_rule_ids = rag.find_languagetool_gaps(text, lt_high)
+    if gap_hints:
+        print(
+            "=== RAG GAPS ===",
+            f"{len(gap_hints)} patterns LT missed",
+            flush=True,
+        )
+
+    sentences = _split_sentences(text)
+    deep_sentence_indexes: list[int] = []
+    for index, (start, end, sentence) in enumerate(sentences):
+        if _sentence_needs_deep_fix(
+            sentence,
+            start,
+            end,
+            lt_high,
+            lt_all,
+            gap_hints,
+            text,
+        ):
+            deep_sentence_indexes.append(index)
+
+    agent1_matches: list[dict[str, Any]] = []
+    agent2_matches: list[dict[str, Any]] = []
+    deep_fixes: dict[int, str] = {}
+
+    for index, (start, end, sentence) in enumerate(sentences):
+        if index in deep_sentence_indexes:
+            continue
+        agent1_matches.extend(_matches_in_span(lt_high, start, end))
+
+    if deep_sentence_indexes:
+        print(
+            "=== AGENT 2 (deep fixer) ===",
+            f"{len(deep_sentence_indexes)} sentence(s)",
+            flush=True,
+        )
+
+    ollama_ok = True
+    for index in deep_sentence_indexes:
+        start, _end, sentence = sentences[index]
+        sentence_gaps = [
+            hint
+            for hint in gap_hints
+            if _parse_gap_hint(hint)
+            and (_parse_gap_hint(hint) or ("", ""))[0].lower() in sentence.lower()
+        ]
+        corrected, ok = _call_deep_fixer(sentence, gap_hints=sentence_gaps)
+        if not ok or not corrected:
+            ollama_ok = False
+            agent1_matches.extend(
+                _matches_in_span(lt_high, sentences[index][0], sentences[index][1])
             )
-        except Exception as exc:  # noqa: BLE001
-            _debug_log(
-                "H1",
-                "server.py:check_grammar",
-                "languagetool merge skipped",
-                {"error": str(exc)[:300]},
-            )
-        corrected = _lightweight_corrected_text(text, formatted_matches)
-    else:
-        print("=== MISTRAL FAILED, LANGUAGETOOL FALLBACK ===", flush=True)
-        formatted_matches = _check_grammar_languagetool(text)
-        corrected = _lightweight_corrected_text(text, formatted_matches)
+            continue
+
+        deep_fixes[index] = corrected
+        rewrite_matches = _rewrite_to_matches(
+            sentence,
+            corrected,
+            base_offset=start,
+            existing=agent1_matches + agent2_matches,
+        )
+        agent2_matches = _merge_grammar_matches(agent2_matches, rewrite_matches)
+
+    formatted_matches = _merge_grammar_matches(agent1_matches, agent2_matches)
+    corrected = _build_corrected_two_agent(
+        text, sentences, agent1_matches, deep_fixes
+    )
 
     formatted_matches.sort(key=lambda m: m["offset"])
+
+    if deep_sentence_indexes and ollama_ok:
+        print(
+            "=== TWO-AGENT MERGE ===",
+            f"agent1={len(agent1_matches)} agent2={len(agent2_matches)}",
+            flush=True,
+        )
+    elif not deep_sentence_indexes:
+        print("=== AGENT 1 ONLY ===", flush=True)
 
     return {
         "text": text,
@@ -724,7 +1093,7 @@ warnings.filterwarnings(
 
 
 def _warm_ollama_model() -> None:
-    """Preload mistral so the first user grammar check is faster."""
+    """Preload qwen2.5:7b so the first user grammar check is faster."""
     if not is_ollama_running():
         return
     try:
@@ -808,6 +1177,15 @@ def _grammar_quick_response(text: str) -> GrammarResponse:
 
 
 # Register /grammar/quick before /grammar so routing is unambiguous.
+@app.post("/reload-rules")
+def reload_rules() -> dict[str, Any]:
+    """Reload grammar_rules.json into the RAG cache (called after auto_tune adds rules)."""
+    rag.reload_rules_cache()
+    total = len(rag.load_rules())
+    injectable = len(rag.injectable_rules())
+    return {"ok": True, "total_rules": total, "injectable_rules": injectable}
+
+
 @app.post("/grammar/quick", response_model=GrammarResponse)
 def grammar_quick(body: TextRequest) -> GrammarResponse:
     """Fast LanguageTool-only check for snappy inline underlines."""
@@ -833,13 +1211,10 @@ def grammar(
         return _grammar_quick_response(text)
 
     if DEBUG_OLLAMA:
-        print("=== GRAMMAR (Mistral) ===", text[:200], flush=True)
-    ollama_matches, ollama_ok, raw_response, _errors = _call_mistral_for_grammar(text)
-    if DEBUG_OLLAMA:
-        print("=== MISTRAL RETURNED ===", (raw_response or "")[:500], flush=True)
+        print("=== GRAMMAR (LT→RAG→qwen2.5:7b) ===", text[:200], flush=True)
 
     try:
-        result = check_grammar(text, ollama_matches=ollama_matches, ollama_ok=ollama_ok)
+        result = check_grammar(text)
         _debug_log(
             "H1",
             "server.py:grammar",

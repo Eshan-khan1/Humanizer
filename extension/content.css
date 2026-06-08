@@ -13,7 +13,7 @@
   --grm-color-text-muted: #718096;
   --grm-color-surface: #ffffff;
   --grm-color-border: #e2e8f0;
-  --grm-highlight-bg: rgba(229, 62, 62, 0.12);
+  --grm-highlight-bg: transparent;
   --grm-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
   --grm-card-radius: 12px;
   --grm-btn-radius: 8px;
@@ -26,12 +26,12 @@
 .grm-highlight {
   pointer-events: auto !important;
   cursor: pointer !important;
-  background: var(--grm-highlight-bg) !important;
-  border-radius: 2px !important;
+  background: transparent !important;
+  border-radius: 0 !important;
   padding: 1px 2px !important;
-  text-underline-offset: 3px !important;
+  text-underline-offset: 2px !important;
   text-decoration-line: underline !important;
-  text-decoration-style: wavy !important;
+  text-decoration-style: solid !important;
   text-decoration-color: var(--grm-color-correctness) !important;
   text-decoration-thickness: 2px !important;
   -webkit-text-decoration-color: var(--grm-color-correctness) !important;
@@ -52,7 +52,7 @@
 
 .grammar-error.grammar-error-active,
 .grm-highlight--active {
-  background: rgba(229, 62, 62, 0.18) !important;
+  background: transparent !important;
 }
 
 .grammar-error.spelling-match,

@@ -8,7 +8,7 @@ ollama_configure_gpu() {
   export OLLAMA_GPU_MEMORY_FRACTION="${OLLAMA_GPU_MEMORY_FRACTION:-0.75}"
   export OLLAMA_FLASH_ATTENTION="${OLLAMA_FLASH_ATTENTION:-1}"
   export OLLAMA_LLM_LIBRARY="${OLLAMA_LLM_LIBRARY:-metal}"
-  # Keep mistral loaded longer to avoid reload cost during grammar/training bursts.
+  # Keep qwen2.5:7b loaded longer to avoid reload cost during grammar/training bursts.
   export OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:-30m}"
 
   if [[ "$(uname -s)" != "Darwin" ]]; then

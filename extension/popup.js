@@ -1,14 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
   const toggleEl = document.getElementById("enabled-toggle");
-  if (!statusEl || !toggleEl) return;
+  const autoFixToggleEl = document.getElementById("autofix-toggle");
+  if (!statusEl || !toggleEl || !autoFixToggleEl) return;
 
-  chrome.storage.sync.get({ enabled: true }, (result) => {
+  chrome.storage.sync.get({ enabled: true, autoFixAll: true }, (result) => {
     toggleEl.checked = result.enabled !== false;
+    autoFixToggleEl.checked = result.autoFixAll !== false;
   });
 
   toggleEl.addEventListener("change", () => {
     chrome.storage.sync.set({ enabled: toggleEl.checked });
+  });
+
+  autoFixToggleEl.addEventListener("change", () => {
+    chrome.storage.sync.set({ autoFixAll: autoFixToggleEl.checked });
   });
 
   fetch("http://127.0.0.1:8000/health")

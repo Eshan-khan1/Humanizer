@@ -26,7 +26,7 @@ ollama_ensure_serve
 if curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
   if ! curl -sf -X POST http://127.0.0.1:11434/api/generate \
       -H "Content-Type: application/json" \
-      -d '{"model":"mistral","prompt":"ok","stream":false}' 2>&1 | grep -q '"response"'; then
+      -d '{"model":"qwen2.5:7b","prompt":"ok","stream":false}' 2>&1 | grep -q '"response"'; then
     echo "WARNING: Ollama API is up but generate fails (llama-server missing)." >&2
     echo "  Fix: ./scripts/fix_ollama.sh" >&2
   fi
@@ -44,8 +44,8 @@ fi
 echo "Starting Humanizer local server at http://127.0.0.1:${HUMANIZER_PORT}"
 echo "  POST /grammar?quick=true - fast underlines (LanguageTool)"
 echo "  POST /grammar/quick      - same fast check"
-echo "  POST /grammar            - full check (Mistral + LanguageTool)"
-echo "  POST /humanize           - AI rewrite (requires Ollama + mistral)"
+echo "  POST /grammar            - full check (Agent1: LT+RAG, Agent2: deep rewrite)"
+echo "  POST /humanize           - AI rewrite (requires Ollama + qwen2.5:7b)"
 echo ""
 # Pass Ollama GPU env through to server.py (and any ollama serve it spawns).
 export OLLAMA_GPU_MEMORY_FRACTION OLLAMA_GPU_OVERHEAD OLLAMA_FLASH_ATTENTION OLLAMA_LLM_LIBRARY OLLAMA_KEEP_ALIVE

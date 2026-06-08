@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Auto-improvement loop: call /grammar on test pairs, compare Mistral fixes to gold
+Auto-improvement loop: call /grammar (two-agent: LT+RAG + deep rewrite) on test pairs
 corrections, append rules for missed errors, repeat until target accuracy.
 
 Pairs that score 100% are saved to test_data/mastered_pairs.json and skipped on
-later attempts (and future runs). Delete that file to re-test everything.
+later attempts. Delete that file to re-test everything.
 
-Requires the Humanizer server (./start_server.sh) and Ollama/Mistral running.
+Requires the Humanizer server (./start_server.sh) and Ollama/qwen2.5:7b running.
 """
 
 from __future__ import annotations
@@ -28,8 +28,10 @@ PAIRS_PATH = ROOT / "test_data" / "pairs.json"
 MASTERED_PATH = ROOT / "test_data" / "mastered_pairs.json"
 GRAMMAR_URL = "http://127.0.0.1:8000/grammar"
 HEALTH_URL = "http://127.0.0.1:8000/health"
+RELOAD_RULES_URL = "http://127.0.0.1:8000/reload-rules"
 TARGET_ACCURACY = 0.95
 REQUEST_TIMEOUT = 300
+STAGNATION_ATTEMPTS = 3
 
 
 @dataclass
@@ -187,10 +189,36 @@ def is_error_fixed(
     return False
 
 
+def is_error_fixed_in_corrected(
+    expected: dict[str, str], corrected: str, wrong_text: str
+) -> bool:
+    """Credit a fix when Agent 2's full rewrite contains the gold correction."""
+    ew, ec = expected["wrong"], expected["correct"]
+    if not _phrase_in_text(ew, wrong_text):
+        return False
+    if not corrected:
+        return False
+    if _phrase_in_text(ec, corrected):
+        return True
+    return _similarity(ec, corrected) >= 0.72 and _phrase_in_text(
+        ec.split(".")[0], corrected
+    )
+
+
 def score_pair(
-    pair: TestPair, found: list[dict[str, str]]
+    pair: TestPair,
+    found: list[dict[str, str]],
+    corrected: str | None = None,
 ) -> tuple[int, int, list[dict[str, str]], list[dict[str, str]]]:
-    fixed = [e for e in pair.errors if is_error_fixed(e, found, pair.wrong)]
+    fixed: list[dict[str, str]] = []
+    for error in pair.errors:
+        if is_error_fixed(error, found, pair.wrong):
+            fixed.append(error)
+        elif corrected and is_error_fixed_in_corrected(
+            error, corrected, pair.wrong
+        ):
+            fixed.append(error)
+
     missed = [e for e in pair.errors if e not in fixed]
     return len(fixed), len(pair.errors), fixed, missed
 
@@ -215,24 +243,104 @@ def existing_rule_ids(data: dict[str, Any]) -> set[str]:
     return {str(r.get("id")) for r in data.get("rules", []) if r.get("id")}
 
 
-def existing_triggers(data: dict[str, Any]) -> set[str]:
-    triggers: set[str] = set()
+def existing_example_keys(data: dict[str, Any]) -> set[tuple[str, str]]:
+    keys: set[tuple[str, str]] = set()
     for rule in data.get("rules", []):
+        for example in rule.get("examples") or []:
+            if not isinstance(example, dict):
+                continue
+            wrong = str(example.get("wrong") or "").strip().lower()
+            correct = str(example.get("correct") or "").strip().lower()
+            if wrong and correct:
+                keys.add((wrong, correct))
+    return keys
+
+
+def _find_rule_for_miss(
+    data: dict[str, Any], wrong: str
+) -> dict[str, Any] | None:
+    wrong_norm = _normalize(wrong)
+    best: dict[str, Any] | None = None
+    best_len = -1
+
+    for rule in data.get("rules", []):
+        if not isinstance(rule, dict):
+            continue
         for trigger in rule.get("triggers") or []:
-            triggers.add(_normalize(str(trigger)))
-    return triggers
+            trigger_norm = _normalize(str(trigger))
+            if trigger_norm and trigger_norm in wrong_norm and len(trigger_norm) > best_len:
+                best = rule
+                best_len = len(trigger_norm)
+        for example in rule.get("examples") or []:
+            if not isinstance(example, dict):
+                continue
+            example_wrong = _normalize(str(example.get("wrong") or ""))
+            if example_wrong and example_wrong in wrong_norm and len(example_wrong) > best_len:
+                best = rule
+                best_len = len(example_wrong)
+
+    return best
 
 
-def add_rules_for_missed(missed: list[dict[str, str]]) -> list[dict[str, Any]]:
+def _strengthen_rule(rule: dict[str, Any], wrong: str, correct: str) -> bool:
+    """Add or reinforce a learned example on an existing rule."""
+    examples = rule.setdefault("examples", [])
+    key = (_normalize(wrong), _normalize(correct))
+    changed = False
+
+    if not any(
+        (_normalize(str(ex.get("wrong") or "")), _normalize(str(ex.get("correct") or "")))
+        == key
+        for ex in examples
+        if isinstance(ex, dict)
+    ):
+        examples.append({"wrong": wrong, "correct": correct})
+        changed = True
+
+    triggers = rule.setdefault("triggers", [])
+    trigger = wrong.lower()
+    if trigger not in {str(t).lower() for t in triggers}:
+        triggers.insert(0, trigger)
+        changed = True
+
+    priority = int(rule.get("training_priority") or 0) + 1
+    rule["training_priority"] = priority
+    changed = True
+    rule["title"] = f"{wrong} → {correct}"
+    rule["rule"] = (
+        f'When the text contains "{wrong}", correct it to "{correct}". '
+        f"Learned from auto_tune (priority {priority})."
+    )
+    words = re.findall(r"[a-zA-Z']+", wrong.lower())
+    rule["keywords"] = list(dict.fromkeys(words))[:10]
+    return changed
+
+
+def add_rules_for_missed(
+    missed: list[dict[str, str]], *, force_update: bool = False
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """
+    Learn from mistakes: add new rules or strengthen existing ones.
+
+    Returns (added_rules, updated_rules).
+    """
     data = load_rules_file()
     ids = existing_rule_ids(data)
-    triggers = existing_triggers(data)
+    known_examples = existing_example_keys(data)
     added: list[dict[str, Any]] = []
+    updated: list[dict[str, Any]] = []
 
     for item in missed:
         wrong, correct = item["wrong"], item["correct"]
-        trigger_key = _normalize(wrong)
-        if trigger_key in triggers:
+        key = (_normalize(wrong), _normalize(correct))
+        if key in known_examples and not force_update:
+            continue
+
+        existing = _find_rule_for_miss(data, wrong)
+        if existing:
+            if _strengthen_rule(existing, wrong, correct):
+                updated.append(existing)
+                known_examples.add(key)
             continue
 
         base_id = f"auto-{_slugify(wrong)}"
@@ -249,27 +357,41 @@ def add_rules_for_missed(missed: list[dict[str, str]]) -> list[dict[str, Any]]:
             "title": f"{wrong} → {correct}",
             "keywords": list(dict.fromkeys(words))[:10],
             "triggers": [wrong.lower()],
+            "training_priority": 1,
             "rule": (
                 f'When the text contains "{wrong}", correct it to "{correct}". '
-                f"This was auto-added by auto_tune.py after a missed grammar check."
+                f"Learned from auto_tune after a missed grammar check."
             ),
             "examples": [{"wrong": wrong, "correct": correct}],
         }
         data.setdefault("rules", []).append(new_rule)
         ids.add(rule_id)
-        triggers.add(trigger_key)
+        known_examples.add(key)
         added.append(new_rule)
 
-    if added:
+    if added or updated:
         save_rules_file(data)
-        try:
-            import rag
+        notify_server_rules_reload()
 
-            rag.reload_rules_cache()
-        except ImportError:
-            pass
+    return added, updated
 
-    return added
+
+def notify_server_rules_reload() -> None:
+    try:
+        response = requests.post(RELOAD_RULES_URL, timeout=10)
+        response.raise_for_status()
+        payload = response.json()
+        print(
+            f"  Server reloaded rules: {payload.get('injectable_rules')} injectable "
+            f"of {payload.get('total_rules')} total",
+            flush=True,
+        )
+    except requests.RequestException as exc:
+        print(
+            f"  Warning: could not reload server rules ({exc}). "
+            "Restart ./start_server.sh if accuracy stalls.",
+            file=sys.stderr,
+        )
 
 
 def check_server() -> None:
@@ -285,10 +407,10 @@ def check_server() -> None:
     if not health.get("grammar_available"):
         print("Warning: grammar_available is false — LanguageTool may be down.", file=sys.stderr)
     if not health.get("ollama_available"):
-        print("Warning: ollama_available is false — Mistral fixes may be missing.", file=sys.stderr)
+        print("Warning: ollama_available is false — qwen2.5:7b fixes may be missing.", file=sys.stderr)
 
 
-def call_grammar(text: str) -> list[dict[str, str]]:
+def call_grammar(text: str) -> tuple[list[dict[str, str]], str]:
     response = requests.post(
         GRAMMAR_URL,
         json={"text": text},
@@ -296,7 +418,9 @@ def call_grammar(text: str) -> list[dict[str, str]]:
     )
     response.raise_for_status()
     payload = response.json()
-    return matches_to_errors(payload.get("matches") or [])
+    matches = matches_to_errors(payload.get("matches") or [])
+    corrected = str(payload.get("corrected") or text)
+    return matches, corrected
 
 
 def _print_error_list(label: str, items: list[dict[str, str]]) -> None:
@@ -313,6 +437,7 @@ def run_loop() -> None:
     pairs = load_test_pairs()
     total_errors = sum(len(p.errors) for p in pairs)
     mastered = load_mastered_labels()
+    recent_accuracies: list[float] = []
 
     print(f"Loaded {len(pairs)} pairs from {PAIRS_PATH}")
     print(f"Ground truth: {total_errors} expected corrections")
@@ -350,12 +475,14 @@ def run_loop() -> None:
 
             active_count += 1
             try:
-                found = call_grammar(pair.wrong)
+                found, corrected = call_grammar(pair.wrong)
             except requests.RequestException as exc:
                 print(f"Grammar request failed on {pair.label}: {exc}", file=sys.stderr)
                 sys.exit(1)
 
-            fixed_count, pair_total, fixed_list, missed_list = score_pair(pair, found)
+            fixed_count, pair_total, fixed_list, missed_list = score_pair(
+                pair, found, corrected
+            )
             fixed_total += fixed_count
             pair_accuracy = fixed_count / pair_total if pair_total else 0.0
 
@@ -369,6 +496,9 @@ def run_loop() -> None:
                     print(f"      - \"{item['wrong']}\" → \"{item['correct']}\"")
             else:
                 print("    API reported: (none)")
+            if corrected and corrected.strip() != pair.wrong.strip():
+                preview = corrected[:120] + ("…" if len(corrected) > 120 else "")
+                print(f"    Corrected: {preview!r}")
 
             if pair_total > 0 and fixed_count == pair_total:
                 newly_mastered.append(pair.label)
@@ -381,6 +511,10 @@ def run_loop() -> None:
 
         elapsed = time.time() - t0
         accuracy = fixed_total / total_errors if total_errors else 0.0
+        recent_accuracies.append(accuracy)
+        if len(recent_accuracies) > STAGNATION_ATTEMPTS:
+            recent_accuracies.pop(0)
+
         print(
             f"\nOverall: Fixed {fixed_total}/{total_errors} errors "
             f"({accuracy * 100:.1f}% accuracy, {elapsed:.1f}s, "
@@ -403,13 +537,37 @@ def run_loop() -> None:
             print("\nAll pairs mastered but overall accuracy is below target. Check scoring.")
             return
 
-        added = add_rules_for_missed(all_missed)
+        stagnated = (
+            len(recent_accuracies) >= STAGNATION_ATTEMPTS
+            and max(recent_accuracies) - min(recent_accuracies) < 0.005
+        )
+        force_update = stagnated and bool(all_missed)
+        if stagnated:
+            print(
+                f"  Learning plateau detected ({STAGNATION_ATTEMPTS} attempts ~"
+                f"{accuracy * 100:.1f}%) — reinforcing missed patterns",
+                flush=True,
+            )
+
+        added, strengthened = add_rules_for_missed(
+            all_missed, force_update=force_update
+        )
         if added:
             print(f"  New rules added ({len(added)}):")
             for rule in added:
                 print(f"    - [{rule['id']}] triggers={rule['triggers']}")
-        else:
-            print("  New rules added: (none — triggers already covered)")
+        if strengthened:
+            print(f"  Rules strengthened ({len(strengthened)}):")
+            for rule in strengthened:
+                print(
+                    f"    - [{rule['id']}] priority={rule.get('training_priority')} "
+                    f"triggers={rule['triggers']}"
+                )
+        if not added and not strengthened:
+            print(
+                "  Learning: no new patterns (all misses already in grammar_rules.json). "
+                "Remaining errors may need better Agent 2 rewrites or scoring tweaks.",
+            )
         print()
 
 
