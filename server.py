@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 import warnings
 from contextlib import asynccontextmanager
 import urllib.error
@@ -262,9 +263,31 @@ def _build_deep_fix_prompt(sentence: str, hints: list[str] | None = None) -> str
         )
 
     return (
-        "Rewrite this sentence with perfect grammar.\n"
+        "Fix grammar errors. Rules:\n"
+        "- Irregular verbs: buy→bought, go→went, see→saw, run→ran\n"
+        '- "i" alone always→"I"\n'
+        '- "me and him"→"He and I", "me and her"→"She and I" as ONE phrase\n'
+        '- Past tense: "we was"→"we were", "he were"→"he was", "they was"→"they were"\n'
+        '- "have seen yesterday"→"saw yesterday" — never use perfect tense with past time words (yesterday, last week, ago)\n'
+        '- "don\'t have no"→"don\'t have any", never drop the verb\n'
+        '- "their" before a noun is ALWAYS correct, never change to "they\'re" or "there"\n'
+        '- "they\'re" means "they are" — only use before a verb\n'
+        "- NEVER change a word that was already correctly fixed\n"
+        "- NEVER change prepositions (about, with, while, for, of)\n"
+        "- No space before punctuation, never split sentences, never add commas unnecessarily\n"
+        "- Return ONLY the corrected sentence, nothing else\n"
+        "\n"
+        "Examples:\n"
+        "me and him was going → He and I were going\n"
+        "i seen him yesterday → I saw him yesterday\n"
+        "we was talking → we were talking\n"
+        "she have went yesterday → she went yesterday\n"
+        "i don't have no money → I don't have any money\n"
+        "their new house → their new house (no change, already correct)\n"
+        "they're going → they're going (no change, already correct)\n"
+        "\n"
         f"{hints_block}"
-        "Return only the corrected sentence, nothing else.\n\n"
+        "Correct this:\n\n"
         f"{sentence}"
     )
 
@@ -283,6 +306,31 @@ def _tokenize_for_diff(text: str) -> list[str]:
     return _WORD_TOKEN_RE.findall(text)
 
 
+def _pairs_from_replace_slice(
+    src_slice: list[str], ref_slice: list[str]
+) -> list[tuple[str, str]]:
+    """Split a replace opcode into one (wrong, correct) pair per word change."""
+    pairs: list[tuple[str, str]] = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+        None, src_slice, ref_slice
+    ).get_opcodes():
+        if tag != "replace":
+            continue
+        sub_src = src_slice[i1:i2]
+        sub_ref = ref_slice[j1:j2]
+        if len(sub_src) == 1 and len(sub_ref) == 1:
+            wrong, correct = sub_src[0], sub_ref[0]
+            if wrong and correct and wrong.lower() != correct.lower():
+                pairs.append((wrong, correct))
+        elif len(sub_src) == len(sub_ref):
+            for wrong, correct in zip(sub_src, sub_ref):
+                if wrong and correct and wrong.lower() != correct.lower():
+                    pairs.append((wrong, correct))
+        else:
+            pairs.extend(_pairs_from_replace_slice(sub_src, sub_ref))
+    return pairs
+
+
 def _extract_replace_pairs(source: str, reference: str) -> list[tuple[str, str]]:
     source_tokens = _tokenize_for_diff(source)
     reference_tokens = _tokenize_for_diff(reference)
@@ -293,10 +341,9 @@ def _extract_replace_pairs(source: str, reference: str) -> list[tuple[str, str]]
     ).get_opcodes():
         if tag != "replace":
             continue
-        wrong = " ".join(source_tokens[i1:i2]).strip()
-        correct = " ".join(reference_tokens[j1:j2]).strip()
-        if wrong and correct and wrong.lower() != correct.lower():
-            pairs.append((wrong, correct))
+        pairs.extend(
+            _pairs_from_replace_slice(source_tokens[i1:i2], reference_tokens[j1:j2])
+        )
 
     return pairs
 
@@ -1038,13 +1085,19 @@ def check_grammar(text: str) -> dict[str, Any]:
             continue
 
         deep_fixes[index] = corrected
-        rewrite_matches = _rewrite_to_matches(
-            sentence,
-            corrected,
-            base_offset=start,
-            existing=agent1_matches + agent2_matches,
-        )
-        agent2_matches = _merge_grammar_matches(agent2_matches, rewrite_matches)
+        try:
+            rewrite_matches = _rewrite_to_matches(
+                sentence,
+                corrected,
+                base_offset=start,
+                existing=agent1_matches + agent2_matches,
+            )
+            agent2_matches = _merge_grammar_matches(agent2_matches, rewrite_matches)
+        except Exception:
+            traceback.print_exc()
+            agent1_matches.extend(
+                _matches_in_span(lt_high, sentences[index][0], sentences[index][1])
+            )
 
     formatted_matches = _merge_grammar_matches(agent1_matches, agent2_matches)
     corrected = _build_corrected_two_agent(
@@ -1061,6 +1114,9 @@ def check_grammar(text: str) -> dict[str, Any]:
         )
     elif not deep_sentence_indexes:
         print("=== AGENT 1 ONLY ===", flush=True)
+
+    print("=== GRAMMAR MATCHES ===", flush=True)
+    print(json.dumps(formatted_matches, ensure_ascii=False), flush=True)
 
     return {
         "text": text,

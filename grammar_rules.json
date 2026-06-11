@@ -944,6 +944,10 @@
         {
           "wrong": "don't have no",
           "correct": "don't have any"
+        },
+        {
+          "wrong": "doesn't have no",
+          "correct": "doesn't have any"
         }
       ]
     },
@@ -2519,7 +2523,7 @@
     {
       "id": "auto-dont-do-nothing",
       "category": "auto_tuned",
-      "title": "dont do nothing → does anything",
+      "title": "dont do nothing → don't do anything",
       "keywords": [
         "dont",
         "do",
@@ -2528,11 +2532,11 @@
       "triggers": [
         "dont do nothing"
       ],
-      "rule": "When the text contains \"dont do nothing\", correct it to \"does anything\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "rule": "When the text contains \"dont do nothing\", correct it to \"don't do anything\". Never drop the verb; only replace \"nothing\" with \"anything\".",
       "examples": [
         {
           "wrong": "dont do nothing",
-          "correct": "does anything"
+          "correct": "don't do anything"
         }
       ]
     },
@@ -3090,25 +3094,6 @@
         }
       ],
       "frequency": 65
-    },
-    {
-      "id": "gc-but-but",
-      "category": "grammar-correction",
-      "title": "but → . But",
-      "keywords": [
-        "but"
-      ],
-      "triggers": [
-        "but"
-      ],
-      "rule": "Common grammar-correction pattern (seen 59x in agentlans/grammar-correction): replace \"but\" with \". But\".",
-      "examples": [
-        {
-          "wrong": "but",
-          "correct": ". But"
-        }
-      ],
-      "frequency": 59
     },
     {
       "id": "gc-another-other",
@@ -6780,24 +6765,6 @@
       ]
     },
     {
-      "id": "auto-him",
-      "category": "auto_tuned",
-      "title": "him → He",
-      "keywords": [
-        "him"
-      ],
-      "triggers": [
-        "him"
-      ],
-      "rule": "When the text contains \"him\", correct it to \"He\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "him",
-          "correct": "He"
-        }
-      ]
-    },
-    {
       "id": "auto-it",
       "category": "auto_tuned",
       "title": "it → it.",
@@ -6818,18 +6785,20 @@
     {
       "id": "auto-no",
       "category": "auto_tuned",
-      "title": "no → any",
+      "title": "don't have no → don't have any",
       "keywords": [
+        "don't",
+        "have",
         "no"
       ],
       "triggers": [
-        "no"
+        "don't have no"
       ],
-      "rule": "When the text contains \"no\", correct it to \"any\". This was auto-added by auto_tune.py after a missed grammar check.",
+      "rule": "When the text contains \"don't have no\", correct it to \"don't have any\". Never drop the verb; only replace \"no\" with \"any\".",
       "examples": [
         {
-          "wrong": "no",
-          "correct": "any"
+          "wrong": "don't have no",
+          "correct": "don't have any"
         }
       ]
     },
@@ -6848,24 +6817,6 @@
         {
           "wrong": "since",
           "correct": "for"
-        }
-      ]
-    },
-    {
-      "id": "auto-me",
-      "category": "auto_tuned",
-      "title": "Me → My friend",
-      "keywords": [
-        "me"
-      ],
-      "triggers": [
-        "me"
-      ],
-      "rule": "When the text contains \"Me\", correct it to \"My friend\". This was auto-added by auto_tune.py after a missed grammar check.",
-      "examples": [
-        {
-          "wrong": "Me",
-          "correct": "My friend"
         }
       ]
     },
@@ -7132,6 +7083,28 @@
           "wrong": "drived",
           "correct": "drive"
         }
+      ]
+    },
+    {
+      "id": "homophone-there-their",
+      "triggers": ["there"],
+      "category": "curated",
+      "examples": [
+        {"wrong": "there house", "correct": "their house"},
+        {"wrong": "there car", "correct": "their car"},
+        {"wrong": "there money", "correct": "their money"},
+        {"wrong": "there new", "correct": "their new"}
+      ]
+    },
+    {
+      "id": "homophone-its-it-is",
+      "triggers": ["its"],
+      "category": "curated",
+      "examples": [
+        {"wrong": "its very", "correct": "it's very"},
+        {"wrong": "its nice", "correct": "it's nice"},
+        {"wrong": "its good", "correct": "it's good"},
+        {"wrong": "its a", "correct": "it's a"}
       ]
     }
   ]

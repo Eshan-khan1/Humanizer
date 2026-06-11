@@ -1,318 +1,5 @@
 [
   {
-    "wrong": "he dont.",
-    "correct": "He doesn't.",
-    "errors": []
-  },
-  {
-    "wrong": "its broke.",
-    "correct": "It's broken.",
-    "errors": []
-  },
-  {
-    "wrong": "they was late",
-    "correct": "They were late.",
-    "errors": []
-  },
-  {
-    "wrong": "me seen it",
-    "correct": "I saw it.",
-    "errors": []
-  },
-  {
-    "wrong": "she go everyday",
-    "correct": "She goes every day.",
-    "errors": []
-  },
-  {
-    "wrong": "him and me was there",
-    "correct": "He and I were there.",
-    "errors": []
-  },
-  {
-    "wrong": "the childrens runned fastly",
-    "correct": "The children ran fast.",
-    "errors": []
-  },
-  {
-    "wrong": "we dont got no money",
-    "correct": "We don't have any money.",
-    "errors": []
-  },
-  {
-    "wrong": "her dont like it",
-    "correct": "She doesn't like it.",
-    "errors": []
-  },
-  {
-    "wrong": "I goed to the store yesterday and buyed a new clothe but the cashier dont gave me the right change and me was very angrily about it.",
-    "correct": "I went to the store yesterday and bought new clothes but the cashier didn't give me the right change and I was very angry about it.",
-    "errors": []
-  },
-  {
-    "wrong": "Him and her was suppose to finish the homeworks before the deadlines but they didnt showed up and the teacher dont approved their late submissions.",
-    "correct": "He and she were supposed to finish the homework before the deadline but they didn't show up and the teacher didn't approve their late submissions.",
-    "errors": []
-  },
-  {
-    "wrong": "the informations was incorrect,the datas was missing and the reports dont make no sense to nobody who reads it.",
-    "correct": "The information was incorrect, the data was missing and the reports don't make any sense to anyone who reads them.",
-    "errors": []
-  },
-  {
-    "wrong": "She have been working here since five years,earns less then the new peoples,and still dont get no raise which its not fare.",
-    "correct": "She has been working here for five years, earns less than the new people, and still doesn't get a raise which is not fair.",
-    "errors": []
-  },
-  {
-    "wrong": "The scientifics has founded new evidences that support the theories about how the planets was formed billions years ago.",
-    "correct": "The scientists have found new evidence that supports the theory about how the planets were formed billions of years ago.",
-    "errors": []
-  },
-  {
-    "wrong": "Me and my friend goed to the cinema,the movie were boring so we leaved early and went to ate at a resturant but it were close.",
-    "correct": "My friend and I went to the cinema, the movie was boring so we left early and went to eat at a restaurant but it was closed.",
-    "errors": []
-  },
-  {
-    "wrong": "Their going to the airport at six in morning,me and my sister is going to drived them because they dont have no car and the traffics is to bad.",
-    "correct": "They're going to the airport at six in the morning, my sister and I are going to drive them because they don't have a car and the traffic is too bad.",
-    "errors": []
-  },
-  {
-    "wrong": "Each student have to submitted their assignments before the deadlines,if they dont the teacher will took away their marks and they wont passed the class.",
-    "correct": "Each student has to submit their assignment before the deadline, if they don't the teacher will take away their marks and they won't pass the class.",
-    "errors": []
-  },
-  {
-    "wrong": "The boss were not happy because him and his team didnt showed up on time,telled them they should of called ahead and dont let it happen again.",
-    "correct": "The boss was not happy because he and his team didn't show up on time, told them they should have called ahead and not to let it happen again.",
-    "errors": []
-  },
-  {
-    "wrong": "irregardless of the heavy rain,we catched a cold because of no umbrella,the traffics was terrible and we was suppose to went earlier but him and me overslept.",
-    "correct": "Regardless of the heavy rain, we caught a cold because we had no umbrella, the traffic was terrible and we were supposed to go earlier but he and I overslept.",
-    "errors": []
-  },
-  {
-    "wrong": "The   dog   barks loud .",
-    "correct": "The dog barks loudly.",
-    "errors": []
-  },
-  {
-    "wrong": "she   dont   like   noises .",
-    "correct": "She doesn't like noise.",
-    "errors": []
-  },
-  {
-    "wrong": "him  was  late  to  work  again",
-    "correct": "He was late to work again.",
-    "errors": []
-  },
-  {
-    "wrong": "we  cant  finish  it  in  time",
-    "correct": "We can't finish it in time.",
-    "errors": []
-  },
-  {
-    "wrong": "the  childrens  was  playing  to  loud  outside  and  the  neighbor  dont  approved  it",
-    "correct": "The children were playing too loudly outside and the neighbor didn't approve of it.",
-    "errors": []
-  },
-  {
-    "wrong": "Me  and  my  sister  is  going  to  drived  them  because  they  dont  have  no  car  and  its  to  far  to  walked.",
-    "correct": "My sister and I are going to drive them because they don't have a car and it's too far to walk.",
-    "errors": []
-  },
-  {
-    "wrong": "The  scientifics  has  founded  evidences  that  the  datas  was  incorrect  and  the  theories  dont  support  nothing.",
-    "correct": "The scientists have found evidence that the data was incorrect and the theories don't support anything.",
-    "errors": []
-  },
-  {
-    "wrong": "himandme was late,theboss warentappy,hetelled us weshouldof called",
-    "correct": "He and I were late, the boss wasn't happy, he told us we should have called.",
-    "errors": []
-  },
-  {
-    "wrong": "shedontlike noisesand itsnot fare toher",
-    "correct": "She doesn't like noise and it's not fair to her.",
-    "errors": []
-  },
-  {
-    "wrong": "thechildrens runnedfastly inthe park andcatched a cold",
-    "correct": "The children ran fast in the park and caught a cold.",
-    "errors": []
-  },
-  {
-    "wrong": "wedont got nomoney sincethe deadlines past",
-    "correct": "We don't have any money since the deadline passed.",
-    "errors": []
-  },
-  {
-    "wrong": "hergoto themarket everyday andbuyed toomany things",
-    "correct": "She goes to the market every day and buys too many things.",
-    "errors": []
-  },
-  {
-    "wrong": "itsnotfare thenew employees earns more then her",
-    "correct": "It's not fair the new employees earn more than her.",
-    "errors": []
-  },
-  {
-    "wrong": "Him dont know how to speaks english very good,he need to practiced more if he want to improved his skills and his teacher dont helped him neither.",
-    "correct": "He doesn't know how to speak English very well, he needs to practice more if he wants to improve his skills and his teacher doesn't help him either.",
-    "errors": []
-  },
-  {
-    "wrong": "The  news  are  bad  today ,there  was  many  accidents  on  the  highway  and  alot  of  peoples  was  injuried  badly  because  of  the  traffics.",
-    "correct": "The news is bad today, there were many accidents on the highway and a lot of people were injured badly because of the traffic.",
-    "errors": []
-  },
-  {
-    "wrong": "Irregardless of the rain it raining very heavy today,we catched a cold because of no umbrella and we was suppose to went to store to buy a medicine.",
-    "correct": "Regardless of the rain, it was raining very heavily today, we caught a cold because we had no umbrella and we were supposed to go to the store to buy medicine.",
-    "errors": []
-  },
-  {
-    "wrong": "her  dont  like  when  peoples  talks  to  loud  in  the  libary ,the  informations  was  incorrect  and  the  datas  was  missing  from  the  reports .",
-    "correct": "She doesn't like when people talk too loudly in the library, the information was incorrect and the data was missing from the reports.",
-    "errors": []
-  },
-  {
-    "wrong": "we was wondering if yous could helped us with the homeworks,the teachers has gave us to much works and we cant finished it in time because of the deadlines.",
-    "correct": "We were wondering if you could help us with the homework, the teachers have given us too much work and we can't finish it in time because of the deadline.",
-    "errors": []
-  },
-  {
-    "wrong": "the datas show that less people is reading books then before,this are a big problem for the publishing industry and they needs to find a solution irregardless of cost.",
-    "correct": "The data shows that fewer people are reading books than before, this is a big problem for the publishing industry and they need to find a solution regardless of cost.",
-    "errors": []
-  },
-  {
-    "wrong": "its fine.",
-    "correct": "It's fine.",
-    "errors": []
-  },
-  {
-    "wrong": "he dont care.",
-    "correct": "He doesn't care.",
-    "errors": []
-  },
-  {
-    "wrong": "her went home.",
-    "correct": "She went home.",
-    "errors": []
-  },
-  {
-    "wrong": "them was angry.",
-    "correct": "They were angry.",
-    "errors": []
-  },
-  {
-    "wrong": "me and him goed.",
-    "correct": "He and I went.",
-    "errors": []
-  },
-  {
-    "wrong": "she dont know nothing.",
-    "correct": "She doesn't know anything.",
-    "errors": []
-  },
-  {
-    "wrong": "its not fare at all.",
-    "correct": "It's not fair at all.",
-    "errors": []
-  },
-  {
-    "wrong": "him buyed a clothe.",
-    "correct": "He bought clothes.",
-    "errors": []
-  },
-  {
-    "wrong": "they cant fix it theirselves.",
-    "correct": "They can't fix it themselves.",
-    "errors": []
-  },
-  {
-    "wrong": "She have been working here since five years and still dont get a raise,its not fare that the new employees earns more then her and nobody dont do nothing about it.",
-    "correct": "She has been working here for five years and still doesn't get a raise, it's not fair that the new employees earn more than her and nobody does anything about it.",
-    "errors": []
-  },
-  {
-    "wrong": "Him and me was late to the meeting because of the traffics,the boss were not happy and telled us that we should of called ahead and not let it happened again.",
-    "correct": "He and I were late to the meeting because of the traffic, the boss was not happy and told us that we should have called ahead and not let it happen again.",
-    "errors": []
-  },
-  {
-    "wrong": "their going to the airport tomorrow at six in the morning,me and my sister is going to drived them because they dont have no car and the bus dont run that early.",
-    "correct": "They're going to the airport tomorrow at six in the morning, my sister and I are going to drive them because they don't have a car and the bus doesn't run that early.",
-    "errors": []
-  },
-  {
-    "wrong": "The  scientifics  has  founded  new  evidences  that  support  the  theories,each  student  have  to  submitted  their  assignments  before  the  deadlines  or  they  will  loosed  their  marks.",
-    "correct": "The scientists have found new evidence that supports the theory, each student has to submit their assignment before the deadline or they will lose their marks.",
-    "errors": []
-  },
-  {
-    "wrong": "him dont know how to speaks english very good,he need to practiced more if he want to improved his skills and the teacher dont helped him neither since a long time.",
-    "correct": "He doesn't know how to speak English very well, he needs to practice more if he wants to improve his skills and the teacher hasn't helped him either for a long time.",
-    "errors": []
-  },
-  {
-    "wrong": "Me and my friend goed to the cinema but the movie were boring,we leaved early and went to ate dinner at a resturant nearby but it were close so we went to another one.",
-    "correct": "My friend and I went to the cinema but the movie was boring, we left early and went to eat dinner at a restaurant nearby but it was closed so we went to another one.",
-    "errors": []
-  },
-  {
-    "wrong": "the datas show that less people is reading books then before and this are a big problem for the publishing industry,they needs to find a solution irregardless of the cost and the time.",
-    "correct": "The data shows that fewer people are reading books than before and this is a big problem for the publishing industry, they need to find a solution regardless of the cost and the time.",
-    "errors": []
-  },
-  {
-    "wrong": "each student have to submitted their assignments before the deadlines,if they dont the teacher will took away their marks,they wont passed the class and they will have to repeated the year.",
-    "correct": "Each student has to submit their assignment before the deadline, if they don't the teacher will take away their marks, they won't pass the class and they will have to repeat the year.",
-    "errors": []
-  },
-  {
-    "wrong": "The boss were not happy because him and his team didnt showed up on time,telled them they should of called ahead,dont let it happen again and they need to came early tomorrow.",
-    "correct": "The boss was not happy because he and his team didn't show up on time, told them they should have called ahead, not to let it happen again and that they need to come in early tomorrow.",
-    "errors": []
-  },
-  {
-    "wrong": "himandme was late,theboss warentappy,hetelled us weshouldof called,wedont got noexcuse,itsnotfare topunish us when the traffics was terrible irregardless of the weather.",
-    "correct": "He and I were late, the boss wasn't happy, he told us we should have called, we don't have any excuse, it's not fair to punish us when the traffic was terrible regardless of the weather.",
-    "errors": []
-  },
-  {
-    "wrong": "me and him was going to the store",
-    "correct": "He and I were going to the store",
-    "errors": [
-      {
-        "wrong": "me and him",
-        "correct": "He and I"
-      },
-      {
-        "wrong": "was",
-        "correct": "were"
-      }
-    ]
-  },
-  {
-    "wrong": "i don't have no money",
-    "correct": "I don't have any money",
-    "errors": [
-      {
-        "wrong": "i",
-        "correct": "I"
-      },
-      {
-        "wrong": "don't have no",
-        "correct": "don't have any"
-      }
-    ]
-  },
-  {
     "wrong": "So I think we can not live if old people could not find siences and tecnologies and they did not developped .",
     "correct": "So I think we would not be alive if our ancestors did not develop sciences and technologies .",
     "errors": []
@@ -353,6 +40,11 @@
     "errors": []
   },
   {
+    "wrong": "It figures Diana Krall wearing a Rolex watch and has a text that suggests that if the reader wants to belong to the restricted club , not necessarily of Rolex watch wearers , but of highly talented , sophisticated and competent artists , he or she should also have a Rolex .",
+    "correct": "It features Diana Krall wearing a Rolex watch and the text suggests that if the reader wants to belong to a restricted club -- not necessarily of Rolex watch-wearers -- but of highly talented , sophisticated , competent artists , then he or she should also have a Rolex .",
+    "errors": []
+  },
+  {
     "wrong": "There are several reason .",
     "correct": "There are several reasons .",
     "errors": []
@@ -365,6 +57,11 @@
   {
     "wrong": "Since most urban areas are occupied with cars , they are all facing up with an irresistible problem of air and noise pollution .",
     "correct": "Since most urban areas are occupied with cars , they are facing a problem of air and noise pollution .",
+    "errors": []
+  },
+  {
+    "wrong": "It is true that consumers preffer to buy a product that has a lower price , but when international companies that has already the certification begins to send its market , people will preffer to consume theirs because the difference between prices is probbably not going to affect them to much .",
+    "correct": "While it is true that consumers prefer to buy products with lower prices , when international companies that are already certified begin to send their products to market , people will prefer to consume those goods because the difference in price will probably not affect them too much .",
     "errors": []
   },
   {
@@ -403,6 +100,11 @@
     "errors": []
   },
   {
+    "wrong": "If in this society who will not to do study they never concept there opportunity or ca n't understand any ideas so most of the important that in this situation and I also very interestion and also prefer that for the study material .",
+    "correct": "In this society , those who will not study will never grasp the concepts or understand any ideas , which is the most important point ; thus I am also very interested and prefer to have the study materials .",
+    "errors": []
+  },
+  {
     "wrong": "We have to know this problem it 's serious but almost people doens't know about this .",
     "correct": "This is a serious problem , but most people are unaware of it .",
     "errors": []
@@ -410,6 +112,11 @@
   {
     "wrong": "Students can focus on only a few subjects they are intwerested in and they will become an experts in those areas .",
     "correct": "Students can focus on only a few subjects they are interested in and they will become experts in those areas .",
+    "errors": []
+  },
+  {
+    "wrong": "But in other waythismakes other way country need to pay extra money to make , repair the roads What they did is reduce the amount of gas consumers , high the gas tax , and low the income tax because they thought , only rise the gas tax is unfair .",
+    "correct": "But in another way , this means the country needs to pay extra money to build and repair the roads ; what they did is reduce the amount of gas consumed , raise the gas tax , and lower the income tax because they thought only raising the gas tax is unfair .",
     "errors": []
   },
   {
@@ -555,6 +262,11 @@
   {
     "wrong": "If we conseder an idea as a totally autonomous concept within the individual process of defining reality , I will state that ideas are useless , not being based on experience .",
     "correct": "If we consider an idea as a totally autonomous concept within the individual process of defining reality , I think the ideas are useless , and not based on experience .",
+    "errors": []
+  },
+  {
+    "wrong": "He/she wants to know everything about the universe , wants to know everything about the God , the death etc. these some concepts that everyone can encourage a lot of ideas but the facts are not found yet .",
+    "correct": "He or she wants to know everything about the universe , God , and death , these are some concepts that everyone can encourage ideas , but no facts have been found yet .",
     "errors": []
   },
   {
@@ -790,6 +502,11 @@
   {
     "wrong": "we grip on many subject we get ample exopsure greatly and easily .",
     "correct": "We read on many subjects so we get ample exposure .",
+    "errors": []
+  },
+  {
+    "wrong": "But on the other hand ther is also people that is often convinced by the interesting advertisements they see everywhere , becuase of this many times they have to face problems with the product that they bought and many times ther is no way to give back that product .",
+    "correct": "But on the other hand there are also people that are often convinced by the interesting advertisements they see everywhere , because of this many times they have to face problems with the product that they bought and many times there is no way to give back that product .",
     "errors": []
   },
   {
@@ -1118,6 +835,11 @@
     "errors": []
   },
   {
+    "wrong": "I think it is very hard to distribute the point and to make every one to understand , because when few poeple started to do so , they would think it is not fair at all , they are the few who are suffering , other people cannot get it and continue doing the same thing , it just make those people thinks stupid .",
+    "correct": "I think it is very hard to describe the point and to make everyone understand , because when a few people start to do so , they will think it is not fair at all , that they are the few who are suffering , and other people will not get it and will continue doing the same thing ; it just makes those people think stupidly .",
+    "errors": []
+  },
+  {
     "wrong": "Maybe at the beginning , but time after timer other animals in the inviroment will choose them as their new food .",
     "correct": "Maybe at the beginning , but time after time other animals in the environment will choose them as their new food .",
     "errors": []
@@ -1288,6 +1010,11 @@
     "errors": []
   },
   {
+    "wrong": "While the child spends about five hours or less with his parents , and whenever that child wants to go out he will most probably go out with his friends which are his classmates , so most of his school life will be spent with his classmates , and this will have a great affect on his personality which will determine the way the child will react towards his school and will determine how he will use his life .",
+    "correct": "While the child spends about five hours or less with his parents , and whenever that child wants to go out he will probably go out with his friends which are classmates , so most of his school life will be spent with his classmates and this will have a great impact on his personality which will determine the way the child will react towards his school and how he will live out his life .",
+    "errors": []
+  },
+  {
     "wrong": "someone likes music and someone like science , and some one is talent on ballet while someone is not .",
     "correct": "Someone likes music , and someone likes science , and someone is talented in ballet while others are not .",
     "errors": []
@@ -1443,6 +1170,11 @@
     "errors": []
   },
   {
+    "wrong": "Even though the place I went was Kyoto which is most beautiful city in Japan and they have most valuable and interesting temples , nothing really remein in my mind after the trip because I was just part of the group and following a tour guide without thinking .",
+    "correct": "Even though the place I went was Kyoto , which is the most beautiful city in Japan , they have interesting temples , nothing really remains in my mind after the trip because I was just part of a group following a tour guide without thinking .",
+    "errors": []
+  },
+  {
     "wrong": "Board knowledge on may subjects is not possiable to acqurie .",
     "correct": "Broad knowledge on may subjects is not possible to acquire .",
     "errors": []
@@ -1513,6 +1245,11 @@
     "errors": []
   },
   {
+    "wrong": "Education is the basis of opportunities and the amount of subjects in which a person has knowledge conditions his or her opportunities in very important aspects of life like work and even helping others .",
+    "correct": "Education is the basis of opportunities , and the amount of subjects in which a person has knowledge , provides more opportunities in all aspects of life like work and helping others .",
+    "errors": []
+  },
+  {
     "wrong": "It usually makes them to be more postive to do it .",
     "correct": "It usually makes them more positive to do it .",
     "errors": []
@@ -1535,6 +1272,11 @@
   {
     "wrong": "Insufficient closet space inefficient heating and decaying plumbing makes life harder to live in old houses .",
     "correct": "Insufficient closet space , inefficient heating , and decaying plumbing makes life harder to live in old houses .",
+    "errors": []
+  },
+  {
+    "wrong": "The advertisemnet says that the car has space for 1 0 people when thhe truth is that the car is just 4 people space , another example is an advertisement of a skin soap , they said that this soap is the best because they say your skin wil be as soft as a fifteen years old princess , or that your skin will be as soft as the Jennife Lopez 's skin .",
+    "correct": "The advertisement says that the car has space for ten people , when the truth is that the car just has space for four people ; another example is a skin soap advertisement that says the soap is the best because it will make your skin as soft as a 1 5 year old princess or as soft as the skin of Jennifer Lopez .",
     "errors": []
   },
   {
@@ -1613,6 +1355,11 @@
     "errors": []
   },
   {
+    "wrong": "Extending the same example as stated above i can tell you during the most worst period of Amitabh Bacchan he was offered to enter into politics to take advantage of his publicity that he had got and he will be paid for it heavily so he was very much in need of financial support Mr. Bacchan had rejected this offer only because he knew that how polititians play with the imotions of common people .",
+    "correct": "Extending the same example as stated above , I can tell you that during the worst period of Amitabh Bacchan , he was offered a job in politics to take advantage of his publicity and would be paid heavily for it , he was very much in need of financial support , but Mr. Bacchan rejected this offer because he knew how politicians play with the emotions of common people .",
+    "errors": []
+  },
+  {
     "wrong": "and when we want got those energy , we need desport the ground and soil or oceans , because those energy were found in those palce .",
     "correct": "And when we want those energy sources , we need to extract them from the ground and soil or oceans , because those energy types are found in those places .",
     "errors": []
@@ -1635,6 +1382,11 @@
   {
     "wrong": "It means , to understand an war development , you should understand the ideas and cultural moviments that resulted in a particular period , and helped for the occuring of that war , for exemple .",
     "correct": "It means , to understand war development , you should understand the ideas and cultural movements that resulted in a particular period , and helped for the occurring of that war , for example .",
+    "errors": []
+  },
+  {
+    "wrong": "alternative Reading passege emphesize about alternative to priscibing burning by giving some turm like \" disking \" in this fire clear out dry and dead shrub and stimulate the growth of new plant life .",
+    "correct": "A different passage emphasizes an alternative to prescribed burning that uses the term \" disking , \" a method that uses fire to clear out dry and dead shrubs , thus stimulating the growth of new plant life .",
     "errors": []
   },
   {
@@ -1753,6 +1505,11 @@
     "errors": []
   },
   {
+    "wrong": "If scientist will do something different like if he/she can modify the form of carbohydarte like gelatinized and nongelatinized carbohydrate then incorporated in fish feed then fish may be utilize more than previous then if fish utilize more then chances of growth will be more then it may be appreciated by everyone .",
+    "correct": "If scientist will do something different like modifying the form of carbohydrate ( gelatinized and non-gelatinized ) , and then incorporating that into fish feed then fish may have a greater chance of growth and then be utilized more efficiently much to the appreciation of everyone .",
+    "errors": []
+  },
+  {
     "wrong": "While turned out reaults from both experiences are same , the method and the time that brings a result is not same .",
     "correct": "While the results from both experiences are same , the method and the time that brings a result is not the same .",
     "errors": []
@@ -1833,6 +1590,11 @@
     "errors": []
   },
   {
+    "wrong": "Every body no that the trueth today is a compitition maket in each and every field we are faceing compitition , for example if you are choosing you carree in software field than you have to master on that subject , than you can easily get a job .",
+    "correct": "Everybody knows that today , the truth of competitive markets in each and every field , we 're facing plenty of competition , and if you are choosing a career in the field of software , for example , you have to master the subject and then you can easily get a job .",
+    "errors": []
+  },
+  {
     "wrong": "Because you share only a single interest , thus making you a loner .",
     "correct": "Because you share only a single interest , it makes you a loner .",
     "errors": []
@@ -1855,6 +1617,11 @@
   {
     "wrong": "but if they needs money for these perpose they can do a extra hardwork .",
     "correct": "But if they need money for these purposes , they can work extra hard .",
+    "errors": []
+  },
+  {
+    "wrong": "Learn",
+    "correct": "Learn .",
     "errors": []
   },
   {
@@ -1910,6 +1677,11 @@
   {
     "wrong": "I am sure that most of the kid knew that this was not the way their parents teached them , because they do not know why was it wrong or why should they do the ways their parents told .",
     "correct": "I am sure that most of the kids knew that this was not the way their parents taught them , because they do not know why it was wrong or why they should do things the ways their parents told them to .",
+    "errors": []
+  },
+  {
+    "wrong": "we can see young people working over countries or working for others with tools like telephones or internet even if they look they spend their time just for themselves by being whole day in their room .",
+    "correct": "We can see young people working with other countries and other people with tools like the telephone or internet , even if it looks like they are spending time just for themselves by spending the whole day in their room .",
     "errors": []
   },
   {
@@ -2238,6 +2010,11 @@
     "errors": []
   },
   {
+    "wrong": "When you understand the concepts and ideas is up to you to prove them , to see if they are really what you have been told , i think this is the main reason why students prefere facts rather than just understanding ideas and concepts .",
+    "correct": "When you understand the concepts and ideas , it is up to you to prove them , to see if they are really what you have been told , and I think this is the main reason why students prefer facts rather than just understanding ideas and concepts .",
+    "errors": []
+  },
+  {
     "wrong": "for example , if you are attempting to study arts and scienses and to get equalifications in both , you are extraordinary creation .",
     "correct": "For example , if you are attempting to study arts and sciences , and are trying to get qualifications in both , you are an extraordinary creation .",
     "errors": []
@@ -2285,6 +2062,11 @@
   {
     "wrong": "Not that bungee jumping is something that every young person wants to do but even if he wanted to do it he probably would n't be able to .",
     "correct": "Not that bungee jumping is something that every young person wants to do , but , even if he wanted to do it , he probably would n't be able to .",
+    "errors": []
+  },
+  {
+    "wrong": "Close-up video clips of a juicy hamburger flying around the screen , surely satisfying the models eating it could easily create in the viewers a false sense of being hungry and urge them to hop into their car and drive to a fast food restaurant nearby to get what they have seen .",
+    "correct": "Close-up video clips of a juicy hamburger flying around the screen , clearly satisfying the model eating it , could easily create in viewers a false sense of being hungry and urge them to hop in a car and drive to a nearby fast food restaurant to buy what they saw .",
     "errors": []
   },
   {
@@ -2445,6 +2227,11 @@
   {
     "wrong": "in my opinion students need to a knowledge .",
     "correct": "In my opinion , students need knowledge .",
+    "errors": []
+  },
+  {
+    "wrong": "So because more people are able to buy cars the demand for cars will increase and so the production of cars will also increase and in the end this means that the number of cars will increase from now to twenty years time .",
+    "correct": "So because more people are able to buy cars , the demand for , and production of , cars will increase , and , in the end , this means that the number of cars will increase in twenty years ' time .",
     "errors": []
   },
   {
@@ -2623,6 +2410,11 @@
     "errors": []
   },
   {
+    "wrong": "For example in a chemistry class when you talk about oxygen is needed for a burning process you can give a fact to support your idea which is you can put out a fire with a blanket by cutting the oxygen .",
+    "correct": "For example , in a chemistry class when you talk about oxygen being needed for a burning process , you can provide a fact to support your idea , which might be that you can put out a fire with a blanket because it cuts off the oxygen .",
+    "errors": []
+  },
+  {
     "wrong": "Who we mach them togather .",
     "correct": "Who we match them together with .",
     "errors": []
@@ -2750,6 +2542,11 @@
   {
     "wrong": "Before wasent like that , we was all tha times under the voluntad of the man , and depending economyc from him .",
     "correct": "Before it was n't like that , back then we were , at all times , at the will of the man , and depending , economically , on him .",
+    "errors": []
+  },
+  {
+    "wrong": "when you are a teenager , you start experiencing some sexual changes , which in contrast changes your way of thinking , thinking more about the other gender than thinking about toys , would enjoy going out with some friends , than staying home playing with your toys .",
+    "correct": "When you are a teenager , you start experiencing some sexual changes , which , in contrast , changes your way of thinking , thinking more about the other gender than thinking about toys , and enjoying going out with some friends than staying home and playing with your toys .",
     "errors": []
   },
   {
@@ -3023,6 +2820,11 @@
     "errors": []
   },
   {
+    "wrong": "It is a brillant idea , and you know that you are really good working with small boys and girls , but you have to risk your work , your salary , and with this almost your life for an idea that may or may not work .",
+    "correct": "It is a brilliant idea , and you know that you are really good working with small boys and girls , but you have to risk your work , your salary , and , with this , almost your life for an idea that may , or may not , work .",
+    "errors": []
+  },
+  {
     "wrong": "It 's modren life now .",
     "correct": "It 's modern life now .",
     "errors": []
@@ -3070,6 +2872,11 @@
   {
     "wrong": "They would use bicycles due to the relatively cheap cost and minimal need for maintenance .",
     "correct": "They would use bicycles due to their relatively cheap cost and minimal need for maintenance .",
+    "errors": []
+  },
+  {
+    "wrong": "It will alsow bi unfair , because it would affect low-income Amricans much mor seriously than well-to-do Americanc In the listenig part the woman ecplani dhe nir reality the raising gasoline tax dose not reflest the real economic damage .",
+    "correct": "It will be unfair because it would affect low-income Americans much more seriously than well-to-do Americans , and listening to the part where the woman explains her reality does not reflect the real economic damages raising gasoline tax would do to low-income Americans .",
     "errors": []
   },
   {
@@ -3213,6 +3020,11 @@
     "errors": []
   },
   {
+    "wrong": "On one hand you have the general practitioners who look at all the basic problems related to the body while on the other hand you have the specialists who only take care of specific areas whether it be an orthopaedic surgeon ( related to bones ) , a cardiologist ( related to heart ) or an ENT ( ear , nose , throat ) surgeon .",
+    "correct": "On one hand you have the general practitioners who look at all the basic problems related to the body , while on the other hand you have the specialists who only take care of specific areas , whether it be an orthopedic surgeon ( related to bones ) , a cardiologist ( related to the heart ) or an ENT ( ear , nose , throat ) surgeon .",
+    "errors": []
+  },
+  {
     "wrong": "The definication yong or older is not apparent .",
     "correct": "The definition of young or old is not apparent .",
     "errors": []
@@ -3313,6 +3125,11 @@
     "errors": []
   },
   {
+    "wrong": "And does n't matter if teh person who takes the riks , has like result all the things he or she has in mind , the important is that they made all the thing and they prove taht tahy can do a los of things in their lives , always thinking in good results for theyselves and for the whole world .",
+    "correct": "And it does n't matter if the people who take the risks achieve all the goals they had in mind ; what is important is that they made things and have proved that they can do a lot of things in their lives by always focusing on good results for themselves and the whole world .",
+    "errors": []
+  },
+  {
     "wrong": "I once read a report said that during the Vietnam war , more Americans died on roads in their cars than on battlefield .",
     "correct": "I once read a report that said during the Vietnam war , more Americans died on roads in their cars than on battlefield .",
     "errors": []
@@ -3360,6 +3177,11 @@
   {
     "wrong": "so they will be able to get more knowledge in there free time .",
     "correct": "So they will be able to gain more knowledge during their free time .",
+    "errors": []
+  },
+  {
+    "wrong": "So lets not lose hope and let the scientists do the job , but i think being in a traffic jam is a stressfull situation it requires time and patients and there are many more disatvantages about the large number of cars .",
+    "correct": "So lets not lose hope and let the scientists do their jobs , but I think being in a traffic jam is a stressful situation , it requires time and patience and there are so many more disadvantages of a large number of cars .",
     "errors": []
   },
   {
@@ -3518,6 +3340,11 @@
     "errors": []
   },
   {
+    "wrong": "While the travel company will most likely show them some interesting sites in order for their customers to advertise for their company to their family and friends , it is highly unlikely , that the company will tell about the sites that were not included in the tour -- for example due to entrance fees that would make the total package price overly expensive .",
+    "correct": "While the travel company will most likely show them some interesting sites in order for their customers to advertise for their company to their family and friends , it is highly unlikely that the company will tell about the sites that were not included in the tour -- for example due to entrance fees that would make the total package price overly expensive .",
+    "errors": []
+  },
+  {
     "wrong": "Disadvantage is parking their car is very difficult .",
     "correct": "A disadvantage is that parking their cars is very difficult .",
     "errors": []
@@ -3548,8 +3375,18 @@
     "errors": []
   },
   {
+    "wrong": "I think to learn facts is only an evidence if the students can work hard and if they are able to keep every detailled information as tought , but it 's definitly not an evidence for their intelligence .",
+    "correct": "I think to learn facts is only evidence if the students can work hard and if they are able to keep every detailed information taught , but it 's definitely not evidence of their intelligence .",
+    "errors": []
+  },
+  {
     "wrong": "Unforturntly , almost older people can not use internet , in spite of benefit of internet .",
     "correct": "Unfortunately , in spite of its benefits , many older people can not use the Internet .",
+    "errors": []
+  },
+  {
+    "wrong": "So , if i have alot of information about this subject , i will taulk too much with knowledge but if i have general information for this subject , i will talk about this subjec with my limited knowlege and this case may be make me shame like when my brother asked me about some thing but i have not alot of information about this thing .",
+    "correct": "So , if I have a lot of information about this subject , I will talk a lot with knowledge but if I have general information for this subject , I will talk about this subject with my limited knowledge and this case may make me shameful like when my brother asked me about some thing but I did not have a lot of information about this thing .",
     "errors": []
   },
   {
@@ -3575,6 +3412,11 @@
   {
     "wrong": "When these people create their new ideas others often look very strange on them .",
     "correct": "When these people create their new ideas , others often look very strange to them .",
+    "errors": []
+  },
+  {
+    "wrong": "No ohter transportation concept has been as successful as the car , not only because the goog street and highway system throughout the United States and Europe , but only because off the fact , that people love their cars .",
+    "correct": "No other transportation concept has been as successful as the car , not only because they can go on the street and highway system throughout the United States and Europe , but because of the fact that people love their cars .",
     "errors": []
   },
   {
@@ -3648,6 +3490,11 @@
     "errors": []
   },
   {
+    "wrong": "So for these reasons i really believe that it 's important to have a broad knowledge on different subjects , instead of being focused on just one , because sometime the answer that we are searching for , we can easily find it in a field that can seems not related to our purpose .",
+    "correct": "So , for these reasons , I really believe that it 's important to have broad knowledge on different subjects instead of being focused on just one , because sometimes we can easily find the answer that we are searching for in a field that can seem unrelated to our purpose .",
+    "errors": []
+  },
+  {
     "wrong": "I am pleased to know intelligent peple and learn about things which I do n't know .",
     "correct": "I am pleased to know intelligent people and learn about things which I do n't know .",
     "errors": []
@@ -3688,6 +3535,16 @@
     "errors": []
   },
   {
+    "wrong": "Even more relevant to the seduction of advertisement is the fact that quite frequently those images of perfection placed in front of our eyes are just mirages and illusions , bodies touched up by computer programs and therefore , they do not resemble reality at all .",
+    "correct": "Even more relevant to the seduction of advertisement is the fact that quite frequently those images of perfection placed in front of our eyes are just mirages and illusions , bodies touched up by computer programs and , therefore , they do not resemble reality at all .",
+    "errors": []
+  },
+  {
+    "wrong": "As the professor claimed the details and examples to strengthen the position of reading passage , which I , in the following pargarghs , would like to provide the evidence to present the whole views .",
+    "correct": "The professor claimed details and examples to strengthen the position of the reading passage ; in the following paragraphs , I would like to provide evidence to present the whole view .",
+    "errors": []
+  },
+  {
     "wrong": "In the advertisement that he shows in the media , newspapers , magazines , and public spaces , he clearly says that the product is made with products of high quality in technology .",
     "correct": "In the advertisements he shows in the media , newspapers , magazines , and public spaces , he clearly says that the product is made with products of high quality in technology .",
     "errors": []
@@ -3725,6 +3582,11 @@
   {
     "wrong": "They were drove settlements in other domain .",
     "correct": "They drove settlements in other domains .",
+    "errors": []
+  },
+  {
+    "wrong": "The time line about this danger , which i have already given in the above discussion is so predictable that one can have even calculations about it if he/she has both the population and existing fuel count .",
+    "correct": "The timeline about this danger , which I have already given in the above discussion is so predictable that one can even have calculations about it if he/she has both the population and existing fuel count .",
     "errors": []
   },
   {
@@ -3858,6 +3720,11 @@
     "errors": []
   },
   {
+    "wrong": "This is supported by national and internation policy which is presenting attractively the advantages of going abroad , make self-experiences in other countries and cultures , learning foreign-languages while staying in a country where this language is spoken , and so on .",
+    "correct": "This is supported by national and international policy , which is presenting attractively the advantages of going abroad , making self-experiences in other countries and cultures , learning foreign-languages while staying in a country where this language is spoken , and so on .",
+    "errors": []
+  },
+  {
     "wrong": "Even if we are failed , We have to try to get a new things .",
     "correct": "Even if we all failed , we have to try to get new things .",
     "errors": []
@@ -3865,6 +3732,11 @@
   {
     "wrong": "He explained that the methane which is derived is a non biological process .",
     "correct": "He explained that the methane , which is derived , is a non-biological process .",
+    "errors": []
+  },
+  {
+    "wrong": "I put into this group of people , everyone who have arrive to that success with his own work , i mean people who work very hard and try for example to develop new kinds of work , of technologies or someone who tries to do his work in another way to arrive the goal that he want easily .",
+    "correct": "I put into this group of people , everyone who has arrived to success with his own work , I mean people who work very hard and try , for example to develop new kinds of work , of technology or someone who tries to do his work in another way to arrive to the goal that he wants easily .",
     "errors": []
   },
   {
@@ -4123,6 +3995,11 @@
     "errors": []
   },
   {
+    "wrong": "one of the most important problem is accidents for sure everyday millions of people dies jus because of the drivers not being carefull as a matter affect i do believe that there will be less cars in twenty years but this will happen just for one reasen that we will use somethink else .",
+    "correct": "One of the most important problem is accidents for sure everyday millions of people dies jus because of the drivers not being careful as a matter affect i do believe that there will be less cars in twenty years but this will happen just for one reason that we will use something else .",
+    "errors": []
+  },
+  {
     "wrong": "internet offer a good opportunity for people that travel for work , for a student , for work .",
     "correct": "Internet offers a good opportunity for people that travel for work , for a student , and for work .",
     "errors": []
@@ -4228,6 +4105,11 @@
     "errors": []
   },
   {
+    "wrong": "But if the student is going only learning things whithout knowing the concept then not any company is give apportunity to that person because he does not know the concept of its related branch so by this way its create a problem in the future .",
+    "correct": "But if the student is going to only learn things without knowing the concept , then no company is going to give an opportunity to that person because he does not know the concept of its related branch , so by this way it creates a problem in the future .",
+    "errors": []
+  },
+  {
     "wrong": "Third , stone tower of east coast is making unnatural way also this tower is unusual in Europe so non Europian might be made this tower .",
     "correct": "Third , the stone tower in the east coast is made in an unnatural way , also this tower is unusual in Europe so non Europeans might have made this tower .",
     "errors": []
@@ -4303,6 +4185,11 @@
     "errors": []
   },
   {
+    "wrong": "Although there are some rules for protect young peopel such as limiting of aging in movies and preview about the bad aspect of programs before s , it is just made for little kids not young peole like high shcool or university student .",
+    "correct": "Although there are some rules to protect young people , such as age limits for movies and previews reviewing the bad aspects of programs before they air , the rules are only made for little kids , not young people like those in high school or universities .",
+    "errors": []
+  },
+  {
     "wrong": "However , the fact that they most of the time do not reflect the actual quality of a product decreases the reliability of the advertisements .",
     "correct": "However , the fact that most of the time they do not reflect the actual quality of a product decreases the reliability of the advertisements .",
     "errors": []
@@ -4320,6 +4207,11 @@
   {
     "wrong": "This things can make us more successful in life ; even though were that successful we must continue are work , we should take our chances to the greater heights .",
     "correct": "These things can make us more successful in life ; even though we 're that successful , we must continue our work , and we should take our chances to the greater heights .",
+    "errors": []
+  },
+  {
+    "wrong": "For the greeks philosopher Plato an Aristotle , the capacity for understand ideas and concepts , the intelligence as the main ability of the human soul , is the part of ourselves that makes us the being we actually are .",
+    "correct": "For the Greeks , philosophers Plato and Aristotle , the capacity for understanding ideas and concepts and the intelligence as the main ability of the human soul , are the parts of ourselves that make us the beings we actually are .",
     "errors": []
   },
   {
@@ -4723,6 +4615,11 @@
     "errors": []
   },
   {
+    "wrong": "This is clearly seen in the way many young people organize the collection of funds or books to help others receive a proper education , and , also in the way many students go to schools for the blind to read out books to them and help them out .",
+    "correct": "This is clearly seen in the way many young people organize the collection of funds or books to help others receive a proper education , and , also , in the way many students go to schools for the blind to read books aloud to them and help them out .",
+    "errors": []
+  },
+  {
     "wrong": "As a result , young people feels a less sense of competition for a place in universities .",
     "correct": "As a result , young people feel less sense of competition for a place in universities .",
     "errors": []
@@ -4730,6 +4627,11 @@
   {
     "wrong": "However , Billgate developed people 's lives more comfortable than previos circumstance .",
     "correct": "However , Bill Gates improved people 's lives and provided them the opportunity to live more comfortably than ever .",
+    "errors": []
+  },
+  {
+    "wrong": "Also , students , by paying more attention to understanding ideas and concepts , will not only comprehend the facts they are given , but also acquire the skill of understanding , which can be applied in all areas surrounding them .",
+    "correct": "Also , students , by paying more attention to understanding ideas and concepts , you will not only comprehend the facts that are given , but also acquire the skill of understanding , which can be applied to all areas that surround them .",
     "errors": []
   },
   {
@@ -4853,6 +4755,11 @@
     "errors": []
   },
   {
+    "wrong": "Personally , I doubt that there will be fewer cars in use in twenty years than there are today , based on my observations of falling vehicle prices , increasing population and stagnating rate of technological advance in the field of terrestrial transportation .",
+    "correct": "Personally , I doubt that there will be fewer cars in use in twenty years than there are today , based on my observations of falling vehicle prices , increasing population and stagnating rates of technological advances in the field of terrestrial transportation .",
+    "errors": []
+  },
+  {
     "wrong": "I agree with that concept to take the risk and go for the new field .",
     "correct": "I agree with the concept of taking risks and going for new fields .",
     "errors": []
@@ -4970,6 +4877,11 @@
   {
     "wrong": "Is it merely understanding the idea behind that concept ?",
     "correct": "Is it merely about understanding the idea behind that concept ?",
+    "errors": []
+  },
+  {
+    "wrong": "Making exercitation students can learn how to proceed in a correct way and making wrong operation they will be able to understand the concepts and don-t make the same errors or mistakes in the future .",
+    "correct": "With effort , students can learn how to proceed correctly , and the experience of making errors will teach them to avoid the same mistakes in the future .",
     "errors": []
   },
   {
@@ -5413,6 +5325,11 @@
     "errors": []
   },
   {
+    "wrong": "Although the professor in the listening passage explains that the solution is acceptable because not only the striped bass population is vital for menhaden but also the entire ecological system based on it .",
+    "correct": "Although , the professor in the listening passage explains that the solution is acceptable because not only is the striped bass population vital for Menhaden , but also the entire ecological system based on it .",
+    "errors": []
+  },
+  {
     "wrong": "the fact is that it would rain when the specific condition is prepared .",
     "correct": "The fact is that it would rain when the specific condition is prepared .",
     "errors": []
@@ -5420,6 +5337,11 @@
   {
     "wrong": "that is not true also .",
     "correct": "That is not true , as well .",
+    "errors": []
+  },
+  {
+    "wrong": "First is how to release the drugs as fast as possible , in order to sell it faster and to make more money faster , but goverment requeres a certein amount of the testing to be done before the drug is reliased , so it reduses the date of drug release .",
+    "correct": "First is how to release the drugs as quickly as possible in order to sell them faster and make money faster , but government requires a certain amount of testing to be done before the drug is released , so that pushes back the date of the drug release .",
     "errors": []
   },
   {
@@ -5818,6 +5740,11 @@
     "errors": []
   },
   {
+    "wrong": "These surveys also demostrate how much young men and women are not aware of the improvements they could afford if they were able to really put themselves in an effective relation with their communities .",
+    "correct": "These surveys also demonstrate how much young men , and women , are not aware of the improvements they could afford if they were able to really put themselves in an effective position within their communities .",
+    "errors": []
+  },
+  {
     "wrong": "And as a contradiction of this the professor said that dicease study is not designed very well .",
     "correct": "As a contradiction of this the professor said that disease study is not designed very well .",
     "errors": []
@@ -5938,6 +5865,11 @@
     "errors": []
   },
   {
+    "wrong": "But , in the technology and evolution time people 's mind had arrived to a solution , they must decrease water carriers or water way ships which travel between North America and The Eastern Europe , or build more canals and ship ports so the load on the ship can be decreased and less zebra mussel is transported .",
+    "correct": "But , in the evolution of technology over time people had arrived at a solution : they must decrease water carriers or waterway ships which travel between North America and Eastern Europe , or build more canals and ship ports so the load on the ships can be decreased and fewer zebra mussels are transported .",
+    "errors": []
+  },
+  {
     "wrong": "It can be good opportunity to make their own time to do anything .",
     "correct": "It can be a good opportunity to make their own time to do anything .",
     "errors": []
@@ -5973,6 +5905,16 @@
     "errors": []
   },
   {
+    "wrong": "Fro exemple , it will be easier for people to concentrate on a subject such as geology , having a broad knwoledge of many academics , than to try to concentrate on geology after having studied litterature .",
+    "correct": "For example , it will be easier for people to concentrate on a subject such as geology , having a broad knowledge of many academics , than to try to concentrate on geology after having studied literature .",
+    "errors": []
+  },
+  {
+    "wrong": "After a official training course , we helped the patients to bath , talked with the elder people who lived alone , and helped the organization to hold activities during special occasions like the mother 's day .",
+    "correct": "After an official training course , we helped the patients bathe , talked with the elder people who lived alone , and helped the organization hold activities during special occasions like Mother 's Day .",
+    "errors": []
+  },
+  {
     "wrong": "You can buy a vavilla cake in a fine store and another vanilla cake in the regular store .",
     "correct": "You can buy a vanilla cake in a fine store and another vanilla cake at a regular store .",
     "errors": []
@@ -6000,6 +5942,11 @@
   {
     "wrong": "It is possible that as the energy problem , the people 's live styal will be changed .",
     "correct": "It is possible that with the energy problem , people 's life style will be changed .",
+    "errors": []
+  },
+  {
+    "wrong": "For example , When I was in school my Geography book present `` Ploto '' as the last planet but the recent studies posted that `` Ploto '' is not a planet at all becouse of some different chracterictcs .",
+    "correct": "For example , when I was in school my Geography book presents `` Pluto '' as the last planet but recent studies posted that `` Pluto '' is not a planet at all because of different characteristics .",
     "errors": []
   },
   {
@@ -6123,6 +6070,11 @@
     "errors": []
   },
   {
+    "wrong": "If however the student will put only conepts and his/hers ore someone elses ideas or concepts , which can be mistakes will make the professor think if the student actualy did what was asked from the assigment .",
+    "correct": "If , however the students will only put concepts and his/hers or someone else 's ideas or concepts , which can be mistakes will make the professor think if the student actually did what was asked from the assignment .",
+    "errors": []
+  },
+  {
     "wrong": "We can just hope that those cars will have a new motor generation wich pollute less .",
     "correct": "We can just hope that those cars will have a new motor generation which will pollute less .",
     "errors": []
@@ -6148,6 +6100,11 @@
     "errors": []
   },
   {
+    "wrong": "Those who were open enough to try it , had the risk about spending too much money as they choose the first and only tariff which was higher than other suppliers , but they were connected to the world .",
+    "correct": "Those who were open enough to try it , had the risk about spending too much money as they choose the first and only tariff , which was higher than other suppliers , but they were connected to the world .",
+    "errors": []
+  },
+  {
     "wrong": "The old teaching system is a fair system because it treats teachers on education , teaching skills and Finall and the most important thing is teaching experience .",
     "correct": "The old teaching system is a fair system because it treats teachers on education , teaching skills and the most important thing is the teaching experience .",
     "errors": []
@@ -6170,6 +6127,11 @@
   {
     "wrong": "With this pupluation outburst , more cars will have to be present to meet the needs of the people .",
     "correct": "With this population outburst , more cars will have to be present to meet the needs of the people .",
+    "errors": []
+  },
+  {
+    "wrong": "It was said in the passage that the humans are endotherms and maintain the internal body temperatures upto 37 degrees , the same with dinosaurs that they maintain body temperatures upto 37 degrees or more than this temperature .",
+    "correct": "It was said in the passage that the humans are endothermic and maintain an internal body temperature up to 37 degrees , the same with dinosaurs , that they maintain body temperatures up to 37 degrees or more than this temperature .",
     "errors": []
   },
   {
@@ -6210,6 +6172,11 @@
   {
     "wrong": "If the explorers didnt take risk we wouldnt discover the new contenant .",
     "correct": "If the explorers did n't take risks , we would n't have discovered the new continent .",
+    "errors": []
+  },
+  {
+    "wrong": "The second points is about the evidence , according the the passage the evidence that associates the Sphinx with a know Old Kindgom King , and identifies the Sphinx as honoring Khafre , but the lecture says that , these evidence are not strong to accept the point , it is not strong either to accept the Old Kingdom King , Khafre and his stone plaque between the Sphinx front paws carries and identifies the khafre .",
+    "correct": "The second point is about the evidence , according to the passage the evidence that associates the Sphinx with a know Old Kingdom King , and identifies the Sphinx as honoring Khafre , but the lecture says that , these evidence is not strong to accept the point , it is not strong either to accept the Old Kingdom King , Khafre and his stone plaque between the Sphinx front paws carries and identifies the Khafre .",
     "errors": []
   },
   {
@@ -6275,6 +6242,11 @@
   {
     "wrong": "I wish I can go to travel somewhere that I can take pictures as much as I want it .",
     "correct": "I wish I can go travel somewhere where I can take pictures as much as I want .",
+    "errors": []
+  },
+  {
+    "wrong": "For example if my friends talking about their proplem about computer issues , I will give them an advices about how to solve the prople or just to listen to and understand them will also help the to be comfortable in our meeting .",
+    "correct": "For example , if my friends are talking about their problems with their computer , I will give them advice about how to solve the problem or just listen to and understand them will also help them to be comfortable in our meeting .",
     "errors": []
   },
   {
@@ -6370,6 +6342,11 @@
   {
     "wrong": "For exsample I like to go to a big city like New York .",
     "correct": "For example , I like to go to a big city like New York .",
+    "errors": []
+  },
+  {
+    "wrong": "When we were born , our parents tough us how to speak , after we grow up , they send us to the school to learn how to write , sometime you have to learn the vocabulary from the write , then you can use more words in your speak .",
+    "correct": "When we were born , our parents taught us how to speak , after we grow up , they send us to school to learn how to write , and sometimes you have to learn the vocabulary from writing , then you can use more words when you speak .",
     "errors": []
   },
   {
@@ -6540,166 +6517,6 @@
   {
     "wrong": "Members gather money for the funeral and help them .",
     "correct": "Members gather money for the funeral to help them .",
-    "errors": []
-  },
-  {
-    "wrong": "There going to the store.",
-    "correct": "They're going to the store.",
-    "errors": []
-  },
-  {
-    "wrong": "Their going to the store.",
-    "correct": "There're going to the store.",
-    "errors": []
-  },
-  {
-    "wrong": "They're going to the store.",
-    "correct": "There are going to the store.",
-    "errors": []
-  },
-  {
-    "wrong": "It's a beautiful day, they're out there playing.",
-    "correct": "They're a beautiful day, it's out there playing.",
-    "errors": []
-  },
-  {
-    "wrong": "She said, 'I'll be their soon.'",
-    "correct": "She said, 'I'll be there soon.'",
-    "errors": []
-  },
-  {
-    "wrong": "It's a beautiful day, their out there playing.",
-    "correct": "There's a beautiful day, it's out there playing.",
-    "errors": []
-  },
-  {
-    "wrong": "Their is no doubt about it.",
-    "correct": "There is no doubt about it.",
-    "errors": []
-  },
-  {
-    "wrong": "They're is no doubt about it.",
-    "correct": "There's is no doubt about it.",
-    "errors": []
-  },
-  {
-    "wrong": "Its a beautiful day, it's out there playing.",
-    "correct": "It's a beautiful day, it's out there playing.",
-    "errors": []
-  },
-  {
-    "wrong": "It's going to be their soon.",
-    "correct": "Its going to be theirs soon.",
-    "errors": []
-  },
-  {
-    "wrong": "It's a beautiful day, it's out there playing.",
-    "correct": "There's a beautiful day, it's out there playing.",
-    "errors": []
-  },
-  {
-    "wrong": "The dog is wagging its tail.",
-    "correct": "The dog is wagging it's tail.",
-    "errors": []
-  },
-  {
-    "wrong": "Its going to be their soon.",
-    "correct": "It's going to be theirs soon.",
-    "errors": []
-  },
-  {
-    "wrong": "The cat is purring its contentment.",
-    "correct": "The cat is purring it's contentment.",
-    "errors": []
-  },
-  {
-    "wrong": "Your my best friend.",
-    "correct": "You're my best friend.",
-    "errors": []
-  },
-  {
-    "wrong": "Your going to the store.",
-    "correct": "You're going to the store.",
-    "errors": []
-  },
-  {
-    "wrong": "Your coming with us.",
-    "correct": "You're coming with us.",
-    "errors": []
-  },
-  {
-    "wrong": "Your the best.",
-    "correct": "You're the best.",
-    "errors": []
-  },
-  {
-    "wrong": "Your going to be late.",
-    "correct": "You're going to be late.",
-    "errors": []
-  },
-  {
-    "wrong": "She then went to the store, and she than bought groceries.",
-    "correct": "She then went to the store, and she then bought groceries.",
-    "errors": []
-  },
-  {
-    "wrong": "I will go there, and I will than come back.",
-    "correct": "I will go there, and I will then come back.",
-    "errors": []
-  },
-  {
-    "wrong": "She went there, and she then bought groceries.",
-    "correct": "She went there, and she than bought groceries.",
-    "errors": []
-  },
-  {
-    "wrong": "hello , world",
-    "correct": "hello, world",
-    "errors": []
-  },
-  {
-    "wrong": "hi , how are you?",
-    "correct": "hi, how are you?",
-    "errors": []
-  },
-  {
-    "wrong": "good morning , everyone!",
-    "correct": "good morning, everyone!",
-    "errors": []
-  },
-  {
-    "wrong": "how are you doing , today?",
-    "correct": "how are you doing, today?",
-    "errors": []
-  },
-  {
-    "wrong": "see you later , friend.",
-    "correct": "see you later, friend.",
-    "errors": []
-  },
-  {
-    "wrong": "dont worry",
-    "correct": "don't worry",
-    "errors": []
-  },
-  {
-    "wrong": "cant do it",
-    "correct": "can't do it",
-    "errors": []
-  },
-  {
-    "wrong": "wont go there",
-    "correct": "won't go there",
-    "errors": []
-  },
-  {
-    "wrong": "shant go there",
-    "correct": "shan't go there",
-    "errors": []
-  },
-  {
-    "wrong": "darent do it",
-    "correct": "daresn't do it",
     "errors": []
   }
 ]

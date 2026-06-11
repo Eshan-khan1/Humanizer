@@ -22,6 +22,10 @@ GENERIC_SINGLE_WORDS = frozenset({
 
 DATASET_RULE_CATEGORIES = frozenset({"grammar-correction", "jfleg"})
 
+COMMON_SINGLE_WRONG_WORDS = frozenset({
+    "me", "him", "her", "but", "and", "the", "a", "is", "was",
+})
+
 _WORD_RE = re.compile(r"[a-zA-Z']+")
 
 # High-confidence phrase patterns → rule ids (always included when matched)
@@ -103,10 +107,30 @@ def is_generic_single_word_rule(rule: dict[str, Any]) -> bool:
     return False
 
 
+def _has_multiword_wrong_phrase(rule: dict[str, Any], min_words: int = 3) -> bool:
+    for example in rule.get("examples") or []:
+        if not isinstance(example, dict):
+            continue
+        wrong = str(example.get("wrong") or "").strip()
+        if len(wrong.split()) >= min_words:
+            return True
+    return False
+
+
 def is_injectable_rule(rule: dict[str, Any]) -> bool:
     """Filter low-confidence or overly generic rules before RAG injection."""
     if is_generic_single_word_rule(rule):
         return False
+
+    examples = rule.get("examples") or []
+    if examples and isinstance(examples[0], dict):
+        wrong = str(examples[0].get("wrong") or "").strip()
+        if wrong and " " not in wrong and wrong.lower() in COMMON_SINGLE_WRONG_WORDS:
+            category = str(rule.get("category") or "")
+            if not (
+                category == "auto_tuned" and _has_multiword_wrong_phrase(rule, 3)
+            ):
+                return False
 
     category = str(rule.get("category") or "")
     freq = rule_frequency(rule)

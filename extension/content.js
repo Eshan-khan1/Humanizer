@@ -288,8 +288,14 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     checkGrammar(field, trimmed, trimStart, { quick: false });
   }
 
-  function continueAutoFixAfterFullCheck(field, matches, trimmed) {
+  function continueAutoFixAfterFullCheck(field, matches, trimmed, corrected) {
     if (!autoFixAll || !enabled) {
+      stopAutoFixLoop();
+      return;
+    }
+
+    const correctedTrimmed = (corrected || "").trim();
+    if (correctedTrimmed && trimmed === correctedTrimmed) {
       stopAutoFixLoop();
       return;
     }
@@ -322,6 +328,11 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     lastAutoFixFingerprint = fingerprint;
 
     if (applied === 0 || afterText === beforeText) {
+      stopAutoFixLoop();
+      return;
+    }
+
+    if (correctedTrimmed && afterText === correctedTrimmed) {
       stopAutoFixLoop();
       return;
     }
@@ -1523,7 +1534,8 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
           continueAutoFixAfterFullCheck(
             field,
             response.data.matches || [],
-            trimmed
+            trimmed,
+            response.data.corrected || ""
           );
         }
       }
