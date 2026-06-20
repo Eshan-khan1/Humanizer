@@ -1,5 +1,3 @@
-console.log("✅ Grammar checker loaded on:", window.location.href);
-
 (() => {
   const CHECK_IDLE_MS = 2000;
   const MIN_TEXT_LENGTH = 2;
@@ -39,6 +37,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   let floatingPositionHandler = null;
   let enabled = true;
   let autoFixAll = true;
+  let rewriteInSearchBars = true;
   let autoFixInProgress = false;
   let autoFixPass = 0;
   let lastAutoFixFingerprint = "";
@@ -54,6 +53,22 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   let fieldClickHandler = null;
   let suppressPopupUntil = 0;
   let popupEscapeHandler = null;
+
+  /** Rewrite selection UI */
+  let savedRewriteRange = null;
+  let savedRewriteField = null;
+  let savedInputSelection = null;
+  let rewriteAnchorRect = null;
+  let rewriteCircleEl = null;
+  let rewriteBoxEl = null;
+  let rewriteInputOpen = false;
+  let rewriteSubmitting = false;
+  let rewriteWateryEl = null;
+  let rewriteOriginalText = "";
+  let rewriteUseBlocks = false;
+  let rewriteBlockTag = "DIV";
+  let rewriteDomSnapshot = null;
+  let rewriteRangeSnapshot = null;
 
   const BLOCK_TAGS = new Set([
     "DIV",
@@ -76,7 +91,10 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   const attachedFields = new WeakSet();
   const SCAN_DEBOUNCE_MS = 150;
   const RESCAN_INTERVAL_MS = 2500;
+  /** Max characters between errors to merge into one multi-word fix chunk. */
+  const MERGE_NEARBY_GAP = 2;
   let rescanIntervalId = null;
+  const REWRITE_API = "http://127.0.0.1:8000/rewrite";
 
   const isValid = () => {
     try {
@@ -85,26 +103,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       return false;
     }
   };
-
-  function debugLog(hypothesisId, location, message, data = {}) {
-    // #region agent log
-    fetch("http://127.0.0.1:7614/ingest/df6edd19-693a-4116-bf9b-4599575e7a5c", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "2bb802",
-      },
-      body: JSON.stringify({
-        sessionId: "2bb802",
-        hypothesisId,
-        location,
-        message,
-        data,
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }
 
   init();
 
@@ -117,21 +115,8 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
     if (chrome.storage?.onChanged) {
       chrome.storage.onChanged.addListener((changes, area) => {
-        if (area !== "sync") return;
-        if (changes.enabled) {
-          enabled = changes.enabled.newValue !== false;
-          if (!enabled) {
-            stopAutoFixLoop();
-            deactivateField();
-          } else {
-            startGrammarChecker();
-            scanForEditableFields();
-          }
-        }
-        if (changes.autoFixAll) {
-          autoFixAll = changes.autoFixAll.newValue !== false;
-          if (!autoFixAll) stopAutoFixLoop();
-        }
+        if (area !== "sync" && area !== "local") return;
+        applyStoredSettings(changes);
       });
     }
 
@@ -140,6 +125,9 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
     document.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onWindowChange);
+    document.addEventListener("mouseup", onDocumentMouseUp, true);
+    document.addEventListener("selectionchange", onDocumentSelectionChange);
+    document.addEventListener("keydown", onRewriteDocumentKeydown, true);
   }
 
   function startGrammarChecker() {
@@ -168,11 +156,42 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     }
   }
 
+  function applyStoredSettings(changes) {
+    if (changes.enabled) {
+      enabled = changes.enabled.newValue !== false;
+      if (!enabled) {
+        stopAutoFixLoop();
+        deactivateField();
+        hideRewriteUI();
+      } else {
+        startGrammarChecker();
+        scanForEditableFields();
+      }
+    }
+    if (changes.autoFixAll) {
+      autoFixAll = changes.autoFixAll.newValue !== false;
+      if (!autoFixAll) stopAutoFixLoop();
+    }
+    if (changes.rewriteInSearchBars) {
+      rewriteInSearchBars = changes.rewriteInSearchBars.newValue !== false;
+      if (
+        !rewriteInSearchBars &&
+        savedRewriteField &&
+        isSearchBarField(savedRewriteField)
+      ) {
+        hideRewriteUI();
+        clearRewriteSelectionState();
+      }
+    }
+  }
+
   function loadEnabledSetting() {
     if (!isValid() || !chrome.storage?.sync) return;
-    chrome.storage.sync.get({ enabled: true, autoFixAll: true }, (result) => {
+    const defaults = { enabled: true, autoFixAll: true, rewriteInSearchBars: true };
+    const applyLoadedSettings = (result) => {
       enabled = result.enabled !== false;
       autoFixAll = result.autoFixAll !== false;
+      rewriteInSearchBars = result.rewriteInSearchBars !== false;
       if (!enabled) {
         deactivateField();
         return;
@@ -181,6 +200,14 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
         startGrammarChecker();
         scanForEditableFields();
       });
+    };
+
+    chrome.storage.sync.get(defaults, (syncResult) => {
+      if (chrome.runtime.lastError && chrome.storage?.local) {
+        chrome.storage.local.get(defaults, applyLoadedSettings);
+        return;
+      }
+      applyLoadedSettings(syncResult);
     });
   }
 
@@ -211,6 +238,72 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
   function getFixableMatches(matches, text) {
     return filterMatches(matches, text).filter((m) => shouldApplyMatch(m, text));
+  }
+
+  function chunkWordCount(text) {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  function buildChunkFromGroup(group, text) {
+    const start = group[0].offset ?? 0;
+    const end =
+      (group[group.length - 1].offset ?? 0) +
+      (group[group.length - 1].length ?? 0);
+    const chunk = text.slice(start, end);
+    let result = chunk;
+
+    for (const m of [...group].sort((a, b) => (b.offset ?? 0) - (a.offset ?? 0))) {
+      const rel = (m.offset ?? 0) - start;
+      const repl = getMatchSuggestions(m)[0] ?? "";
+      result = result.slice(0, rel) + repl + result.slice(rel + (m.length ?? 0));
+    }
+
+    if (result === chunk) return null;
+
+    return {
+      ...group[0],
+      offset: start,
+      length: end - start,
+      word: chunk,
+      suggestions: [result],
+      replacements: [result],
+      mergedCount: group.length,
+    };
+  }
+
+  /** Merge nearby single-word hits into multi-word fix chunks. */
+  function mergeNearbyFixableChunks(matches, text, maxGap = MERGE_NEARBY_GAP) {
+    if (!matches.length) return [];
+
+    const sorted = [...matches].sort((a, b) => (a.offset ?? 0) - (b.offset ?? 0));
+    const groups = [[sorted[0]]];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = groups[groups.length - 1][groups[groups.length - 1].length - 1];
+      const prevEnd = (prev.offset ?? 0) + (prev.length ?? 0);
+      const gap = (sorted[i].offset ?? 0) - prevEnd;
+      if (gap <= maxGap) {
+        groups[groups.length - 1].push(sorted[i]);
+      } else {
+        groups.push([sorted[i]]);
+      }
+    }
+
+    const chunks = groups
+      .map((group) => buildChunkFromGroup(group, text))
+      .filter(Boolean);
+
+    const multiWord = chunks.filter(
+      (c) =>
+        (c.mergedCount ?? 1) >= 2 ||
+        chunkWordCount(c.word || text.slice(c.offset, c.offset + c.length)) >= 2
+    );
+
+    return multiWord.length ? multiWord : chunks;
+  }
+
+  function selectNextFixChunk(chunks) {
+    return [...chunks].sort((a, b) => (a.offset ?? 0) - (b.offset ?? 0))[0];
   }
 
   function applyAllSuggestionsInField(field, matches) {
@@ -253,6 +346,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
         }
 
         recordAcceptedFix(offset, length, replacement);
+        optimisticUpdateAfterFix(field, match, replacement);
         leftBound = offset;
         applied += 1;
       }
@@ -262,12 +356,47 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
     if (applied > 0) {
       field.focus();
-      currentMatches = [];
-      syncGrammarDisplay(field, []);
-      updateBadge(0);
     }
 
     return applied;
+  }
+
+  /** Immediately refresh underlines after a local fix, before the next server scan. */
+  function optimisticUpdateAfterFix(field, match, replacement) {
+    const offset = match.offset ?? 0;
+    const length = match.length ?? 0;
+    const end = offset + length;
+    const delta = replacement.length - length;
+
+    currentMatches = filterMatchesForDisplay(
+      currentMatches
+        .filter((m) => {
+          const mStart = m.offset ?? 0;
+          const mEnd = mStart + (m.length ?? 0);
+          return !rangesOverlap(mStart, mEnd, offset, end);
+        })
+        .map((m) => {
+          if ((m.offset ?? 0) > offset) {
+            return { ...m, offset: (m.offset ?? 0) + delta };
+          }
+          return m;
+        })
+    );
+
+    syncGrammarDisplay(field, currentMatches);
+    updateBadge(currentMatches.length);
+  }
+
+  function rescanAfterFix(field, { resetPass = false } = {}) {
+    lastCheckedText = "";
+    if (autoFixAll) {
+      if (resetPass) {
+        autoFixPass = 0;
+        lastAutoFixFingerprint = "";
+      }
+      autoFixInProgress = true;
+    }
+    runFullCheckImmediately(field);
   }
 
   function runFullCheckImmediately(field) {
@@ -294,14 +423,18 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       return;
     }
 
-    const correctedTrimmed = (corrected || "").trim();
-    if (correctedTrimmed && trimmed === correctedTrimmed) {
+    const filtered = filterMatches(matches, trimmed);
+    const fixable = getFixableMatches(matches, trimmed);
+    const chunks = mergeNearbyFixableChunks(fixable, trimmed);
+
+    if (!filtered.length) {
       stopAutoFixLoop();
+      syncGrammarDisplay(field, []);
+      updateBadge(0);
       return;
     }
 
-    const fixable = getFixableMatches(matches, trimmed);
-    if (!fixable.length) {
+    if (!chunks.length) {
       stopAutoFixLoop();
       return;
     }
@@ -311,7 +444,8 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       return;
     }
 
-    const fingerprint = matchFingerprint(fixable, trimmed);
+    const nextFix = selectNextFixChunk(chunks);
+    const fingerprint = matchFingerprint([nextFix], trimmed);
     if (fingerprint === lastAutoFixFingerprint) {
       stopAutoFixLoop();
       return;
@@ -321,7 +455,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     autoFixInProgress = true;
     hideSuggestionPopup();
 
-    const applied = applyAllSuggestionsInField(field, fixable);
+    const applied = applyAllSuggestionsInField(field, [nextFix]);
     const { trimmed: afterText } = getGrammarTextContext(field);
 
     autoFixPass += 1;
@@ -332,13 +466,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       return;
     }
 
-    if (correctedTrimmed && afterText === correctedTrimmed) {
-      stopAutoFixLoop();
-      return;
-    }
-
-    lastCheckedText = "";
-    runFullCheckImmediately(field);
+    rescanAfterFix(field);
   }
 
   function waitForBody(callback) {
@@ -440,6 +568,11 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       '[contenteditable=""]',
       '[contenteditable="plaintext-only"]',
       '[contenteditable]:not([contenteditable="false"])',
+      ".ProseMirror",
+      ".ql-editor",
+      ".tox-edit-area",
+      ".ace_text-input",
+      '[data-lexical-editor="true"]',
     ].join(", ");
 
     for (const node of queryAllDeep(editableSelector)) {
@@ -449,7 +582,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     }
 
     for (const node of queryAllDeep(
-      '[role="textbox"], [role="searchbox"], [role="combobox"]'
+      '[role="textbox"], [role="searchbox"], [role="combobox"], [role="search"]'
     )) {
       if (!isEditableElement(node) || !isVisibleField(node)) continue;
       if (isNestedTextbox(node)) continue;
@@ -472,7 +605,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       return field;
     }
     const root = field.closest(
-      '[contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"], [role="textbox"][contenteditable], [role="searchbox"][contenteditable]'
+      '[contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"], [role="textbox"], [role="searchbox"], .ProseMirror, .ql-editor'
     );
     return root instanceof HTMLElement ? root : field;
   }
@@ -482,6 +615,10 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     if (el.classList?.contains("grammar-overlay-floating")) return false;
     if (el.closest?.(".grammar-overlay-floating, .grm-suggestion-popup")) return false;
     if (el === document.body || el === document.documentElement) return false;
+
+    if (el.getAttribute("aria-readonly") === "true" || el.getAttribute("aria-disabled") === "true") {
+      return false;
+    }
 
     if (el instanceof HTMLTextAreaElement) {
       return !el.disabled && !el.readOnly;
@@ -493,8 +630,15 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     if (el.isContentEditable) return true;
 
     const role = (el.getAttribute("role") || "").toLowerCase();
-    if (role === "textbox" || role === "searchbox" || role === "combobox") {
-      return el.isContentEditable || el.querySelector?.("[contenteditable='true']") != null;
+    if (role === "textbox" || role === "searchbox" || role === "combobox" || role === "search") {
+      return (
+        el.isContentEditable ||
+        el.querySelector?.(
+          "[contenteditable='true'], [contenteditable=''], .ProseMirror, .ql-editor"
+        ) != null ||
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement
+      );
     }
 
     return false;
@@ -553,11 +697,16 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     if (style.display === "none" || style.visibility === "hidden") return false;
     if (Number(style.opacity) === 0) return false;
 
+    if (el.isContentEditable) return true;
+
+    const role = (el.getAttribute("role") || "").toLowerCase();
+    if (role === "textbox" || role === "searchbox" || role === "search") return true;
+
     const rect = el.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) return true;
 
     if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-      return !el.disabled;
+      return !el.disabled && !el.readOnly;
     }
 
     return false;
@@ -754,6 +903,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   }
 
   function onScroll(event) {
+    repositionRewriteUi();
     if (suggestionPopup && suggestionPopupAnchor) {
       positionSuggestionPopup(suggestionPopup, suggestionPopupAnchor);
     }
@@ -764,6 +914,7 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   }
 
   function onWindowChange() {
+    repositionRewriteUi();
     if (suggestionPopup && suggestionPopupAnchor) {
       positionSuggestionPopup(suggestionPopup, suggestionPopupAnchor);
     }
@@ -886,6 +1037,324 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
     }
 
     return text.replace(/\u200b/g, "");
+  }
+
+  /** Plain text for a DOM range, preserving block/line breaks like extractContentEditableText. */
+  function extractRangePlainText(range) {
+    if (!range) return "";
+    const container = document.createElement("div");
+    container.appendChild(range.cloneContents());
+    return extractContentEditableText(container);
+  }
+
+  function rangeContainsBlockElements(range) {
+    const container = document.createElement("div");
+    container.appendChild(range.cloneContents());
+    for (const tag of BLOCK_TAGS) {
+      if (container.querySelector(tag)) return true;
+    }
+    return false;
+  }
+
+  function inferRewriteBlockTag(range, wrapEl) {
+    if (wrapEl instanceof HTMLElement) {
+      for (const child of wrapEl.children) {
+        if (BLOCK_TAGS.has(child.tagName)) return child.tagName;
+      }
+      const parent = wrapEl.parentElement;
+      if (parent) {
+        for (const sib of parent.children) {
+          if (sib !== wrapEl && BLOCK_TAGS.has(sib.tagName)) return sib.tagName;
+        }
+      }
+    }
+
+    let node = range?.commonAncestorContainer;
+    if (node?.nodeType === Node.TEXT_NODE) node = node.parentElement;
+    const block = node?.closest?.("div, p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, td");
+    return block?.tagName || "DIV";
+  }
+
+  function shouldUseBlockLayout(range, plainText) {
+    if (plainText.includes("\n")) return true;
+    return rangeContainsBlockElements(range);
+  }
+
+  function captureRewriteDomSnapshot(root) {
+    if (!(root instanceof HTMLElement)) return [];
+    return Array.from(root.childNodes).map((node) => node.cloneNode(true));
+  }
+
+  function cloneElementShell(template) {
+    if (!(template instanceof Element)) return null;
+    const el = document.createElement(template.tagName);
+    for (const attr of template.attributes) {
+      el.setAttribute(attr.name, attr.value);
+    }
+    return el;
+  }
+
+  function getInlineFormatShell(element) {
+    if (!(element instanceof Element)) return null;
+    if (
+      element.getAttribute("style") ||
+      (element.tagName === "FONT" &&
+        (element.getAttribute("color") ||
+          element.getAttribute("face") ||
+          element.getAttribute("size")))
+    ) {
+      return element;
+    }
+    for (const child of element.children) {
+      if (
+        child.tagName === "SPAN" ||
+        child.tagName === "FONT" ||
+        child.tagName === "B" ||
+        child.tagName === "I" ||
+        child.tagName === "U" ||
+        child.tagName === "A"
+      ) {
+        const nested = getInlineFormatShell(child);
+        if (nested) return nested;
+        if (child.getAttribute("style") || child.className) return child;
+      }
+    }
+    return null;
+  }
+
+  function replaceTextPreservingMarkup(root, newText) {
+    const textNodes = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    if (!textNodes.length) {
+      if (root instanceof Element) root.textContent = newText;
+      return;
+    }
+    textNodes[0].textContent = newText;
+    for (let i = 1; i < textNodes.length; i++) {
+      textNodes[i].textContent = "";
+    }
+  }
+
+  function splitNormalizedLines(text) {
+    const lines = [];
+    let previousBlank = false;
+    for (const line of normalizeEmailSpacing(text).split("\n")) {
+      const isBlank = line.trim() === "";
+      if (isBlank) {
+        if (!previousBlank) lines.push("");
+        previousBlank = true;
+      } else {
+        lines.push(line);
+        previousBlank = false;
+      }
+    }
+    return lines;
+  }
+
+  function createBlockFromTemplate(template, line) {
+    const block =
+      template instanceof Element
+        ? cloneElementShell(template) || document.createElement(template.tagName)
+        : document.createElement(rewriteBlockTag || "DIV");
+
+    if (line === "") {
+      const blankTemplate =
+        template instanceof Element &&
+        (template.querySelector("br") || template.textContent.trim() === "");
+      if (blankTemplate && template.firstChild) {
+        block.appendChild(template.firstChild.cloneNode(true));
+      } else {
+        block.appendChild(document.createElement("br"));
+      }
+      return block;
+    }
+
+    if (template instanceof Element) {
+      const inlineShell = getInlineFormatShell(template);
+      if (inlineShell) {
+        const styled = inlineShell.cloneNode(false);
+        styled.textContent = line;
+        block.appendChild(styled);
+        return block;
+      }
+
+      const cloned = template.cloneNode(true);
+      replaceTextPreservingMarkup(cloned, line);
+      while (cloned.firstChild) {
+        block.appendChild(cloned.firstChild);
+      }
+      return block;
+    }
+
+    block.textContent = line;
+    return block;
+  }
+
+  function buildFragmentFromBlockTemplates(blockTemplates, text) {
+    const frag = document.createDocumentFragment();
+    const lines = splitNormalizedLines(text);
+    if (!lines.length) return frag;
+
+    for (let i = 0; i < lines.length; i++) {
+      const template = blockTemplates[Math.min(i, blockTemplates.length - 1)];
+      frag.appendChild(createBlockFromTemplate(template, lines[i]));
+    }
+    return frag;
+  }
+
+  function findStyledShellInSnapshot(snapshot) {
+    for (const node of snapshot) {
+      if (node.nodeType !== Node.ELEMENT_NODE) continue;
+      const shell = getInlineFormatShell(node);
+      if (shell) return shell;
+      if (node.tagName === "SPAN" || node.tagName === "FONT") return node;
+    }
+    return null;
+  }
+
+  function buildFragmentPreservingFormat(snapshot, text) {
+    const frag = document.createDocumentFragment();
+    const normalized = normalizeEmailSpacing(text);
+    if (!snapshot?.length) {
+      frag.appendChild(document.createTextNode(normalized));
+      return frag;
+    }
+
+    const blockTemplates = snapshot.filter(
+      (node) => node.nodeType === Node.ELEMENT_NODE && BLOCK_TAGS.has(node.tagName)
+    );
+
+    if (blockTemplates.length > 0) {
+      return buildFragmentFromBlockTemplates(blockTemplates, normalized);
+    }
+
+    if (!normalized.includes("\n")) {
+      const styledShell = findStyledShellInSnapshot(snapshot);
+      if (styledShell) {
+        const wrapper = styledShell.cloneNode(false);
+        wrapper.textContent = normalized;
+        frag.appendChild(wrapper);
+        return frag;
+      }
+
+      if (
+        snapshot.length === 1 &&
+        snapshot[0].nodeType === Node.ELEMENT_NODE
+      ) {
+        const cloned = snapshot[0].cloneNode(true);
+        replaceTextPreservingMarkup(cloned, normalized);
+        frag.appendChild(cloned);
+        return frag;
+      }
+    }
+
+    if (rewriteUseBlocks) {
+      return plainTextToBlockFragment(normalized, rewriteBlockTag);
+    }
+
+    frag.appendChild(document.createTextNode(normalized));
+    return frag;
+  }
+
+  function replaceElementPreservingFormat(el, text, snapshot) {
+    if (!(el instanceof HTMLElement) || !el.parentNode) return false;
+    const parent = el.parentNode;
+    el.replaceWith(buildFragmentPreservingFormat(snapshot, text));
+    parent.normalize?.();
+    return true;
+  }
+
+  function insertTextAtRangePreservingFormat(range, text, snapshot) {
+    if (!range) return false;
+    range.deleteContents();
+    range.insertNode(buildFragmentPreservingFormat(snapshot, text));
+    return true;
+  }
+
+  function plainTextToBlockFragment(text, blockTag) {
+    const frag = document.createDocumentFragment();
+    const tag = blockTag || "DIV";
+    const normalized = normalizeEmailSpacing(text);
+    let previousBlank = false;
+    for (const line of normalized.split("\n")) {
+      const isBlank = line.trim() === "";
+      if (isBlank) {
+        if (previousBlank) continue;
+        previousBlank = true;
+        const block = document.createElement(tag);
+        block.appendChild(document.createElement("br"));
+        frag.appendChild(block);
+        continue;
+      }
+      previousBlank = false;
+      const block = document.createElement(tag);
+      block.textContent = line;
+      frag.appendChild(block);
+    }
+    return frag;
+  }
+
+  function replaceElementWithPlainText(el, text, { useBlocks = false, blockTag = "DIV" } = {}) {
+    if (!(el instanceof HTMLElement) || !el.parentNode) return false;
+    const parent = el.parentNode;
+
+    if (!useBlocks) {
+      el.replaceWith(document.createTextNode(text));
+      parent.normalize?.();
+      return true;
+    }
+
+    el.replaceWith(plainTextToBlockFragment(text, blockTag));
+    parent.normalize?.();
+    return true;
+  }
+
+  function insertPlainTextAtRange(range, text, { useBlocks = false, blockTag = "DIV" } = {}) {
+    if (!range) return false;
+    range.deleteContents();
+    if (!useBlocks) {
+      range.insertNode(document.createTextNode(text));
+      return true;
+    }
+    range.insertNode(plainTextToBlockFragment(text, blockTag));
+    return true;
+  }
+
+  function normalizeEmailSpacing(text) {
+    let normalized = String(text || "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\u200b/g, "");
+
+    normalized = normalized.replace(/\n{3,}/g, "\n\n");
+
+    const lines = normalized.split("\n");
+    const collapsed = [];
+    let previousBlank = false;
+    for (const line of lines) {
+      const isBlank = line.trim() === "";
+      if (isBlank) {
+        if (!previousBlank) {
+          collapsed.push("");
+        }
+        previousBlank = true;
+      } else {
+        collapsed.push(line);
+        previousBlank = false;
+      }
+    }
+
+    return collapsed.join("\n");
+  }
+
+  function normalizeRewrittenText(text) {
+    return normalizeEmailSpacing(
+      String(text || "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .replace(/\\n/g, "\n")
+    );
   }
 
   function findPhraseInText(text, phrase, hintOffset = 0) {
@@ -1159,6 +1628,75 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
       field.textContent = text;
     }
     field.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // Commit a value into input/textarea so framework-controlled fields (React, etc.)
+  // pick up the change. Adapted from github/text-expander-element onCommit, plus the
+  // native prototype setter pattern required when React overrides element.value.
+  function setNativeInputOrTextareaValue(field, value) {
+    const prototype =
+      field instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype;
+    const { set: prototypeSetter } =
+      Object.getOwnPropertyDescriptor(prototype, "value") || {};
+    const { set: fieldSetter } =
+      Object.getOwnPropertyDescriptor(field, "value") || {};
+
+    if (prototypeSetter && fieldSetter !== prototypeSetter) {
+      prototypeSetter.call(field, value);
+    } else if (fieldSetter) {
+      fieldSetter.call(field, value);
+    } else {
+      field.value = value;
+    }
+  }
+
+  function notifyInputOrTextareaValueChange(field, previousValue) {
+    const tracker = field._valueTracker;
+    if (tracker) {
+      tracker.setValue(previousValue);
+    }
+
+    field.dispatchEvent(new Event("input", { bubbles: true, cancelable: true }));
+    try {
+      field.dispatchEvent(
+        new InputEvent("input", {
+          bubbles: true,
+          cancelable: true,
+          inputType: "insertReplacementText",
+        })
+      );
+    } catch {
+      /* InputEvent unsupported in some contexts */
+    }
+  }
+
+  function commitInputOrTextareaValue(field, newValue, selectionStart, selectionEnd) {
+    if (
+      !(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) ||
+      !isConnectedElement(field)
+    ) {
+      return;
+    }
+
+    const previousValue = field.value;
+    setNativeInputOrTextareaValue(field, newValue);
+    notifyInputOrTextareaValueChange(field, previousValue);
+
+    const maxLen = newValue.length;
+    const start = Math.max(0, Math.min(selectionStart ?? maxLen, maxLen));
+    const end = Math.max(start, Math.min(selectionEnd ?? start, maxLen));
+    field.setSelectionRange(start, end);
+    field.focus({ preventScroll: true });
+  }
+
+  function commitInputOrTextareaReplacement(field, start, end, replacement) {
+    const beginning = field.value.substring(0, start);
+    const remaining = field.value.substring(end);
+    const newValue = beginning + replacement + remaining;
+    const cursor = beginning.length + replacement.length;
+    commitInputOrTextareaValue(field, newValue, cursor, cursor);
   }
 
   function dispatchFieldInput(field) {
@@ -1505,12 +2043,6 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
         if (currentTrimmed !== trimmed) return;
 
         if (chrome.runtime.lastError || !response?.ok) {
-          if (!quick) {
-            debugLog("H2", "content.js:checkGrammar", "client grammar failed", {
-              lastError: chrome.runtime.lastError?.message || null,
-              error: response?.error || null,
-            });
-          }
           if (!quick && !currentMatches.length) {
             syncGrammarDisplay(field, []);
             updateBadge(0);
@@ -1519,6 +2051,10 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
         }
 
         if (quick && trimmed === lastCheckedText) {
+          return;
+        }
+
+        if (quick && autoFixInProgress) {
           return;
         }
 
@@ -1531,6 +2067,9 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
         if (!quick) {
           lastCheckedText = trimmed;
+          if (!filteredMatchesCount(response.data.matches || [], trimmed)) {
+            stopAutoFixLoop();
+          }
           continueAutoFixAfterFullCheck(
             field,
             response.data.matches || [],
@@ -1540,6 +2079,10 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
         }
       }
     );
+  }
+
+  function filteredMatchesCount(matches, text) {
+    return filterMatches(matches, text).length;
   }
 
   function syncMirrorText(field, matches) {
@@ -1903,31 +2446,9 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
 
     recordAcceptedFix(offset, length, replacement);
 
-    const delta = replacement.length - length;
-    currentMatches = filterMatchesForDisplay(
-      currentMatches
-        .filter((m) => m.offset < offset || m.offset >= offset + length)
-        .map((m) => {
-          if (m.offset > offset) {
-            return { ...m, offset: m.offset + delta };
-          }
-          return m;
-        })
-    );
+    optimisticUpdateAfterFix(field, match, replacement);
 
-    const { trimmed } = getGrammarTextContext(field);
-    lastCheckedText = trimmed;
-
-    syncGrammarDisplay(field, currentMatches);
-    updateBadge(currentMatches.length);
-
-    if (autoFixAll && currentMatches.length > 0) {
-      autoFixPass = 0;
-      lastAutoFixFingerprint = "";
-      autoFixInProgress = true;
-      lastCheckedText = "";
-      runFullCheckImmediately(field);
-    }
+    rescanAfterFix(field, { resetPass: true });
   }
 
   function applyReplacement(field, offset, length, replacement) {
@@ -1942,6 +2463,1137 @@ console.log("✅ Grammar checker loaded on:", window.location.href);
   function updateBadge(count) {
     if (!isValid()) return;
     chrome.runtime.sendMessage({ type: "updateBadge", count });
+  }
+
+  function selectionInEditableField(selection) {
+    const anchor = selection?.anchorNode;
+    if (anchor) {
+      const field = resolveEditableField(anchor);
+      if (field) return field;
+    }
+
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement
+    ) {
+      if (!active.disabled && !active.readOnly) return active;
+    }
+    return null;
+  }
+
+  function selectionInContentEditable(selection) {
+    return selectionInEditableField(selection);
+  }
+
+  function clearRewriteSelectionState() {
+    savedRewriteRange = null;
+    savedRewriteField = null;
+    savedInputSelection = null;
+    rewriteAnchorRect = null;
+  }
+
+  function getInputSelectionAnchorRect(field, start, end) {
+    const rect = field.getBoundingClientRect();
+    if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) {
+      return new DOMRect(rect.right - 1, rect.bottom - 1, 1, 1);
+    }
+
+    const style = window.getComputedStyle(field);
+    const textBefore = field.value.slice(0, end);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.font = `${style.fontStyle} ${style.fontVariant} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const textWidth = ctx.measureText(textBefore).width;
+      const padLeft = Number.parseFloat(style.paddingLeft) || 0;
+      const padTop = Number.parseFloat(style.paddingTop) || 0;
+      const lineHeight =
+        Number.parseFloat(style.lineHeight) ||
+        Number.parseFloat(style.fontSize) ||
+        16;
+      const innerWidth = Math.max(0, rect.width - padLeft - (Number.parseFloat(style.paddingRight) || 0));
+      const x = rect.left + padLeft + Math.min(textWidth, Math.max(0, innerWidth - 4));
+      const y = rect.top + padTop + lineHeight;
+      return new DOMRect(x, y, 1, 1);
+    }
+
+    return new DOMRect(rect.right - 1, rect.bottom - 1, 1, 1);
+  }
+
+  function getRewriteSelectionFromPage() {
+    const active = document.activeElement;
+    if (
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement
+    ) {
+      if (!active.disabled && !active.readOnly && isTextInput(active)) {
+        const start = active.selectionStart ?? 0;
+        const end = active.selectionEnd ?? 0;
+        if (start !== end) {
+          const text = active.value.slice(start, end);
+          if (text.length > 10) {
+            return {
+              field: active,
+              text,
+              inputSelection: { start, end },
+              range: null,
+            };
+          }
+        }
+      }
+    }
+
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+      return null;
+    }
+
+    const text = selection.toString();
+    if (text.length <= 10) return null;
+
+    const field = selectionInEditableField(selection);
+    if (!field) return null;
+
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+      const start = field.selectionStart ?? 0;
+      const end = field.selectionEnd ?? 0;
+      if (start === end) return null;
+      return {
+        field,
+        text: field.value.slice(start, end),
+        inputSelection: { start, end },
+        range: null,
+      };
+    }
+
+    return {
+      field,
+      text,
+      inputSelection: null,
+      range: selection.getRangeAt(0).cloneRange(),
+    };
+  }
+
+  function setRewriteSelection(rewriteSel) {
+    savedRewriteField = rewriteSel.field;
+    if (!attachedFields.has(rewriteSel.field)) {
+      attachGrammarChecker(rewriteSel.field);
+    }
+
+    if (rewriteSel.range) {
+      savedRewriteRange = rewriteSel.range;
+      savedInputSelection = null;
+      rewriteAnchorRect = getRangeEndRect(rewriteSel.range);
+      applyRewriteHighlight(rewriteSel.range);
+      return;
+    }
+
+    savedRewriteRange = null;
+    savedInputSelection = rewriteSel.inputSelection;
+    rewriteAnchorRect = getInputSelectionAnchorRect(
+      rewriteSel.field,
+      rewriteSel.inputSelection.start,
+      rewriteSel.inputSelection.end
+    );
+    clearRewriteHighlight();
+  }
+
+  function rewriteSelectionMatches(a, b) {
+    if (!a || !b) return false;
+    if (a.field !== b.field) return false;
+    if (a.text !== b.text) return false;
+    if (a.range && b.range) return true;
+    if (a.inputSelection && b.inputSelection) {
+      return (
+        a.inputSelection.start === b.inputSelection.start &&
+        a.inputSelection.end === b.inputSelection.end
+      );
+    }
+    return false;
+  }
+
+  function getRewritePositionRange() {
+    return savedRewriteRange;
+  }
+
+  function inferPageContext() {
+    const host = location.hostname.replace(/^www\./, "");
+    let app = host;
+    let documentType = "web_form";
+
+    if (host.includes("mail.google")) {
+      app = "gmail";
+      documentType = "email";
+    } else if (host.includes("docs.google")) {
+      app = "google_docs";
+      documentType = "document";
+    } else if (host.includes("google.") && /\/search|\/webhp/.test(location.pathname)) {
+      app = "google_search";
+      documentType = "search";
+    } else if (host.includes("slack.com")) {
+      app = "slack";
+      documentType = "chat_message";
+    } else if (host.includes("linkedin.com")) {
+      app = "linkedin";
+      documentType = "social_post";
+    } else if (host.includes("notion.")) {
+      app = "notion";
+      documentType = "document";
+    }
+
+    return {
+      app,
+      documentType,
+      title: document.title || "",
+      host,
+    };
+  }
+
+  function isSearchBarField(field) {
+    if (!(field instanceof HTMLElement)) return false;
+
+    const el = normalizeEditableField(field);
+    const role = (el.getAttribute("role") || "").toLowerCase();
+    if (role === "searchbox" || role === "search") return true;
+
+    if (el instanceof HTMLInputElement && (el.type || "").toLowerCase() === "search") {
+      return true;
+    }
+
+    const searchContainer = el.closest(
+      '[role="search"], form[role="search"], form[action*="search" i]'
+    );
+    if (searchContainer?.contains(el)) return true;
+
+    const aria = (el.getAttribute("aria-label") || "").toLowerCase();
+    const placeholder = (el.getAttribute("placeholder") || "").toLowerCase();
+    if (/\bsearch\b/.test(aria) || /\bsearch\b/.test(placeholder)) return true;
+
+    const name = (el.getAttribute("name") || "").toLowerCase();
+    if (
+      (name === "q" || name === "query" || name === "search") &&
+      el.closest("form")
+    ) {
+      return true;
+    }
+
+    if (
+      inferPageContext().app === "google_search" &&
+      (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function rewriteAllowedForField(field) {
+    if (rewriteInSearchBars) return true;
+    return !isSearchBarField(field);
+  }
+
+  function inferFieldRole(field) {
+    if (!(field instanceof HTMLElement)) {
+      return { role: "unknown", label: "" };
+    }
+
+    const aria = (field.getAttribute("aria-label") || "").trim();
+    const name = (field.getAttribute("name") || "").toLowerCase();
+    const placeholder = (field.getAttribute("placeholder") || "").trim();
+    const lowerAria = aria.toLowerCase();
+
+    if (
+      lowerAria.includes("subject") ||
+      name === "subjectbox" ||
+      field.closest('[aria-label*="Subject" i], [name="subjectbox"]')
+    ) {
+      return { role: "email_subject", label: aria || placeholder || "Subject" };
+    }
+
+    if (
+      lowerAria.includes("message body") ||
+      name === "messagebody" ||
+      field.closest('[aria-label*="Message Body" i], [name="messagebody"]')
+    ) {
+      return { role: "email_body", label: aria || placeholder || "Message body" };
+    }
+
+    if (field instanceof HTMLInputElement) {
+      return {
+        role: "single_line_input",
+        label: aria || placeholder || field.type || "input",
+      };
+    }
+
+    if (field instanceof HTMLTextAreaElement) {
+      return {
+        role: "multi_line_textarea",
+        label: aria || placeholder || "textarea",
+      };
+    }
+
+    if (lowerAria.includes("to") && lowerAria.length <= 4) {
+      return { role: "email_recipient", label: aria };
+    }
+
+    return {
+      role: "rich_text",
+      label: aria || placeholder || "",
+    };
+  }
+
+  function getTextNodeOffsetHint(field, container, pointOffset) {
+    let offset = 0;
+    const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const len = (node.textContent || "").replace(/\u200b/g, "").length;
+      if (node === container) {
+        return offset + pointOffset;
+      }
+      offset += len;
+    }
+    return offset;
+  }
+
+  function getRangeOffsetsInFieldText(field, range) {
+    if (!field || !range) return null;
+
+    const selected = extractRangePlainText(range);
+    const fieldText = getFieldText(field);
+    if (!selected || !fieldText) return null;
+
+    const hint = getTextNodeOffsetHint(
+      field,
+      range.startContainer,
+      range.startOffset
+    );
+    let idx = fieldText.indexOf(selected, Math.max(0, hint - 60));
+    if (idx === -1) {
+      idx = fieldText.indexOf(selected);
+    }
+    if (idx === -1) return null;
+
+    return { start: idx, end: idx + selected.length };
+  }
+
+  function detectSelectionLayout(field, range) {
+    let node = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement;
+    }
+
+    const block =
+      node instanceof Element
+        ? node.closest(
+            "li, p, div, h1, h2, h3, h4, h5, h6, blockquote, pre, td, tr"
+          )
+        : null;
+    const blockTag = block?.tagName?.toLowerCase() || "inline";
+    const listRoot = block?.closest("ul, ol");
+    const inList = Boolean(listRoot);
+    const listType = listRoot?.tagName?.toLowerCase() || null;
+    let listIndex = null;
+    if (inList && block) {
+      const items = Array.from(listRoot.querySelectorAll(":scope > li"));
+      listIndex = items.indexOf(block.closest("li") || block) + 1;
+      if (listIndex <= 0) listIndex = null;
+    }
+
+    const blocks = field
+      ? Array.from(
+          field.querySelectorAll("p, div:not(:empty), li, h1, h2, h3, h4, h5, h6")
+        ).filter((el) => (el.textContent || "").trim())
+      : [];
+    let paragraphIndex = null;
+    let paragraphCount = blocks.length || null;
+    if (block && blocks.length) {
+      const idx = blocks.findIndex((el) => el === block || el.contains(block));
+      if (idx >= 0) paragraphIndex = idx + 1;
+    }
+
+    const fieldText = field ? getFieldText(field) : "";
+    const fieldLineCount = fieldText ? fieldText.split("\n").length : null;
+
+    return {
+      blockType: blockTag,
+      inList,
+      listType,
+      listIndex,
+      paragraphIndex,
+      paragraphCount,
+      fieldLineCount,
+    };
+  }
+
+  function analyzeSelectionShape(text, fieldText, start, end) {
+    const trimmed = text.trim();
+    const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
+    const paragraphLineCount = text.split("\n").length;
+    const spansParagraphs = paragraphLineCount > 1 || text.includes("\n");
+    const before = fieldText.slice(Math.max(0, start - 1), start);
+    const after = fieldText.slice(end, end + 1);
+    const startsMidSentence =
+      Boolean(before) && !/[.!?\n]\s*$/.test(fieldText.slice(Math.max(0, start - 80), start));
+    const endsMidSentence =
+      Boolean(after) && !/^\s*[.!?]/.test(fieldText.slice(end, end + 80));
+    const isCompleteSentence =
+      /[.!?]["')\]]*\s*$/.test(trimmed) && /^[A-Z0-9"(']/.test(trimmed);
+
+    return {
+      wordCount,
+      paragraphLineCount,
+      spansParagraphs,
+      startsMidSentence,
+      endsMidSentence,
+      isCompleteSentence,
+    };
+  }
+
+  function gatherRewriteContext(range, field) {
+    const normalizedField =
+      field instanceof HTMLElement ? normalizeEditableField(field) : null;
+    const rawSelectedText = extractRangePlainText(range);
+    const normalizedInput = rawSelectedText
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\u200b/g, "");
+    const selectedText = normalizeEmailSpacing(normalizedInput);
+    const excessVerticalSpacing = selectedText !== normalizedInput;
+    const fieldText = normalizedField ? getFieldText(normalizedField) : "";
+    const offsets = normalizedField
+      ? getRangeOffsetsInFieldText(normalizedField, range)
+      : null;
+
+    let before = "";
+    let after = "";
+    let selectionMeta = analyzeSelectionShape(selectedText, fieldText, 0, selectedText.length);
+
+    if (offsets && fieldText) {
+      const { start, end } = offsets;
+      before = fieldText.slice(Math.max(0, start - 280), start).trimStart();
+      after = fieldText.slice(end, Math.min(fieldText.length, end + 280)).trimEnd();
+      selectionMeta = analyzeSelectionShape(selectedText, fieldText, start, end);
+    } else if (fieldText && selectedText) {
+      const idx = fieldText.indexOf(selectedText);
+      if (idx >= 0) {
+        before = fieldText.slice(Math.max(0, idx - 280), idx).trimStart();
+        after = fieldText
+          .slice(idx + selectedText.length, idx + selectedText.length + 280)
+          .trimEnd();
+        selectionMeta = analyzeSelectionShape(
+          selectedText,
+          fieldText,
+          idx,
+          idx + selectedText.length
+        );
+      }
+    }
+
+    return {
+      page: inferPageContext(),
+      field: normalizedField ? inferFieldRole(normalizedField) : { role: "unknown", label: "" },
+      layout: normalizedField
+        ? detectSelectionLayout(normalizedField, range)
+        : { blockType: "unknown" },
+      selection: {
+        text: selectedText,
+        excessVerticalSpacing,
+        ...selectionMeta,
+      },
+      surrounding: {
+        before,
+        after,
+      },
+    };
+  }
+
+  function gatherRewriteContextForInput(field, { start, end }) {
+    const fieldText = field.value || "";
+    const rawSelectedText = fieldText.slice(start, end);
+    const normalizedInput = rawSelectedText
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\u200b/g, "");
+    const selectedText = normalizeEmailSpacing(normalizedInput);
+    const excessVerticalSpacing = selectedText !== normalizedInput;
+
+    return {
+      page: inferPageContext(),
+      field: inferFieldRole(field),
+      layout: { blockType: field.tagName.toLowerCase() },
+      selection: {
+        text: selectedText,
+        excessVerticalSpacing,
+        ...analyzeSelectionShape(selectedText, fieldText, start, end),
+      },
+      surrounding: {
+        before: fieldText.slice(Math.max(0, start - 280), start).trimStart(),
+        after: fieldText.slice(end, Math.min(fieldText.length, end + 280)).trimEnd(),
+      },
+    };
+  }
+
+  function clearRewriteHighlight() {
+    if (!usesNativeHighlights()) return;
+    try {
+      CSS.highlights.delete("humanizer-rewrite-selection");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function applyRewriteHighlight(range) {
+    if (!usesNativeHighlights()) return;
+    try {
+      CSS.highlights.set("humanizer-rewrite-selection", new Highlight(range));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function ensureHumanizerRippleFilter() {
+    if (document.getElementById("humanizer-ripple-filter")) return;
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "0");
+    svg.setAttribute("height", "0");
+    svg.style.position = "absolute";
+    svg.style.overflow = "hidden";
+    svg.innerHTML =
+      '<filter id="humanizer-ripple-filter" x="-20%" y="-20%" width="140%" height="140%">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="6" result="humanizer-noise">' +
+      '<animate attributeName="baseFrequency" dur="4s" values="0.015 0.05;0.025 0.06;0.015 0.05" repeatCount="indefinite" />' +
+      "</feTurbulence>" +
+      '<feDisplacementMap in="SourceGraphic" in2="humanizer-noise" scale="7" xChannelSelector="R" yChannelSelector="G" />' +
+      "</filter>";
+    document.body.appendChild(svg);
+  }
+
+  function wrapRangeForWateryEffect(range) {
+    const span = document.createElement("span");
+    span.className = "humanizer-watery-wrap";
+    try {
+      range.surroundContents(span);
+    } catch {
+      const contents = range.extractContents();
+      span.appendChild(contents);
+      range.insertNode(span);
+    }
+    rewriteDomSnapshot = captureRewriteDomSnapshot(span);
+    return span;
+  }
+
+  function startWateryEffect(el) {
+    if (!(el instanceof HTMLElement)) return;
+    ensureHumanizerRippleFilter();
+    el.classList.remove("humanizer-watery-settle");
+    el.classList.add("humanizer-watery");
+  }
+
+  function restoreRewriteDomSnapshot(wrapEl) {
+    if (!(wrapEl instanceof HTMLElement) || !wrapEl.parentNode) return false;
+    if (!rewriteDomSnapshot?.length) return false;
+    const parent = wrapEl.parentNode;
+    const frag = document.createDocumentFragment();
+    for (const node of rewriteDomSnapshot) {
+      frag.appendChild(node.cloneNode(true));
+    }
+    wrapEl.replaceWith(frag);
+    parent.normalize?.();
+    return true;
+  }
+
+  function cancelWateryEffect(el, originalText) {
+    if (!(el instanceof HTMLElement) || !el.isConnected) return;
+    el.classList.remove("humanizer-watery", "humanizer-watery-settle");
+    if (restoreRewriteDomSnapshot(el)) return;
+    replaceElementWithPlainText(el, originalText, {
+      useBlocks: rewriteUseBlocks,
+      blockTag: rewriteBlockTag,
+    });
+  }
+
+  function resolveWateryEffect(el, newText) {
+    if (!(el instanceof HTMLElement) || !el.isConnected) {
+      return false;
+    }
+
+    el.classList.remove("humanizer-watery");
+    el.classList.add("humanizer-watery-settle");
+
+    const snapshot = rewriteDomSnapshot;
+    setTimeout(() => {
+      if (!(el instanceof HTMLElement) || !el.isConnected) return;
+      el.classList.remove("humanizer-watery-settle");
+      replaceElementPreservingFormat(el, newText, snapshot);
+    }, 350);
+
+    return true;
+  }
+
+  function clearRewriteWateryState() {
+    rewriteWateryEl = null;
+    rewriteOriginalText = "";
+    rewriteUseBlocks = false;
+    rewriteBlockTag = "DIV";
+    rewriteDomSnapshot = null;
+    rewriteRangeSnapshot = null;
+  }
+
+  function rewriteUiVisible() {
+    return !!(rewriteCircleEl || rewriteBoxEl);
+  }
+
+  function eventHitsRewriteUi(target) {
+    if (!(target instanceof Element)) return false;
+    return !!target.closest(".humanizer-rewrite-btn, .humanizer-rewrite-box");
+  }
+
+  function getRangeEndRect(range) {
+    const rects = range.getClientRects();
+    if (rects.length > 0) {
+      return rects[rects.length - 1];
+    }
+    return range.getBoundingClientRect();
+  }
+
+  function positionAtSelectionCorner(el, range) {
+    if (!el) return;
+    const endRect = range ? getRangeEndRect(range) : rewriteAnchorRect;
+    if (!endRect) return;
+    const width = el.offsetWidth || 32;
+    const height = el.offsetHeight || 32;
+    const gap = 8;
+
+    // Bottom-right of selection end, with a small gap from the text.
+    let left = endRect.right + gap;
+    let top = endRect.bottom + gap;
+
+    if (left + width > window.innerWidth - 8) {
+      left = endRect.right - width - gap;
+    }
+    if (top + height > window.innerHeight - 8) {
+      top = endRect.top - height - gap;
+    }
+
+    left = Math.min(Math.max(8, left), Math.max(8, window.innerWidth - width - 8));
+    top = Math.min(Math.max(8, top), Math.max(8, window.innerHeight - height - 8));
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+  }
+
+  function repositionRewriteUi() {
+    if ((!savedRewriteRange && !rewriteAnchorRect) || rewriteSubmitting) return;
+    if (savedRewriteRange) {
+      applyRewriteHighlight(savedRewriteRange);
+    }
+    const anchor = getRewritePositionRange();
+    if (rewriteBoxEl && rewriteInputOpen && !rewriteBoxEl.classList.contains("humanizer-rewrite-box--hidden")) {
+      positionAtSelectionCorner(rewriteBoxEl, anchor);
+    } else if (rewriteCircleEl && !rewriteCircleEl.classList.contains("humanizer-rewrite-btn--hidden")) {
+      positionAtSelectionCorner(rewriteCircleEl, anchor);
+    }
+  }
+
+  function setRewriteLoading(loading) {
+    rewriteSubmitting = loading;
+    const input = rewriteBoxEl?.querySelector("input");
+    const sendButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-send");
+    if (input) input.disabled = loading;
+    if (sendButton) sendButton.disabled = loading;
+
+    if (!rewriteCircleEl || !rewriteBoxEl) return;
+
+    if (loading) {
+      rewriteBoxEl.classList.add("humanizer-rewrite-box--hidden");
+      rewriteCircleEl.classList.remove("humanizer-rewrite-btn--hidden");
+      rewriteCircleEl.classList.add("humanizer-rewrite-btn--loading");
+      if (savedRewriteRange || rewriteAnchorRect) {
+        positionAtSelectionCorner(rewriteCircleEl, getRewritePositionRange());
+      }
+      return;
+    }
+
+    rewriteCircleEl.classList.remove("humanizer-rewrite-btn--loading");
+  }
+
+  function cancelRewrite() {
+    if (rewriteWateryEl) {
+      cancelWateryEffect(rewriteWateryEl, rewriteOriginalText);
+      clearRewriteWateryState();
+    }
+    if (rewriteSubmitting) {
+      rewriteSubmitting = false;
+    }
+    hideRewriteUI();
+  }
+
+  function removeRewriteUi() {
+    rewriteCircleEl?.remove();
+    rewriteBoxEl?.remove();
+    rewriteCircleEl = null;
+    rewriteBoxEl = null;
+    rewriteInputOpen = false;
+    rewriteSubmitting = false;
+  }
+
+  function hideRewriteUI({ animate = true } = {}) {
+    if (!rewriteUiVisible()) {
+      clearRewriteHighlight();
+      clearRewriteSelectionState();
+      rewriteSubmitting = false;
+      rewriteInputOpen = false;
+      return;
+    }
+
+    const finish = () => {
+      removeRewriteUi();
+      clearRewriteHighlight();
+      clearRewriteSelectionState();
+      clearRewriteWateryState();
+    };
+
+    if (!animate) {
+      finish();
+      return;
+    }
+
+    const fading =
+      rewriteBoxEl && !rewriteBoxEl.classList.contains("humanizer-rewrite-box--hidden")
+        ? rewriteBoxEl
+        : rewriteCircleEl;
+    if (!fading) {
+      finish();
+      return;
+    }
+
+    fading.classList.remove(
+      "humanizer-rewrite-box--visible",
+      "humanizer-rewrite-btn--visible"
+    );
+    fading.classList.add(
+      fading === rewriteBoxEl
+        ? "humanizer-rewrite-box--hiding"
+        : "humanizer-rewrite-btn--hiding"
+    );
+    const onDone = () => finish();
+    fading.addEventListener("transitionend", onDone, { once: true });
+    setTimeout(onDone, 180);
+  }
+
+  function ensureRewriteCircle() {
+    if (rewriteCircleEl) return rewriteCircleEl;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "humanizer-rewrite-btn humanizer-rewrite-btn--hidden";
+    btn.setAttribute("aria-label", "Rewrite selection");
+    btn.innerHTML =
+      '<span class="humanizer-rewrite-btn-icon" aria-hidden="true">↗</span>' +
+      '<span class="humanizer-rewrite-btn-spinner" aria-hidden="true"></span>';
+
+    btn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    btn.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!rewriteSubmitting && !rewriteInputOpen) {
+        openRewriteInput();
+      }
+    });
+
+    document.body.appendChild(btn);
+    rewriteCircleEl = btn;
+    return btn;
+  }
+
+  function ensureRewriteBox() {
+    if (rewriteBoxEl) return rewriteBoxEl;
+
+    const box = document.createElement("div");
+    box.className = "humanizer-rewrite-box humanizer-rewrite-box--hidden";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-label", "Rewrite tone");
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Tone… e.g. friendly, formal, simple";
+    input.setAttribute("aria-label", "Rewrite tone");
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelRewrite();
+        return;
+      }
+      if (event.key === "Enter" && !rewriteSubmitting) {
+        event.preventDefault();
+        submitRewrite(input);
+      }
+    });
+
+    const sendButton = document.createElement("button");
+    sendButton.type = "button";
+    sendButton.className = "humanizer-rewrite-send";
+    sendButton.setAttribute("aria-label", "Submit rewrite");
+    sendButton.textContent = "→";
+
+    sendButton.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    sendButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!rewriteSubmitting) {
+        submitRewrite(input);
+      }
+    });
+
+    box.appendChild(input);
+    box.appendChild(sendButton);
+    box.addEventListener("mousedown", (event) => {
+      event.stopPropagation();
+    });
+
+    document.body.appendChild(box);
+    rewriteBoxEl = box;
+    return box;
+  }
+
+  function showRewriteCircle(range) {
+    rewriteInputOpen = false;
+    const circle = ensureRewriteCircle();
+    const box = ensureRewriteBox();
+    box.classList.add("humanizer-rewrite-box--hidden");
+    box.classList.remove(
+      "humanizer-rewrite-box--visible",
+      "humanizer-rewrite-box--hiding",
+      "humanizer-rewrite-box--error"
+    );
+    const input = box.querySelector("input");
+    if (input && document.activeElement !== input) {
+      input.value = "";
+    }
+    circle.classList.remove(
+      "humanizer-rewrite-btn--hidden",
+      "humanizer-rewrite-btn--hiding",
+      "humanizer-rewrite-btn--loading"
+    );
+    const anchor = range || getRewritePositionRange();
+    positionAtSelectionCorner(circle, anchor);
+    requestAnimationFrame(() => {
+      positionAtSelectionCorner(circle, anchor);
+      circle.classList.add("humanizer-rewrite-btn--visible");
+    });
+  }
+
+  function openRewriteInput() {
+    if (!savedRewriteField && !savedRewriteRange) return;
+    rewriteInputOpen = true;
+    const circle = ensureRewriteCircle();
+    const box = ensureRewriteBox();
+    circle.classList.add("humanizer-rewrite-btn--hidden");
+    circle.classList.remove("humanizer-rewrite-btn--visible");
+    box.classList.remove("humanizer-rewrite-box--hidden", "humanizer-rewrite-box--hiding");
+    const anchor = getRewritePositionRange();
+    positionAtSelectionCorner(box, anchor);
+    box.classList.add("humanizer-rewrite-box--visible");
+    box.querySelector("input")?.focus();
+    requestAnimationFrame(() => {
+      positionAtSelectionCorner(box, anchor);
+    });
+  }
+
+  async function callRewriteApi(text, prompt, context) {
+    const response = await fetch(REWRITE_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, prompt, context }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || `Rewrite failed (${response.status})`);
+    }
+    return data.rewritten || "";
+  }
+
+  function finishRewriteField(targetField, { skipInputDispatch = false } = {}) {
+    if (!(targetField instanceof HTMLElement)) return;
+    const normalized = normalizeEditableField(targetField);
+    suppressGrammarEvents = true;
+    try {
+      if (!skipInputDispatch) {
+        dispatchFieldInput(normalized);
+      }
+    } finally {
+      suppressGrammarEvents = false;
+    }
+    if (normalized !== activeField) {
+      attachGrammarChecker(normalized);
+      activateField(normalized);
+    }
+    markTextDirty(normalized);
+    scheduleCheck(normalized);
+  }
+
+  function applyRewriteResult(rewrittenRaw, ctx) {
+    hideRewriteUI();
+
+    const rewritten = normalizeRewrittenText(rewrittenRaw);
+    const { range, field, inputSelection } = ctx;
+
+    if (
+      inputSelection &&
+      (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)
+    ) {
+      const { start, end } = inputSelection;
+      suppressGrammarEvents = true;
+      try {
+        commitInputOrTextareaReplacement(field, start, end, rewritten);
+      } finally {
+        suppressGrammarEvents = false;
+      }
+      clearRewriteWateryState();
+      finishRewriteField(field, { skipInputDispatch: true });
+      return;
+    }
+
+    const targetField =
+      field ||
+      activeField ||
+      rewriteWateryEl?.closest?.("[contenteditable]") ||
+      null;
+    const applied = rewriteWateryEl
+      ? resolveWateryEffect(rewriteWateryEl, rewritten)
+      : false;
+
+    if (!applied && range) {
+      const liveSelection = window.getSelection();
+      if (liveSelection) {
+        liveSelection.removeAllRanges();
+        liveSelection.addRange(range);
+      }
+      suppressGrammarEvents = true;
+      try {
+        insertTextAtRangePreservingFormat(
+          range,
+          rewritten,
+          rewriteDomSnapshot?.length
+            ? rewriteDomSnapshot
+            : rewriteRangeSnapshot
+        );
+      } finally {
+        suppressGrammarEvents = false;
+      }
+    }
+
+    clearRewriteWateryState();
+    finishRewriteField(targetField);
+  }
+
+  function submitRewrite(inputEl) {
+    if (rewriteSubmitting) return;
+
+    const input =
+      inputEl || rewriteBoxEl?.querySelector("input");
+    const prompt = (input?.value || "").trim();
+
+    if (!prompt) {
+      input?.focus();
+      rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
+      setTimeout(() => {
+        rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
+      }, 1200);
+      return;
+    }
+
+    if (!savedRewriteRange && !savedInputSelection) {
+      hideRewriteUI({ animate: false });
+      return;
+    }
+
+    const field = savedRewriteField;
+    let rawText;
+    let text;
+    let rewriteContext;
+    let range = null;
+    let inputSelection = null;
+
+    if (savedRewriteRange) {
+      rawText = extractRangePlainText(savedRewriteRange);
+      text = normalizeEmailSpacing(rawText);
+      if (!text.trim()) {
+        hideRewriteUI({ animate: false });
+        return;
+      }
+
+      range = savedRewriteRange.cloneRange();
+      rewriteUseBlocks = shouldUseBlockLayout(range, text);
+      rewriteBlockTag = inferRewriteBlockTag(range, null);
+      rewriteContext = gatherRewriteContext(range, field);
+      clearRewriteHighlight();
+
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+
+      rewriteOriginalText = rawText;
+      rewriteRangeSnapshot = Array.from(
+        savedRewriteRange.cloneContents().childNodes
+      ).map((node) => node.cloneNode(true));
+      rewriteWateryEl = null;
+      try {
+        rewriteWateryEl = wrapRangeForWateryEffect(range);
+        rewriteBlockTag = inferRewriteBlockTag(range, rewriteWateryEl);
+        startWateryEffect(rewriteWateryEl);
+      } catch {
+        rewriteWateryEl = null;
+      }
+    } else {
+      rawText = field.value.slice(
+        savedInputSelection.start,
+        savedInputSelection.end
+      );
+      text = normalizeEmailSpacing(rawText);
+      if (!text.trim()) {
+        hideRewriteUI({ animate: false });
+        return;
+      }
+
+      inputSelection = { ...savedInputSelection };
+      rewriteContext = gatherRewriteContextForInput(field, savedInputSelection);
+      rewriteOriginalText = rawText;
+      rewriteWateryEl = null;
+      rewriteRangeSnapshot = null;
+      rewriteUseBlocks = false;
+    }
+
+    setRewriteLoading(true);
+
+    const resultCtx = { range, field, inputSelection };
+
+    callRewriteApi(text, prompt, rewriteContext)
+      .then((rewrittenRaw) => {
+        setRewriteLoading(false);
+        if (!isValid()) return;
+        applyRewriteResult(rewrittenRaw, resultCtx);
+      })
+      .catch(() => {
+        setRewriteLoading(false);
+        if (!isValid()) return;
+        if (rewriteWateryEl) {
+          cancelWateryEffect(rewriteWateryEl, rewriteOriginalText);
+          clearRewriteWateryState();
+        }
+        openRewriteInput();
+        rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
+        setTimeout(() => {
+          rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
+        }, 1200);
+      });
+  }
+
+  function onRewriteDocumentKeydown(event) {
+    if (event.key === "Escape" && rewriteUiVisible()) {
+      cancelRewrite();
+    }
+  }
+
+  let rewriteSelectionChangeTimer = null;
+
+  function onDocumentSelectionChange() {
+    if (!isValid() || !enabled || rewriteSubmitting || rewriteInputOpen) return;
+    clearTimeout(rewriteSelectionChangeTimer);
+    rewriteSelectionChangeTimer = setTimeout(() => {
+      if (!isValid() || !enabled || rewriteSubmitting || rewriteInputOpen) return;
+      const rewriteSel = getRewriteSelectionFromPage();
+      if (!rewriteSel || !rewriteAllowedForField(rewriteSel.field)) return;
+      if (
+        !(rewriteSel.field instanceof HTMLInputElement) &&
+        !(rewriteSel.field instanceof HTMLTextAreaElement)
+      ) {
+        return;
+      }
+      setRewriteSelection(rewriteSel);
+      showRewriteCircle(rewriteSel.range);
+    }, 80);
+  }
+
+  function onDocumentMouseUp(event) {
+    if (!isValid() || !enabled) return;
+    if (eventHitsRewriteUi(event.target)) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      if (!isValid() || !enabled) return;
+      if (eventHitsRewriteUi(event.target)) {
+        return;
+      }
+
+      const rewriteSel = getRewriteSelectionFromPage();
+      const hasValidSelection = Boolean(rewriteSel && rewriteAllowedForField(rewriteSel.field));
+
+      if (rewriteUiVisible() && !hasValidSelection) {
+        if (rewriteInputOpen) {
+          if (savedRewriteRange) {
+            applyRewriteHighlight(savedRewriteRange);
+          }
+          repositionRewriteUi();
+          return;
+        }
+        if (eventHitsRewriteUi(event.target)) {
+          repositionRewriteUi();
+          return;
+        }
+        cancelRewrite();
+        return;
+      }
+
+      if (rewriteSubmitting) {
+        return;
+      }
+
+      if (!hasValidSelection) {
+        return;
+      }
+
+      const currentSel = {
+        field: rewriteSel.field,
+        text: rewriteSel.text,
+        inputSelection: rewriteSel.inputSelection,
+        range: rewriteSel.range,
+      };
+      const previousSel = {
+        field: savedRewriteField,
+        text: savedRewriteRange
+          ? savedRewriteRange.toString()
+          : savedInputSelection
+            ? savedRewriteField?.value?.slice(
+                savedInputSelection.start,
+                savedInputSelection.end
+              )
+            : "",
+        inputSelection: savedInputSelection,
+        range: savedRewriteRange,
+      };
+
+      if (rewriteUiVisible() && rewriteSelectionMatches(currentSel, previousSel)) {
+        setRewriteSelection(rewriteSel);
+        repositionRewriteUi();
+        return;
+      }
+
+      setRewriteSelection(rewriteSel);
+      showRewriteCircle(rewriteSel.range);
+    });
   }
 
   function escapeHtml(value) {

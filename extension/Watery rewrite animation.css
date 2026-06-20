@@ -1,0 +1,24 @@
+/* Apply this class to the selected text span while waiting for the rewrite response */
+.humanizer-watery {
+    background-image: linear-gradient(100deg, #0c4a6e 0%, #0ea5e9 22%, #67e8f9 50%, #0ea5e9 78%, #0c4a6e 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: url(#humanizer-ripple-filter);
+    animation: humanizer-watery-flow 1.3s linear infinite;
+  }
+  
+  @keyframes humanizer-watery-flow {
+    to { background-position: -220% 0; }
+  }
+  
+  /* Apply this class right after swapping in the rewritten text, to settle in smoothly */
+  .humanizer-watery-settle {
+    animation: humanizer-watery-pop 0.35s ease-out;
+  }
+  
+  @keyframes humanizer-watery-pop {
+    0% { opacity: 0; transform: translateY(2px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }

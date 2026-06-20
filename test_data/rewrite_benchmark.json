@@ -1,0 +1,193 @@
+{
+  "summary": {
+    "total": 10,
+    "success": 10,
+    "failed": 0,
+    "success_rate": 1.0,
+    "latency_s": {
+      "mean": 1.03,
+      "median": 0.82,
+      "p95": 1.46
+    },
+    "similarity": {
+      "mean": 0.587,
+      "median": 0.52
+    },
+    "spacing_normalized": 1.0,
+    "structure_preserved": 1.0,
+    "by_task": {
+      "email": {
+        "count": 2,
+        "mean_similarity": 0.933,
+        "mean_latency_s": 1.14
+      },
+      "rewrite_casual": {
+        "count": 8,
+        "mean_similarity": 0.501,
+        "mean_latency_s": 1.0
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "val_1",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 1.64,
+      "similarity": 0.503,
+      "input_len": 76,
+      "output_len": 67,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "A higher court deals with civil appeals referred up from the ordinary court.",
+      "reference": "The court of a higher court hears appeals in civil cases brought by a general court.",
+      "output": "An appellate court handles civil appeals submitted by lower courts.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "val_2",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 0.81,
+      "similarity": 0.456,
+      "input_len": 64,
+      "output_len": 63,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "If anyone sees it, alert the new head of the zoology department.",
+      "reference": "Anybody see him, let the new Zoological Chief know.",
+      "output": "Alert the new head of the zoology department if anyone sees it.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "val_3",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 0.7,
+      "similarity": 0.842,
+      "input_len": 51,
+      "output_len": 44,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "But Covington had been at Hereford for seven years.",
+      "reference": "Of course, Covington spent seven years at Hereford.",
+      "output": "Covington had spent seven years at Hereford.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "val_4",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 0.84,
+      "similarity": 0.343,
+      "input_len": 136,
+      "output_len": 91,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "Accordingly, the reading range of the first implementations of RFID systems has been targeted equally by their promoters and detractors.",
+      "reference": "As a result, both promoters and opponents of RFID systems focused on the reading scope of the early applications of RFID systems to the same extent.",
+      "output": "The reading range of early RFID system implementations was similarly criticized and lauded.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "val_5",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 1.25,
+      "similarity": 0.336,
+      "input_len": 139,
+      "output_len": 138,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "I would not say that it was integral to the politics of the Nixon administration to keep John Lennon from having residence in this country.",
+      "reference": "I don't think to deny Lennon the right to establish himself here is an integral part of the Nixon Government's policy.",
+      "output": "It is not clear that it was essential to the politics of the Nixon administration to prevent John Lennon's residence in the United States.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "val_6",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 1.35,
+      "similarity": 0.537,
+      "input_len": 177,
+      "output_len": 154,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "In this respect it would be essential to strengthen the local networks that form a bridge between the European and local levels by exchanging ideas and experience with projects.",
+      "reference": "Regional networks which are a bridge between Europe and local level and enable ideas and projects to meet, should be encouraged in this way.",
+      "output": "In this respect, it is essential to strengthen local networks as bridges between the European and local levels through exchanges of ideas and experiences.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "val_7",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 0.73,
+      "similarity": 0.538,
+      "input_len": 41,
+      "output_len": 45,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "We aren't real, and I think we're fading.",
+      "reference": "We're not real, I think I'm pale.",
+      "output": "We are not real, and I believe we are fading.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "val_8",
+      "task": "rewrite_casual",
+      "ok": true,
+      "latency_s": 0.7,
+      "similarity": 0.451,
+      "input_len": 37,
+      "output_len": 39,
+      "prompt": "Rewrite in a casual, natural tone.",
+      "input_text": "Thea is in the kitchen and I am here.",
+      "reference": "Thea's in the galley, I'm in it.",
+      "output": "Thea is in the kitchen while I am here.",
+      "spacing_ok": null,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "email_spacing_chatgpt",
+      "task": "email",
+      "ok": true,
+      "latency_s": 1.46,
+      "similarity": 0.982,
+      "input_len": 93,
+      "output_len": 88,
+      "prompt": "Rewrite the text. Fix all grammar errors. Fix all spelling mistakes. Fix all punctuation errors.",
+      "input_text": "Hi Sarah,\n\n\n\nI hope you're doing well.\n\n\n\nI wanted to follow up on our meeting.\n\n\n\nBest,\nAlex",
+      "reference": "Hi Sarah,\n\n\n\nI hope you're doing well.\n\n\n\nI wanted to follow up on our meeting.\n\n\n\nBest,\nAlex",
+      "output": "Hi Sarah,\n\nI hope you are doing well.\n\nI wanted to follow up on our meeting.\n\nBest, Alex",
+      "spacing_ok": true,
+      "structure_ok": null,
+      "error": ""
+    },
+    {
+      "case_id": "email_greeting_body_signoff",
+      "task": "email",
+      "ok": true,
+      "latency_s": 0.81,
+      "similarity": 0.884,
+      "input_len": 74,
+      "output_len": 58,
+      "prompt": "make it more professional",
+      "input_text": "Dear team,\n\nPlease review the attached document by Friday.\n\nThanks,\nJordan",
+      "reference": "Dear team,\n\nPlease review the attached document by Friday.\n\nThanks,\nJordan",
+      "output": "Dear team,\n\nPlease review the attached document by Friday.",
+      "spacing_ok": null,
+      "structure_ok": true,
+      "error": ""
+    }
+  ]
+}

@@ -286,3 +286,211 @@
   font-size: 14px;
   color: var(--grm-color-text-muted);
 }
+
+/* Rewrite selection UI */
+::highlight(humanizer-rewrite-selection) {
+  text-decoration: underline solid #3b82f6;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.humanizer-rewrite-btn {
+  position: fixed;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+  cursor: pointer;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.humanizer-rewrite-btn--hidden {
+  display: none;
+}
+
+.humanizer-rewrite-btn--visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.humanizer-rewrite-btn--hiding {
+  opacity: 0;
+  transform: scale(0.92);
+  pointer-events: none;
+}
+
+.humanizer-rewrite-btn-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.humanizer-rewrite-btn-spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: humanizer-rewrite-spin 0.7s linear infinite;
+}
+
+.humanizer-rewrite-btn--loading .humanizer-rewrite-btn-icon {
+  display: none;
+}
+
+.humanizer-rewrite-btn--loading .humanizer-rewrite-btn-spinner {
+  display: block;
+}
+
+.humanizer-rewrite-box {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 99999;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.humanizer-rewrite-box--hidden {
+  display: none;
+}
+
+.humanizer-rewrite-box--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.humanizer-rewrite-box--hiding {
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+.humanizer-rewrite-box--error {
+  animation: humanizer-rewrite-shake 0.35s ease;
+  border-color: #fca5a5;
+}
+
+.humanizer-rewrite-box input {
+  width: 180px;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  background: transparent;
+  color: #111827;
+}
+
+.humanizer-rewrite-box input::placeholder {
+  color: #9ca3af;
+}
+
+.humanizer-rewrite-box input:disabled {
+  color: #6b7280;
+}
+
+.humanizer-rewrite-box .humanizer-rewrite-send {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.humanizer-rewrite-box .humanizer-rewrite-send:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.humanizer-rewrite-box .humanizer-rewrite-send:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+@keyframes humanizer-rewrite-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes humanizer-rewrite-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Watery rewrite animation */
+.humanizer-watery {
+  background-image: linear-gradient(
+    100deg,
+    #0c4a6e 0%,
+    #0ea5e9 22%,
+    #67e8f9 50%,
+    #0ea5e9 78%,
+    #0c4a6e 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: url(#humanizer-ripple-filter);
+  animation: humanizer-watery-flow 1.3s linear infinite;
+}
+
+@keyframes humanizer-watery-flow {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+.humanizer-watery-settle {
+  animation: humanizer-watery-pop 0.35s ease-out;
+}
+
+@keyframes humanizer-watery-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

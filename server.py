@@ -16,19 +16,18 @@ from contextlib import asynccontextmanager
 import urllib.error
 import urllib.request
 from functools import lru_cache
-from typing import Any
+from typing import Any, Dict, Optional
 
 import language_tool_python
 import requests
 import uvicorn
 
-import rag
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-OLLAMA_MODEL = "qwen2.5:7b"
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "humanizer-grammar")
 OLLAMA_TEMPERATURE = 0.9
 OLLAMA_GRAMMAR_TEMPERATURE = 0.2
 OLLAMA_START_TIMEOUT_SEC = 30.0
@@ -120,6 +119,19 @@ class HumanizeResponse(BaseModel):
     result: str
 
 
+class RewriteRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    prompt: Optional[str] = None
+    tone: str = "neutral"
+    context: Optional[Dict[str, Any]] = None
+
+
+class RewriteResponse(BaseModel):
+    text: str
+    tone: str
+    rewritten: str
+
+
 class HealthResponse(BaseModel):
     ok: bool
     ollama_available: bool
@@ -162,7 +174,6 @@ def _split_paragraphs(text: str) -> list[str]:
 
 _SENTENCE_SPLIT_RE = re.compile(r"[^.!?]+[.!?]+|[^.!?]+$")
 _WORD_TOKEN_RE = re.compile(r"[A-Za-z0-9']+|\S")
-_GAP_HINT_RE = re.compile(r'^"([^"]*)"\s*→\s*"([^"]*)"$')
 
 
 def _split_sentences(text: str) -> list[tuple[int, int, str]]:
@@ -187,61 +198,15 @@ def _matches_in_span(
     ]
 
 
-def _phrase_overlaps_match(
-    phrase: str, text: str, match: dict[str, Any]
-) -> bool:
-    phrase_lower = phrase.lower().strip()
-    if not phrase_lower:
-        return False
-    offset = match.get("offset", -1)
-    length = match.get("length", 0)
-    if not isinstance(offset, int) or not isinstance(length, int):
-        return False
-    span = text[offset : offset + length].lower()
-    return phrase_lower in span or span in phrase_lower
-
-
-def _lt_covers_phrase(
-    phrase: str, text: str, lt_matches: list[dict[str, Any]]
-) -> bool:
-    return any(_phrase_overlaps_match(phrase, text, match) for match in lt_matches)
-
-
-def _parse_gap_hint(hint: str) -> tuple[str, str] | None:
-    match = _GAP_HINT_RE.match((hint or "").strip())
-    if not match:
-        return None
-    return match.group(1), match.group(2)
-
-
-def _gap_hints_for_sentence(
-    sentence: str, gap_hints: list[str]
-) -> list[tuple[str, str]]:
-    sentence_lower = sentence.lower()
-    found: list[tuple[str, str]] = []
-    for hint in gap_hints:
-        parsed = _parse_gap_hint(hint)
-        if parsed and parsed[0].lower() in sentence_lower:
-            found.append(parsed)
-    return found
-
-
 def _sentence_needs_deep_fix(
-    sentence: str,
     sentence_start: int,
     sentence_end: int,
     lt_high: list[dict[str, Any]],
     lt_all: list[dict[str, Any]],
-    gap_hints: list[str],
-    full_text: str,
 ) -> bool:
-    """Route hard sentences to Agent 2 when Agent 1 lacks high-confidence coverage."""
+    """Route hard sentences to Agent 2 when LanguageTool coverage is incomplete."""
     sent_high = _matches_in_span(lt_high, sentence_start, sentence_end)
     sent_all = _matches_in_span(lt_all, sentence_start, sentence_end)
-
-    for wrong, _correct in _gap_hints_for_sentence(sentence, gap_hints):
-        if not _lt_covers_phrase(wrong, full_text, sent_high):
-            return True
 
     if len(sent_all) >= 2:
         return True
@@ -252,16 +217,7 @@ def _sentence_needs_deep_fix(
     return False
 
 
-def _build_deep_fix_prompt(sentence: str, hints: list[str] | None = None) -> str:
-    hints = hints or []
-    hints_block = ""
-    if hints:
-        joined = "\n".join(f"- {hint}" for hint in hints)
-        hints_block = (
-            "Apply these learned corrections where they apply:\n"
-            f"{joined}\n\n"
-        )
-
+def _build_deep_fix_prompt(sentence: str) -> str:
     return (
         "Fix grammar errors. Rules:\n"
         "- Irregular verbs: buy→bought, go→went, see→saw, run→ran\n"
@@ -275,6 +231,7 @@ def _build_deep_fix_prompt(sentence: str, hints: list[str] | None = None) -> str
         "- NEVER change a word that was already correctly fixed\n"
         "- NEVER change prepositions (about, with, while, for, of)\n"
         "- No space before punctuation, never split sentences, never add commas unnecessarily\n"
+        "- Change only the incorrect phrase(s), not the whole sentence when a short fix suffices\n"
         "- Return ONLY the corrected sentence, nothing else\n"
         "\n"
         "Examples:\n"
@@ -286,7 +243,6 @@ def _build_deep_fix_prompt(sentence: str, hints: list[str] | None = None) -> str
         "their new house → their new house (no change, already correct)\n"
         "they're going → they're going (no change, already correct)\n"
         "\n"
-        f"{hints_block}"
         "Correct this:\n\n"
         f"{sentence}"
     )
@@ -309,7 +265,7 @@ def _tokenize_for_diff(text: str) -> list[str]:
 def _pairs_from_replace_slice(
     src_slice: list[str], ref_slice: list[str]
 ) -> list[tuple[str, str]]:
-    """Split a replace opcode into one (wrong, correct) pair per word change."""
+    """Keep each diff replace opcode as one multi-word phrase pair."""
     pairs: list[tuple[str, str]] = []
     for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
         None, src_slice, ref_slice
@@ -318,16 +274,12 @@ def _pairs_from_replace_slice(
             continue
         sub_src = src_slice[i1:i2]
         sub_ref = ref_slice[j1:j2]
-        if len(sub_src) == 1 and len(sub_ref) == 1:
-            wrong, correct = sub_src[0], sub_ref[0]
-            if wrong and correct and wrong.lower() != correct.lower():
-                pairs.append((wrong, correct))
-        elif len(sub_src) == len(sub_ref):
-            for wrong, correct in zip(sub_src, sub_ref):
-                if wrong and correct and wrong.lower() != correct.lower():
-                    pairs.append((wrong, correct))
-        else:
-            pairs.extend(_pairs_from_replace_slice(sub_src, sub_ref))
+        if not sub_src or not sub_ref:
+            continue
+        wrong = " ".join(sub_src)
+        correct = " ".join(sub_ref)
+        if wrong and correct and wrong.lower() != correct.lower():
+            pairs.append((wrong, correct))
     return pairs
 
 
@@ -348,6 +300,160 @@ def _extract_replace_pairs(source: str, reference: str) -> list[tuple[str, str]]
     return pairs
 
 
+def _word_char_spans(text: str, tokens: list[str]) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    pos = 0
+    for tok in tokens:
+        idx = text.find(tok, pos)
+        if idx == -1:
+            idx = text.lower().find(tok.lower(), pos)
+        if idx == -1:
+            spans.append((pos, pos + len(tok)))
+            pos += len(tok)
+        else:
+            spans.append((idx, idx + len(tok)))
+            pos = idx + len(tok)
+    return spans
+
+
+def _rewrite_match_word_range(
+    original: str, match: dict[str, Any], base_offset: int
+) -> tuple[int, int] | None:
+    """Map a rewrite match to inclusive word indices in original."""
+    local_start = int(match["offset"]) - base_offset
+    local_end = local_start + int(match["length"])
+    tokens = _tokenize_for_diff(original)
+    spans = _word_char_spans(original, tokens)
+
+    first: int | None = None
+    last: int | None = None
+    for index, (start, end) in enumerate(spans):
+        if end <= local_start:
+            continue
+        if start >= local_end:
+            break
+        if first is None:
+            first = index
+        last = index
+
+    if first is None or last is None:
+        return None
+    return first, last
+
+
+def _corrected_phrase_for_word_range(
+    original: str, corrected: str, word_start: int, word_end: int
+) -> str:
+    """Aligned phrase from Qwen output covering the same word span."""
+    orig_tokens = _tokenize_for_diff(original)
+    corr_tokens = _tokenize_for_diff(corrected)
+    corr_spans = _word_char_spans(corrected, corr_tokens)
+
+    corr_word_indices: list[int] = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
+        None, orig_tokens, corr_tokens
+    ).get_opcodes():
+        overlap_start = max(i1, word_start)
+        overlap_end = min(i2, word_end + 1)
+        if overlap_start >= overlap_end:
+            continue
+
+        if tag == "equal":
+            for orig_index in range(overlap_start, overlap_end):
+                corr_word_indices.append(j1 + (orig_index - i1))
+        elif tag == "replace":
+            orig_len = i2 - i1
+            corr_len = j2 - j1
+            if orig_len <= 0:
+                continue
+            for orig_index in range(overlap_start, overlap_end):
+                rel = orig_index - i1
+                corr_index = j1 + int((rel + 0.5) * corr_len / orig_len)
+                corr_index = min(j2 - 1, max(j1, corr_index))
+                corr_word_indices.append(corr_index)
+
+    if not corr_word_indices:
+        return " ".join(corr_tokens[word_start : word_end + 1])
+
+    c_first = min(corr_word_indices)
+    c_last = max(corr_word_indices)
+    return corrected[corr_spans[c_first][0] : corr_spans[c_last][1]]
+
+
+def _merge_rewrite_matches_by_word_gap(
+    matches: list[dict[str, Any]],
+    original: str,
+    corrected: str,
+    base_offset: int,
+    *,
+    max_word_gap: int = 3,
+    rule_id: str = "DEEP_FIXER",
+    category: str = "AGENT2",
+) -> list[dict[str, Any]]:
+    """Merge rewrite matches within max_word_gap words of each other."""
+    if len(matches) <= 1:
+        return matches
+
+    orig_tokens = _tokenize_for_diff(original)
+    orig_spans = _word_char_spans(original, orig_tokens)
+
+    indexed: list[tuple[dict[str, Any], tuple[int, int]]] = []
+    for match in sorted(matches, key=lambda item: item["offset"]):
+        word_range = _rewrite_match_word_range(original, match, base_offset)
+        if word_range is None:
+            indexed.append((match, (-1, -1)))
+        else:
+            indexed.append((match, word_range))
+
+    groups: list[list[tuple[dict[str, Any], tuple[int, int]]]] = [[indexed[0]]]
+    for item in indexed[1:]:
+        _match, (w_start, w_end) = item
+        _prev_match, (prev_start, prev_end) = groups[-1][-1]
+        if w_start < 0 or prev_start < 0:
+            groups.append([item])
+            continue
+        gap_words = w_start - prev_end - 1
+        if gap_words <= max_word_gap:
+            groups[-1].append(item)
+        else:
+            groups.append([item])
+
+    merged: list[dict[str, Any]] = []
+    for group in groups:
+        if len(group) == 1:
+            merged.append(dict(group[0][0]))
+            continue
+
+        word_start = min(word_range[0] for _m, word_range in group)
+        word_end = max(word_range[1] for _m, word_range in group)
+        char_start = orig_spans[word_start][0]
+        char_end = orig_spans[word_end][1]
+        wrong = original[char_start:char_end]
+        suggestion = _corrected_phrase_for_word_range(
+            original, corrected, word_start, word_end
+        )
+        if not wrong or not suggestion or wrong == suggestion:
+            merged.extend(dict(m) for m, _ in group)
+            continue
+
+        base = dict(group[0][0])
+        base.update(
+            {
+                "word": wrong,
+                "offset": base_offset + char_start,
+                "length": char_end - char_start,
+                "suggestions": _format_suggestions([suggestion]),
+                "type": "grammar",
+                "message": f'Use "{suggestion}" instead of "{wrong}"',
+                "rule_id": rule_id,
+                "category": category,
+            }
+        )
+        merged.append(base)
+
+    return merged
+
+
 def _rewrite_to_matches(
     original: str,
     corrected: str,
@@ -359,13 +465,19 @@ def _rewrite_to_matches(
         {"wrong": wrong, "correct": correct, "reason": "Deep sentence rewrite"}
         for wrong, correct in _extract_replace_pairs(original, corrected)
     ]
-    return _ollama_errors_to_matches(
+    matches = _ollama_errors_to_matches(
         original,
         errors,
         existing=existing,
         base_offset=base_offset,
         rule_id="DEEP_FIXER",
         category="AGENT2",
+    )
+    return _merge_rewrite_matches_by_word_gap(
+        matches,
+        original,
+        corrected,
+        base_offset,
     )
 
 
@@ -380,20 +492,10 @@ def _offset_matches_to_sentence(
     return shifted
 
 
-def _call_deep_fixer(
-    sentence: str, *, gap_hints: list[str] | None = None
-) -> tuple[str | None, bool]:
+def _call_deep_fixer(sentence: str) -> tuple[str | None, bool]:
     try:
-        learned_hints = rag.get_deep_fix_hints(sentence)
-        combined_hints: list[str] = []
-        seen_hints: set[str] = set()
-        for hint in (gap_hints or []) + learned_hints:
-            if hint and hint not in seen_hints:
-                seen_hints.add(hint)
-                combined_hints.append(hint)
-
         raw = _ollama_generate(
-            _build_deep_fix_prompt(sentence, combined_hints),
+            _build_deep_fix_prompt(sentence),
             temperature=OLLAMA_GRAMMAR_TEMPERATURE,
             grammar=False,
         )
@@ -625,57 +727,158 @@ def humanize_text(text: str) -> str:
     return _ollama_generate(second_pass_prompt)
 
 
-def _log_rag_injection(text: str, info: dict[str, Any]) -> None:
-    """Print RAG rule selection for each qwen2.5:7b grammar request."""
-    preview = text[:80].replace("\n", " ")
-    print("=== RAG INJECTION ===", flush=True)
-    print(
-        f"  grammar_rules.json: {info['total_rules']} total, "
-        f"{info.get('eligible_rules', info['total_rules'])} injectable",
-        flush=True,
-    )
-    print(
-        f"  selected: {info['selected_count']} rules (top_k=5, mode={info['mode']})",
-        flush=True,
-    )
-    if info.get("gap_hint_count"):
-        print(f"  LT gap hints: {info['gap_hint_count']}", flush=True)
-    print(
-        f"  prompt block: {info['prompt_block_chars']} chars, "
-        f"injected={info['injected']}",
-        flush=True,
-    )
-    for rule in info.get("selected_rules") or []:
-        category = rule.get("category") or "uncategorized"
-        print(
-            f"    - [{rule.get('id')}] ({category}) {rule.get('title')}",
-            flush=True,
-        )
-    if not info.get("selected_rules"):
-        print("    - (no rules selected — prompt has no RAG block)", flush=True)
-    print(f"  text: {preview!r}", flush=True)
+def _format_rewrite_context(context: dict[str, Any] | None) -> str:
+    if not context:
+        return ""
+
+    lines: list[str] = ["DOCUMENT CONTEXT:"]
+
+    page = context.get("page") or {}
+    if page:
+        app = page.get("app") or "unknown"
+        doc_type = page.get("documentType") or "unknown"
+        lines.append(f"- Application: {app}")
+        lines.append(f"- Document type: {doc_type}")
+        if page.get("title"):
+            lines.append(f"- Page title: {page['title']}")
+
+    field = context.get("field") or {}
+    if field:
+        role = field.get("role") or "unknown"
+        lines.append(f"- Field role: {role}")
+        if field.get("label"):
+            lines.append(f"- Field label: {field['label']}")
+
+    layout = context.get("layout") or {}
+    if layout:
+        block = layout.get("blockType") or "unknown"
+        lines.append(f"- Block type: {block}")
+        if layout.get("inList"):
+            lines.append(
+                f"- Inside list ({layout.get('listType') or 'list'} item "
+                f"{layout.get('listIndex') or '?'})"
+            )
+        if layout.get("paragraphIndex") is not None:
+            lines.append(
+                f"- Paragraph {layout['paragraphIndex']} of "
+                f"{layout.get('paragraphCount') or '?'}"
+            )
+        if layout.get("fieldLineCount") is not None:
+            lines.append(f"- Field has {layout['fieldLineCount']} line(s)")
+
+    selection = context.get("selection") or {}
+    if selection:
+        if selection.get("wordCount") is not None:
+            lines.append(f"- Selection length: {selection['wordCount']} words")
+        flags = []
+        if selection.get("spansParagraphs"):
+            flags.append("spans multiple paragraphs")
+        if selection.get("startsMidSentence"):
+            flags.append("starts mid-sentence")
+        if selection.get("endsMidSentence"):
+            flags.append("ends mid-sentence")
+        if selection.get("isCompleteSentence"):
+            flags.append("complete sentence(s)")
+        if flags:
+            lines.append(f"- Selection shape: {', '.join(flags)}")
+        line_count = selection.get("paragraphLineCount")
+        if line_count and line_count > 1:
+            lines.append(f"- Paragraph structure: {line_count} lines (single blank line between sections)")
+        if selection.get("excessVerticalSpacing"):
+            lines.append(
+                "- Spacing fix needed: collapse excess blank lines to one blank line "
+                "between sections"
+            )
+
+    surrounding = context.get("surrounding") or {}
+    if surrounding.get("before"):
+        lines.append(f"\nTEXT BEFORE SELECTION:\n...{surrounding['before']}")
+    if surrounding.get("after"):
+        lines.append(f"\nTEXT AFTER SELECTION:\n{surrounding['after']}...")
+
+    return "\n".join(lines)
 
 
-def _build_ollama_grammar_prompt(
-    text: str, lt_matches: list[dict[str, Any]] | None = None
+def _normalize_email_spacing(text: str) -> str:
+    """Collapse runs of blank lines to a single blank line between sections."""
+    if not text:
+        return ""
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+    collapsed: list[str] = []
+    previous_blank = False
+    for line in normalized.split("\n"):
+        is_blank = not line.strip()
+        if is_blank:
+            if not previous_blank:
+                collapsed.append("")
+            previous_blank = True
+        else:
+            collapsed.append(line)
+            previous_blank = False
+    return "\n".join(collapsed)
+
+
+def _build_rewrite_prompt(
+    text: str,
+    user_instruction: str,
+    context: dict[str, Any] | None = None,
+    *,
+    direct: bool = False,
 ) -> str:
-    lt_matches = lt_matches or []
-    rag_block, rag_info = rag.prepare_grammar_rag_for_prompt(
-        text, lt_matches, top_k=rag.DEFAULT_TOP_K
+    instruction = (user_instruction or "").strip()
+    if not instruction:
+        instruction = "Rewrite to sound clear and natural."
+    elif not direct:
+        if len(instruction.split()) <= 2 and not any(
+            char in instruction for char in ".!?,:;"
+        ):
+            instruction = f"Rewrite in a {instruction} tone."
+        elif not instruction.lower().startswith("rewrite"):
+            instruction = f"Rewrite the text as follows: {instruction}"
+
+    context_block = _format_rewrite_context(context)
+    planning = (
+        "You are rewriting a selected passage inside a larger document.\n"
+        "1. Read the document context, layout, and surrounding text.\n"
+        "2. Plan how the selection should change while fitting its place in the layout.\n"
+        "3. Rewrite ONLY the selected passage — not the before/after text.\n"
+        "4. Match constraints: email subjects stay one concise line; list items stay "
+        "parallel; mid-sentence edits must flow into neighboring text; preserve meaning.\n"
+        "5. For emails and multi-section text: use exactly ONE blank line between sections "
+        "(greeting, body, sign-off). Never stack multiple blank lines. If the input has "
+        "excess vertical spacing from pasted AI text, normalize it down to single breaks.\n"
+        "Return ONLY the rewritten selected text, nothing else."
     )
-    _log_rag_injection(text, rag_info)
-    rag_section = f"\n{rag_block}\n\n" if rag_block else "\n"
 
-    focus_note = ""
-    if lt_matches:
-        focus_note = (
-            "LanguageTool has already flagged some issues (listed above). "
-            "Find ADDITIONAL errors it missed — especially those marked MUST find.\n\n"
-        )
+    sections = [planning]
+    if context_block:
+        sections.append(context_block)
+    sections.append(f"\nUSER INSTRUCTION:\n{instruction}")
+    sections.append(f"\nSELECTED TEXT TO REWRITE:\n{text}")
+    return "\n\n".join(sections)
 
+
+def rewrite_text(
+    text: str,
+    user_instruction: str = "neutral",
+    context: dict[str, Any] | None = None,
+    *,
+    direct: bool = False,
+) -> str:
+    """Rewrite selected text using layout context and user instruction via Ollama."""
+    if not text or not text.strip():
+        return ""
+    prompt = _build_rewrite_prompt(text, user_instruction, context, direct=direct)
+    raw = _ollama_generate(prompt, temperature=0.4)
+    return _normalize_email_spacing(_clean_deep_fix_response(raw))
+
+
+def _build_ollama_grammar_prompt(text: str) -> str:
+    """Legacy JSON grammar prompt (unused by live two-agent pipeline)."""
     return f"""You are a strict English grammar and spelling checker. Find EVERY error in the text.
 
-{rag_section}{focus_note}Pass 1 - Spelling & Word Choice:
+Pass 1 - Spelling & Word Choice:
 - Misspelled words
 - Homophones (to/too/two, their/there/they're, your/you're)
 - Confused words (specific/pacific, aisle/isle, people/peoples)
@@ -761,6 +964,67 @@ def _merge_grammar_matches(
         if not overlaps:
             merged.append(candidate)
     return merged
+
+
+def _coalesce_nearby_matches(
+    text: str,
+    matches: list[dict[str, Any]],
+    *,
+    max_gap: int = 2,
+) -> list[dict[str, Any]]:
+    """Merge adjacent matches into multi-word fix chunks (not single-word splinters)."""
+    if not matches:
+        return []
+
+    sorted_matches = sorted(matches, key=lambda m: m["offset"])
+    groups: list[list[dict[str, Any]]] = [[sorted_matches[0]]]
+
+    for match in sorted_matches[1:]:
+        prev = groups[-1][-1]
+        prev_end = prev["offset"] + prev["length"]
+        gap = match["offset"] - prev_end
+        if gap <= max_gap:
+            groups[-1].append(match)
+        else:
+            groups.append([match])
+
+    coalesced: list[dict[str, Any]] = []
+    for group in groups:
+        if len(group) == 1:
+            coalesced.append(dict(group[0]))
+            continue
+
+        start = group[0]["offset"]
+        end = group[-1]["offset"] + group[-1]["length"]
+        chunk = text[start:end]
+        result = chunk
+        for item in sorted(group, key=lambda m: m["offset"], reverse=True):
+            rel_off = item["offset"] - start
+            suggestions = item.get("suggestions") or []
+            if not suggestions:
+                continue
+            result = (
+                result[:rel_off]
+                + suggestions[0]
+                + result[rel_off + item["length"] :]
+            )
+
+        base = dict(group[0])
+        base.update(
+            {
+                "offset": start,
+                "length": end - start,
+                "word": chunk,
+                "suggestions": [result],
+                "message": f'Use "{result}" instead of "{chunk}"',
+                "type": "grammar",
+                "rule_id": base.get("rule_id") or "COALESCED",
+                "category": base.get("category") or "MERGED",
+            }
+        )
+        coalesced.append(base)
+
+    return coalesced
 
 
 def _resolve_error_span(
@@ -853,18 +1117,15 @@ def _ollama_errors_to_matches(
 def _call_ollama_for_grammar(
     text: str,
     existing: list[dict[str, Any]] | None = None,
-    *,
-    lt_matches: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], bool, str | None, list[dict[str, Any]] | None]:
     """
-    qwen2.5:7b grammar check with RAG context (including LanguageTool gaps).
+    Legacy qwen2.5:7b JSON grammar check (unused by live two-agent pipeline).
 
     Returns (matches, success, raw_response, parsed_errors).
     """
     existing = existing or []
-    lt_matches = lt_matches or []
     try:
-        prompt = _build_ollama_grammar_prompt(text, lt_matches)
+        prompt = _build_ollama_grammar_prompt(text)
         raw_response = _ollama_generate(
             prompt, temperature=OLLAMA_GRAMMAR_TEMPERATURE, grammar=True
         )
@@ -1004,15 +1265,15 @@ def check_grammar(text: str) -> dict[str, Any]:
     """
     Two-agent grammar pipeline.
 
-    Agent 1 (fast): LanguageTool high-confidence matches + RAG gap routing.
-    Agent 2 (deep): qwen2.5:7b full-sentence rewrite for hard sentences.
+    Agent 1 (fast): LanguageTool high-confidence matches.
+    Agent 2 (deep): fine-tuned qwen2.5:7b full-sentence rewrite for hard sentences.
     """
     text = text.strip()
 
     try:
         lt_high, lt_all = _check_grammar_languagetool_split(text)
         print(
-            "=== AGENT 1 (LT + RAG) ===",
+            "=== AGENT 1 (LT) ===",
             f"{len(lt_high)} high-confidence matches",
             f"({len(lt_all)} total LT)",
             flush=True,
@@ -1026,29 +1287,10 @@ def check_grammar(text: str) -> dict[str, Any]:
             {"error": str(exc)[:300]},
         )
 
-    rag_block, rag_info = rag.prepare_grammar_rag_for_prompt(text, lt_high)
-    _log_rag_injection(text, rag_info)
-
-    gap_hints, _gap_rule_ids = rag.find_languagetool_gaps(text, lt_high)
-    if gap_hints:
-        print(
-            "=== RAG GAPS ===",
-            f"{len(gap_hints)} patterns LT missed",
-            flush=True,
-        )
-
     sentences = _split_sentences(text)
     deep_sentence_indexes: list[int] = []
-    for index, (start, end, sentence) in enumerate(sentences):
-        if _sentence_needs_deep_fix(
-            sentence,
-            start,
-            end,
-            lt_high,
-            lt_all,
-            gap_hints,
-            text,
-        ):
+    for index, (start, end, _sentence) in enumerate(sentences):
+        if _sentence_needs_deep_fix(start, end, lt_high, lt_all):
             deep_sentence_indexes.append(index)
 
     agent1_matches: list[dict[str, Any]] = []
@@ -1070,13 +1312,7 @@ def check_grammar(text: str) -> dict[str, Any]:
     ollama_ok = True
     for index in deep_sentence_indexes:
         start, _end, sentence = sentences[index]
-        sentence_gaps = [
-            hint
-            for hint in gap_hints
-            if _parse_gap_hint(hint)
-            and (_parse_gap_hint(hint) or ("", ""))[0].lower() in sentence.lower()
-        ]
-        corrected, ok = _call_deep_fixer(sentence, gap_hints=sentence_gaps)
+        corrected, ok = _call_deep_fixer(sentence)
         if not ok or not corrected:
             ollama_ok = False
             agent1_matches.extend(
@@ -1100,6 +1336,7 @@ def check_grammar(text: str) -> dict[str, Any]:
             )
 
     formatted_matches = _merge_grammar_matches(agent1_matches, agent2_matches)
+    formatted_matches = _coalesce_nearby_matches(text, formatted_matches)
     corrected = _build_corrected_two_agent(
         text, sentences, agent1_matches, deep_fixes
     )
@@ -1149,7 +1386,7 @@ warnings.filterwarnings(
 
 
 def _warm_ollama_model() -> None:
-    """Preload qwen2.5:7b so the first user grammar check is faster."""
+    """Preload the grammar model so the first user grammar check is faster."""
     if not is_ollama_running():
         return
     try:
@@ -1170,7 +1407,6 @@ def startup_warm_grammar() -> None:
     _get_language_tool.cache_clear()
     try:
         _get_language_tool()
-        rag.load_rules()
         _grammar_quick_response("Warmup.")
         _warm_ollama_model()
         _grammar_available = True
@@ -1235,11 +1471,8 @@ def _grammar_quick_response(text: str) -> GrammarResponse:
 # Register /grammar/quick before /grammar so routing is unambiguous.
 @app.post("/reload-rules")
 def reload_rules() -> dict[str, Any]:
-    """Reload grammar_rules.json into the RAG cache (called after auto_tune adds rules)."""
-    rag.reload_rules_cache()
-    total = len(rag.load_rules())
-    injectable = len(rag.injectable_rules())
-    return {"ok": True, "total_rules": total, "injectable_rules": injectable}
+    """No-op kept for auto_tune compatibility (RAG removed from grammar pipeline)."""
+    return {"ok": True, "message": "RAG removed; reload not required"}
 
 
 @app.post("/grammar/quick", response_model=GrammarResponse)
@@ -1267,7 +1500,7 @@ def grammar(
         return _grammar_quick_response(text)
 
     if DEBUG_OLLAMA:
-        print("=== GRAMMAR (LT→RAG→qwen2.5:7b) ===", text[:200], flush=True)
+        print("=== GRAMMAR (LT→qwen2.5:7b) ===", text[:200], flush=True)
 
     try:
         result = check_grammar(text)
@@ -1303,6 +1536,28 @@ def humanize(body: TextRequest) -> HumanizeResponse:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return HumanizeResponse(text=text, result=result)
+
+
+@app.post("/rewrite", response_model=RewriteResponse)
+def rewrite(body: RewriteRequest) -> RewriteResponse:
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text must not be empty")
+
+    user_prompt = (body.prompt or body.tone or "").strip()
+    if not user_prompt:
+        raise HTTPException(status_code=400, detail="prompt must not be empty")
+    context = body.context
+    direct = bool((body.prompt or "").strip())
+
+    try:
+        rewritten = rewrite_text(text, user_prompt, context, direct=direct)
+    except OllamaError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    return RewriteResponse(text=text, tone=user_prompt, rewritten=rewritten)
 
 
 if __name__ == "__main__":

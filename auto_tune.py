@@ -24,7 +24,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parent
 RULES_PATH = ROOT / "grammar_rules.json"
-PAIRS_PATH = ROOT / "test_data" / "pairs.json"
+PAIRS_PATH = ROOT / "train_data.jsonl"
 MASTERED_PATH = ROOT / "test_data" / "mastered_pairs.json"
 GRAMMAR_URL = "http://127.0.0.1:8000/grammar"
 HEALTH_URL = "http://127.0.0.1:8000/health"
@@ -117,48 +117,46 @@ def save_mastered_labels(labels: set[str], path: Path = MASTERED_PATH) -> None:
         handle.write("\n")
 
 
-def load_test_pairs(path: Path = PAIRS_PATH) -> list[TestPair]:
+def load_test_pairs(path: Path = PAIRS_PATH):
     if not path.is_file():
         print(f"Missing test pairs file: {path}", file=sys.stderr)
         sys.exit(1)
 
-    with path.open(encoding="utf-8") as handle:
-        raw = json.load(handle)
+    def pair_stream():
+        with path.open(encoding="utf-8") as handle:
+            for index, line in enumerate(handle, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
 
-    if isinstance(raw, dict):
-        entries = raw.get("pairs", [])
-    elif isinstance(raw, list):
-        entries = raw
-    else:
-        print(f"Invalid pairs.json: expected list or {{\"pairs\": [...]}}", file=sys.stderr)
-        sys.exit(1)
+                wrong = (entry.get("input") or entry.get("wrong") or "").strip()
+                correct = (entry.get("output") or entry.get("correct") or "").strip()
+                if not wrong or not correct:
+                    continue
 
-    pairs: list[TestPair] = []
-    for index, entry in enumerate(entries, start=1):
-        if not isinstance(entry, dict):
-            continue
-        wrong = (entry.get("wrong") or "").strip()
-        correct = (entry.get("correct") or "").strip()
-        if not wrong or not correct:
-            continue
+                label = (entry.get("id") or entry.get("label") or f"pair-{index}").strip()
+                explicit = entry.get("errors") or entry.get("ground_truth") or []
+                if explicit:
+                    errors = [
+                        {"wrong": e["wrong"], "correct": e["correct"]}
+                        for e in explicit
+                        if isinstance(e, dict) and e.get("wrong") and e.get("correct")
+                    ]
+                else:
+                    errors = extract_errors_from_pair(wrong, correct)
 
-        label = (entry.get("id") or entry.get("label") or f"pair-{index}").strip()
-        explicit = entry.get("errors") or entry.get("ground_truth") or []
-        if explicit:
-            errors = [
-                {"wrong": e["wrong"], "correct": e["correct"]}
-                for e in explicit
-                if isinstance(e, dict) and e.get("wrong") and e.get("correct")
-            ]
-        else:
-            errors = extract_errors_from_pair(wrong, correct)
+                yield TestPair(wrong=wrong, correct=correct, errors=errors, label=label)
 
-        pairs.append(TestPair(wrong=wrong, correct=correct, errors=errors, label=label))
-
+    pairs = list(pair_stream())
     if not pairs:
         print(f"No valid pairs in {path}", file=sys.stderr)
         sys.exit(1)
-
     return pairs
 
 

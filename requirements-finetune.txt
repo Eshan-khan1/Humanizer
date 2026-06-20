@@ -1,0 +1,7 @@
+# Fine-tune grammar model with MLX LoRA on Apple Silicon.
+# Install: pip install -r requirements-finetune.txt
+# Data prep: .venv/bin/python prepare_data.py
+mlx-lm[train]
+torch
+gguf
+datasets

@@ -1,0 +1,47 @@
+{
+    "rewrite_ui": {
+      "trigger": "mouseup on selection inside attached contenteditable, minimum 3 words selected",
+      "circle_button": {
+        "class": "humanizer-rewrite-btn",
+        "size": "32px",
+        "shape": "circle",
+        "background": "#7c3aed",
+        "icon": "↗ or pen, white, 16px",
+        "position": "fixed, bottom-right of selection bounding rect + 8px offset",
+        "animation": "fade-in 150ms",
+        "z_index": 99999
+      },
+      "input_box": {
+        "class": "humanizer-rewrite-box",
+        "shape": "pill, border-radius 20px",
+        "background": "white",
+        "border": "1px solid #e5e7eb",
+        "shadow": "0 4px 12px rgba(0,0,0,0.15)",
+        "position": "fixed, same anchor as circle",
+        "z_index": 99999,
+        "children": {
+          "input": {
+            "placeholder": "Rewrite tone… e.g. friendly",
+            "font_size": "13px",
+            "width": "180px",
+            "border": "none",
+            "outline": "none"
+          },
+          "send_button": {
+            "label": "→",
+            "background": "#7c3aed",
+            "color": "white",
+            "border_radius": "50%",
+            "size": "22px"
+          }
+        }
+      },
+      "states": {
+        "idle": "circle visible",
+        "active": "input box visible, circle hidden",
+        "loading": "spinner inside circle, input hidden",
+        "done": "all UI hidden, text replaced"
+      },
+      "dismiss": "click outside or Escape key"
+    }
+  }
