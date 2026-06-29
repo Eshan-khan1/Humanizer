@@ -38,7 +38,11 @@ from security import (
     RateLimitMiddleware,
     RequestSizeLimitMiddleware,
     SecurityHeadersMiddleware,
+    UntrustedProxyHeadersMiddleware,
+    assert_text_length,
     cors_allowed_origins,
+    redact_secrets_from_log_data,
+    reject_unsafe_text,
     resolve_debug_log_path,
     safe_error_detail,
     sanitize_profile_fields,
@@ -88,21 +92,21 @@ _ollama_process: subprocess.Popen[bytes] | None = None
 
 
 def _debug_log(hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
-    # #region agent log
+    if not DEBUG_OLLAMA:
+        return
     try:
         payload = {
             "sessionId": "2bb802",
             "hypothesisId": hypothesis_id,
             "location": location,
             "message": message,
-            "data": data or {},
+            "data": redact_secrets_from_log_data(data),
             "timestamp": int(time.time() * 1000),
         }
         with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as log_file:
             log_file.write(json.dumps(payload) + "\n")
     except OSError:
         pass
-    # #endregion
 
 
 class OllamaError(Exception):
@@ -793,7 +797,8 @@ def _ollama_generate(
         response.raise_for_status()
         body = response.json()
     except Exception as e:
-        print("=== OLLAMA ERROR ===", str(e), flush=True)
+        if DEBUG_OLLAMA:
+            print("=== OLLAMA ERROR ===", str(e), flush=True)
         raise OllamaError(str(e)) from e
 
     if body.get("error"):
@@ -1224,12 +1229,13 @@ def check_grammar(text: str) -> dict[str, Any]:
 
     try:
         lt_high, lt_all = _check_grammar_languagetool_split(text)
-        print(
-            "=== AGENT 1 (LT) ===",
-            f"{len(lt_high)} high-confidence matches",
-            f"({len(lt_all)} total LT)",
-            flush=True,
-        )
+        if DEBUG_OLLAMA:
+            print(
+                "=== AGENT 1 (LT) ===",
+                f"{len(lt_high)} high-confidence matches",
+                f"({len(lt_all)} total LT)",
+                flush=True,
+            )
     except Exception as exc:  # noqa: BLE001
         lt_high, lt_all = [], []
         _debug_log(
@@ -1282,7 +1288,8 @@ def check_grammar(text: str) -> dict[str, Any]:
             )
             agent2_matches = _merge_grammar_matches(agent2_matches, rewrite_matches)
         except Exception:
-            traceback.print_exc()
+            if DEBUG_OLLAMA:
+                traceback.print_exc()
             agent1_matches.extend(
                 _matches_in_span(lt_high, sentences[index][0], sentences[index][1])
             )
@@ -1295,17 +1302,18 @@ def check_grammar(text: str) -> dict[str, Any]:
 
     formatted_matches.sort(key=lambda m: m["offset"])
 
-    if deep_sentence_indexes and ollama_ok:
+    if DEBUG_OLLAMA and deep_sentence_indexes and ollama_ok:
         print(
             "=== TWO-AGENT MERGE ===",
             f"agent1={len(agent1_matches)} agent2={len(agent2_matches)}",
             flush=True,
         )
-    elif not deep_sentence_indexes:
+    elif DEBUG_OLLAMA and not deep_sentence_indexes:
         print("=== AGENT 1 ONLY ===", flush=True)
 
-    print("=== GRAMMAR MATCHES ===", flush=True)
-    print(json.dumps(formatted_matches, ensure_ascii=False), flush=True)
+    if DEBUG_OLLAMA:
+        print("=== GRAMMAR MATCHES ===", flush=True)
+        print(json.dumps(formatted_matches, ensure_ascii=False), flush=True)
 
     return {
         "text": text,
@@ -1397,6 +1405,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(UntrustedProxyHeadersMiddleware)
 app.add_middleware(LocalClientMiddleware)
 app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(RateLimitMiddleware)
@@ -1448,9 +1457,7 @@ def reload_rules() -> dict[str, Any]:
 @app.post("/grammar/quick", response_model=GrammarResponse, dependencies=[Depends(_secure_endpoint)])
 def grammar_quick(body: TextRequest) -> GrammarResponse:
     """Fast LanguageTool-only check for snappy inline underlines."""
-    text = body.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="text must not be empty")
+    text = assert_text_length(body.text, field="text")
     try:
         return _grammar_quick_response(text)
     except Exception as exc:  # noqa: BLE001
@@ -1462,9 +1469,7 @@ def grammar(
     body: TextRequest,
     quick: bool = Query(False, description="Fast LanguageTool-only check"),
 ) -> GrammarResponse:
-    text = body.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="text must not be empty")
+    text = assert_text_length(body.text, field="text")
 
     if quick:
         return _grammar_quick_response(text)
@@ -1494,9 +1499,7 @@ def grammar(
 
 @app.post("/humanize", response_model=HumanizeResponse, dependencies=[Depends(_secure_endpoint)])
 def humanize(body: TextRequest) -> HumanizeResponse:
-    text = body.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="text must not be empty")
+    text = assert_text_length(body.text, field="text")
 
     try:
         result = humanize_text(text)
@@ -1510,13 +1513,14 @@ def humanize(body: TextRequest) -> HumanizeResponse:
 
 @app.post("/rewrite", response_model=RewriteResponse, dependencies=[Depends(_secure_endpoint)])
 def rewrite(body: RewriteRequest) -> RewriteResponse:
-    text = body.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="text must not be empty")
+    text = assert_text_length(body.text, field="text")
 
     user_prompt = (body.prompt or body.tone or "").strip()
     if not user_prompt:
         raise HTTPException(status_code=400, detail="prompt must not be empty")
+    reject_unsafe_text(user_prompt, field="prompt")
+    if len(user_prompt) > MAX_PROMPT_CHARS:
+        raise HTTPException(status_code=413, detail="prompt exceeds maximum length")
     context = validate_context(body.context)
     direct = bool((body.prompt or "").strip())
 
@@ -1539,13 +1543,17 @@ def rewrite(body: RewriteRequest) -> RewriteResponse:
 
 @app.post("/generate", response_model=GenerateResponse, dependencies=[Depends(_secure_endpoint)])
 def generate(body: GenerateRequest) -> GenerateResponse:
-    text = body.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="text must not be empty")
+    text = assert_text_length(body.text, field="text")
 
     format_type = (body.format or "essay").strip().lower()
     if format_type not in ("email", "essay"):
         raise HTTPException(status_code=400, detail="format must be 'email' or 'essay'")
+
+    notes = (body.notes or "").strip()
+    if notes:
+        reject_unsafe_text(notes, field="notes")
+        if len(notes) > MAX_NOTES_CHARS:
+            raise HTTPException(status_code=413, detail="notes exceeds maximum length")
 
     try:
         settings = (
@@ -1561,7 +1569,7 @@ def generate(body: GenerateRequest) -> GenerateResponse:
         generated = generate_text(
             text,
             format_type,
-            body.notes or "",
+            notes,
             validate_context(body.context),
             settings=settings,
             ai_config=ai_config,
@@ -1578,6 +1586,8 @@ def generate(body: GenerateRequest) -> GenerateResponse:
 
 if __name__ == "__main__":
     if REQUIRE_AUTH and API_TOKEN:
-        print(f"  API auth: enabled (Bearer token required)")
+        print("  API auth: enabled (Bearer token required)")
         print(f"  HUMANIZER_API_TOKEN={API_TOKEN}")
+    elif not API_TOKEN:
+        print("  Security note: set HUMANIZER_REQUIRE_AUTH=1 or HUMANIZER_API_TOKEN for Bearer auth")
     uvicorn.run(app, host=HOST, port=PORT, reload=False)

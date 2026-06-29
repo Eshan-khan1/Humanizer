@@ -31,6 +31,8 @@ def normalize_ai_config(raw: dict[str, Any] | None) -> dict[str, Any] | None:
     if provider not in _SUPPORTED_PROVIDERS:
         raise CloudAIError(f"Unsupported AI provider: {provider}")
     api_key = str(raw.get("api_key") or raw.get("apiKey") or "").strip()
+    if "\x00" in api_key:
+        raise CloudAIError("AI API key contains invalid characters")
     if not api_key:
         raise CloudAIError("AI API key is required when using a cloud provider")
     model = str(raw.get("model") or "").strip()

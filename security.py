@@ -38,6 +38,27 @@ CHROME_EXTENSION_ORIGIN_RE = re.compile(r"^chrome-extension://[a-p]{32}$")
 
 GENERIC_SERVER_ERROR = "An internal error occurred. Try again later."
 GENERIC_AUTH_ERROR = "Unauthorized"
+GENERIC_CLIENT_ERROR = "Request could not be processed."
+
+# Headers that must not appear on direct localhost connections (proxy spoofing).
+_UNTRUSTED_PROXY_HEADERS = frozenset({
+    "x-forwarded-for",
+    "x-forwarded-host",
+    "x-forwarded-proto",
+    "x-real-ip",
+    "forwarded",
+    "cf-connecting-ip",
+    "true-client-ip",
+})
+
+_SECRET_LOG_KEYS = frozenset({
+    "api_key",
+    "apikey",
+    "authorization",
+    "token",
+    "password",
+    "secret",
+})
 
 API_TOKEN = os.environ.get("HUMANIZER_API_TOKEN", "").strip()
 REQUIRE_AUTH = os.environ.get("HUMANIZER_REQUIRE_AUTH", "").lower() in ("1", "true", "yes")
@@ -60,8 +81,15 @@ def safe_error_detail(exc: Exception) -> str:
     return GENERIC_SERVER_ERROR
 
 
+def reject_unsafe_text(value: str, *, field: str) -> None:
+    """Reject payloads that can break downstream parsers or enable injection."""
+    if "\x00" in value:
+        raise HTTPException(status_code=400, detail=f"{field} contains invalid characters")
+
+
 def assert_text_length(value: str, *, field: str, limit: int = MAX_TEXT_CHARS) -> str:
     text = (value or "").strip()
+    reject_unsafe_text(text, field=field)
     if not text:
         raise HTTPException(status_code=400, detail=f"{field} must not be empty")
     if len(text) > limit:
@@ -81,6 +109,7 @@ def assert_optional_text_length(
     if value is None:
         return None
     text = value.strip()
+    reject_unsafe_text(text, field=field)
     if not text:
         return None
     if len(text) > limit:
@@ -164,8 +193,26 @@ def verify_api_token(request: Request) -> None:
     if not auth_header.lower().startswith("bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=GENERIC_AUTH_ERROR)
     token = auth_header[7:].strip()
-    if not token or not secrets.compare_digest(token, API_TOKEN):
+    if not token or len(token) > 512:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=GENERIC_AUTH_ERROR)
+    if not secrets.compare_digest(token, API_TOKEN):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=GENERIC_AUTH_ERROR)
+
+
+def redact_secrets_from_log_data(data: dict[str, Any] | None) -> dict[str, Any]:
+    """Return a copy safe for debug logs (never log raw API keys or tokens)."""
+    if not data:
+        return {}
+    cleaned: dict[str, Any] = {}
+    for key, value in data.items():
+        key_l = str(key).lower()
+        if any(part in key_l for part in _SECRET_LOG_KEYS):
+            cleaned[key] = "[redacted]"
+        elif isinstance(value, dict):
+            cleaned[key] = redact_secrets_from_log_data(value)
+        else:
+            cleaned[key] = value
+    return cleaned
 
 
 def client_host(request: Request) -> str:
@@ -208,7 +255,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Cache-Control"] = "no-store"
         response.headers["Permissions-Policy"] = "interest-cohort=()"
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         return response
+
+
+class UntrustedProxyHeadersMiddleware(BaseHTTPMiddleware):
+    """Reject proxy headers on direct localhost connections (anti-spoofing)."""
+
+    async def dispatch(self, request: Request, call_next):
+        for header in request.headers:
+            if header.lower() in _UNTRUSTED_PROXY_HEADERS:
+                return JSONResponse({"detail": "Forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+        return await call_next(request)
 
 
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
@@ -240,21 +299,37 @@ class LocalClientMiddleware(BaseHTTPMiddleware):
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
+    _PRUNE_EVERY_N = 256
+
     def __init__(self, app, *, limit: int = RATE_LIMIT_REQUESTS, window_sec: int = RATE_LIMIT_WINDOW_SEC):
         super().__init__(app)
         self.limit = limit
         self.window_sec = window_sec
         self._events: dict[str, deque[float]] = defaultdict(deque)
+        self._request_count = 0
 
     def _rate_key(self, request: Request) -> str:
         host = client_host(request) or "unknown"
         return f"{host}:{request.method}:{request.url.path}"
+
+    def _prune_stale_buckets(self, now: float) -> None:
+        stale_keys = [
+            key
+            for key, bucket in self._events.items()
+            if not bucket or now - bucket[-1] > self.window_sec
+        ]
+        for key in stale_keys:
+            del self._events[key]
 
     async def dispatch(self, request: Request, call_next):
         if request.method == "GET" and request.url.path == "/health":
             return await call_next(request)
 
         now = time.monotonic()
+        self._request_count += 1
+        if self._request_count % self._PRUNE_EVERY_N == 0:
+            self._prune_stale_buckets(now)
+
         key = self._rate_key(request)
         bucket = self._events[key]
         while bucket and now - bucket[0] > self.window_sec:
@@ -279,6 +354,7 @@ def sanitize_ai_config(raw: dict[str, Any] | None) -> dict[str, Any] | None:
     if provider not in {"groq", "openai"}:
         raise HTTPException(status_code=400, detail="ai.provider must be groq or openai")
     api_key = str(raw.get("api_key") or raw.get("apiKey") or "").strip()
+    reject_unsafe_text(api_key, field="ai.apiKey")
     if not api_key:
         raise HTTPException(status_code=400, detail="ai.apiKey is required for cloud providers")
     if len(api_key) > MAX_AI_API_KEY_CHARS:

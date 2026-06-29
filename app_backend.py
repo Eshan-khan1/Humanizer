@@ -10,6 +10,7 @@ from humanizer import (
     humanize,
     is_ollama_running,
 )
+from security import GENERIC_CLIENT_ERROR
 
 WORD_LIMIT = 1200
 VALID_INTENSITIES = frozenset({"mild", "moderate", "aggressive"})
@@ -42,6 +43,9 @@ class HumanizeAPI:
                 "error": "Enter text in the Input Text area.",
             }
 
+        if "\x00" in text:
+            return {"ok": False, "error": "Input contains invalid characters."}
+
         if intensity not in VALID_INTENSITIES:
             return {
                 "ok": False,
@@ -57,8 +61,8 @@ class HumanizeAPI:
             result = humanize(text, intensity=intensity)  # type: ignore[arg-type]
             score_after = calculate_ai_score(result)
             changes = count_pipeline_edits(text, intensity)  # type: ignore[arg-type]
-        except Exception as exc:  # noqa: BLE001
-            return {"ok": False, "error": str(exc)}
+        except Exception:  # noqa: BLE001
+            return {"ok": False, "error": GENERIC_CLIENT_ERROR}
 
         return {
             "ok": True,

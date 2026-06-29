@@ -37,8 +37,12 @@ fi
 
 if command -v lsof >/dev/null 2>&1 && lsof -ti:"${HUMANIZER_PORT}" >/dev/null 2>&1; then
   echo "Stopping previous server on port ${HUMANIZER_PORT}..."
-  lsof -ti:"${HUMANIZER_PORT}" | xargs kill -9 2>/dev/null || true
-  sleep 1
+  lsof -ti:"${HUMANIZER_PORT}" | xargs kill -15 2>/dev/null || true
+  sleep 2
+  if lsof -ti:"${HUMANIZER_PORT}" >/dev/null 2>&1; then
+    lsof -ti:"${HUMANIZER_PORT}" | xargs kill -9 2>/dev/null || true
+    sleep 1
+  fi
 fi
 
 echo "Starting Humanizer local server at http://127.0.0.1:${HUMANIZER_PORT}"
