@@ -1,0 +1,68 @@
+{
+    "tests": [
+      {
+        "id": 1,
+        "name": "Tone Separation",
+        "feature": "generate",
+        "input": "I need the report by Monday or the project will be delayed.",
+        "variants": [
+          { "tone": "formal", "length": "short", "complexity": "simple" },
+          { "tone": "friendly", "length": "short", "complexity": "simple" },
+          { "tone": "casual", "length": "short", "complexity": "simple" }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Length Separation",
+        "feature": "generate",
+        "input": "Follow up with the client about the contract.",
+        "variants": [
+          { "tone": "friendly", "length": "short", "complexity": "simple" },
+          { "tone": "friendly", "length": "medium", "complexity": "simple" },
+          { "tone": "friendly", "length": "long", "complexity": "simple" }
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Complexity Separation",
+        "feature": "generate",
+        "input": "Ask the team to submit their updates before the meeting.",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "simple" },
+          { "tone": "formal", "length": "medium", "complexity": "standard" },
+          { "tone": "formal", "length": "medium", "complexity": "advanced" }
+        ]
+      },
+      {
+        "id": 4,
+        "name": "Note Information Only",
+        "feature": "generate",
+        "input": "Email my professor asking for an extension.",
+        "note": "I have a family emergency this week.",
+        "variants": [
+          { "tone": "friendly", "length": "short", "complexity": "simple" }
+        ]
+      },
+      {
+        "id": 5,
+        "name": "Note Tone Override",
+        "feature": "generate",
+        "input": "Email my professor asking for an extension.",
+        "note": "Make it more formal than usual.",
+        "variants": [
+          { "tone": "casual", "length": "short", "complexity": "simple" }
+        ]
+      },
+      {
+        "id": 6,
+        "name": "Rewrite Length Stays Same",
+        "feature": "rewrite",
+        "input": "The meeting has been moved to Thursday.",
+        "variants": [
+          { "instruction": "make it formal" },
+          { "instruction": "make it casual" },
+          { "instruction": "make it friendly" }
+        ]
+      }
+    ]
+  }

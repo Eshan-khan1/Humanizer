@@ -59,6 +59,7 @@ PAIR_FILES = (
 # 4-bit MLX weights → QLoRA (fits ~16–32 GB unified memory).
 BASE_MODEL = "mlx-community/Qwen2.5-7B-Instruct-4bit"
 OLLAMA_MODEL_NAME = "humanizer-grammar"
+OLLAMA_WRITING_MODEL_NAME = "humanizer-writing"
 
 DEEP_FIX_RULES = """Fix grammar errors. Rules:
 - Irregular verbs: buy→bought, go→went, see→saw, run→ran
@@ -87,6 +88,19 @@ they're going → they're going (no change, already correct)"""
 # Full DEEP_FIX_RULES is still used at inference in server.py / Ollama Modelfile.
 TRAIN_GRAMMAR_PREFIX = (
     "Fix grammar errors. Return only the corrected sentence.\n\nCorrect this:\n\n"
+)
+
+TRAIN_GRAMMAR_SYSTEM = (
+    "Fix grammar and spelling with minimal, safe edits. Return only the corrected sentence."
+)
+
+TRAIN_TONE_SYSTEM = (
+    "Rewrite text to match the requested tone. Make bold changes to word choice, "
+    "structure, and length as needed. Return only the full rewritten text."
+)
+
+TONE_REWRITE_FLEXIBILITY = (
+    " You can change word choice, structure, and length as needed to fully achieve this tone."
 )
 
 TASK_USER_PREFIX = {
@@ -267,22 +281,64 @@ def build_user_prompt(wrong: str) -> str:
     return f"{DEEP_FIX_RULES}\n\nCorrect this:\n\n{wrong}"
 
 
-def build_user_prompt_for_task(task: str, input_text: str) -> str:
+def build_user_prompt_for_task(
+    task: str, input_text: str, *, instruction: str = ""
+) -> str:
     if task == "grammar":
         return build_user_prompt(input_text)
+    if task == "rewrite_tone":
+        if instruction:
+            return f"{instruction}\n\n{input_text}"
+        return input_text
     prefix = TASK_USER_PREFIX.get(task)
     if prefix:
         return f"{prefix}{input_text}"
     return build_user_prompt(input_text)
 
 
-def build_train_user_prompt_for_task(task: str, input_text: str) -> str:
+def build_train_user_prompt_for_task(
+    task: str, input_text: str, *, instruction: str = ""
+) -> str:
     if task == "grammar":
         return f"{TRAIN_GRAMMAR_PREFIX}{input_text}"
+    if task == "rewrite_tone":
+        if instruction:
+            inst = instruction.strip()
+            lower = inst.lower()
+            if "change word choice" not in lower and "restructure" not in lower:
+                if not inst.endswith((".", "!", "?")):
+                    inst += "."
+                inst += TONE_REWRITE_FLEXIBILITY
+            return f"{inst}\n\n{input_text}"
+        return input_text
     prefix = TASK_USER_PREFIX.get(task)
     if prefix:
         return f"{prefix}{input_text}"
     return f"{TRAIN_GRAMMAR_PREFIX}{input_text}"
+
+
+def _system_prompt_for_task(task: str) -> str:
+    if task == "rewrite_tone":
+        return TRAIN_TONE_SYSTEM
+    return TRAIN_GRAMMAR_SYSTEM
+
+
+def _tone_repeat_count(
+    tone_rows: int,
+    other_rows: int,
+    *,
+    target_fraction: float,
+) -> int:
+    if tone_rows <= 0 or target_fraction <= 0:
+        return 1
+    if target_fraction >= 1.0:
+        return max(1, int(other_rows / max(tone_rows, 1)) + 1)
+    # Solve: tone*repeat / (other + tone*repeat) = target_fraction
+    numerator = target_fraction * other_rows
+    denominator = tone_rows * (1.0 - target_fraction)
+    if denominator <= 0:
+        return 1
+    return max(1, int(round(numerator / denominator)))
 
 
 def _load_train_tokenizer() -> Any:
@@ -309,29 +365,39 @@ def _jsonl_record_to_chat(
     task = str(row.get("task") or "grammar").strip()
     input_text = str(row.get("input") or row.get("wrong") or "").strip()
     output_text = str(row.get("output") or row.get("correct") or "").strip()
+    instruction = str(row.get("instruction") or "").strip()
     if not input_text or not output_text or input_text == output_text:
         return None
     build_prompt = build_train_user_prompt_for_task if for_training else build_user_prompt_for_task
-    return {
-        "messages": [
-            {"role": "user", "content": build_prompt(task, input_text)},
+    messages: list[dict[str, str]] = []
+    if for_training:
+        messages.append({"role": "system", "content": _system_prompt_for_task(task)})
+    messages.extend(
+        [
+            {
+                "role": "user",
+                "content": build_prompt(task, input_text, instruction=instruction),
+            },
             {"role": "assistant", "content": output_text},
         ]
-    }
+    )
+    return {"messages": messages}
 
 
 def convert_jsonl_to_mlx_chat(
     src: Path,
     dest: Path,
     *,
-    max_seq_length: int = 256,
+    max_seq_length: int = 384,
     tokenizer: Any | None = None,
+    tone_target_fraction: float = 0.0,
 ) -> tuple[int, int]:
     """Stream JSONL task/input/output (or wrong/correct) → mlx_lm chat JSONL."""
     dest.parent.mkdir(parents=True, exist_ok=True)
-    count = 0
-    skipped = 0
-    with src.open(encoding="utf-8") as handle, dest.open("w", encoding="utf-8") as out:
+    rows: list[dict[str, Any]] = []
+    tone_rows = 0
+    other_rows = 0
+    with src.open(encoding="utf-8") as handle:
         for line in handle:
             line = line.strip()
             if not line:
@@ -342,20 +408,50 @@ def convert_jsonl_to_mlx_chat(
                 continue
             if not isinstance(row, dict):
                 continue
-            chat = _jsonl_record_to_chat(row, for_training=True)
-            if not chat:
-                continue
-            if tokenizer is not None:
-                token_count = _chat_token_count(tokenizer, chat["messages"])
-                if token_count > max_seq_length:
-                    skipped += 1
+            rows.append(row)
+            if str(row.get("task") or "grammar") == "rewrite_tone":
+                tone_rows += 1
+            else:
+                other_rows += 1
+
+    tone_repeat = 1
+    if tone_target_fraction > 0 and tone_rows > 0:
+        tone_repeat = _tone_repeat_count(
+            tone_rows,
+            other_rows,
+            target_fraction=tone_target_fraction,
+        )
+        log(
+            f"  Upsampling rewrite_tone {tone_repeat}x "
+            f"({tone_rows:,} → {tone_rows * tone_repeat:,}, "
+            f"target {100 * tone_target_fraction:.0f}% of batches)"
+        )
+
+    count = 0
+    skipped = 0
+    with dest.open("w", encoding="utf-8") as out:
+        for row in rows:
+            task = str(row.get("task") or "grammar")
+            repeats = tone_repeat if task == "rewrite_tone" else 1
+            for _ in range(repeats):
+                chat = _jsonl_record_to_chat(row, for_training=True)
+                if not chat:
                     continue
-            out.write(json.dumps(chat, ensure_ascii=False) + "\n")
-            count += 1
+                if tokenizer is not None:
+                    token_count = _chat_token_count(tokenizer, chat["messages"])
+                    if token_count > max_seq_length:
+                        skipped += 1
+                        continue
+                out.write(json.dumps(chat, ensure_ascii=False) + "\n")
+                count += 1
     return count, skipped
 
 
-def prepare_mlx_from_prepared_data(*, max_seq_length: int = 256) -> tuple[Path, int]:
+def prepare_mlx_from_prepared_data(
+    *,
+    max_seq_length: int = 384,
+    tone_target_fraction: float = 0.35,
+) -> tuple[Path, int]:
     """Convert train_data.jsonl / val_data.jsonl → mlx_lm data directory."""
     if not TRAIN_DATA_PATH.is_file():
         log(f"ERROR: Missing {TRAIN_DATA_PATH}")
@@ -378,6 +474,7 @@ def prepare_mlx_from_prepared_data(*, max_seq_length: int = 256) -> tuple[Path, 
         train_path,
         max_seq_length=max_seq_length,
         tokenizer=tokenizer,
+        tone_target_fraction=tone_target_fraction,
     )
     if VAL_DATA_PATH.is_file():
         valid_count, valid_skipped = convert_jsonl_to_mlx_chat(
@@ -385,6 +482,7 @@ def prepare_mlx_from_prepared_data(*, max_seq_length: int = 256) -> tuple[Path, 
             valid_path,
             max_seq_length=max_seq_length,
             tokenizer=tokenizer,
+            tone_target_fraction=0.0,
         )
     else:
         log(f"WARNING: {VAL_DATA_PATH} not found; reusing 10% of train for valid")
@@ -671,14 +769,20 @@ def export_for_ollama(quantization: str = "q4_k_m") -> None:
     modelfile_body = _build_modelfile(gguf_path.name)
     modelfile_path.write_text(modelfile_body, encoding="utf-8")
 
+    writing_modelfile_path = GGUF_DIR / "Modelfile.writing"
+    writing_modelfile_body = _build_writing_modelfile(gguf_path.name)
+    writing_modelfile_path.write_text(writing_modelfile_body, encoding="utf-8")
+
     log(f"Wrote {modelfile_path}")
+    log(f"Wrote {writing_modelfile_path}")
     log("")
     log("Register in Ollama:")
     log(f"  cd {GGUF_DIR}")
     log(f"  ollama create {OLLAMA_MODEL_NAME} -f Modelfile")
+    log(f"  ollama create {OLLAMA_WRITING_MODEL_NAME} -f Modelfile.writing")
     log("")
-    log("Then start the server with the fine-tuned model:")
-    log(f"  OLLAMA_MODEL={OLLAMA_MODEL_NAME} ./start_server.sh")
+    log("Then start the server:")
+    log(f"  OLLAMA_GRAMMAR_MODEL={OLLAMA_MODEL_NAME} OLLAMA_WRITING_MODEL={OLLAMA_WRITING_MODEL_NAME} ./start_server.sh")
 
 
 def _build_modelfile(gguf_filename: str) -> str:
@@ -696,9 +800,37 @@ TEMPLATE \"\"\"{{{{- if .System }}}}<|im_start|>system
 {{{{ end }}}}{{{{ .Response }}}}
 \"\"\"
 
-SYSTEM \"\"\"You are a grammar correction assistant. Return only the corrected sentence.\"\"\"
+SYSTEM \"\"\"You are a grammar correction assistant. Fix grammar and spelling with minimal, safe edits. Return only the corrected sentence.\"\"\"
 
 PARAMETER temperature 0.2
+PARAMETER top_p 0.9
+PARAMETER num_ctx 4096
+PARAMETER stop "<|endoftext|>"
+"""
+
+
+def _build_writing_modelfile(gguf_filename: str) -> str:
+    return f"""# Humanizer Writing Agent — Rewrite + Generate (Qwen2.5-7B + MLX LoRA)
+# Build: ollama create {OLLAMA_WRITING_MODEL_NAME} -f Modelfile.writing
+# Run from: models/humanizer-grammar/gguf/
+
+FROM ./{gguf_filename}
+
+TEMPLATE \"\"\"{{{{- if .System }}}}<|im_start|>system
+{{{{ .System }}}}
+{{{{ end }}}}{{{{- if .Prompt }}}}<|im_start|>user
+{{{{ .Prompt }}}}
+<|im_start|>assistant
+{{{{ end }}}}{{{{ .Response }}}}
+\"\"\"
+
+SYSTEM \"\"\"You are the Humanizer Writing Agent. You only do two jobs:
+1. REWRITE — change tone/style of selected text with bold edits to word choice, structure, and length.
+2. GENERATE — expand short notes, bullets, or prompts into complete emails or essays.
+For emails: produce a full send-ready message with subject, greeting, body, and sign-off as appropriate. Decide structure from context and user notes — not a rigid template.
+Never do minimal grammar-only fixes. Return only the final plain text.\"\"\"
+
+PARAMETER temperature 0.55
 PARAMETER top_p 0.9
 PARAMETER num_ctx 4096
 PARAMETER stop "<|endoftext|>"
@@ -730,7 +862,18 @@ def parse_args() -> argparse.Namespace:
         help="Train only; skip fuse/GGUF/Ollama export",
     )
     parser.add_argument("--iters", type=int, default=400, help="Training iterations")
-    parser.add_argument("--max-seq-length", type=int, default=256)
+    parser.add_argument(
+        "--max-seq-length",
+        type=int,
+        default=384,
+        help="Max tokens per training example (tone rewrites need more room than grammar)",
+    )
+    parser.add_argument(
+        "--tone-target-fraction",
+        type=float,
+        default=0.35,
+        help="Upsample rewrite_tone rows so this fraction of MLX train batches are tone (0=off)",
+    )
     parser.add_argument("--lora-rank", type=int, default=8)
     parser.add_argument("--learning-rate", type=float, default=1e-5)
     parser.add_argument("--batch-size", type=int, default=1)
@@ -756,6 +899,7 @@ def main() -> None:
     if use_prepared:
         data_dir, num_examples = prepare_mlx_from_prepared_data(
             max_seq_length=args.max_seq_length,
+            tone_target_fraction=args.tone_target_fraction,
         )
         if args.prepare_only:
             log("prepare-only: done.")

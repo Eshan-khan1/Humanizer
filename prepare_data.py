@@ -20,9 +20,16 @@ from pathlib import Path
 from typing import Any, Callable, TextIO
 
 ROOT = Path(__file__).resolve().parent
+TEST_DATA = ROOT / "test_data"
 TRAIN_PATH = ROOT / "train_data.jsonl"
 VAL_PATH = ROOT / "val_data.jsonl"
 TEMP_NAME = "prepare_data_combined.jsonl"
+TONE_REWRITE_PATH = TEST_DATA / "Tone rewrite training data .json"
+TONE_REWRITE_SOURCES = (
+    TONE_REWRITE_PATH,
+    TEST_DATA / "tone_rewrite_generated.jsonl",
+    ROOT / "tone_rewrite_training_data_batch2.jsonl",
+)
 
 MAX_PAIRS = 500_000
 TRAIN_FRACTION = 0.9
@@ -169,6 +176,68 @@ def append_c4_200m(handle: TextIO) -> int:
     )
 
 
+def parse_tone_rewrite_row(row: dict[str, Any]) -> dict[str, str] | None:
+    prompt = str(row.get("prompt") or "").strip()
+    completion = str(row.get("completion") or "").strip()
+    if not prompt or not completion or "\n\n" not in prompt:
+        return None
+
+    instruction, input_text = prompt.rsplit("\n\n", 1)
+    instruction = instruction.strip()
+    input_text = input_text.strip()
+    if not instruction or not input_text or input_text == completion:
+        return None
+
+    return {
+        "task": "rewrite_tone",
+        "instruction": instruction,
+        "input": input_text,
+        "output": completion,
+    }
+
+
+def append_tone_rewrite_pairs(
+    handle: TextIO,
+    paths: tuple[Path, ...] | None = None,
+) -> int:
+    """Append tone-rewrite prompt/completion pairs for LoRA training."""
+    sources = paths or TONE_REWRITE_SOURCES
+    seen: set[tuple[str, str]] = set()
+    added = 0
+
+    for path in sources:
+        if not path.is_file():
+            log(f"  tone rewrite: {path.name} not found — skipping")
+            continue
+
+        log(f"Appending tone rewrite pairs from {path.name} …")
+        file_added = 0
+        with path.open(encoding="utf-8") as source:
+            for line_no, line in enumerate(source, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    log(f"  {path.name}:{line_no} skipped: {exc}")
+                    continue
+                record = parse_tone_rewrite_row(row)
+                if not record:
+                    continue
+                key = (record["input"].lower(), record["output"].lower())
+                if key in seen:
+                    continue
+                seen.add(key)
+                handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+                added += 1
+                file_added += 1
+        log(f"  +{file_added:,} from {path.name}")
+
+    log(f"  total tone rewrite pairs: {added:,}")
+    return added
+
+
 def append_gyafc_pairs(handle: TextIO, folder: Path = ROOT) -> int:
     """
     Placeholder: append GYAFC pairs from gyafc_raw.jsonl if present.
@@ -204,41 +273,133 @@ def append_gyafc_pairs(handle: TextIO, folder: Path = ROOT) -> int:
     return added
 
 
+def balance_for_tone_strength(
+    lines: list[str],
+    *,
+    grammar_per_tone: float = 1.0,
+    casual_per_tone: float = 0.5,
+) -> list[str]:
+    """Keep all tone rows; cap grammar/casual so tone is not drowned out."""
+    tone_lines: list[str] = []
+    by_task: dict[str, list[str]] = defaultdict(list)
+    for line in lines:
+        try:
+            task = str(json.loads(line).get("task") or "unknown")
+        except json.JSONDecodeError:
+            task = "unknown"
+        if task == "rewrite_tone":
+            tone_lines.append(line)
+        else:
+            by_task[task].append(line)
+
+    tone_count = len(tone_lines)
+    if tone_count == 0:
+        log("  tone-balance: no rewrite_tone rows — skipping balance step")
+        return lines
+
+    random.seed(RANDOM_SEED)
+    balanced: list[str] = list(tone_lines)
+    counts: dict[str, int] = {"rewrite_tone": tone_count}
+
+    grammar_cap = max(1, int(round(tone_count * grammar_per_tone)))
+    grammar_pool = by_task.get("grammar", [])
+    if grammar_pool:
+        picked = (
+            grammar_pool
+            if len(grammar_pool) <= grammar_cap
+            else random.sample(grammar_pool, grammar_cap)
+        )
+        balanced.extend(picked)
+        counts["grammar"] = len(picked)
+
+    casual_cap = max(0, int(round(tone_count * casual_per_tone)))
+    casual_pool = by_task.get("rewrite_casual", [])
+    if casual_pool and casual_cap > 0:
+        picked = (
+            casual_pool
+            if len(casual_pool) <= casual_cap
+            else random.sample(casual_pool, casual_cap)
+        )
+        balanced.extend(picked)
+        counts["rewrite_casual"] = len(picked)
+
+    for task, pool in sorted(by_task.items()):
+        if task in ("grammar", "rewrite_casual"):
+            continue
+        cap = max(1, tone_count // 20)
+        picked = pool if len(pool) <= cap else random.sample(pool, cap)
+        balanced.extend(picked)
+        counts[task] = len(picked)
+
+    random.shuffle(balanced)
+    detail = ", ".join(f"{task}={count:,}" for task, count in sorted(counts.items()))
+    log(
+        f"Tone-balanced dataset: {len(balanced):,} pairs "
+        f"({detail}; grammar_per_tone={grammar_per_tone}, casual_per_tone={casual_per_tone})"
+    )
+    return balanced
+
+
 def cap_by_task_balance(lines: list[str], max_pairs: int) -> list[str]:
     if len(lines) <= max_pairs:
         return lines
 
-    by_task: dict[str, list[str]] = defaultdict(list)
+    tone_lines: list[str] = []
+    other_lines: list[str] = []
     for line in lines:
         try:
             task = json.loads(line).get("task", "unknown")
         except json.JSONDecodeError:
             task = "unknown"
-        by_task[str(task)].append(line)
-
-    tasks = sorted(by_task)
-    if not tasks:
-        return lines[:max_pairs]
-
-    per_task = max_pairs // len(tasks)
-    remainder = max_pairs % len(tasks)
-    random.seed(RANDOM_SEED)
-
-    sampled: list[str] = []
-    for index, task in enumerate(tasks):
-        quota = per_task + (1 if index < remainder else 0)
-        pool = by_task[task]
-        if len(pool) <= quota:
-            sampled.extend(pool)
+        if task == "rewrite_tone":
+            tone_lines.append(line)
         else:
-            sampled.extend(random.sample(pool, quota))
+            other_lines.append(line)
+
+    tone_count = len(tone_lines)
+    other_budget = max(0, max_pairs - tone_count)
+    if len(other_lines) <= other_budget:
+        sampled = tone_lines + other_lines
+    else:
+        by_task: dict[str, list[str]] = defaultdict(list)
+        for line in other_lines:
+            try:
+                task = json.loads(line).get("task", "unknown")
+            except json.JSONDecodeError:
+                task = "unknown"
+            by_task[str(task)].append(line)
+
+        tasks = sorted(by_task)
+        per_task = other_budget // len(tasks) if tasks else 0
+        remainder = other_budget % len(tasks) if tasks else 0
+        random.seed(RANDOM_SEED)
+
+        sampled_others: list[str] = []
+        for index, task in enumerate(tasks):
+            quota = per_task + (1 if index < remainder else 0)
+            pool = by_task[task]
+            if len(pool) <= quota:
+                sampled_others.extend(pool)
+            else:
+                sampled_others.extend(random.sample(pool, quota))
+        sampled = tone_lines + sampled_others
 
     random.shuffle(sampled)
-    log(f"Capped dataset from {len(lines):,} to {len(sampled):,} pairs (balanced by task)")
+    log(
+        f"Capped dataset from {len(lines):,} to {len(sampled):,} pairs "
+        f"({tone_count:,} tone rewrite kept)"
+    )
     return sampled
 
 
-def shuffle_and_split(temp_path: Path, *, max_pairs: int = MAX_PAIRS) -> tuple[int, int]:
+def shuffle_and_split(
+    temp_path: Path,
+    *,
+    max_pairs: int = MAX_PAIRS,
+    tone_balanced: bool = False,
+    grammar_per_tone: float = 1.0,
+    casual_per_tone: float = 0.5,
+) -> tuple[int, int]:
     log("Reading combined temp file for shuffle/split …")
     with temp_path.open(encoding="utf-8") as handle:
         lines = [line for line in handle if line.strip()]
@@ -246,6 +407,12 @@ def shuffle_and_split(temp_path: Path, *, max_pairs: int = MAX_PAIRS) -> tuple[i
     if not lines:
         raise SystemExit("No training pairs were produced.")
 
+    if tone_balanced:
+        lines = balance_for_tone_strength(
+            lines,
+            grammar_per_tone=grammar_per_tone,
+            casual_per_tone=casual_per_tone,
+        )
     lines = cap_by_task_balance(lines, max_pairs)
 
     random.seed(RANDOM_SEED)
@@ -276,7 +443,57 @@ def main() -> None:
         default=MAX_PAIRS,
         help=f"Cap total pairs after shuffle (default {MAX_PAIRS:,})",
     )
+    parser.add_argument(
+        "--tone-only",
+        action="store_true",
+        help="Build train/val JSONL from tone rewrite training data only (no HF download)",
+    )
+    parser.add_argument(
+        "--tone-balanced",
+        action="store_true",
+        help="Cap grammar/casual to ~1:1 with tone rows so tone rewrite is not drowned out",
+    )
+    parser.add_argument(
+        "--grammar-per-tone",
+        type=float,
+        default=1.0,
+        help="When --tone-balanced: max grammar rows per tone row (default 1.0)",
+    )
+    parser.add_argument(
+        "--casual-per-tone",
+        type=float,
+        default=0.5,
+        help="When --tone-balanced: max casual rewrite rows per tone row (default 0.5)",
+    )
     cli = parser.parse_args()
+
+    if cli.tone_only:
+        log("=" * 60)
+        log("Preparing tone-rewrite training data only")
+        log("=" * 60)
+        temp_path = ROOT / TEMP_NAME
+        with temp_path.open("w", encoding="utf-8") as handle:
+            tone_count = append_tone_rewrite_pairs(handle)
+        if tone_count == 0:
+            raise SystemExit(
+                "No tone rewrite pairs found. Generate some first:\n"
+                "  .venv/bin/python scripts/generate_tone_data.py\n"
+                f"Or add data to {TONE_REWRITE_PATH}"
+            )
+        train_count, val_count = shuffle_and_split(
+            temp_path,
+            max_pairs=tone_count,
+            tone_balanced=cli.tone_balanced,
+            grammar_per_tone=cli.grammar_per_tone,
+            casual_per_tone=cli.casual_per_tone,
+        )
+        temp_path.unlink(missing_ok=True)
+        log(f"Wrote {train_count:,} train + {val_count:,} val tone rewrite pairs")
+        log(
+            "Next: .venv/bin/python scripts/finetune_grammar_lora.py "
+            "--prepare-only --tone-target-fraction 0.35"
+        )
+        return
 
     log("=" * 60)
     log("Preparing training data")
@@ -294,6 +511,7 @@ def main() -> None:
             log("Skipping liweili/c4_200m (--skip-c4)")
             totals["c4_200m"] = 0
         totals["gyafc"] = append_gyafc_pairs(handle)
+        totals["tone_rewrite"] = append_tone_rewrite_pairs(handle)
 
     log("")
     log("Dataset counts written to temp file:")
@@ -301,7 +519,13 @@ def main() -> None:
         log(f"  {label}: {count:,}")
     log(f"  total: {sum(totals.values()):,}")
 
-    train_count, val_count = shuffle_and_split(temp_path, max_pairs=cli.max_pairs)
+    train_count, val_count = shuffle_and_split(
+        temp_path,
+        max_pairs=cli.max_pairs,
+        tone_balanced=cli.tone_balanced,
+        grammar_per_tone=cli.grammar_per_tone,
+        casual_per_tone=cli.casual_per_tone,
+    )
     temp_path.unlink(missing_ok=True)
 
     log("")

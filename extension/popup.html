@@ -52,7 +52,7 @@
 
     <div id="settings-view" class="view view--hidden" hidden>
       <div class="settings-top">
-        <button type="button" id="settings-back" class="settings-back" aria-label="Back">
+        <button type="button" id="settings-back" class="settings-back" aria-label="Back to main">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
           </svg>
@@ -74,6 +74,18 @@
         </button>
       </div>
 
+      <p class="section-label">AI &amp; security</p>
+
+      <button type="button" id="ai-open" class="settings-nav-row">
+        <span class="settings-nav-text">
+          <span class="settings-nav-title">AI &amp; API keys</span>
+          <span id="ai-nav-subtitle" class="settings-nav-subtitle">Local Ollama · no cloud key</span>
+        </span>
+        <svg class="settings-nav-chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+        </svg>
+      </button>
+
       <p class="section-label">Rewrite</p>
 
       <div class="row toggle-row" data-setting="rewriteInSearchBars">
@@ -81,6 +93,145 @@
         <button type="button" class="toggle" role="switch" aria-checked="true">
           <span class="toggle-bar" aria-hidden="true"></span>
         </button>
+      </div>
+
+      <p class="section-label">Generate</p>
+
+      <button type="button" id="generate-open" class="settings-nav-row">
+        <span class="settings-nav-text">
+          <span class="settings-nav-title">Generate</span>
+          <span class="settings-nav-subtitle">Profile, permanent note, length, tone, complexity</span>
+        </span>
+        <svg class="settings-nav-chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+        </svg>
+      </button>
+    </div>
+
+    <div id="ai-view" class="view view--hidden" hidden>
+      <div class="settings-top">
+        <button type="button" id="ai-back" class="settings-back" aria-label="Back to settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+          </svg>
+        </button>
+        <h2 class="settings-title">AI &amp; API keys</h2>
+      </div>
+
+      <div class="settings-scroll">
+        <p class="section-hint">
+          Choose how Rewrite and Generate run. Keys stay on this device and are sent only to your
+          local Humanizer server.
+        </p>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Server access</h3>
+          <p class="subsection-hint">Only needed if you started the server with auth enabled.</p>
+          <label class="field-row" for="humanizer-api-token">
+            <span class="field-label">Local server token</span>
+            <input
+              id="humanizer-api-token"
+              class="settings-input"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Bearer token from ./start_server.sh"
+            />
+          </label>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">AI backend</h3>
+          <p class="subsection-hint">Used for Rewrite and Generate only. Grammar still runs locally.</p>
+          <div id="ai-provider-options" class="option-cards" role="radiogroup" aria-label="AI backend"></div>
+        </div>
+
+        <div id="ai-key-section" class="generate-subsection ai-key-section--hidden">
+          <label class="field-row" for="ai-api-key">
+            <span class="field-label">Your AI API key</span>
+            <span id="ai-key-hint" class="field-hint"></span>
+            <input
+              id="ai-api-key"
+              class="settings-input"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Paste your API key"
+            />
+          </label>
+          <p class="hint hint--compact">
+            Get a free Groq key at
+            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="generate-view" class="view view--hidden" hidden>
+      <div class="settings-top">
+        <button type="button" id="generate-back" class="settings-back" aria-label="Back to settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+          </svg>
+        </button>
+        <h2 class="settings-title">Generate</h2>
+      </div>
+
+      <div class="settings-scroll">
+        <p class="section-hint">
+          Saved profile details and defaults are applied every time you generate content.
+        </p>
+
+        <div class="generate-subsection">
+          <label class="field-row" for="generate-permanent-note">
+            <span class="field-label">Permanent note</span>
+            <span class="field-hint">
+              A standing instruction applied silently to every generation — e.g. "always sound professional"
+              or "keep emails concise."
+            </span>
+            <textarea
+              id="generate-permanent-note"
+              class="settings-textarea"
+              rows="3"
+              placeholder="Always sound professional."
+            ></textarea>
+          </label>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Your profile</h3>
+          <p class="subsection-hint">Used automatically in emails and sign-offs.</p>
+          <label class="field-row" for="generate-profile-add">
+            <span class="field-label">Add profile field</span>
+            <select id="generate-profile-add" class="settings-select" aria-label="Add profile field">
+              <option value="">Choose what to add…</option>
+            </select>
+          </label>
+          <div id="generate-profile-fields" class="generate-profile-fields"></div>
+          <p id="generate-profile-empty" class="profile-empty-hint">No profile fields added yet.</p>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Length</h3>
+          <div id="generate-length-options" class="option-cards" role="radiogroup" aria-label="Length"></div>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Tone</h3>
+          <div id="generate-tone-presets" class="option-cards" role="radiogroup" aria-label="Tone"></div>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Complexity</h3>
+          <div id="generate-complexity-options" class="option-cards" role="radiogroup" aria-label="Complexity"></div>
+        </div>
+
+        <div class="row toggle-row" data-setting="generateIncludeSubject">
+          <span class="toggle-label">Include email subject line</span>
+          <button type="button" class="toggle" role="switch" aria-checked="true">
+            <span class="toggle-bar" aria-hidden="true"></span>
+          </button>
+        </div>
       </div>
     </div>
   </body>

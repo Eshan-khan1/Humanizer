@@ -1,0 +1,81 @@
+{
+  "tonePresets": [
+    {
+      "id": "formal",
+      "label": "Formal",
+      "tone": "formal",
+      "description": "Professional, respectful, business or academic language. Best for teachers, managers, and official communication."
+    },
+    {
+      "id": "friendly",
+      "label": "Friendly",
+      "tone": "warm and friendly",
+      "description": "Warm, approachable, and positive while staying professional."
+    },
+    {
+      "id": "casual",
+      "label": "Casual",
+      "tone": "relaxed and casual",
+      "description": "Relaxed and natural everyday language. Best for friends and informal communication."
+    }
+  ],
+  "lengths": [
+    {
+      "id": "short",
+      "label": "Short",
+      "description": "Body: exactly 2 sentences, one paragraph. Structure only."
+    },
+    {
+      "id": "medium",
+      "label": "Medium",
+      "description": "Body: 2–3 paragraphs, each 2–3 sentences. Structure only."
+    },
+    {
+      "id": "long",
+      "label": "Long",
+      "description": "Body: 4+ paragraphs with full detail. Structure only."
+    }
+  ],
+  "complexityLevels": [
+    {
+      "id": "simple",
+      "label": "Simple",
+      "description": "Everyday words only — vocabulary choice, not length or tone."
+    },
+    {
+      "id": "standard",
+      "label": "Standard",
+      "description": "Normal professional vocabulary — word choice only."
+    },
+    {
+      "id": "advanced",
+      "label": "Advanced",
+      "description": "Sophisticated words and varied sentences — vocabulary only."
+    }
+  ],
+  "profileFields": [
+    { "id": "fullName", "label": "Full name", "placeholder": "Alex Johnson" },
+    { "id": "signOff", "label": "Preferred sign-off", "placeholder": "Best regards" },
+    { "id": "jobTitle", "label": "Job title", "placeholder": "Product Manager" },
+    { "id": "companyName", "label": "Company name", "placeholder": "Acme Inc." },
+    { "id": "schoolName", "label": "School name", "placeholder": "Lincoln High School" },
+    { "id": "email", "label": "Email address", "placeholder": "alex@example.com" },
+    { "id": "phone", "label": "Phone number", "placeholder": "(555) 123-4567" }
+  ],
+  "defaultSettings": {
+    "tonePreset": "friendly",
+    "length": "medium",
+    "complexity": "standard",
+    "includeSubject": true,
+    "profile": {
+      "fullName": "",
+      "signOff": "",
+      "jobTitle": "",
+      "companyName": "",
+      "schoolName": "",
+      "email": "",
+      "phone": "",
+      "permanentNote": ""
+    }
+  }
+}

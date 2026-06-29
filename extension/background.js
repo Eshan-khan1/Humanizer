@@ -1,4 +1,5 @@
 const API_BASE = "http://127.0.0.1:8000";
+importScripts("api_auth.js");
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "checkGrammar") {
@@ -11,10 +12,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       : [`${API_BASE}/grammar`];
 
     const body = JSON.stringify({ text: message.text });
-    const headers = { "Content-Type": "application/json" };
 
     (async () => {
       let lastError = null;
+      const headers = await humanizerApiHeaders();
       for (const url of urls) {
         try {
           const response = await fetch(url, { method: "POST", headers, body });
@@ -40,21 +41,23 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message?.type === "humanize") {
-    fetch(`${API_BASE}/humanize`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: message.text }),
-    })
-      .then(async (response) => {
+    (async () => {
+      try {
+        const headers = await humanizerApiHeaders();
+        const response = await fetch(`${API_BASE}/humanize`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ text: message.text }),
+        });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(data.detail || `Humanize failed (${response.status})`);
         }
         sendResponse({ ok: true, data });
-      })
-      .catch((error) => {
+      } catch (error) {
         sendResponse({ ok: false, error: error.message || String(error) });
-      });
+      }
+    })();
     return true;
   }
 
@@ -81,21 +84,64 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return true;
     }
 
-    fetch(`${API_BASE}/rewrite`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, prompt, context }),
-    })
-      .then(async (response) => {
+    (async () => {
+      try {
+        const headers = await humanizerApiHeaders();
+        const ai = await humanizerAiPayload();
+        const response = await fetch(`${API_BASE}/rewrite`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ text, prompt, context, ai }),
+        });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(data.detail || `Rewrite failed (${response.status})`);
         }
         sendResponse({ ok: true, rewritten: data.rewritten || "" });
-      })
-      .catch((error) => {
+      } catch (error) {
         sendResponse({ ok: false, error: error.message || String(error) });
-      });
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "generateText") {
+    const text = String(message.text || "").trim();
+    const format = String(message.format || "essay").trim().toLowerCase();
+    const notes = String(message.notes || "").trim();
+    const context = message.context && typeof message.context === "object"
+      ? message.context
+      : null;
+    const settings = message.settings && typeof message.settings === "object"
+      ? message.settings
+      : null;
+    if (!text) {
+      sendResponse({ ok: false, error: "No text to generate" });
+      return true;
+    }
+    if (format !== "email" && format !== "essay") {
+      sendResponse({ ok: false, error: "format must be email or essay" });
+      return true;
+    }
+
+    (async () => {
+      try {
+        const headers = await humanizerApiHeaders();
+        const ai = await humanizerAiPayload();
+        const response = await fetch(`${API_BASE}/generate`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ text, format, notes, context, settings, ai }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.detail || `Generate failed (${response.status})`);
+        }
+        sendResponse({ ok: true, generated: data.generated || "" });
+      } catch (error) {
+        sendResponse({ ok: false, error: error.message || String(error) });
+      }
+    })();
     return true;
   }
 

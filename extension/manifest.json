@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Humanizer — Local Writing Assistant",
-  "version": "1.6.6",
+  "version": "1.7.7",
   "description": "Grammarly-style grammar and spelling on any site — Google, Docs, Gmail, search bars, and more",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["http://127.0.0.1:8000/*"],
@@ -12,10 +12,16 @@
     "default_title": "Humanizer",
     "default_popup": "popup.html"
   },
+  "web_accessible_resources": [
+    {
+      "resources": ["generate_tones.json", "icons/rewrite-icon.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["api_auth.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle",
       "all_frames": true,

@@ -54,6 +54,20 @@
   let suppressPopupUntil = 0;
   let popupEscapeHandler = null;
 
+  const REWRITE_ICON_DATA_URI =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAACiUlEQVR4nJ2WyWsVQRDGf/NmTOISl7gkoARvggcRDB78EwT15iWCiuBC1IPiguJBwehFEYkgntzwvxA8iF48iYKKiIgBcRcjauLLSCVfSWXSY4wF/bqnu6u+rq+rqh/AJuAjUE6jNdWfYVxyICMhBXAVeALcABrAaGoj40bM8Fpgi/SOSueIegOdJDa5nX+XjdIxg7s1Pqu1RsoD2zBHY2u/agwXWpurfj5wGZgBXARuAQ+rLBTiblRKmWhISaa1hvTu63Dfpd8tgCzcR2kbo/jlpWRE/R3gCrBAhtoF2qzc1RhlDuCILRqXiago1Q8Cu8L8QuC9QKwNi76f5p1fyg+d6B0wVNO+AV+k+ApYJKqWBDCj6jTwCXgNbHYPChk4IC9SHmRAq075Afiqe/Og+KxwPQacAHqA6+56nzbZabqATvVdoXUkAE1WCuSubL0FZgKXnFb72SEup8rgHnnbErJ3mQBs/RzwWB7a9z6nqFXlYpUU66LoaQjnXEb2a3wQOC9PtwF7LE9imBq3S3XCSEEZAF4EAOv7gUPAYRm/ION7lYTFdClaHQ7UrzkzjIyXMu6B8+eEPulZmofSkcfNOn2v9J4Dz4CbdcaL4H4bcFz3USYoGlZkvBHvt4ENwEsBmu6AatNIFaApgK3ArL8AXAMWA2uAR8ADhbbp30uVewdoU6JYwZpKekVbt7wYkGftMj4pCmOiVYtfSoyCdcA8fXfKxnp9TwBIGayWiA5ghcb+XA6qLuUqbLXiD45HT5F4YPqAkxU9K47LlbFeMJNl3h+coUrhIoxP6XKjh1bozLiJleo6NsYm7XJ3qkClHn2jxE4cxfbN1l5PPgvXpCf/87el2sxLB54gvwGERdVSs4UgNQAAAABJRU5ErkJggg==";
+
+  function rewriteIconUrl() {
+    return REWRITE_ICON_DATA_URI;
+  }
+
+  const GENERATE_ICON_DATA_URI =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABuklEQVR4nK2VuUpDQRSGv2waEYKIja2mUhFUtFGEpPUNBMFG7MTKJOQBtNAH8AHEQmsLRRARcUMQm4BFsBFxIyoirlcG/gtjyHaTe2A4y8x8M2fuPTNQXgKWnQO2ZYekk4ADTMtvkl4F7oEW4wSrwKPAABAHeoFua4ECcA7cyTeLdQGDQAcwCsTK7d5d+FATv9WMvV5mzpL6f4Ef2c9hKsuWwCPAB3AG7FlH4ijbT+AY2AX6gTbgBLisBHePKSTQjdUXKpOxkQON7zROpQwc9RudAR4FDiubPqAHyAOnQETHswLsA09V+CUlLJ3Swm5bLpGJZ3Cz7Iygr9ptXv6w+iON7DwjWEF1YGRRf81U0diG4AnFkqoDR3XiZhDyA56Qb+ILitUM9gLPKOZ+o1lgTbdA0C942Jp7pL64X/Co9AxwZa4HVfY1sNMovNWamwbegHfgSzpXDzxrxUy1TlqMmO4rM27IvnO87jwowAUwUfQeZHVVuEdXMzxdNL7aI/XPT9XxtwSsZkuwODbnPg4e4J7kRW2szmOpKu5jYipxXJn4snMkmwLe6v81tvkmvsCNtAMbAj8A837C/wCTFpjkGBVsJwAAAABJRU5ErkJggg==";
+
+  function generateIconUrl() {
+    return GENERATE_ICON_DATA_URI;
+  }
+
   /** Rewrite selection UI */
   let savedRewriteRange = null;
   let savedRewriteField = null;
@@ -61,7 +75,44 @@
   let rewriteAnchorRect = null;
   let rewriteCircleEl = null;
   let rewriteBoxEl = null;
+  let rewriteMenuEl = null;
+  let generatePanelEl = null;
   let rewriteInputOpen = false;
+  let rewriteMenuOpen = false;
+  let generateStep = null;
+  let generateFormat = null;
+  let generateSettings = {
+    tone: "warm and friendly",
+    tonePreset: "friendly",
+    length: "medium",
+    complexity: "standard",
+    includeSubject: true,
+    profile: {
+      fullName: "",
+      signOff: "",
+      jobTitle: "",
+      companyName: "",
+      schoolName: "",
+      email: "",
+      phone: "",
+      permanentNote: "",
+    },
+  };
+  let generateLengthOptions = [
+    { id: "short", label: "Short" },
+    { id: "medium", label: "Medium" },
+    { id: "long", label: "Long" },
+  ];
+  let generateTonePresets = [
+    { id: "formal", label: "Formal" },
+    { id: "friendly", label: "Friendly" },
+    { id: "casual", label: "Casual" },
+  ];
+  let generateComplexityOptions = [
+    { id: "simple", label: "Simple" },
+    { id: "standard", label: "Standard" },
+    { id: "advanced", label: "Advanced" },
+  ];
   let rewriteSubmitting = false;
   let rewriteWateryEl = null;
   let rewriteOriginalText = "";
@@ -95,6 +146,7 @@
   const MERGE_NEARBY_GAP = 2;
   let rescanIntervalId = null;
   const REWRITE_API = "http://127.0.0.1:8000/rewrite";
+  const GENERATE_API = "http://127.0.0.1:8000/generate";
 
   const isValid = () => {
     try {
@@ -112,6 +164,7 @@
     waitForBody(() => startGrammarChecker());
 
     loadEnabledSetting();
+    loadGenerateConfig();
 
     if (chrome.storage?.onChanged) {
       chrome.storage.onChanged.addListener((changes, area) => {
@@ -126,6 +179,7 @@
     document.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onWindowChange);
     document.addEventListener("mouseup", onDocumentMouseUp, true);
+    document.addEventListener("pointerdown", onRewriteOutsidePointerDown, true);
     document.addEventListener("selectionchange", onDocumentSelectionChange);
     document.addEventListener("keydown", onRewriteDocumentKeydown, true);
   }
@@ -183,15 +237,174 @@
         clearRewriteSelectionState();
       }
     }
+    if (
+      changes.generateTone ||
+      changes.generateTonePreset ||
+      changes.generateLength ||
+      changes.generateComplexity ||
+      changes.generateWording ||
+      changes.generateIncludeSubject ||
+      changes.generateProfile
+    ) {
+      applyGenerateSettingsFromStorage({
+        generateTone: changes.generateTone?.newValue,
+        generateTonePreset: changes.generateTonePreset?.newValue,
+        generateLength: changes.generateLength?.newValue,
+        generateComplexity: changes.generateComplexity?.newValue,
+        generateWording: changes.generateWording?.newValue,
+        generateIncludeSubject: changes.generateIncludeSubject?.newValue,
+        generateProfile: changes.generateProfile?.newValue,
+      });
+      syncGeneratePanelSummary();
+    }
+  }
+
+  const TONE_PRESET_VOICE = {
+    formal: "formal",
+    friendly: "warm and friendly",
+    casual: "relaxed and casual",
+  };
+
+  function applyGenerateSettingsFromStorage(result) {
+    if (result.generateTone) {
+      generateSettings.tone = String(result.generateTone);
+    }
+    if (result.generateTonePreset) {
+      generateSettings.tonePreset = String(result.generateTonePreset);
+      if (!result.generateTone) {
+        generateSettings.tone =
+          TONE_PRESET_VOICE[generateSettings.tonePreset] || generateSettings.tone;
+      }
+    }
+    if (result.generateLength) {
+      generateSettings.length = String(result.generateLength);
+    }
+    if (result.generateComplexity || result.generateWording) {
+      generateSettings.complexity = String(
+        result.generateComplexity || result.generateWording
+      );
+    }
+    if (result.generateIncludeSubject !== undefined) {
+      generateSettings.includeSubject = result.generateIncludeSubject !== false;
+    }
+    if (result.generateProfile && typeof result.generateProfile === "object") {
+      generateSettings.profile = {
+        ...generateSettings.profile,
+        ...result.generateProfile,
+      };
+    }
+  }
+
+  function loadGenerateConfig() {
+    if (!isValid() || !chrome.runtime?.getURL) return;
+    fetch(chrome.runtime.getURL("generate_tones.json"))
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (Array.isArray(data.tonePresets) && data.tonePresets.length) {
+          generateTonePresets = data.tonePresets.map((preset) => ({
+            id: preset.id,
+            label: preset.label,
+            tone: preset.tone,
+          }));
+        }
+        if (Array.isArray(data.lengths) && data.lengths.length) {
+          generateLengthOptions = data.lengths;
+        }
+        const complexityLevels = data.complexityLevels || data.wordingLevels;
+        if (Array.isArray(complexityLevels) && complexityLevels.length) {
+          generateComplexityOptions = complexityLevels;
+        }
+        if (data.defaultSettings && typeof data.defaultSettings === "object") {
+          applyGenerateSettingsFromStorage({
+            generateTone: data.defaultSettings.tone,
+            generateTonePreset: data.defaultSettings.tonePreset,
+            generateLength: data.defaultSettings.length,
+            generateComplexity:
+              data.defaultSettings.complexity || data.defaultSettings.wording,
+            generateIncludeSubject: data.defaultSettings.includeSubject,
+            generateProfile: data.defaultSettings.profile,
+          });
+        }
+        syncGeneratePanelSummary();
+      })
+      .catch(() => {});
+  }
+
+  function getGenerateLengthLabel(lengthId) {
+    const match = generateLengthOptions.find((item) => item.id === lengthId);
+    return match?.label || "Medium";
+  }
+
+  function getGenerateComplexityLabel(complexityId) {
+    const match = generateComplexityOptions.find((item) => item.id === complexityId);
+    return match?.label || "Standard";
+  }
+
+  function syncGeneratePanelSummary() {
+    const summary = generatePanelEl?.querySelector(
+      ".humanizer-generate-settings-summary"
+    );
+    if (summary) {
+      summary.textContent = formatGenerateSettingsSummary();
+    }
+  }
+
+  function getGenerateToneLabel(tonePresetId) {
+    const match = generateTonePresets.find((item) => item.id === tonePresetId);
+    return match?.label || "Friendly";
+  }
+
+  function formatGenerateSettingsSummary() {
+    return `${getGenerateToneLabel(generateSettings.tonePreset)} · ${getGenerateLengthLabel(generateSettings.length)} · ${getGenerateComplexityLabel(generateSettings.complexity)}`;
+  }
+
+  function readStoredGenerateSettings() {
+    const profile = { ...generateSettings.profile };
+    if (profile.permanentNotes && !profile.permanentNote) {
+      profile.permanentNote = profile.permanentNotes;
+    }
+    return {
+      tonePreset: generateSettings.tonePreset,
+      tone: generateSettings.tone,
+      length: generateSettings.length,
+      complexity: generateSettings.complexity,
+      wording: generateSettings.complexity,
+      includeSubject: generateSettings.includeSubject !== false,
+      profile,
+    };
   }
 
   function loadEnabledSetting() {
     if (!isValid() || !chrome.storage?.sync) return;
-    const defaults = { enabled: true, autoFixAll: true, rewriteInSearchBars: true };
+    const defaults = {
+      enabled: true,
+      autoFixAll: true,
+      rewriteInSearchBars: true,
+      generateProfile: { ...generateSettings.profile },
+      generateLength: "medium",
+      generateTonePreset: "friendly",
+      generateTone: "warm and friendly",
+      generateComplexity: "standard",
+      generateIncludeSubject: true,
+    };
     const applyLoadedSettings = (result) => {
       enabled = result.enabled !== false;
       autoFixAll = result.autoFixAll !== false;
       rewriteInSearchBars = result.rewriteInSearchBars !== false;
+      applyGenerateSettingsFromStorage({
+        generateTone: result.generateTone || defaults.generateTone,
+        generateTonePreset: result.generateTonePreset || defaults.generateTonePreset,
+        generateLength: result.generateLength || defaults.generateLength,
+        generateComplexity:
+          result.generateComplexity ||
+          result.generateWording ||
+          defaults.generateComplexity,
+        generateIncludeSubject:
+          result.generateIncludeSubject !== false,
+        generateProfile: result.generateProfile || defaults.generateProfile,
+      });
+      syncGeneratePanelSummary();
       if (!enabled) {
         deactivateField();
         return;
@@ -1354,7 +1567,79 @@
         .replace(/\r\n/g, "\n")
         .replace(/\r/g, "\n")
         .replace(/\\n/g, "\n")
+        .trim()
     );
+  }
+
+  /** Replace the entire highlighted range with one rewritten block — no word-level diffing. */
+  function insertRewrittenTextAtRange(range, text) {
+    if (!range) return false;
+
+    const normalized = normalizeRewrittenText(text);
+    range.deleteContents();
+
+    const snapshot = rewriteRangeSnapshot;
+    const useBlocks =
+      rewriteUseBlocks || (normalized.includes("\n") && shouldUseBlockLayout(range, normalized));
+
+    if (useBlocks) {
+      range.insertNode(plainTextToBlockFragment(normalized, rewriteBlockTag || "DIV"));
+      return true;
+    }
+
+    if (snapshot?.length && !normalized.includes("\n")) {
+      const styledShell = findStyledShellInSnapshot(snapshot);
+      if (styledShell) {
+        const wrapper = styledShell.cloneNode(false);
+        wrapper.textContent = normalized;
+        range.insertNode(wrapper);
+        return true;
+      }
+    }
+
+    range.insertNode(document.createTextNode(normalized));
+    return true;
+  }
+
+  /** Swap the full highlighted selection for the model response as one unit. */
+  function replaceHighlightedSelectionWithRewrite(rewritten, ctx) {
+    const text = normalizeRewrittenText(rewritten);
+    const { range, field, inputSelection } = ctx;
+
+    if (
+      inputSelection &&
+      (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)
+    ) {
+      const { start, end } = inputSelection;
+      commitInputOrTextareaReplacement(field, start, end, text);
+      return field;
+    }
+
+    if (rewriteWateryEl) {
+      resolveWateryEffect(rewriteWateryEl, text);
+      return (
+        field ||
+        activeField ||
+        rewriteWateryEl.closest?.("[contenteditable]") ||
+        null
+      );
+    }
+
+    if (range) {
+      const liveSelection = window.getSelection();
+      if (liveSelection) {
+        liveSelection.removeAllRanges();
+        liveSelection.addRange(range);
+      }
+      insertRewrittenTextAtRange(range, text);
+      const anchor =
+        range.commonAncestorContainer instanceof Element
+          ? range.commonAncestorContainer
+          : range.commonAncestorContainer?.parentElement;
+      return field || activeField || (anchor ? normalizeEditableField(anchor) : null);
+    }
+
+    return field || null;
   }
 
   function findPhraseInText(text, phrase, hintOffset = 0) {
@@ -3023,11 +3308,27 @@
     el.classList.remove("humanizer-watery");
     el.classList.add("humanizer-watery-settle");
 
-    const snapshot = rewriteDomSnapshot;
+    const normalized = normalizeRewrittenText(newText);
     setTimeout(() => {
       if (!(el instanceof HTMLElement) || !el.isConnected) return;
       el.classList.remove("humanizer-watery-settle");
-      replaceElementPreservingFormat(el, newText, snapshot);
+
+      const parent = el.parentNode;
+      const useBlocks = rewriteUseBlocks || normalized.includes("\n");
+
+      if (useBlocks) {
+        el.replaceWith(plainTextToBlockFragment(normalized, rewriteBlockTag || "DIV"));
+      } else {
+        const styledShell = findStyledShellInSnapshot(rewriteDomSnapshot || []);
+        if (styledShell) {
+          const wrapper = styledShell.cloneNode(false);
+          wrapper.textContent = normalized;
+          el.replaceWith(wrapper);
+        } else {
+          el.replaceWith(document.createTextNode(normalized));
+        }
+      }
+      parent?.normalize?.();
     }, 350);
 
     return true;
@@ -3042,13 +3343,120 @@
     rewriteRangeSnapshot = null;
   }
 
+  function isRewriteSourceFieldTarget(target) {
+    if (!savedRewriteField || !(target instanceof Node)) return false;
+    const field = normalizeEditableField(savedRewriteField);
+    return field instanceof HTMLElement && field.contains(target);
+  }
+
+  function wireCancelButton(button) {
+    button.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!rewriteSubmitting) {
+        cancelRewrite();
+      }
+    });
+    return button;
+  }
+
+  function createCancelButton(className, label = "Cancel") {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `humanizer-action-cancel ${className}`.trim();
+    button.setAttribute("aria-label", label);
+    button.textContent = "×";
+    return wireCancelButton(button);
+  }
+
+  function onRewriteOutsidePointerDown(event) {
+    if (!isValid() || !enabled || rewriteSubmitting) return;
+    if (!rewriteUiVisible()) return;
+    if (eventHitsRewriteUi(event.target)) return;
+    if (!rewriteUiBlockingSelection() && isRewriteSourceFieldTarget(event.target)) {
+      return;
+    }
+    cancelRewrite();
+  }
+
   function rewriteUiVisible() {
-    return !!(rewriteCircleEl || rewriteBoxEl);
+    return !!(rewriteCircleEl || rewriteBoxEl || rewriteMenuEl || generatePanelEl);
+  }
+
+  function rewriteUiBlockingSelection() {
+    return rewriteSubmitting || rewriteInputOpen || rewriteMenuOpen || Boolean(generateStep);
   }
 
   function eventHitsRewriteUi(target) {
     if (!(target instanceof Element)) return false;
-    return !!target.closest(".humanizer-rewrite-btn, .humanizer-rewrite-box");
+    return !!target.closest(
+      ".humanizer-rewrite-btn, .humanizer-rewrite-box, .humanizer-rewrite-menu, .humanizer-generate-panel, .humanizer-action-cancel"
+    );
+  }
+
+  function getActiveRewritePanel() {
+    if (
+      rewriteBoxEl &&
+      !rewriteBoxEl.classList.contains("humanizer-rewrite-box--hidden")
+    ) {
+      return rewriteBoxEl;
+    }
+    if (
+      generatePanelEl &&
+      !generatePanelEl.classList.contains("humanizer-generate-panel--hidden")
+    ) {
+      return generatePanelEl;
+    }
+    if (
+      rewriteMenuEl &&
+      !rewriteMenuEl.classList.contains("humanizer-rewrite-menu--hidden")
+    ) {
+      return rewriteMenuEl;
+    }
+    return rewriteCircleEl;
+  }
+
+  function hideRewriteSubpanels() {
+    rewriteMenuOpen = false;
+    generateStep = null;
+    generateFormat = null;
+    rewriteInputOpen = false;
+
+    if (rewriteMenuEl) {
+      rewriteMenuEl.classList.add("humanizer-rewrite-menu--hidden");
+      rewriteMenuEl.classList.remove(
+        "humanizer-rewrite-menu--visible",
+        "humanizer-rewrite-menu--hiding"
+      );
+    }
+    if (generatePanelEl) {
+      generatePanelEl.classList.add("humanizer-generate-panel--hidden");
+      generatePanelEl.classList.remove(
+        "humanizer-generate-panel--visible",
+        "humanizer-generate-panel--hiding",
+        "humanizer-generate-panel--error"
+      );
+      const formatStep = generatePanelEl.querySelector(".humanizer-generate-formats");
+      const notesStep = generatePanelEl.querySelector(".humanizer-generate-notes");
+      formatStep?.classList.remove("humanizer-generate-formats--hidden");
+      notesStep?.classList.add("humanizer-generate-notes--hidden");
+      const notesInput = generatePanelEl.querySelector("textarea");
+      if (notesInput) notesInput.value = "";
+    }
+    if (rewriteBoxEl) {
+      rewriteBoxEl.classList.add("humanizer-rewrite-box--hidden");
+      rewriteBoxEl.classList.remove(
+        "humanizer-rewrite-box--visible",
+        "humanizer-rewrite-box--hiding",
+        "humanizer-rewrite-box--error"
+      );
+      const rewriteInput = rewriteBoxEl.querySelector("input");
+      if (rewriteInput) rewriteInput.value = "";
+    }
   }
 
   function getRangeEndRect(range) {
@@ -3090,10 +3498,9 @@
       applyRewriteHighlight(savedRewriteRange);
     }
     const anchor = getRewritePositionRange();
-    if (rewriteBoxEl && rewriteInputOpen && !rewriteBoxEl.classList.contains("humanizer-rewrite-box--hidden")) {
-      positionAtSelectionCorner(rewriteBoxEl, anchor);
-    } else if (rewriteCircleEl && !rewriteCircleEl.classList.contains("humanizer-rewrite-btn--hidden")) {
-      positionAtSelectionCorner(rewriteCircleEl, anchor);
+    const panel = getActiveRewritePanel();
+    if (panel) {
+      positionAtSelectionCorner(panel, anchor);
     }
   }
 
@@ -3101,8 +3508,18 @@
     rewriteSubmitting = loading;
     const input = rewriteBoxEl?.querySelector("input");
     const sendButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-send");
+    const cancelButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-cancel");
+    const notesInput = generatePanelEl?.querySelector("textarea");
+    const generateSend = generatePanelEl?.querySelector(".humanizer-generate-send");
+    const generateCancel = generatePanelEl?.querySelector(".humanizer-generate-cancel");
     if (input) input.disabled = loading;
     if (sendButton) sendButton.disabled = loading;
+    if (cancelButton) cancelButton.disabled = loading;
+    if (notesInput) notesInput.disabled = loading;
+    if (generateSend) generateSend.disabled = loading;
+    if (generateCancel) generateCancel.disabled = loading;
+    const notesCancel = generatePanelEl?.querySelector(".humanizer-generate-notes-cancel");
+    if (notesCancel) notesCancel.disabled = loading;
 
     if (!rewriteCircleEl || !rewriteBoxEl) return;
 
@@ -3133,9 +3550,16 @@
   function removeRewriteUi() {
     rewriteCircleEl?.remove();
     rewriteBoxEl?.remove();
+    rewriteMenuEl?.remove();
+    generatePanelEl?.remove();
     rewriteCircleEl = null;
     rewriteBoxEl = null;
+    rewriteMenuEl = null;
+    generatePanelEl = null;
     rewriteInputOpen = false;
+    rewriteMenuOpen = false;
+    generateStep = null;
+    generateFormat = null;
     rewriteSubmitting = false;
   }
 
@@ -3145,6 +3569,9 @@
       clearRewriteSelectionState();
       rewriteSubmitting = false;
       rewriteInputOpen = false;
+      rewriteMenuOpen = false;
+      generateStep = null;
+      generateFormat = null;
       return;
     }
 
@@ -3160,10 +3587,7 @@
       return;
     }
 
-    const fading =
-      rewriteBoxEl && !rewriteBoxEl.classList.contains("humanizer-rewrite-box--hidden")
-        ? rewriteBoxEl
-        : rewriteCircleEl;
+    const fading = getActiveRewritePanel();
     if (!fading) {
       finish();
       return;
@@ -3171,13 +3595,19 @@
 
     fading.classList.remove(
       "humanizer-rewrite-box--visible",
-      "humanizer-rewrite-btn--visible"
+      "humanizer-rewrite-btn--visible",
+      "humanizer-rewrite-menu--visible",
+      "humanizer-generate-panel--visible"
     );
-    fading.classList.add(
+    const hidingClass =
       fading === rewriteBoxEl
         ? "humanizer-rewrite-box--hiding"
-        : "humanizer-rewrite-btn--hiding"
-    );
+        : fading === rewriteMenuEl
+          ? "humanizer-rewrite-menu--hiding"
+          : fading === generatePanelEl
+            ? "humanizer-generate-panel--hiding"
+            : "humanizer-rewrite-btn--hiding";
+    fading.classList.add(hidingClass);
     const onDone = () => finish();
     fading.addEventListener("transitionend", onDone, { once: true });
     setTimeout(onDone, 180);
@@ -3189,7 +3619,7 @@
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "humanizer-rewrite-btn humanizer-rewrite-btn--hidden";
-    btn.setAttribute("aria-label", "Rewrite selection");
+    btn.setAttribute("aria-label", "Writing tools");
     btn.innerHTML =
       '<span class="humanizer-rewrite-btn-icon" aria-hidden="true">↗</span>' +
       '<span class="humanizer-rewrite-btn-spinner" aria-hidden="true"></span>';
@@ -3201,8 +3631,8 @@
     btn.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (!rewriteSubmitting && !rewriteInputOpen) {
-        openRewriteInput();
+      if (!rewriteSubmitting && !rewriteUiBlockingSelection()) {
+        openRewriteActionMenu();
       }
     });
 
@@ -3242,6 +3672,11 @@
     sendButton.setAttribute("aria-label", "Submit rewrite");
     sendButton.textContent = "→";
 
+    const cancelButton = createCancelButton(
+      "humanizer-rewrite-cancel",
+      "Cancel rewrite"
+    );
+
     sendButton.addEventListener("mousedown", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -3255,6 +3690,7 @@
     });
 
     box.appendChild(input);
+    box.appendChild(cancelButton);
     box.appendChild(sendButton);
     box.addEventListener("mousedown", (event) => {
       event.stopPropagation();
@@ -3265,8 +3701,249 @@
     return box;
   }
 
+  function ensureRewriteMenu() {
+    if (rewriteMenuEl) return rewriteMenuEl;
+
+    const menu = document.createElement("div");
+    menu.className = "humanizer-rewrite-menu humanizer-rewrite-menu--hidden";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "Writing actions");
+
+    const rewriteBtn = document.createElement("button");
+    rewriteBtn.type = "button";
+    rewriteBtn.className =
+      "humanizer-rewrite-menu-item humanizer-rewrite-menu-item--icon-only";
+    rewriteBtn.setAttribute("role", "menuitem");
+    rewriteBtn.setAttribute("aria-label", "Rewrite");
+    rewriteBtn.innerHTML =
+      '<img class="humanizer-rewrite-menu-item-icon" src="' +
+      rewriteIconUrl() +
+      '" alt="" width="18" height="18" draggable="false">' +
+      '<span class="humanizer-rewrite-menu-item-label">Rewrite</span>';
+    rewriteBtn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    rewriteBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openRewriteInput();
+    });
+
+    const generateBtn = document.createElement("button");
+    generateBtn.type = "button";
+    generateBtn.className =
+      "humanizer-rewrite-menu-item humanizer-rewrite-menu-item--icon-only";
+    generateBtn.setAttribute("role", "menuitem");
+    generateBtn.setAttribute("aria-label", "Generate");
+    generateBtn.innerHTML =
+      '<img class="humanizer-rewrite-menu-item-icon" src="' +
+      generateIconUrl() +
+      '" alt="" width="18" height="18" draggable="false">' +
+      '<span class="humanizer-rewrite-menu-item-label">Generate</span>';
+    generateBtn.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    generateBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openGenerateFormatStep();
+    });
+
+    menu.appendChild(rewriteBtn);
+    menu.appendChild(generateBtn);
+    menu.addEventListener("mousedown", (event) => {
+      event.stopPropagation();
+    });
+
+    document.body.appendChild(menu);
+    rewriteMenuEl = menu;
+    return menu;
+  }
+
+  function ensureGeneratePanel() {
+    if (generatePanelEl) return generatePanelEl;
+
+    const panel = document.createElement("div");
+    panel.className = "humanizer-generate-panel humanizer-generate-panel--hidden";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "Generate writing");
+
+    const formatStep = document.createElement("div");
+    formatStep.className = "humanizer-generate-formats";
+
+    const formatLabel = document.createElement("p");
+    formatLabel.className = "humanizer-generate-label";
+    formatLabel.textContent = "Generate as";
+
+    const formatActions = document.createElement("div");
+    formatActions.className = "humanizer-generate-format-actions";
+
+    for (const [format, label] of [
+      ["email", "Email"],
+      ["essay", "Essay"],
+    ]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "humanizer-generate-format-btn";
+      button.dataset.format = format;
+      button.textContent = label;
+      button.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openGenerateNotesStep(format);
+      });
+      formatActions.appendChild(button);
+    }
+
+    formatStep.appendChild(formatLabel);
+    formatStep.appendChild(formatActions);
+
+    const panelCancel = createCancelButton(
+      "humanizer-generate-cancel",
+      "Cancel generate"
+    );
+
+    const notesStep = document.createElement("div");
+    notesStep.className = "humanizer-generate-notes humanizer-generate-notes--hidden";
+
+    const settingsSummary = document.createElement("p");
+    settingsSummary.className = "humanizer-generate-settings-summary";
+    settingsSummary.textContent = formatGenerateSettingsSummary();
+    settingsSummary.title = "Change in extension settings";
+
+    const notesBody = document.createElement("div");
+    notesBody.className = "humanizer-generate-notes-row";
+
+    const notesInput = document.createElement("textarea");
+    notesInput.rows = 2;
+    notesInput.placeholder = "Anything to specify? (optional)";
+    notesInput.setAttribute("aria-label", "Generation notes");
+
+    notesInput.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelRewrite();
+        return;
+      }
+      if (event.key === "Enter" && !event.shiftKey && !rewriteSubmitting) {
+        event.preventDefault();
+        submitGenerate(notesInput);
+      }
+    });
+
+    const sendButton = document.createElement("button");
+    sendButton.type = "button";
+    sendButton.className = "humanizer-generate-send";
+    sendButton.setAttribute("aria-label", "Generate text");
+    sendButton.textContent = "→";
+
+    const notesCancel = createCancelButton(
+      "humanizer-generate-notes-cancel",
+      "Cancel generate"
+    );
+
+    sendButton.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    sendButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!rewriteSubmitting) {
+        submitGenerate(notesInput);
+      }
+    });
+
+    notesBody.appendChild(notesInput);
+    notesBody.appendChild(notesCancel);
+    notesBody.appendChild(sendButton);
+
+    notesStep.appendChild(settingsSummary);
+    notesStep.appendChild(notesBody);
+
+    panel.appendChild(panelCancel);
+    panel.appendChild(formatStep);
+    panel.appendChild(notesStep);
+    panel.addEventListener("mousedown", (event) => {
+      event.stopPropagation();
+    });
+
+    document.body.appendChild(panel);
+    generatePanelEl = panel;
+    return panel;
+  }
+
+  function openRewriteActionMenu() {
+    if (!savedRewriteField && !savedRewriteRange) return;
+    hideRewriteSubpanels();
+    rewriteMenuOpen = true;
+    const circle = ensureRewriteCircle();
+    const menu = ensureRewriteMenu();
+    circle.classList.add("humanizer-rewrite-btn--hidden");
+    circle.classList.remove("humanizer-rewrite-btn--visible");
+    menu.classList.remove("humanizer-rewrite-menu--hidden", "humanizer-rewrite-menu--hiding");
+    const anchor = getRewritePositionRange();
+    positionAtSelectionCorner(menu, anchor);
+    menu.classList.add("humanizer-rewrite-menu--visible");
+    requestAnimationFrame(() => {
+      positionAtSelectionCorner(menu, anchor);
+    });
+  }
+
+  function openGenerateFormatStep() {
+    if (!savedRewriteField && !savedRewriteRange) return;
+    rewriteMenuOpen = false;
+    generateStep = "format";
+    generateFormat = null;
+    const menu = ensureRewriteMenu();
+    const panel = ensureGeneratePanel();
+    menu.classList.add("humanizer-rewrite-menu--hidden");
+    menu.classList.remove("humanizer-rewrite-menu--visible");
+    panel.classList.remove(
+      "humanizer-generate-panel--hidden",
+      "humanizer-generate-panel--hiding",
+      "humanizer-generate-panel--error"
+    );
+    panel.querySelector(".humanizer-generate-formats")?.classList.remove(
+      "humanizer-generate-formats--hidden"
+    );
+    panel.querySelector(".humanizer-generate-notes")?.classList.add(
+      "humanizer-generate-notes--hidden"
+    );
+    syncGeneratePanelSummary();
+    const anchor = getRewritePositionRange();
+    positionAtSelectionCorner(panel, anchor);
+    panel.classList.add("humanizer-generate-panel--visible");
+  }
+
+  function openGenerateNotesStep(format) {
+    generateStep = "notes";
+    generateFormat = format;
+    const panel = ensureGeneratePanel();
+    panel.querySelector(".humanizer-generate-formats")?.classList.add(
+      "humanizer-generate-formats--hidden"
+    );
+    const notesStep = panel.querySelector(".humanizer-generate-notes");
+    notesStep?.classList.remove("humanizer-generate-notes--hidden");
+    syncGeneratePanelSummary();
+    const notesInput = panel.querySelector("textarea");
+    const anchor = getRewritePositionRange();
+    positionAtSelectionCorner(panel, anchor);
+    panel.classList.add("humanizer-generate-panel--visible");
+    notesInput?.focus();
+    requestAnimationFrame(() => {
+      positionAtSelectionCorner(panel, anchor);
+    });
+  }
+
   function showRewriteCircle(range) {
-    rewriteInputOpen = false;
+    hideRewriteSubpanels();
     const circle = ensureRewriteCircle();
     const box = ensureRewriteBox();
     box.classList.add("humanizer-rewrite-box--hidden");
@@ -3294,11 +3971,20 @@
 
   function openRewriteInput() {
     if (!savedRewriteField && !savedRewriteRange) return;
+    rewriteMenuOpen = false;
+    generateStep = null;
+    generateFormat = null;
     rewriteInputOpen = true;
     const circle = ensureRewriteCircle();
     const box = ensureRewriteBox();
+    const menu = ensureRewriteMenu();
+    const panel = ensureGeneratePanel();
     circle.classList.add("humanizer-rewrite-btn--hidden");
     circle.classList.remove("humanizer-rewrite-btn--visible");
+    menu.classList.add("humanizer-rewrite-menu--hidden");
+    menu.classList.remove("humanizer-rewrite-menu--visible");
+    panel.classList.add("humanizer-generate-panel--hidden");
+    panel.classList.remove("humanizer-generate-panel--visible");
     box.classList.remove("humanizer-rewrite-box--hidden", "humanizer-rewrite-box--hiding");
     const anchor = getRewritePositionRange();
     positionAtSelectionCorner(box, anchor);
@@ -3309,112 +3995,31 @@
     });
   }
 
-  async function callRewriteApi(text, prompt, context) {
-    const response = await fetch(REWRITE_API, {
+  async function callGenerateApi(text, format, notes, context, settings) {
+    const headers = await humanizerApiHeaders();
+    const ai = await humanizerAiPayload();
+    const response = await fetch(GENERATE_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, prompt, context }),
+      headers,
+      body: JSON.stringify({
+        text,
+        format,
+        notes: notes || "",
+        context,
+        settings,
+        ai,
+      }),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data.detail || `Rewrite failed (${response.status})`);
+      throw new Error(data.detail || `Generate failed (${response.status})`);
     }
-    return data.rewritten || "";
+    return normalizeRewrittenText(data.generated || "");
   }
 
-  function finishRewriteField(targetField, { skipInputDispatch = false } = {}) {
-    if (!(targetField instanceof HTMLElement)) return;
-    const normalized = normalizeEditableField(targetField);
-    suppressGrammarEvents = true;
-    try {
-      if (!skipInputDispatch) {
-        dispatchFieldInput(normalized);
-      }
-    } finally {
-      suppressGrammarEvents = false;
-    }
-    if (normalized !== activeField) {
-      attachGrammarChecker(normalized);
-      activateField(normalized);
-    }
-    markTextDirty(normalized);
-    scheduleCheck(normalized);
-  }
-
-  function applyRewriteResult(rewrittenRaw, ctx) {
-    hideRewriteUI();
-
-    const rewritten = normalizeRewrittenText(rewrittenRaw);
-    const { range, field, inputSelection } = ctx;
-
-    if (
-      inputSelection &&
-      (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)
-    ) {
-      const { start, end } = inputSelection;
-      suppressGrammarEvents = true;
-      try {
-        commitInputOrTextareaReplacement(field, start, end, rewritten);
-      } finally {
-        suppressGrammarEvents = false;
-      }
-      clearRewriteWateryState();
-      finishRewriteField(field, { skipInputDispatch: true });
-      return;
-    }
-
-    const targetField =
-      field ||
-      activeField ||
-      rewriteWateryEl?.closest?.("[contenteditable]") ||
-      null;
-    const applied = rewriteWateryEl
-      ? resolveWateryEffect(rewriteWateryEl, rewritten)
-      : false;
-
-    if (!applied && range) {
-      const liveSelection = window.getSelection();
-      if (liveSelection) {
-        liveSelection.removeAllRanges();
-        liveSelection.addRange(range);
-      }
-      suppressGrammarEvents = true;
-      try {
-        insertTextAtRangePreservingFormat(
-          range,
-          rewritten,
-          rewriteDomSnapshot?.length
-            ? rewriteDomSnapshot
-            : rewriteRangeSnapshot
-        );
-      } finally {
-        suppressGrammarEvents = false;
-      }
-    }
-
-    clearRewriteWateryState();
-    finishRewriteField(targetField);
-  }
-
-  function submitRewrite(inputEl) {
-    if (rewriteSubmitting) return;
-
-    const input =
-      inputEl || rewriteBoxEl?.querySelector("input");
-    const prompt = (input?.value || "").trim();
-
-    if (!prompt) {
-      input?.focus();
-      rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
-      setTimeout(() => {
-        rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
-      }, 1200);
-      return;
-    }
-
+  function collectTransformationPayload() {
     if (!savedRewriteRange && !savedInputSelection) {
-      hideRewriteUI({ animate: false });
-      return;
+      return null;
     }
 
     const field = savedRewriteField;
@@ -3428,8 +4033,7 @@
       rawText = extractRangePlainText(savedRewriteRange);
       text = normalizeEmailSpacing(rawText);
       if (!text.trim()) {
-        hideRewriteUI({ animate: false });
-        return;
+        return null;
       }
 
       range = savedRewriteRange.cloneRange();
@@ -3463,8 +4067,7 @@
       );
       text = normalizeEmailSpacing(rawText);
       if (!text.trim()) {
-        hideRewriteUI({ animate: false });
-        return;
+        return null;
       }
 
       inputSelection = { ...savedInputSelection };
@@ -3475,28 +4078,147 @@
       rewriteUseBlocks = false;
     }
 
+    return {
+      text,
+      rewriteContext,
+      resultCtx: { range, field, inputSelection },
+    };
+  }
+
+  function handleTransformationFailure(reopenFn) {
+    setRewriteLoading(false);
+    if (!isValid()) return;
+    if (rewriteWateryEl) {
+      cancelWateryEffect(rewriteWateryEl, rewriteOriginalText);
+      clearRewriteWateryState();
+    }
+    reopenFn();
+    generatePanelEl?.classList.add("humanizer-generate-panel--error");
+    rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
+    setTimeout(() => {
+      generatePanelEl?.classList.remove("humanizer-generate-panel--error");
+      rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
+    }, 1200);
+  }
+  async function callRewriteApi(text, prompt, context) {
+    const headers = await humanizerApiHeaders();
+    const ai = await humanizerAiPayload();
+    const response = await fetch(REWRITE_API, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text, prompt, context, ai }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || `Rewrite failed (${response.status})`);
+    }
+    return normalizeRewrittenText(data.rewritten || "");
+  }
+
+  function finishRewriteField(targetField, { skipInputDispatch = false } = {}) {
+    if (!(targetField instanceof HTMLElement)) return;
+    const normalized = normalizeEditableField(targetField);
+    suppressGrammarEvents = true;
+    try {
+      if (!skipInputDispatch) {
+        dispatchFieldInput(normalized);
+      }
+    } finally {
+      suppressGrammarEvents = false;
+    }
+    if (normalized !== activeField) {
+      attachGrammarChecker(normalized);
+      activateField(normalized);
+    }
+    markTextDirty(normalized);
+    scheduleCheck(normalized);
+  }
+
+  function applyRewriteResult(rewrittenRaw, ctx) {
+    hideRewriteUI();
+
+    const isInputField =
+      ctx.inputSelection &&
+      (ctx.field instanceof HTMLInputElement ||
+        ctx.field instanceof HTMLTextAreaElement);
+
+    suppressGrammarEvents = true;
+    let targetField = null;
+    try {
+      targetField = replaceHighlightedSelectionWithRewrite(rewrittenRaw, ctx);
+    } finally {
+      suppressGrammarEvents = false;
+    }
+
+    clearRewriteWateryState();
+    finishRewriteField(targetField, { skipInputDispatch: Boolean(isInputField) });
+  }
+
+  function submitRewrite(inputEl) {
+    if (rewriteSubmitting) return;
+
+    const input =
+      inputEl || rewriteBoxEl?.querySelector("input");
+    const prompt = (input?.value || "").trim();
+
+    if (!prompt) {
+      input?.focus();
+      rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
+      setTimeout(() => {
+        rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
+      }, 1200);
+      return;
+    }
+
+    const payload = collectTransformationPayload();
+    if (!payload) {
+      hideRewriteUI({ animate: false });
+      return;
+    }
+
     setRewriteLoading(true);
 
-    const resultCtx = { range, field, inputSelection };
-
-    callRewriteApi(text, prompt, rewriteContext)
+    callRewriteApi(payload.text, prompt, payload.rewriteContext)
       .then((rewrittenRaw) => {
         setRewriteLoading(false);
         if (!isValid()) return;
-        applyRewriteResult(rewrittenRaw, resultCtx);
+        applyRewriteResult(rewrittenRaw, payload.resultCtx);
       })
       .catch(() => {
+        handleTransformationFailure(() => openRewriteInput());
+      });
+  }
+
+  function submitGenerate(notesEl) {
+    if (rewriteSubmitting || !generateFormat) return;
+
+    const notesInput = notesEl || generatePanelEl?.querySelector("textarea");
+    const notes = (notesInput?.value || "").trim();
+
+    const payload = collectTransformationPayload();
+    if (!payload) {
+      hideRewriteUI({ animate: false });
+      return;
+    }
+
+    setRewriteLoading(true);
+
+    const settings = readStoredGenerateSettings();
+
+    callGenerateApi(
+      payload.text,
+      generateFormat,
+      notes,
+      payload.rewriteContext,
+      settings
+    )
+      .then((generatedRaw) => {
         setRewriteLoading(false);
         if (!isValid()) return;
-        if (rewriteWateryEl) {
-          cancelWateryEffect(rewriteWateryEl, rewriteOriginalText);
-          clearRewriteWateryState();
-        }
-        openRewriteInput();
-        rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
-        setTimeout(() => {
-          rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
-        }, 1200);
+        applyRewriteResult(generatedRaw, payload.resultCtx);
+      })
+      .catch(() => {
+        handleTransformationFailure(() => openGenerateNotesStep(generateFormat));
       });
   }
 
@@ -3509,10 +4231,10 @@
   let rewriteSelectionChangeTimer = null;
 
   function onDocumentSelectionChange() {
-    if (!isValid() || !enabled || rewriteSubmitting || rewriteInputOpen) return;
+    if (!isValid() || !enabled || rewriteUiBlockingSelection()) return;
     clearTimeout(rewriteSelectionChangeTimer);
     rewriteSelectionChangeTimer = setTimeout(() => {
-      if (!isValid() || !enabled || rewriteSubmitting || rewriteInputOpen) return;
+      if (!isValid() || !enabled || rewriteUiBlockingSelection()) return;
       const rewriteSel = getRewriteSelectionFromPage();
       if (!rewriteSel || !rewriteAllowedForField(rewriteSel.field)) return;
       if (
@@ -3542,11 +4264,7 @@
       const hasValidSelection = Boolean(rewriteSel && rewriteAllowedForField(rewriteSel.field));
 
       if (rewriteUiVisible() && !hasValidSelection) {
-        if (rewriteInputOpen) {
-          if (savedRewriteRange) {
-            applyRewriteHighlight(savedRewriteRange);
-          }
-          repositionRewriteUi();
+        if (rewriteSubmitting) {
           return;
         }
         if (eventHitsRewriteUi(event.target)) {

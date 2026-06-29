@@ -16,18 +16,43 @@ from contextlib import asynccontextmanager
 import urllib.error
 import urllib.request
 from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 import language_tool_python
 import requests
 import uvicorn
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from cloud_ai import CloudAIError, normalize_ai_config
+from security import (
+    API_TOKEN,
+    MAX_NOTES_CHARS,
+    MAX_PROFILE_FIELD_CHARS,
+    MAX_PROMPT_CHARS,
+    MAX_TEXT_CHARS,
+    REQUIRE_AUTH,
+    LocalClientMiddleware,
+    RateLimitMiddleware,
+    RequestSizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+    cors_allowed_origins,
+    resolve_debug_log_path,
+    safe_error_detail,
+    sanitize_profile_fields,
+    sanitize_ai_config,
+    validate_context,
+    verify_api_token,
+)
+from writing_agent import OLLAMA_WRITING_MODEL, generate_text, rewrite_text
+
 OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "humanizer-grammar")
+OLLAMA_GRAMMAR_MODEL = os.environ.get(
+    "OLLAMA_GRAMMAR_MODEL", OLLAMA_MODEL
+)
 OLLAMA_TEMPERATURE = 0.9
 OLLAMA_GRAMMAR_TEMPERATURE = 0.2
 OLLAMA_START_TIMEOUT_SEC = 30.0
@@ -35,11 +60,17 @@ OLLAMA_REQUEST_TIMEOUT_SEC = 120.0
 OLLAMA_KEEP_ALIVE = os.environ.get("OLLAMA_KEEP_ALIVE", "30m")
 OLLAMA_GRAMMAR_NUM_PREDICT = int(os.environ.get("OLLAMA_GRAMMAR_NUM_PREDICT", "768"))
 OLLAMA_GRAMMAR_NUM_CTX = int(os.environ.get("OLLAMA_GRAMMAR_NUM_CTX", "4096"))
+
+GRAMMAR_SYSTEM_PROMPT = (
+    "Fix grammar and spelling with minimal, safe edits. Return only the corrected sentence."
+)
 DEBUG_OLLAMA = os.environ.get("HUMANIZER_DEBUG_OLLAMA", "").lower() in ("1", "true", "yes")
 
-HOST = "127.0.0.1"
-PORT = 8000
-DEBUG_LOG_PATH = "/Users/eshankhan/Documents/code/Humanizer/.cursor/debug-2bb802.log"
+HOST = os.environ.get("HUMANIZER_HOST", "127.0.0.1")
+if HOST not in {"127.0.0.1", "localhost"}:
+    HOST = "127.0.0.1"
+PORT = int(os.environ.get("HUMANIZER_PORT", "8000"))
+DEBUG_LOG_PATH = str(resolve_debug_log_path(".cursor/debug-2bb802.log"))
 
 LANGUAGE_CODE = "en-US"
 MIN_SUGGESTIONS = 1
@@ -79,7 +110,7 @@ class OllamaError(Exception):
 
 
 class TextRequest(BaseModel):
-    text: str = Field(..., min_length=1)
+    text: str = Field(..., min_length=1, max_length=MAX_TEXT_CHARS)
 
 
 class GrammarMatch(BaseModel):
@@ -120,10 +151,11 @@ class HumanizeResponse(BaseModel):
 
 
 class RewriteRequest(BaseModel):
-    text: str = Field(..., min_length=1)
-    prompt: Optional[str] = None
-    tone: str = "neutral"
+    text: str = Field(..., min_length=1, max_length=MAX_TEXT_CHARS)
+    prompt: Optional[str] = Field(None, max_length=MAX_PROMPT_CHARS)
+    tone: str = Field("neutral", max_length=MAX_PROMPT_CHARS)
     context: Optional[Dict[str, Any]] = None
+    ai: Optional[AiConfig] = None
 
 
 class RewriteResponse(BaseModel):
@@ -132,10 +164,63 @@ class RewriteResponse(BaseModel):
     rewritten: str
 
 
+class AiConfig(BaseModel):
+    provider: Literal["local", "ollama", "groq", "openai"] = "local"
+    api_key: str = Field("", alias="apiKey", max_length=512)
+    model: str = Field("", max_length=128)
+
+    model_config = {"populate_by_name": True}
+
+
+class GenerateProfile(BaseModel):
+    full_name: str = Field("", alias="fullName", max_length=MAX_PROFILE_FIELD_CHARS)
+    sign_off: str = Field("", alias="signOff", max_length=MAX_PROFILE_FIELD_CHARS)
+    job_title: str = Field("", alias="jobTitle", max_length=MAX_PROFILE_FIELD_CHARS)
+    company_name: str = Field("", alias="companyName", max_length=MAX_PROFILE_FIELD_CHARS)
+    school_name: str = Field("", alias="schoolName", max_length=MAX_PROFILE_FIELD_CHARS)
+    email: str = Field("", max_length=MAX_PROFILE_FIELD_CHARS)
+    phone: str = Field("", max_length=MAX_PROFILE_FIELD_CHARS)
+    permanent_note: str = Field("", alias="permanentNote", max_length=MAX_NOTES_CHARS)
+    permanent_notes: str = Field("", alias="permanentNotes", max_length=MAX_NOTES_CHARS)
+
+    model_config = {"populate_by_name": True}
+
+
+class GenerateSettings(BaseModel):
+    tone: Optional[str] = Field("warm and friendly", max_length=MAX_PROMPT_CHARS)
+    tone_preset: Optional[str] = Field("friendly", alias="tonePreset", max_length=32)
+    length: Literal["short", "medium", "long"] = "medium"
+    complexity: Literal["simple", "standard", "advanced"] = "standard"
+    wording: Optional[Literal["simple", "standard", "advanced"]] = None
+    include_subject: bool = Field(True, alias="includeSubject")
+    profile: Optional[GenerateProfile] = None
+
+    model_config = {"populate_by_name": True}
+
+
+class GenerateRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=MAX_TEXT_CHARS)
+    format: Literal["email", "essay"] = "essay"
+    notes: Optional[str] = Field(None, max_length=MAX_NOTES_CHARS)
+    context: Optional[Dict[str, Any]] = None
+    settings: Optional[GenerateSettings] = None
+    ai: Optional[AiConfig] = None
+
+
+class GenerateResponse(BaseModel):
+    text: str
+    format: str
+    generated: str
+
+
 class HealthResponse(BaseModel):
     ok: bool
     ollama_available: bool
     grammar_available: bool
+    grammar_model: str = OLLAMA_GRAMMAR_MODEL
+    writing_model: str = OLLAMA_WRITING_MODEL
+    writing_agent: str = "rewrite, generate"
+    cloud_ai_providers: list[str] = ["groq", "openai"]
 
 
 def _build_ollama_humanize_prompt(text: str) -> str:
@@ -497,7 +582,8 @@ def _call_deep_fixer(sentence: str) -> tuple[str | None, bool]:
         raw = _ollama_generate(
             _build_deep_fix_prompt(sentence),
             temperature=OLLAMA_GRAMMAR_TEMPERATURE,
-            grammar=False,
+            grammar=True,
+            model=OLLAMA_GRAMMAR_MODEL,
         )
         corrected = _clean_deep_fix_response(raw)
         if corrected and corrected.lower() != sentence.strip().lower():
@@ -662,22 +748,35 @@ def _ollama_generate(
     *,
     temperature: float = OLLAMA_TEMPERATURE,
     grammar: bool = False,
+    system: str | None = None,
+    model: str | None = None,
+    num_predict: int | None = None,
+    num_ctx: int | None = None,
 ) -> str:
     """Send a prompt to Ollama and return the model response text."""
     ensure_ollama_running()
 
     options: dict[str, Any] = {"temperature": temperature}
-    if grammar:
+    if num_predict is not None:
+        options["num_predict"] = num_predict
+    elif grammar:
         options["num_predict"] = OLLAMA_GRAMMAR_NUM_PREDICT
+    if num_ctx is not None:
+        options["num_ctx"] = num_ctx
+    elif grammar:
         options["num_ctx"] = OLLAMA_GRAMMAR_NUM_CTX
 
     payload: dict[str, Any] = {
-        "model": OLLAMA_MODEL,
+        "model": model or (OLLAMA_GRAMMAR_MODEL if grammar else OLLAMA_MODEL),
         "prompt": prompt,
         "stream": False,
         "keep_alive": OLLAMA_KEEP_ALIVE,
         "options": options,
     }
+    if system is not None:
+        payload["system"] = system
+    elif grammar:
+        payload["system"] = GRAMMAR_SYSTEM_PROMPT
 
     if DEBUG_OLLAMA:
         print("=== OLLAMA PAYLOAD ===", payload, flush=True)
@@ -725,153 +824,6 @@ def humanize_text(text: str) -> str:
     combined = "\n\n".join(humanized_paragraphs)
     second_pass_prompt = _build_casual_second_pass_prompt(combined)
     return _ollama_generate(second_pass_prompt)
-
-
-def _format_rewrite_context(context: dict[str, Any] | None) -> str:
-    if not context:
-        return ""
-
-    lines: list[str] = ["DOCUMENT CONTEXT:"]
-
-    page = context.get("page") or {}
-    if page:
-        app = page.get("app") or "unknown"
-        doc_type = page.get("documentType") or "unknown"
-        lines.append(f"- Application: {app}")
-        lines.append(f"- Document type: {doc_type}")
-        if page.get("title"):
-            lines.append(f"- Page title: {page['title']}")
-
-    field = context.get("field") or {}
-    if field:
-        role = field.get("role") or "unknown"
-        lines.append(f"- Field role: {role}")
-        if field.get("label"):
-            lines.append(f"- Field label: {field['label']}")
-
-    layout = context.get("layout") or {}
-    if layout:
-        block = layout.get("blockType") or "unknown"
-        lines.append(f"- Block type: {block}")
-        if layout.get("inList"):
-            lines.append(
-                f"- Inside list ({layout.get('listType') or 'list'} item "
-                f"{layout.get('listIndex') or '?'})"
-            )
-        if layout.get("paragraphIndex") is not None:
-            lines.append(
-                f"- Paragraph {layout['paragraphIndex']} of "
-                f"{layout.get('paragraphCount') or '?'}"
-            )
-        if layout.get("fieldLineCount") is not None:
-            lines.append(f"- Field has {layout['fieldLineCount']} line(s)")
-
-    selection = context.get("selection") or {}
-    if selection:
-        if selection.get("wordCount") is not None:
-            lines.append(f"- Selection length: {selection['wordCount']} words")
-        flags = []
-        if selection.get("spansParagraphs"):
-            flags.append("spans multiple paragraphs")
-        if selection.get("startsMidSentence"):
-            flags.append("starts mid-sentence")
-        if selection.get("endsMidSentence"):
-            flags.append("ends mid-sentence")
-        if selection.get("isCompleteSentence"):
-            flags.append("complete sentence(s)")
-        if flags:
-            lines.append(f"- Selection shape: {', '.join(flags)}")
-        line_count = selection.get("paragraphLineCount")
-        if line_count and line_count > 1:
-            lines.append(f"- Paragraph structure: {line_count} lines (single blank line between sections)")
-        if selection.get("excessVerticalSpacing"):
-            lines.append(
-                "- Spacing fix needed: collapse excess blank lines to one blank line "
-                "between sections"
-            )
-
-    surrounding = context.get("surrounding") or {}
-    if surrounding.get("before"):
-        lines.append(f"\nTEXT BEFORE SELECTION:\n...{surrounding['before']}")
-    if surrounding.get("after"):
-        lines.append(f"\nTEXT AFTER SELECTION:\n{surrounding['after']}...")
-
-    return "\n".join(lines)
-
-
-def _normalize_email_spacing(text: str) -> str:
-    """Collapse runs of blank lines to a single blank line between sections."""
-    if not text:
-        return ""
-    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
-    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
-    collapsed: list[str] = []
-    previous_blank = False
-    for line in normalized.split("\n"):
-        is_blank = not line.strip()
-        if is_blank:
-            if not previous_blank:
-                collapsed.append("")
-            previous_blank = True
-        else:
-            collapsed.append(line)
-            previous_blank = False
-    return "\n".join(collapsed)
-
-
-def _build_rewrite_prompt(
-    text: str,
-    user_instruction: str,
-    context: dict[str, Any] | None = None,
-    *,
-    direct: bool = False,
-) -> str:
-    instruction = (user_instruction or "").strip()
-    if not instruction:
-        instruction = "Rewrite to sound clear and natural."
-    elif not direct:
-        if len(instruction.split()) <= 2 and not any(
-            char in instruction for char in ".!?,:;"
-        ):
-            instruction = f"Rewrite in a {instruction} tone."
-        elif not instruction.lower().startswith("rewrite"):
-            instruction = f"Rewrite the text as follows: {instruction}"
-
-    context_block = _format_rewrite_context(context)
-    planning = (
-        "You are rewriting a selected passage inside a larger document.\n"
-        "1. Read the document context, layout, and surrounding text.\n"
-        "2. Plan how the selection should change while fitting its place in the layout.\n"
-        "3. Rewrite ONLY the selected passage — not the before/after text.\n"
-        "4. Match constraints: email subjects stay one concise line; list items stay "
-        "parallel; mid-sentence edits must flow into neighboring text; preserve meaning.\n"
-        "5. For emails and multi-section text: use exactly ONE blank line between sections "
-        "(greeting, body, sign-off). Never stack multiple blank lines. If the input has "
-        "excess vertical spacing from pasted AI text, normalize it down to single breaks.\n"
-        "Return ONLY the rewritten selected text, nothing else."
-    )
-
-    sections = [planning]
-    if context_block:
-        sections.append(context_block)
-    sections.append(f"\nUSER INSTRUCTION:\n{instruction}")
-    sections.append(f"\nSELECTED TEXT TO REWRITE:\n{text}")
-    return "\n\n".join(sections)
-
-
-def rewrite_text(
-    text: str,
-    user_instruction: str = "neutral",
-    context: dict[str, Any] | None = None,
-    *,
-    direct: bool = False,
-) -> str:
-    """Rewrite selected text using layout context and user instruction via Ollama."""
-    if not text or not text.strip():
-        return ""
-    prompt = _build_rewrite_prompt(text, user_instruction, context, direct=direct)
-    raw = _ollama_generate(prompt, temperature=0.4)
-    return _normalize_email_spacing(_clean_deep_fix_response(raw))
 
 
 def _build_ollama_grammar_prompt(text: str) -> str:
@@ -1427,15 +1379,31 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Humanizer API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="Humanizer API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/docs" if DEBUG_OLLAMA else None,
+    redoc_url="/redoc" if DEBUG_OLLAMA else None,
+    openapi_url="/openapi.json" if DEBUG_OLLAMA else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_allowed_origins(),
+    allow_origin_regex=r"^chrome-extension://[a-p]{32}$",
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(LocalClientMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
+
+def _secure_endpoint(request: Request) -> None:
+    verify_api_token(request)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -1459,6 +1427,8 @@ def health() -> HealthResponse:
         ok=_grammar_available,
         ollama_available=ollama_ok,
         grammar_available=_grammar_available,
+        grammar_model=OLLAMA_GRAMMAR_MODEL,
+        writing_model=OLLAMA_WRITING_MODEL,
     )
 
 
@@ -1469,13 +1439,13 @@ def _grammar_quick_response(text: str) -> GrammarResponse:
 
 
 # Register /grammar/quick before /grammar so routing is unambiguous.
-@app.post("/reload-rules")
+@app.post("/reload-rules", dependencies=[Depends(_secure_endpoint)])
 def reload_rules() -> dict[str, Any]:
     """No-op kept for auto_tune compatibility (RAG removed from grammar pipeline)."""
     return {"ok": True, "message": "RAG removed; reload not required"}
 
 
-@app.post("/grammar/quick", response_model=GrammarResponse)
+@app.post("/grammar/quick", response_model=GrammarResponse, dependencies=[Depends(_secure_endpoint)])
 def grammar_quick(body: TextRequest) -> GrammarResponse:
     """Fast LanguageTool-only check for snappy inline underlines."""
     text = body.text.strip()
@@ -1484,10 +1454,10 @@ def grammar_quick(body: TextRequest) -> GrammarResponse:
     try:
         return _grammar_quick_response(text)
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=safe_error_detail(exc)) from exc
 
 
-@app.post("/grammar", response_model=GrammarResponse)
+@app.post("/grammar", response_model=GrammarResponse, dependencies=[Depends(_secure_endpoint)])
 def grammar(
     body: TextRequest,
     quick: bool = Query(False, description="Fast LanguageTool-only check"),
@@ -1517,12 +1487,12 @@ def grammar(
             "grammar failed",
             {"error": str(exc)[:300]},
         )
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=safe_error_detail(exc)) from exc
 
     return GrammarResponse(**result)
 
 
-@app.post("/humanize", response_model=HumanizeResponse)
+@app.post("/humanize", response_model=HumanizeResponse, dependencies=[Depends(_secure_endpoint)])
 def humanize(body: TextRequest) -> HumanizeResponse:
     text = body.text.strip()
     if not text:
@@ -1533,12 +1503,12 @@ def humanize(body: TextRequest) -> HumanizeResponse:
     except OllamaError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=safe_error_detail(exc)) from exc
 
     return HumanizeResponse(text=text, result=result)
 
 
-@app.post("/rewrite", response_model=RewriteResponse)
+@app.post("/rewrite", response_model=RewriteResponse, dependencies=[Depends(_secure_endpoint)])
 def rewrite(body: RewriteRequest) -> RewriteResponse:
     text = body.text.strip()
     if not text:
@@ -1547,18 +1517,67 @@ def rewrite(body: RewriteRequest) -> RewriteResponse:
     user_prompt = (body.prompt or body.tone or "").strip()
     if not user_prompt:
         raise HTTPException(status_code=400, detail="prompt must not be empty")
-    context = body.context
+    context = validate_context(body.context)
     direct = bool((body.prompt or "").strip())
 
     try:
-        rewritten = rewrite_text(text, user_prompt, context, direct=direct)
+        ai_config = normalize_ai_config(
+            sanitize_ai_config(body.ai.model_dump(by_alias=False) if body.ai else None)
+        )
+        rewritten = rewrite_text(
+            text, user_prompt, context, direct=direct, ai_config=ai_config
+        )
+    except CloudAIError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except OllamaError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=safe_error_detail(exc)) from exc
 
     return RewriteResponse(text=text, tone=user_prompt, rewritten=rewritten)
 
 
+@app.post("/generate", response_model=GenerateResponse, dependencies=[Depends(_secure_endpoint)])
+def generate(body: GenerateRequest) -> GenerateResponse:
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text must not be empty")
+
+    format_type = (body.format or "essay").strip().lower()
+    if format_type not in ("email", "essay"):
+        raise HTTPException(status_code=400, detail="format must be 'email' or 'essay'")
+
+    try:
+        settings = (
+            body.settings.model_dump(by_alias=False)
+            if body.settings is not None
+            else None
+        )
+        if settings and isinstance(settings.get("profile"), dict):
+            settings["profile"] = sanitize_profile_fields(settings["profile"])
+        ai_config = normalize_ai_config(
+            sanitize_ai_config(body.ai.model_dump(by_alias=False) if body.ai else None)
+        )
+        generated = generate_text(
+            text,
+            format_type,
+            body.notes or "",
+            validate_context(body.context),
+            settings=settings,
+            ai_config=ai_config,
+        )
+    except CloudAIError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except OllamaError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=safe_error_detail(exc)) from exc
+
+    return GenerateResponse(text=text, format=format_type, generated=generated)
+
+
 if __name__ == "__main__":
+    if REQUIRE_AUTH and API_TOKEN:
+        print(f"  API auth: enabled (Bearer token required)")
+        print(f"  HUMANIZER_API_TOKEN={API_TOKEN}")
     uvicorn.run(app, host=HOST, port=PORT, reload=False)
