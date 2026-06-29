@@ -1,0 +1,525 @@
+{
+    "meta": {
+      "project": "Humanizer",
+      "description": "Complete brand and UI design system for the Humanizer Chrome extension — a local-first writing assistant. Use this file as the single source of truth for all visual decisions in the extension popup, content script UI, and any web-facing surfaces.",
+      "version": "1.0.0",
+      "source": "Brand sheet — June 29 2026"
+    },
+  
+    "logo": {
+      "description": "The Humanizer wordmark icon / app icon",
+      "mark_concept": "The mark combines a check (✓) for confidence and a subtle pen stroke to represent writing and refinement. Sleek, minimal, and memorable.",
+      "shape": "Rounded-rectangle app icon with heavy corner radius (~28% of icon width), dark background",
+      "symbol": {
+        "type": "Stylized lowercase letter 'e' merged with a checkmark pen stroke",
+        "form": "Single continuous rounded stroke that reads as both an 'e' letterform and a check/edit gesture",
+        "orientation": "Centered inside icon container, slightly left-weighted"
+      },
+      "gradient": {
+        "type": "linear",
+        "direction": "bottom-left to top-right (approximately 135deg)",
+        "stops": [
+          { "position": "0%",   "color": "#FF4D8D", "label": "Hot pink / coral" },
+          { "position": "50%",  "color": "#CC44DD", "label": "Mid magenta-purple" },
+          { "position": "100%", "color": "#9B6BFF", "label": "Soft violet" }
+        ],
+        "applies_to": "The symbol stroke only — not the background"
+      },
+      "icon_background": {
+        "color": "#1A1F2B",
+        "corner_radius": "~22px for 80px icon, scale proportionally",
+        "shadow": "Subtle outer glow — rgba(180, 29, 255, 0.25) at 0 8px 32px"
+      },
+      "variants": [
+        {
+          "name": "dark_bg",
+          "label": "Primary — dark background",
+          "background": "#1A1F2B",
+          "symbol_gradient": "pink-to-violet (default)",
+          "usage": "Default app icon, extension toolbar icon, dark UI contexts"
+        },
+        {
+          "name": "light_bg",
+          "label": "Light background",
+          "background": "#FFFFFF",
+          "symbol_gradient": "pink-to-violet (default)",
+          "usage": "Light mode surfaces, print, white-background contexts"
+        },
+        {
+          "name": "outline",
+          "label": "Outline / monochrome",
+          "background": "#2A2F3F",
+          "symbol_gradient": "pink-to-violet (same), slightly reduced opacity",
+          "border": "1px dashed rgba(255,255,255,0.15)",
+          "usage": "Grid/spec views, ghost states, development overlays"
+        }
+      ],
+      "construction": {
+        "formula": "checkmark_icon + pen_stroke_icon = humanizer_mark",
+        "note": "The mark is NOT a checkmark alone and NOT an 'e' alone — it is the visual union of both concepts"
+      },
+      "do_not": [
+        "Do not stretch or distort the mark",
+        "Do not place on a busy photographic background without a backing card",
+        "Do not recolor the gradient — always use the defined pink-to-violet range",
+        "Do not use the symbol without the rounded-rectangle container in app-icon contexts"
+      ]
+    },
+  
+    "colors": {
+      "description": "Full color palette extracted from brand sheet. Always use CSS custom properties (var(--color-*)) in code.",
+      "primary_gradient": {
+        "label": "Brand gradient — pink to violet",
+        "css": "linear-gradient(135deg, #FF4D8D 0%, #CC44DD 50%, #9B6BFF 100%)",
+        "usage": "Primary buttons, active icons, logo mark, key CTAs, progress indicators"
+      },
+      "palette": [
+        {
+          "name": "pink",
+          "hex": "#FF4D8D",
+          "css_var": "--color-pink",
+          "rgb": "255, 77, 141",
+          "label": "Brand Pink",
+          "usage": "Gradient start, accent dots, icon active state (Check icon ring), error-adjacent highlights"
+        },
+        {
+          "name": "purple",
+          "hex": "#B14DFF",
+          "css_var": "--color-purple",
+          "rgb": "177, 77, 255",
+          "label": "Brand Purple",
+          "usage": "Gradient mid, secondary accents, hover states on primary"
+        },
+        {
+          "name": "violet",
+          "hex": "#6366F1",
+          "css_var": "--color-violet",
+          "rgb": "99, 102, 241",
+          "label": "Brand Violet / Indigo",
+          "usage": "Gradient end, link colors, focus rings, tag backgrounds"
+        },
+        {
+          "name": "bg_darkest",
+          "hex": "#0E1117",
+          "css_var": "--color-bg-darkest",
+          "rgb": "14, 17, 23",
+          "label": "Background — Darkest",
+          "usage": "Page/app background, deepest layer, extension popup outer shell"
+        },
+        {
+          "name": "bg_dark",
+          "hex": "#1A1F2B",
+          "css_var": "--color-bg-dark",
+          "rgb": "26, 31, 43",
+          "label": "Background — Dark",
+          "usage": "Card backgrounds, icon container background, main popup surface"
+        },
+        {
+          "name": "bg_mid",
+          "hex": "#2A2F3F",
+          "css_var": "--color-bg-mid",
+          "rgb": "42, 47, 63",
+          "label": "Background — Mid",
+          "usage": "Secondary cards, input fields, hover states on dark surfaces, secondary button background"
+        },
+        {
+          "name": "text_muted",
+          "hex": "#E5E7EB",
+          "css_var": "--color-text-muted",
+          "rgb": "229, 231, 235",
+          "label": "Text — Muted / Light Gray",
+          "usage": "Body text on dark backgrounds, secondary labels, button text on secondary button"
+        }
+      ],
+      "semantic": {
+        "background_page":        { "value": "#0E1117", "var": "--color-bg-darkest" },
+        "background_card":        { "value": "#1A1F2B", "var": "--color-bg-dark"    },
+        "background_input":       { "value": "#2A2F3F", "var": "--color-bg-mid"     },
+        "background_hover":       { "value": "#2A2F3F", "var": "--color-bg-mid"     },
+        "text_primary":           { "value": "#FFFFFF", "var": "--color-white"       },
+        "text_secondary":         { "value": "#E5E7EB", "var": "--color-text-muted"  },
+        "text_placeholder":       { "value": "rgba(229,231,235,0.4)" },
+        "accent_primary":         { "value": "#FF4D8D", "var": "--color-pink"        },
+        "accent_secondary":       { "value": "#6366F1", "var": "--color-violet"      },
+        "border_subtle":          { "value": "rgba(255,255,255,0.08)" },
+        "border_card":            { "value": "rgba(255,255,255,0.06)" },
+        "success":                { "value": "#FF4D8D", "note": "Brand uses pink check for 'all good' state, not green" },
+        "grammar_underline":      { "value": "#FF4D8D", "note": "Red underline for grammar errors uses brand pink" },
+        "suggestion_arrow":       { "value": "#FF4D8D", "note": "Arrow indicator on suggestion cards" }
+      }
+    },
+  
+    "typography": {
+      "font_family": {
+        "primary": "Inter",
+        "fallback": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "css": "font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;",
+        "source": "Google Fonts — https://fonts.google.com/specimen/Inter",
+        "note": "Inter is the ONLY typeface in the system. Do not introduce additional fonts."
+      },
+      "scale": [
+        {
+          "name": "display",
+          "size": "32px",
+          "weight": 700,
+          "line_height": "1.2",
+          "letter_spacing": "-0.02em",
+          "usage": "Hero headings, large stat numbers"
+        },
+        {
+          "name": "heading_1",
+          "size": "20px",
+          "weight": 600,
+          "line_height": "1.3",
+          "letter_spacing": "-0.01em",
+          "usage": "Section titles, popup header"
+        },
+        {
+          "name": "heading_2",
+          "size": "16px",
+          "weight": 600,
+          "line_height": "1.4",
+          "usage": "Card titles, label headings (e.g. COLOR PALETTE, TYPOGRAPHY section labels)"
+        },
+        {
+          "name": "label_caps",
+          "size": "11px",
+          "weight": 600,
+          "line_height": "1.4",
+          "letter_spacing": "0.08em",
+          "text_transform": "uppercase",
+          "color": "#FF4D8D",
+          "usage": "Section category labels (COLOR PALETTE, TYPOGRAPHY, UI ELEMENTS, ICON STYLE, MARK CONCEPT). Always pink, always uppercase, always tracked."
+        },
+        {
+          "name": "body",
+          "size": "14px",
+          "weight": 400,
+          "line_height": "1.6",
+          "usage": "Body copy, descriptions, suggestion card text"
+        },
+        {
+          "name": "body_small",
+          "size": "12px",
+          "weight": 400,
+          "line_height": "1.5",
+          "usage": "Helper text, sub-labels, 'No issues found.' status text"
+        },
+        {
+          "name": "button",
+          "size": "14px",
+          "weight": 600,
+          "line_height": "1",
+          "letter_spacing": "0.01em",
+          "usage": "All button labels"
+        },
+        {
+          "name": "icon_label",
+          "size": "11px",
+          "weight": 400,
+          "line_height": "1.3",
+          "color": "#E5E7EB",
+          "usage": "Labels beneath icons in icon grid (Check, Rewrite, Clarity, etc.)"
+        }
+      ]
+    },
+  
+    "spacing": {
+      "base_unit": 4,
+      "scale": {
+        "xs":  "4px",
+        "sm":  "8px",
+        "md":  "12px",
+        "lg":  "16px",
+        "xl":  "24px",
+        "2xl": "32px",
+        "3xl": "48px"
+      },
+      "note": "All spacing should be multiples of 4px."
+    },
+  
+    "border_radius": {
+      "sm":   "6px",
+      "md":   "10px",
+      "lg":   "14px",
+      "xl":   "20px",
+      "pill": "999px",
+      "icon_container": "16px",
+      "app_icon":       "22px",
+      "card":           "14px",
+      "button":         "10px",
+      "input":          "8px",
+      "color_swatch":   "10px"
+    },
+  
+    "shadows": {
+      "card":         "0 2px 12px rgba(0,0,0,0.4)",
+      "popup":        "0 8px 32px rgba(0,0,0,0.6)",
+      "brand_glow":   "0 0 24px rgba(255,77,141,0.3)",
+      "icon_glow":    "0 8px 32px rgba(180,29,255,0.25)",
+      "button_glow":  "0 4px 16px rgba(255,77,141,0.4)"
+    },
+  
+    "components": {
+      "buttons": {
+        "primary": {
+          "description": "Gradient fill button — main CTA",
+          "background": "linear-gradient(135deg, #FF4D8D 0%, #B14DFF 100%)",
+          "text_color": "#FFFFFF",
+          "font": "14px Inter SemiBold",
+          "border_radius": "10px",
+          "padding": "10px 20px",
+          "border": "none",
+          "box_shadow": "0 4px 16px rgba(255,77,141,0.4)",
+          "hover": {
+            "opacity": 0.9,
+            "box_shadow": "0 6px 20px rgba(255,77,141,0.55)"
+          },
+          "active": { "transform": "scale(0.97)" },
+          "example_label": "Primary Button"
+        },
+        "secondary": {
+          "description": "Outlined / ghost button — secondary actions",
+          "background": "#2A2F3F",
+          "text_color": "#E5E7EB",
+          "font": "14px Inter SemiBold",
+          "border_radius": "10px",
+          "padding": "10px 20px",
+          "border": "1px solid rgba(255,255,255,0.1)",
+          "box_shadow": "none",
+          "hover": {
+            "background": "#353B4F",
+            "border_color": "rgba(255,255,255,0.2)"
+          },
+          "example_label": "Secondary Button"
+        }
+      },
+  
+      "cards": {
+        "default": {
+          "background": "#1A1F2B",
+          "border": "1px solid rgba(255,255,255,0.06)",
+          "border_radius": "14px",
+          "padding": "16px",
+          "box_shadow": "0 2px 12px rgba(0,0,0,0.4)"
+        },
+        "suggestion_card": {
+          "description": "Grammar/clarity suggestion panel shown inline next to underlined text",
+          "background": "#1A1F2B",
+          "border": "1px solid rgba(255,255,255,0.08)",
+          "border_radius": "14px",
+          "padding": "14px 16px",
+          "elements": {
+            "category_dot": {
+              "shape": "circle 7px diameter",
+              "color": "#FF4D8D",
+              "position": "left of category label"
+            },
+            "category_label": {
+              "text": "e.g. Clarity",
+              "font": "14px Inter SemiBold",
+              "color": "#FFFFFF"
+            },
+            "issue_text": {
+              "description": "Sentence with the problematic phrase underlined",
+              "font": "14px Inter Regular",
+              "color": "#E5E7EB",
+              "underline_style": "underline solid #E5E7EB",
+              "underline_phrase_example": "hard to follow"
+            },
+            "suggestion_row": {
+              "icon": "→ (arrow, pink #FF4D8D)",
+              "text": "Suggestion text e.g. 'Consider simplifying the structure.'",
+              "font": "12px Inter Regular",
+              "color": "#E5E7EB",
+              "icon_color": "#FF4D8D"
+            }
+          }
+        },
+        "status_card": {
+          "description": "'All good / No issues found' clean state card",
+          "background": "#1A1F2B",
+          "border": "1px solid rgba(255,255,255,0.06)",
+          "border_radius": "14px",
+          "padding": "14px 16px",
+          "elements": {
+            "check_icon": {
+              "style": "circle with checkmark, filled gradient ring (#FF4D8D → #B14DFF)",
+              "size": "20px"
+            },
+            "primary_text": {
+              "text": "All good",
+              "font": "14px Inter SemiBold",
+              "color": "#FFFFFF"
+            },
+            "secondary_text": {
+              "text": "No issues found.",
+              "font": "12px Inter Regular",
+              "color": "#E5E7EB"
+            },
+            "dismiss_icon": {
+              "icon": "× (close)",
+              "color": "rgba(255,255,255,0.4)",
+              "position": "top-right corner of card"
+            }
+          }
+        }
+      },
+  
+      "icons": {
+        "style": "Thin stroke, rounded line caps, minimal fill — NOT filled/solid. Monochrome on dark card backgrounds.",
+        "stroke_width": "1.5px",
+        "color_default": "#E5E7EB",
+        "color_active": "#FF4D8D",
+        "size_default": "24px",
+        "container": {
+          "shape": "rounded square",
+          "size": "48px",
+          "background": "#2A2F3F",
+          "border_radius": "12px",
+          "active_border": "1.5px solid #FF4D8D"
+        },
+        "icon_set": [
+          {
+            "name": "Check",
+            "description": "Circle with a checkmark inside. Active variant has a pink gradient ring border.",
+            "usage": "Grammar check status, 'All good' indicator, Check feature tab"
+          },
+          {
+            "name": "Rewrite",
+            "description": "Four-pointed star / sparkle with a small additional sparkle — represents AI magic/rewrite action.",
+            "usage": "Rewrite feature trigger, rewrite tab icon"
+          },
+          {
+            "name": "Clarity",
+            "description": "Lightbulb outline — represents insight and readability improvement.",
+            "usage": "Clarity suggestions, clarity feature tab"
+          },
+          {
+            "name": "Tone",
+            "description": "Smiley face / emoji face outline — represents tone and personality of writing.",
+            "usage": "Tone selector, tone feature tab"
+          },
+          {
+            "name": "Structure",
+            "description": "Three horizontal lines with a small settings/filter tick on the right side — represents document structure and organization.",
+            "usage": "Structure analysis, structure feature tab"
+          },
+          {
+            "name": "Settings",
+            "description": "Gear / cog outline — standard settings icon.",
+            "usage": "Settings panel, extension options"
+          }
+        ]
+      },
+  
+      "grammar_underline": {
+        "description": "Red underline shown beneath grammar/spelling errors in the Gmail compose field",
+        "style": "underline solid",
+        "color": "#FF4D8D",
+        "thickness": "2px",
+        "offset": "2px",
+        "implementation_note": "In Gmail contenteditable, use CSS Highlight API: CSS.highlights.set('humanizer-grammar', new Highlight(...ranges)) with ::highlight(humanizer-grammar) { text-decoration: underline solid #FF4D8D 2px; }"
+      },
+  
+      "circular_icon_trigger": {
+        "description": "The floating circular icon that appears beside highlighted text when the user selects text (Rewrite / Generate trigger)",
+        "shape": "circle",
+        "size": "36px",
+        "background": "linear-gradient(135deg, #FF4D8D, #B14DFF)",
+        "icon_inside": "Sparkle / rewrite icon (white, 16px)",
+        "box_shadow": "0 4px 12px rgba(255,77,141,0.45)",
+        "position": "Appears at the end of the text selection, slight offset above-right",
+        "hover": { "transform": "scale(1.08)", "box_shadow": "0 6px 18px rgba(255,77,141,0.6)" }
+      },
+  
+      "rewrite_input_panel": {
+        "description": "Small panel that appears after clicking the circular icon — lets user type a rewrite instruction",
+        "background": "#1A1F2B",
+        "border": "1px solid rgba(255,255,255,0.1)",
+        "border_radius": "12px",
+        "padding": "10px 12px",
+        "box_shadow": "0 8px 24px rgba(0,0,0,0.5)",
+        "input_field": {
+          "placeholder": "e.g. Make it more friendly",
+          "background": "#2A2F3F",
+          "border": "1px solid rgba(255,255,255,0.08)",
+          "border_radius": "8px",
+          "font": "13px Inter Regular",
+          "color": "#FFFFFF",
+          "padding": "8px 10px"
+        },
+        "submit_button": {
+          "type": "icon button — arrow →",
+          "background": "linear-gradient(135deg, #FF4D8D, #B14DFF)",
+          "size": "28px circle",
+          "icon_color": "#FFFFFF"
+        }
+      },
+  
+      "popup_shell": {
+        "description": "The extension popup window (popup.html) overall container",
+        "width": "340px",
+        "min_height": "400px",
+        "background": "#0E1117",
+        "border_radius": "0px (browser clip)",
+        "font_family": "Inter",
+        "padding": "0px",
+        "sections": {
+          "header": {
+            "background": "#1A1F2B",
+            "padding": "16px",
+            "border_bottom": "1px solid rgba(255,255,255,0.06)",
+            "contains": ["Logo mark (24px)", "App name 'Humanizer' (Inter SemiBold 15px #FFFFFF)", "Enable toggle"]
+          },
+          "tab_bar": {
+            "background": "#0E1117",
+            "tabs": ["Check", "Rewrite", "Clarity", "Tone", "Structure", "Settings"],
+            "active_tab_indicator": "underline or background highlight using #FF4D8D"
+          },
+          "content_area": {
+            "background": "#0E1117",
+            "padding": "16px"
+          }
+        }
+      }
+    },
+  
+    "motion": {
+      "easing_default": "cubic-bezier(0.16, 1, 0.3, 1)",
+      "duration_fast":   "120ms",
+      "duration_normal": "200ms",
+      "duration_slow":   "320ms",
+      "transitions": {
+        "button_hover":    "opacity 120ms ease, box-shadow 120ms ease, transform 120ms ease",
+        "panel_appear":    "opacity 200ms ease, transform 200ms cubic-bezier(0.16,1,0.3,1)",
+        "underline_fade":  "opacity 150ms ease",
+        "icon_scale":      "transform 120ms ease"
+      }
+    },
+  
+    "css_custom_properties": {
+      "description": "Paste this :root block into your global CSS / content.css / popup CSS",
+      "block": ":root {\n  --color-pink:        #FF4D8D;\n  --color-purple:      #B14DFF;\n  --color-violet:      #6366F1;\n  --color-bg-darkest:  #0E1117;\n  --color-bg-dark:     #1A1F2B;\n  --color-bg-mid:      #2A2F3F;\n  --color-text-muted:  #E5E7EB;\n  --color-white:       #FFFFFF;\n  --gradient-brand:    linear-gradient(135deg, #FF4D8D 0%, #B14DFF 50%, #9B6BFF 100%);\n  --gradient-brand-h:  linear-gradient(90deg,  #FF4D8D 0%, #B14DFF 100%);\n  --border-subtle:     rgba(255,255,255,0.08);\n  --border-card:       rgba(255,255,255,0.06);\n  --shadow-card:       0 2px 12px rgba(0,0,0,0.4);\n  --shadow-popup:      0 8px 32px rgba(0,0,0,0.6);\n  --shadow-glow:       0 4px 16px rgba(255,77,141,0.4);\n  --radius-sm:         6px;\n  --radius-md:         10px;\n  --radius-lg:         14px;\n  --radius-xl:         20px;\n  --radius-pill:       999px;\n  --font-sans:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n  --transition-fast:   120ms cubic-bezier(0.16,1,0.3,1);\n  --transition-normal: 200ms cubic-bezier(0.16,1,0.3,1);\n}"
+    },
+  
+    "do_and_dont": {
+      "do": [
+        "Always use Inter as the typeface",
+        "Use the pink (#FF4D8D) → purple (#B14DFF) gradient for all primary CTAs",
+        "Keep backgrounds layered: darkest (#0E1117) → card (#1A1F2B) → input (#2A2F3F)",
+        "Use uppercase tracked pink text (label_caps) for all section category headers",
+        "Keep icons thin-stroke and minimal — no filled/bold icon styles",
+        "Use the circular gradient trigger for the Rewrite/Generate floating icon",
+        "Maintain the pink dot + arrow → pattern for suggestion cards"
+      ],
+      "dont": [
+        "Don't use green for 'success' — the brand uses pink check marks",
+        "Don't introduce any new typefaces beyond Inter",
+        "Don't use solid fills on feature icons — keep them outline/stroke style",
+        "Don't use light backgrounds — this is a dark-first design system",
+        "Don't change the logo gradient colors or orientation",
+        "Don't use opacity hacks to create new grays — use the defined bg palette steps"
+      ]
+    }
+  }

@@ -3,18 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <title>Humanizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="design-tokens.css" />
     <link rel="stylesheet" href="popup.css" />
     <script src="popup.js" defer></script>
   </head>
   <body>
     <header class="popup-header">
-      <svg class="popup-logo" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true">
-        <circle cx="14" cy="14" r="14" fill="#15C39A" />
-        <path fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 14l4 4 8-8" />
+      <svg class="popup-logo" viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="#1A1F2B" />
+        <defs>
+          <linearGradient id="hz-logo-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#FF4D8D" />
+            <stop offset="50%" stop-color="#CC44DD" />
+            <stop offset="100%" stop-color="#9B6BFF" />
+          </linearGradient>
+        </defs>
+        <path
+          fill="none"
+          stroke="url(#hz-logo-grad)"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M11 21c5-1 8-4 9-8 1-5-2-9-7-9-3 0-5 1-6 3m3 5l-2 3 4-1"
+        />
       </svg>
       <div class="popup-header-text">
-        <h1>Write without mistakes</h1>
-        <p class="subtitle">Grammar, spelling, and punctuation — checked locally</p>
+        <h1>Humanizer</h1>
+        <p class="subtitle">Grammar, rewrite, and generate — checked locally</p>
       </div>
       <button
         type="button"
@@ -38,7 +59,7 @@
       <ul class="legend">
         <li>
           <span class="swatch swatch-correctness" aria-hidden="true"></span>
-          Correctness — solid red underline on mistakes
+          Correctness — pink underline on mistakes
         </li>
       </ul>
 

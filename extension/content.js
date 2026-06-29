@@ -1703,13 +1703,13 @@
     style.id = id;
     style.textContent = `
       ::highlight(humanizer-grammar) {
-        text-decoration: underline solid #e53e3e;
+        text-decoration: underline solid #ff4d8d;
         text-decoration-thickness: 2px;
         text-underline-offset: 2px;
         background-color: transparent;
       }
       ::highlight(humanizer-grammar-active) {
-        text-decoration: underline solid #e53e3e;
+        text-decoration: underline solid #ff4d8d;
         text-decoration-thickness: 2px;
         text-underline-offset: 2px;
         background-color: transparent;
@@ -2480,7 +2480,7 @@
   }
 
   function correctnessIconSvg() {
-    return `<svg class="grm-card__icon grm-icon--correctness" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="#E53E3E" d="M10 2L3 5v5c0 4.2 3 7.9 7 9 4-1.1 7-4.8 7-9V5l-7-3z"/></svg>`;
+    return `<svg class="grm-card__icon grm-icon--correctness" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><circle cx="10" cy="10" r="4" fill="#FF4D8D"/></svg>`;
   }
 
   function bindCloseControl(element, onClose) {

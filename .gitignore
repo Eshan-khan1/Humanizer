@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 dist/
 build/
-.cursor/
+.cursor/*
+!.cursor/hooks.json
+!.cursor/hooks/
 auto_tune.log
 *.log

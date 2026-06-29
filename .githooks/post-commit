@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Push to GitHub after every local commit.
+git push origin HEAD >/dev/null 2>&1 &
