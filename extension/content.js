@@ -145,8 +145,6 @@
   /** Max characters between errors to merge into one multi-word fix chunk. */
   const MERGE_NEARBY_GAP = 2;
   let rescanIntervalId = null;
-  const REWRITE_API = "http://127.0.0.1:8000/rewrite";
-  const GENERATE_API = "http://127.0.0.1:8000/generate";
 
   const isValid = () => {
     try {
@@ -3995,26 +3993,30 @@
     });
   }
 
-  async function callGenerateApi(text, format, notes, context, settings) {
-    const headers = await humanizerApiHeaders();
-    const ai = await humanizerAiPayload();
-    const response = await fetch(GENERATE_API, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        text,
-        format,
-        notes: notes || "",
-        context,
-        settings,
-        ai,
-      }),
+  function callGenerateApi(text, format, notes, context, settings) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: "generateText",
+          text,
+          format,
+          notes: notes || "",
+          context,
+          settings,
+        },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          if (!response?.ok) {
+            reject(new Error(response.error || "Generate failed"));
+            return;
+          }
+          resolve(normalizeRewrittenText(response.generated || ""));
+        }
+      );
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || `Generate failed (${response.status})`);
-    }
-    return normalizeRewrittenText(data.generated || "");
   }
 
   function collectTransformationPayload() {
@@ -4100,19 +4102,23 @@
       rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
     }, 1200);
   }
-  async function callRewriteApi(text, prompt, context) {
-    const headers = await humanizerApiHeaders();
-    const ai = await humanizerAiPayload();
-    const response = await fetch(REWRITE_API, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ text, prompt, context, ai }),
+  function callRewriteApi(text, prompt, context) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: "rewriteText", text, prompt, context },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
+          }
+          if (!response?.ok) {
+            reject(new Error(response.error || "Rewrite failed"));
+            return;
+          }
+          resolve(normalizeRewrittenText(response.rewritten || ""));
+        }
+      );
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || `Rewrite failed (${response.status})`);
-    }
-    return normalizeRewrittenText(data.rewritten || "");
   }
 
   function finishRewriteField(targetField, { skipInputDispatch = false } = {}) {
