@@ -28,12 +28,12 @@
     {
       "id": "medium",
       "label": "Medium",
-      "description": "Body: 2–3 paragraphs, each 2–3 sentences. Structure only."
+      "description": "Body: 3 paragraphs, 3 sentences each. Structure only — never changes tone or vocabulary."
     },
     {
       "id": "long",
       "label": "Long",
-      "description": "Body: 4+ paragraphs with full detail. Structure only."
+      "description": "Body: 4+ paragraphs with full detail. Structure only — never changes tone or vocabulary."
     }
   ],
   "complexityLevels": [

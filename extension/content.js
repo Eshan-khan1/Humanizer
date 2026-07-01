@@ -313,17 +313,6 @@
         if (Array.isArray(complexityLevels) && complexityLevels.length) {
           generateComplexityOptions = complexityLevels;
         }
-        if (data.defaultSettings && typeof data.defaultSettings === "object") {
-          applyGenerateSettingsFromStorage({
-            generateTone: data.defaultSettings.tone,
-            generateTonePreset: data.defaultSettings.tonePreset,
-            generateLength: data.defaultSettings.length,
-            generateComplexity:
-              data.defaultSettings.complexity || data.defaultSettings.wording,
-            generateIncludeSubject: data.defaultSettings.includeSubject,
-            generateProfile: data.defaultSettings.profile,
-          });
-        }
         syncGeneratePanelSummary();
       })
       .catch(() => {});

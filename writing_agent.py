@@ -52,11 +52,14 @@ General rules:
   • If the seed is already a near-complete draft, polish and complete missing parts only."""
 
 GENERATE_INDEPENDENCE_RULES = """\
-THREE INDEPENDENT SETTINGS — apply all three at the same time; each does its own job only:
-  • LENGTH controls structure and nothing else. It does not change tone or vocabulary.
-  • TONE controls how it sounds and nothing else. It does not change paragraph count or word choice.
-  • COMPLEXITY controls vocabulary and nothing else. It does not change structure or tone.
-Changing one setting must never affect the other two."""
+THREE FULLY INDEPENDENT SETTINGS — apply all three simultaneously; each does exactly one job:
+  • LENGTH only changes how much text is produced (short stays short, long stays long).
+    It must NEVER affect wording style, tone, or vocabulary.
+  • TONE only changes personality/voice (formal vs. friendly vs. casual).
+    It must NEVER affect output length, paragraph count, or vocabulary difficulty.
+  • COMPLEXITY only changes vocabulary/sentence difficulty (simple vs. standard vs. advanced).
+    It must NEVER affect tone or length.
+Changing one setting must NEVER visibly shift the other two."""
 
 GENERATE_STRICT_RULES = """\
 OUTPUT RULES (non-negotiable):
@@ -192,12 +195,6 @@ SHORT LENGTH CONTENT (mandatory when length is short):
   • Never add sentences, instructions, or topics the user did not mention.
   • Do NOT add "please review changes", "provide feedback", "let me know if you have questions",
     or similar unless the user specifically said those in the input."""
-
-GENERATE_FRIENDLY_SIMPLE_VOICE = """\
-FRIENDLY/CASUAL + SIMPLE (when tone is friendly or casual and complexity is simple):
-  • Write like a real person talking to a colleague — warm but plain.
-  • Prefer "pushed to", "moved to", "because", "asked for" over formal noun-heavy phrasing.
-  • Use contractions where natural (we're, it's, that's). Never sound like a legal memo."""
 
 TONE_PRESET_TO_VOICE: dict[str, str] = {
     "formal": "formal",
@@ -1546,22 +1543,28 @@ def _build_tone_rules(tone_preset: str, format_type: str) -> str:
     return "\n\n".join(part for part in parts if part)
 
 
-def _build_complexity_rules(complexity: str, tone_preset: str = "friendly") -> str:
-    rules = GENERATE_COMPLEXITY_GUIDANCE.get(
+def _build_complexity_rules(complexity: str) -> str:
+    return GENERATE_COMPLEXITY_GUIDANCE.get(
         complexity, GENERATE_COMPLEXITY_GUIDANCE["standard"]
     )
-    if complexity == "simple" and tone_preset in {"friendly", "casual"}:
-        rules = f"{rules}\n\n{GENERATE_FRIENDLY_SIMPLE_VOICE}"
-    return rules
 
 
-def _build_generate_system_prompt(length: str, complexity: str, tone_preset: str = "friendly") -> str:
+def _build_generate_system_prompt(
+    length: str,
+    complexity: str,
+    tone_preset: str = "friendly",
+    *,
+    format_type: str = "email",
+) -> str:
     parts = [
         WRITING_AGENT_SYSTEM_PROMPT,
-        "ACTIVE LENGTH SETTING — enforce this exact structure in every generate response:",
+        GENERATE_INDEPENDENCE_RULES,
+        "ACTIVE LENGTH — structure only (never change tone or vocabulary):",
         _build_length_rules(length),
-        "ACTIVE COMPLEXITY SETTING — enforce this exact vocabulary in every generate response:",
-        _build_complexity_rules(complexity, tone_preset),
+        "ACTIVE TONE — voice/personality only (never change length or vocabulary difficulty):",
+        _build_tone_rules(tone_preset, format_type),
+        "ACTIVE COMPLEXITY — vocabulary only (never change tone or length):",
+        _build_complexity_rules(complexity),
         GENERATE_STRICT_RULES,
     ]
     if length == "short":
@@ -1589,7 +1592,7 @@ def _build_generate_settings_block(
             GENERATE_STRICT_RULES,
             _build_length_rules(length),
             _build_tone_rules(tone_preset, format_type),
-            _build_complexity_rules(complexity, tone_preset),
+            _build_complexity_rules(complexity),
         ]
     )
 
@@ -1646,6 +1649,11 @@ def build_generate_prompt(
         )
     if profile_block:
         sections.append(profile_block)
+    else:
+        sections.append(
+            "USER PROFILE: No saved profile — use [Name] for the recipient and "
+            "[Your Name] for the sender. Do not invent names."
+        )
     if context_block:
         sections.append(context_block)
 
@@ -1790,7 +1798,9 @@ class WritingAgent:
         complexity = effective_settings["complexity"]
         tone_preset = effective_settings["tone_preset"]
         seed_baseline = build_seed_content_baseline(text, notes)
-        system_prompt = _build_generate_system_prompt(length, complexity, tone_preset)
+        system_prompt = _build_generate_system_prompt(
+            length, complexity, tone_preset, format_type=format_type
+        )
         num_predict = _generate_num_predict_for_length(length)
         prompt = build_generate_prompt(text, format_type, notes, context, settings)
         raw = _call_llm(
