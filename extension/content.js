@@ -649,6 +649,9 @@
 
     if (!chunks.length) {
       stopAutoFixLoop();
+      currentMatches = filterMatchesForDisplay(filtered);
+      syncGrammarDisplay(field, currentMatches);
+      updateBadge(currentMatches.length);
       return;
     }
 
@@ -2158,6 +2161,10 @@
     const suggestions = getMatchSuggestions(match);
     if (!suggestions.length) return true;
 
+    const offset = match.offset ?? 0;
+    const length = match.length ?? 0;
+    if (text.slice(offset, offset + length) === suggestions[0]) return true;
+
     if (PUNCTUATION_ONLY_RE.test(word) && word.length <= 2) return true;
 
     return false;
@@ -2705,7 +2712,6 @@
     const offset = match.offset;
     const length = match.length;
     const wrongText =
-      (mirrorSpan?.textContent || "").trim() ||
       match.word ||
       getFieldText(field).slice(offset, offset + length);
 

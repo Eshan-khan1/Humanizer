@@ -897,6 +897,112 @@ def _find_text_offset(text: str, fragment: str, start_at: int = 0) -> tuple[int,
     return None
 
 
+def _align_grammar_match(text: str, match: dict[str, Any]) -> dict[str, Any] | None:
+    offset = int(match.get("offset", 0) or 0)
+    length = int(match.get("length", 0) or 0)
+    word = (match.get("word") or "").strip()
+    if not word:
+        word = match.get("word") or ""
+    suggestions = match.get("suggestions") or []
+    if not suggestions:
+        return None
+    suggestion = suggestions[0]
+
+    if length > 0 and 0 <= offset < len(text):
+        actual = text[offset : offset + length]
+        if actual != (match.get("word") or ""):
+            found = _find_text_offset(text, match.get("word") or word, max(0, offset - 80))
+            if not found:
+                found = _find_text_offset(text, match.get("word") or word, 0)
+            if not found:
+                return None
+            offset, length = found
+            actual = text[offset : offset + length]
+    else:
+        found = _find_text_offset(text, match.get("word") or word, 0)
+        if not found:
+            return None
+        offset, length = found
+        actual = text[offset : offset + length]
+
+    if suggestion == actual:
+        return None
+
+    aligned = dict(match)
+    aligned["offset"] = offset
+    aligned["length"] = length
+    aligned["word"] = actual
+    return aligned
+
+
+def _align_grammar_matches(text: str, matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    aligned = [_align_grammar_match(text, match) for match in matches]
+    return [match for match in aligned if match is not None]
+
+
+def _homophone_grammar_matches(text: str) -> list[dict[str, Any]]:
+    rules: list[tuple[re.Pattern[str], str, str]] = [
+        (
+            re.compile(r"\bTheir\s+(?=going|coming|not\b|here\b)", re.IGNORECASE),
+            "They're",
+            "HOMOPHONE_THEIR",
+        ),
+        (
+            re.compile(r"\bYour\s+(?=going|welcome|right\b)", re.IGNORECASE),
+            "You're",
+            "HOMOPHONE_YOUR",
+        ),
+        (
+            re.compile(r"\bIts\s+(?=a\b|the\b|going)", re.IGNORECASE),
+            "It's",
+            "HOMOPHONE_ITS",
+        ),
+        (re.compile(r"\balot\b", re.IGNORECASE), "a lot", "HOMOPHONE_ALOT"),
+    ]
+    matches: list[dict[str, Any]] = []
+    for pattern, replacement, rule_id in rules:
+        for found in pattern.finditer(text):
+            span = found.group(0)
+            start = found.start()
+            if rule_id == "HOMOPHONE_ALOT":
+                suggestion = replacement
+            else:
+                suggestion = replacement + span[len(found.group(0).split()[0]) :]
+                # span is e.g. "Their " -> prefix "Their", suffix is rest after first word
+                first_word = span.split(None, 1)[0] if span.split(None, 1) else span
+                rest = span[len(first_word) :]
+                suggestion = replacement + rest
+            actual = text[start : start + len(span)]
+            if suggestion == actual:
+                continue
+            matches.append(
+                {
+                    "word": actual,
+                    "offset": start,
+                    "length": len(actual),
+                    "suggestions": [suggestion],
+                    "type": "grammar",
+                    "message": f'Use "{suggestion.strip()}" instead of "{first_word if rule_id != "HOMOPHONE_ALOT" else actual}"',
+                    "rule_id": rule_id,
+                    "category": "HOMOPHONE",
+                }
+            )
+    return matches
+
+
+def _deep_fix_is_sane(original: str, corrected: str) -> bool:
+    if not corrected or corrected.strip() == original.strip():
+        return False
+    if corrected == original:
+        return False
+    if re.search(r"\.[^\s\n]", corrected):
+        return False
+    for token in re.findall(r"\S+", corrected):
+        if len(token) > 20:
+            return False
+    return True
+
+
 def _ranges_overlap(
     a_offset: int, a_length: int, b_offset: int, b_length: int
 ) -> bool:
@@ -1271,7 +1377,7 @@ def check_grammar(text: str) -> dict[str, Any]:
     for index in deep_sentence_indexes:
         start, _end, sentence = sentences[index]
         corrected, ok = _call_deep_fixer(sentence)
-        if not ok or not corrected:
+        if not ok or not corrected or not _deep_fix_is_sane(sentence, corrected):
             ollama_ok = False
             agent1_matches.extend(
                 _matches_in_span(lt_high, sentences[index][0], sentences[index][1])
@@ -1300,6 +1406,11 @@ def check_grammar(text: str) -> dict[str, Any]:
         text, sentences, agent1_matches, deep_fixes
     )
 
+    formatted_matches.sort(key=lambda m: m["offset"])
+    formatted_matches = _merge_grammar_matches(
+        formatted_matches, _homophone_grammar_matches(text)
+    )
+    formatted_matches = _align_grammar_matches(text, formatted_matches)
     formatted_matches.sort(key=lambda m: m["offset"])
 
     if DEBUG_OLLAMA and deep_sentence_indexes and ollama_ok:
