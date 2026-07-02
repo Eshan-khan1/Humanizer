@@ -8,6 +8,9 @@ cd "$ROOT"
 export NLTK_DATA="$ROOT/nltk_data"
 mkdir -p "$NLTK_DATA"
 
+# Stay in sync with GitHub before launching the desktop app.
+bash "$ROOT/scripts/pull-github.sh" 2>/dev/null || true
+
 VENV="$ROOT/.venv"
 PYTHON="$VENV/bin/python"
 
