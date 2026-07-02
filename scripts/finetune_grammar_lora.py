@@ -95,12 +95,13 @@ TRAIN_GRAMMAR_SYSTEM = (
 )
 
 TRAIN_TONE_SYSTEM = (
-    "Rewrite text to match the requested tone. Make bold changes to word choice, "
-    "structure, and length as needed. Return only the full rewritten text."
+    "Rewrite text to match the requested tone. Keep the same information and roughly "
+    "the same length. Do not add greetings, sign-offs, filler, or extra sentences. "
+    "Return only the full rewritten text."
 )
 
 TONE_REWRITE_FLEXIBILITY = (
-    " You can change word choice, structure, and length as needed to fully achieve this tone."
+    " Change only word choice and sentence structure to match the tone."
 )
 
 TASK_USER_PREFIX = {
