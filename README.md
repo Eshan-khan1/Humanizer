@@ -334,6 +334,38 @@ UI colors, typography, and components are defined in [`Humanizer design system.j
 
 ---
 
+## Keep local, cloud, and GitHub in sync
+
+GitHub `main` is the single source of truth. Every machine (your laptop, Cursor Cloud Agent, teammates) should see the same code.
+
+| When | What runs | Direction |
+|------|-----------|-----------|
+| Cloud agent VM boots | `.cursor/environment.json` → `pull-github.sh` | GitHub → cloud |
+| Local server / desktop app starts | `start_server.sh` / `run.sh` → `pull-github.sh` | GitHub → local |
+| Local commit | `.githooks/post-commit` → `git push` | local → GitHub |
+| Cloud agent finishes | `.cursor/hooks.json` `stop` → `sync-github.sh` | cloud → GitHub |
+| Manual one-shot sync | `bash scripts/sync-all.sh` | both ways |
+
+### Setup (one time on each machine)
+
+```bash
+./scripts/install.sh          # also installs git hooks
+# or only hooks:
+./scripts/install-git-hooks.sh
+```
+
+### Daily commands
+
+```bash
+bash scripts/pull-github.sh   # get latest from GitHub
+bash scripts/sync-github.sh     # pull, commit local edits, push
+bash scripts/sync-all.sh        # same as sync-github.sh
+```
+
+Cloud agents also read [`AGENTS.md`](AGENTS.md) for pull-at-start / push-at-end rules.
+
+---
+
 ## Contributing
 
 Contributions are welcome.

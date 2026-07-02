@@ -6,5 +6,7 @@ build/
 .cursor/*
 !.cursor/hooks.json
 !.cursor/hooks/
+!.cursor/environment.json
 auto_tune.log
 *.log
+.git/sync-github.lock

@@ -1,0 +1,3 @@
+{
+  "install": "bash scripts/pull-github.sh && bash scripts/install.sh"
+}
