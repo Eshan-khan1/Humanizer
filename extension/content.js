@@ -265,6 +265,14 @@
     casual: "relaxed and casual",
   };
 
+  const REWRITE_TONE_PRESETS = [
+    { id: "formal", label: "Formal", prompt: "Rewrite in a professional, formal tone." },
+    { id: "friendly", label: "Friendly", prompt: "Rewrite in a warm and friendly tone." },
+    { id: "casual", label: "Casual", prompt: "Rewrite in a casual, natural tone." },
+    { id: "concise", label: "Concise", prompt: "Rewrite to be more concise." },
+    { id: "simple", label: "Simpler", prompt: "Rewrite using simpler, easier-to-understand words." },
+  ];
+
   function applyGenerateSettingsFromStorage(result) {
     if (result.generateTone) {
       generateSettings.tone = String(result.generateTone);
@@ -3655,6 +3663,9 @@
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-label", "Rewrite tone");
 
+    const inputRow = document.createElement("div");
+    inputRow.className = "humanizer-rewrite-input-row";
+
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = "Tone… e.g. friendly, formal, simple";
@@ -3695,9 +3706,37 @@
       }
     });
 
-    box.appendChild(input);
-    box.appendChild(cancelButton);
-    box.appendChild(sendButton);
+    inputRow.appendChild(input);
+    inputRow.appendChild(cancelButton);
+    inputRow.appendChild(sendButton);
+
+    const presetRow = document.createElement("div");
+    presetRow.className = "humanizer-rewrite-presets";
+    presetRow.setAttribute("role", "group");
+    presetRow.setAttribute("aria-label", "Rewrite tone presets");
+
+    for (const preset of REWRITE_TONE_PRESETS) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "humanizer-rewrite-preset";
+      chip.textContent = preset.label;
+      chip.title = preset.prompt;
+      chip.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+      chip.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (rewriteSubmitting) return;
+        input.value = preset.prompt;
+        submitRewrite(input);
+      });
+      presetRow.appendChild(chip);
+    }
+
+    box.appendChild(inputRow);
+    box.appendChild(presetRow);
     box.addEventListener("mousedown", (event) => {
       event.stopPropagation();
     });
