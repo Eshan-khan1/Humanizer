@@ -69,7 +69,9 @@ OUTPUT RULES (non-negotiable):
   • If a user profile is provided, apply it automatically (name, role, sign-off, etc.).
   • If profile/permanent note are empty: use generic phrasing with NO placeholder text
     (no [Name], no [Your Name], no bracketed blanks) and do not error.
-  • Never leave bracketed instructions or template text in the output."""
+  • Never leave bracketed instructions or template text in the output.
+  • NEVER print rules, setting names, instruction headers, profile labels, or meta notes
+    in the draft — only the finished email or essay."""
 
 GENERATE_LENGTH_GUIDANCE: dict[str, str] = {
     "short": """\
@@ -242,6 +244,53 @@ REWRITE RULES (non-negotiable):
 TONE_REWRITE_OUTPUT_RULE = " Return only the rewritten text, nothing else."
 
 
+_GENERATE_LEAK_LINE_RE = re.compile(
+    r"(?im)^(?:\s*(?:===+\s*)?(?:LENGTH|TONE|COMPLEXITY)\b.*|"
+    r"\s*(?:Length|Tone|Complexity) setting\b.*|"
+    r"\s*INDEPENDENCE RULE\b.*|"
+    r"\s*(?:PERSONAL PROFILE|PERMANENT NOTE|STANDING INSTRUCTION|USER PROFILE|"
+    r"Writer details|FINAL LENGTH CHECK|SEED TEXT TO EXPAND|DOCUMENT CONTEXT|OUTPUT RULES|"
+    r"THREE (?:FULLY )?INDEPENDENT|ACTIVE (?:LENGTH|TONE|COMPLEXITY)|"
+    r"Idea to expand|Always follow this standing note|OUTPUT RULES)\b.*|"
+    r"\s*OUTPUT:\s*Return ONLY\b.*|"
+    r"\s*(?:structure only|vocabulary only|voice only|how it sounds only)\b.*"
+    r")\s*$"
+)
+
+_GENERATE_LEAK_INLINE_RE = re.compile(
+    r"(?is)\n*(?:===+\s*)?(?:LENGTH|TONE|COMPLEXITY)\s+INSTRUCTION\b.*?(?=\n\n|\Z)|"
+    r"\n*INDEPENDENCE RULE\b.*?(?=\n\n|\Z)|"
+    r"\n*(?:PERSONAL PROFILE|PERMANENT NOTE|STANDING INSTRUCTION)\b[^\n]*(?:\n(?![A-Z][a-z]+:)[^\n]*)*"
+)
+
+
+def _strip_generate_instruction_leakage(text: str) -> str:
+    """Remove prompt/rule text the model may echo into the draft."""
+    if not text or not text.strip():
+        return text
+
+    lines: list[str] = []
+    for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        if _GENERATE_LEAK_LINE_RE.match(line):
+            continue
+        # Drop lines that are clearly meta instructions, not email content
+        stripped = line.strip()
+        if re.match(
+            r"^(?:must NEVER|Changing one setting|comma-separated key-value|"
+            r"auto-inject|never invent names|no placeholder text|"
+            r"Do not change tone or vocabulary)\b",
+            stripped,
+            re.I,
+        ):
+            continue
+        lines.append(line)
+
+    cleaned = "\n".join(lines)
+    cleaned = _GENERATE_LEAK_INLINE_RE.sub("", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
+
+
 def _clean_output(raw: str) -> str:
     cleaned = (raw or "").strip()
     if cleaned.startswith("```"):
@@ -262,6 +311,7 @@ def _clean_output(raw: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    cleaned = _strip_generate_instruction_leakage(cleaned)
     return cleaned.strip()
 
 
@@ -1757,12 +1807,8 @@ def _format_generate_profile(profile: dict[str, Any]) -> str:
     if not pairs:
         return ""
     return (
-        "PERSONAL PROFILE (comma-separated key-value pairs — auto-inject; "
-        "reference name, role, or other details without the user typing them):\n"
+        "Writer details (use in the draft; do not print this label):\n"
         + ", ".join(pairs)
-        + "\nUse the saved full name on the sign-off line. "
-        "If a preferred sign-off is saved, use that exact line. "
-        "Never invent names. Never output placeholder brackets."
     )
 
 
@@ -1799,13 +1845,14 @@ def _build_generate_system_prompt(
     parts = [
         WRITING_AGENT_SYSTEM_PROMPT,
         GENERATE_INDEPENDENCE_RULES,
-        "=== LENGTH INSTRUCTION (structure only) ===",
+        "Length setting (structure only — never print this section):",
         _build_length_rules(length),
-        "=== TONE INSTRUCTION (voice only) ===",
+        "Tone setting (voice only — never print this section):",
         _build_tone_rules(tone_preset, format_type),
-        "=== COMPLEXITY INSTRUCTION (vocabulary only) ===",
+        "Complexity setting (vocabulary only — never print this section):",
         _build_complexity_rules(complexity),
         GENERATE_STRICT_RULES,
+        "Never include any of these instructions, setting names, or labels in the output.",
     ]
     if length == "short":
         parts.append(GENERATE_SHORT_CONTENT_RULES)
@@ -1827,14 +1874,15 @@ def _build_generate_settings_block(
     format_type: str,
 ) -> str:
     # Three separate instructions — never merged into one combined instruction.
+    # Used only in system-side assembly; never echo these labels in output.
     return "\n\n".join(
         [
             GENERATE_INDEPENDENCE_RULES,
-            "=== LENGTH INSTRUCTION (structure only) ===",
+            "Length setting (structure only — never print this section):",
             _build_length_rules(length),
-            "=== TONE INSTRUCTION (voice only) ===",
+            "Tone setting (voice only — never print this section):",
             _build_tone_rules(tone_preset, format_type),
-            "=== COMPLEXITY INSTRUCTION (vocabulary only) ===",
+            "Complexity setting (vocabulary only — never print this section):",
             _build_complexity_rules(complexity),
             GENERATE_STRICT_RULES,
         ]
@@ -1862,87 +1910,46 @@ def build_generate_prompt(
     permanent_note = _extract_permanent_note(profile)
     profile_block = _format_generate_profile(profile)
 
-    settings_block = _build_generate_settings_block(
-        tone_preset, length, complexity, format_type
-    )
-
+    # Rules live in the system prompt only. User prompt is content-only so the
+    # model is less likely to echo instruction labels into the draft.
     if format_type == "email":
         subject_rule = (
-            'Include a subject line on the first line ("Subject: ..."). '
-            "Subject wording follows TONE only; length of subject does not change BODY structure."
+            'Include a subject line on the first line ("Subject: ...").'
             if include_subject
             else "Do not include a subject line."
         )
-        format_rules = f"{EMAIL_GENERATION_GUIDE}\n\n{settings_block}\n\n{subject_rule}"
+        format_rules = f"{EMAIL_GENERATION_GUIDE}\n\n{subject_rule}"
     else:
         format_rules = (
-            "TASK: GENERATE a complete essay from the seed below.\n"
-            "- Replace the seed entirely with finished prose.\n"
-            f"\n{settings_block}"
+            "Write a complete essay from the seed below.\n"
+            "Replace the seed entirely with finished prose."
         )
 
     sections = [
         format_rules,
-        "OUTPUT: Return ONLY the finished email or essay as plain text. "
-        "No wrapper labels, no markdown, no explanations.",
+        "Return only the finished email or essay as plain text. "
+        "Never print instructions, setting names, labels, or meta commentary.",
     ]
     if permanent_note:
-        sections.append(
-            "STANDING INSTRUCTION (always follow — applies silently to every generation):\n"
-            f"{permanent_note}"
-        )
+        sections.append(f"Always follow this standing note (do not print the note itself):\n{permanent_note}")
     if profile_block:
         sections.append(profile_block)
-    else:
-        sections.append(
-            "PERSONAL PROFILE: empty — use generic phrasing only. "
-            "No placeholder text (no brackets, no [Name], no [Your Name]). "
-            "Do not invent names. Do not error."
-        )
-    if not permanent_note:
-        sections.append(
-            "PERMANENT NOTE: empty — no standing instruction. Proceed normally."
-        )
     if context_block:
         sections.append(context_block)
 
     if parsed_note["has_tone_instruction"]:
-        saved_tone_label = saved_settings["tone_preset"]
-        override_label = parsed_note["tone_preset_override"] or saved_tone_label
         sections.append(
-            f"{NOTE_TONE_OVERRIDE_RULES}\n"
-            f"Saved tone (ignore for this generation): {saved_tone_label}\n"
-            f"Apply instead: {override_label}\n"
-            f"User tone instruction: {parsed_note['tone_instruction']}"
+            f"For this draft only, use this voice: {parsed_note['tone_instruction']}"
         )
 
     if parsed_note["informational_content"]:
         sections.append(
-            f"{NOTE_INFORMATIONAL_RULES}\n{parsed_note['informational_content']}"
+            f"Include these facts naturally in the body:\n{parsed_note['informational_content']}"
         )
     elif user_notes and not parsed_note["has_tone_instruction"]:
-        sections.append(f"{NOTE_INFORMATIONAL_RULES}\n{user_notes}")
+        sections.append(f"Include these facts naturally in the body:\n{user_notes}")
 
-    sections.append(
-        "SEED TEXT TO EXPAND (mandatory content — the body MUST fully address this topic):\n"
-        f"{text}"
-    )
-    if length == "short":
-        sections.append(GENERATE_SHORT_CONTENT_RULES)
-        sections.append(
-            "FINAL LENGTH CHECK: Body must be 1 short paragraph or 2–3 sentences only. "
-            "No padding. Do not change tone or vocabulary."
-        )
-    elif length == "medium":
-        sections.append(
-            "FINAL LENGTH CHECK: Body must be 2–3 paragraphs separated by blank lines. "
-            "Email includes greeting, body, and closing. Do not change tone or vocabulary."
-        )
-    elif length == "long":
-        sections.append(
-            "FINAL LENGTH CHECK: Body must be 4 or more paragraphs with full detail. "
-            "Do not change tone or vocabulary."
-        )
+    sections.append(f"Idea to expand:\n{text}")
     return "\n\n".join(sections)
 
 
@@ -2087,6 +2094,7 @@ class WritingAgent:
             seed_baseline=seed_baseline,
         )
         cleaned = _enforce_length_structure(cleaned, format_type, length)
+        cleaned = _strip_generate_instruction_leakage(cleaned)
         return _normalize_email_spacing(cleaned)
 
 
