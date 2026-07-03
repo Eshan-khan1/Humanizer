@@ -4198,23 +4198,63 @@
 
     setRewriteLoading(true);
 
-    const settings = readStoredGenerateSettings();
+    // Persistence: always reload latest popup settings before every generation
+    // so Length, Tone, Complexity, profile, and permanent note auto-apply.
+    const storageDefaults = {
+      generateProfile: { ...generateSettings.profile },
+      generateLength: generateSettings.length,
+      generateTonePreset: generateSettings.tonePreset,
+      generateTone: generateSettings.tone,
+      generateComplexity: generateSettings.complexity,
+      generateIncludeSubject: generateSettings.includeSubject !== false,
+    };
 
-    callGenerateApi(
-      payload.text,
-      generateFormat,
-      notes,
-      payload.rewriteContext,
-      settings
-    )
-      .then((generatedRaw) => {
-        setRewriteLoading(false);
-        if (!isValid()) return;
-        applyRewriteResult(generatedRaw, payload.resultCtx);
-      })
-      .catch(() => {
-        handleTransformationFailure(() => openGenerateNotesStep(generateFormat));
+    const runWithSettings = (stored) => {
+      applyGenerateSettingsFromStorage({
+        generateTone: stored.generateTone || storageDefaults.generateTone,
+        generateTonePreset:
+          stored.generateTonePreset || storageDefaults.generateTonePreset,
+        generateLength: stored.generateLength || storageDefaults.generateLength,
+        generateComplexity:
+          stored.generateComplexity ||
+          stored.generateWording ||
+          storageDefaults.generateComplexity,
+        generateIncludeSubject:
+          stored.generateIncludeSubject !== false,
+        generateProfile: stored.generateProfile || storageDefaults.generateProfile,
       });
+      syncGeneratePanelSummary();
+
+      const settings = readStoredGenerateSettings();
+      callGenerateApi(
+        payload.text,
+        generateFormat,
+        notes,
+        payload.rewriteContext,
+        settings
+      )
+        .then((generatedRaw) => {
+          setRewriteLoading(false);
+          if (!isValid()) return;
+          applyRewriteResult(generatedRaw, payload.resultCtx);
+        })
+        .catch(() => {
+          handleTransformationFailure(() => openGenerateNotesStep(generateFormat));
+        });
+    };
+
+    if (!chrome.storage?.sync) {
+      runWithSettings(storageDefaults);
+      return;
+    }
+
+    chrome.storage.sync.get(storageDefaults, (syncResult) => {
+      if (chrome.runtime.lastError && chrome.storage?.local) {
+        chrome.storage.local.get(storageDefaults, runWithSettings);
+        return;
+      }
+      runWithSettings(syncResult || storageDefaults);
+    });
   }
 
   function onRewriteDocumentKeydown(event) {

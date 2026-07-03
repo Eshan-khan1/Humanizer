@@ -52,14 +52,13 @@ General rules:
   • If the seed is already a near-complete draft, polish and complete missing parts only."""
 
 GENERATE_INDEPENDENCE_RULES = """\
-THREE FULLY INDEPENDENT SETTINGS — apply all three simultaneously; each does exactly one job:
-  • LENGTH only changes how much text is produced (short stays short, long stays long).
-    It must NEVER affect wording style, tone, or vocabulary.
-  • TONE only changes personality/voice (formal vs. friendly vs. casual).
-    It must NEVER affect output length, paragraph count, or vocabulary difficulty.
-  • COMPLEXITY only changes vocabulary/sentence difficulty (simple vs. standard vs. advanced).
-    It must NEVER affect tone or length.
-Changing one setting must NEVER visibly shift the other two."""
+INDEPENDENCE RULE (core constraint):
+  Length, Tone, and Complexity are THREE SEPARATE instructions applied together.
+  Never merge them into one instruction.
+  Changing one setting while holding the other two fixed must ONLY change the
+  dimension it controls.
+  Example: Short + Formal + Advanced vs. Long + Formal + Advanced must differ
+  ONLY in amount of text — not in formality or word choice."""
 
 GENERATE_STRICT_RULES = """\
 OUTPUT RULES (non-negotiable):
@@ -67,104 +66,88 @@ OUTPUT RULES (non-negotiable):
   • Apply TONE to greeting, subject, body phrasing, and sign-off consistently.
   • Apply COMPLEXITY only to word choice within the required structure and tone.
   • Never invent recipient names (John, Jane, Sarah, Alice, Bob, etc.).
-    Use [Name] in greetings unless the user profile supplies a recipient name.
-  • Use the saved profile full name on the sign-off line when available.
-    If no profile name is saved, use [Your Name] — never invent a sender name.
-  • Never leave bracketed instructions or template text in the output except [Name] and [Your Name].
-  • Apply saved user profile (name, sign-off preference, job title, etc.) automatically."""
+  • If a user profile is provided, apply it automatically (name, role, sign-off, etc.).
+  • If profile/permanent note are empty: use generic phrasing with NO placeholder text
+    (no [Name], no [Your Name], no bracketed blanks) and do not error.
+  • Never leave bracketed instructions or template text in the output."""
 
 GENERATE_LENGTH_GUIDANCE: dict[str, str] = {
     "short": """\
-LENGTH — structure only (independent of tone and complexity; hit this exactly):
-  • Email BODY (between greeting and sign-off): exactly 1 paragraph, exactly 2 sentences.
-    No extra body lines or padding. The first body sentence IS the point — no warm-up,
-    no opener, no filler before the reason for the email.
-  • CONTENT RULE: include ONLY what the seed input says — nothing else. Never add extra
-    instructions, requests, or topics the user did not mention (no "please review changes",
-    "provide feedback", "let me know if you have questions" unless those were in the input).
-  • Example: seed "let the team know the deadline changed" → body only says the deadline changed.
-  • Essay: exactly 1 paragraph, exactly 2 sentences total. Start with the point immediately.
-  • Greeting, subject line, and sign-off are outside the body and do not count toward these limits.
-  • REQUIRED COUNT: 1 body paragraph, 2 body sentences — verify before finishing.""",
+LENGTH — structure only (independent of tone and complexity):
+  • Produce 1 short paragraph OR 2–3 sentences total for the body.
+  • Just the core message — no padding, no warm-up, no filler.
+  • Email: greeting and sign-off are allowed but the BODY is only the core message.
+  • Essay: 1 short paragraph or 2–3 sentences total.
+  • LENGTH must NEVER change vocabulary difficulty or tone — use the active tone and
+    complexity settings unchanged; only produce less text.""",
     "medium": """\
-LENGTH — structure only (independent of tone and complexity; hit this exactly):
-  • Email BODY (between greeting and sign-off): exactly 3 paragraphs, each paragraph
-    exactly 3 sentences (9 body sentences total). Separate paragraphs with one blank line.
-  • Essay: exactly 3 paragraphs, each paragraph exactly 3 sentences.
-  • Do NOT stop at 1 short paragraph — medium requires multiple paragraphs with detail.
-  • REQUIRED COUNT: 3 body paragraphs, 3 sentences each — verify before finishing.""",
+LENGTH — structure only (independent of tone and complexity):
+  • Produce 2–3 body paragraphs (separated by blank lines).
+  • Email: include greeting, body (2–3 paragraphs), and closing/sign-off.
+  • Essay: 2–3 paragraphs of content.
+  • LENGTH must NEVER change vocabulary difficulty or tone — use the active tone and
+    complexity settings unchanged; only produce a medium amount of text.""",
     "long": """\
-LENGTH — structure only (independent of tone and complexity; hit this exactly):
-  • Email BODY (between greeting and sign-off): exactly 4 paragraphs minimum,
-    each paragraph 3–4 sentences. Include full detail, context, and supporting points
-    spread across all paragraphs.
-  • Essay: 4 or more paragraphs, each with 3–4 sentences and supporting detail.
-  • Do NOT stop at 1 short paragraph — long requires substantial multi-paragraph content.
-  • REQUIRED COUNT: at least 4 body paragraphs, 3–4 sentences each — verify before finishing.""",
+LENGTH — structure only (independent of tone and complexity):
+  • Produce 4 or more body paragraphs with full detail, context, and elaboration.
+  • Email: greeting, 4+ body paragraphs, and closing/sign-off.
+  • Essay: 4 or more paragraphs with supporting detail.
+  • LENGTH must NEVER change vocabulary difficulty or tone — a "long, casual, simple"
+    output must still use simple words and casual voice, just more of them.""",
 }
 
 GENERATE_COMPLEXITY_GUIDANCE: dict[str, str] = {
     "simple": """\
-COMPLEXITY — vocabulary only (independent of length and tone; word choice only):
-  • Use short everyday words — no word longer than 2 syllables where a shorter word works.
-  • Keep sentences short and direct (about 15 words or fewer when possible).
-  • Sound like a real person talking — not a formal document or status report.
-  • REWRITE stiff phrasing into plain speech. Example:
-    "extended until next Friday due to additional client requests for revisions"
-    → "pushed to next Friday because the client asked for more changes."
-  • AVOID: utilize, commence, facilitate, pursuant, regarding, inquire, request (as formal noun),
-    prior to, subsequent, additionally, appreciate, would appreciate, kindly, herein,
-    extended until, due to additional, client requests for revisions, "I am writing to request",
-    "I would like to inquire", "I hope this finds you well", "Please be advised that",
-    "I am reaching out to", corporate or academic phrasing.
-  • USE: get, ask, need, want, help, send, make, use, check, tell, push, moved, changed,
-    "I wanted to ask", "can I get", "because", "so", plain everyday language and contractions.
-  • Do not add or remove paragraphs or sentences — LENGTH controls structure.
-  • Do not change greeting style or formality — TONE controls how it sounds.""",
+COMPLEXITY — vocabulary only (independent of length and tone):
+  • Short, common words; short sentences; minimal jargon.
+  • Prefer everyday words: get, ask, need, want, help, send, make, use, check, tell,
+    push, moved, changed, because, so.
+  • AVOID advanced/academic words: utilize, commence, facilitate, pursuant, regarding,
+    inquire, subsequent, additionally, herein, comprehensive, expedite, endeavor.
+  • COMPLEXITY must NEVER change tone or length — "simple" does not mean shorter output
+    and does not change formality (TONE controls voice).""",
     "standard": """\
-COMPLEXITY — vocabulary only (independent of length and tone; word choice only):
-  • Use normal professional business vocabulary — clear, balanced, and readable.
-  • AVOID: commence, pursuant, herein, thereof, ergo, overly academic jargon, slang.
-  • USE: standard professional words (provide, update, review, discuss, confirm, follow up,
-    appreciate, request, submit) in clear professional sentences.
-  • Do not add or remove paragraphs or sentences — LENGTH controls structure.
-  • Do not change greeting style or formality — TONE controls how it sounds.""",
+COMPLEXITY — vocabulary only (independent of length and tone):
+  • Everyday professional vocabulary; moderate sentence length.
+  • USE: provide, update, review, discuss, confirm, follow up, request, submit, appreciate.
+  • AVOID: commence, pursuant, herein, thereof, overly academic jargon, and also avoid
+    overly childish one-syllable-only phrasing.
+  • COMPLEXITY must NEVER change tone or length — keep the active tone and paragraph count.""",
     "advanced": """\
-COMPLEXITY — vocabulary only (independent of length and tone; word choice only):
-  • Use sophisticated vocabulary and varied sentence structure throughout every paragraph.
-  • USE: expedite, facilitate, comprehensive, subsequently, articulate, leverage, paramount,
-    accordingly, endeavor, pursuant, prior to, notwithstanding, subordinate clauses,
-    and formal phrasing in every sentence.
-  • AVOID: casual contractions, slang, choppy one-clause-only sentences, simple grade-school words
-    where a precise professional term fits.
-  • Do not add or remove paragraphs or sentences — LENGTH controls structure.
-  • Do not change greeting style or formality — TONE controls how it sounds.""",
+COMPLEXITY — vocabulary only (independent of length and tone):
+  • Sophisticated vocabulary and longer/more complex sentence structures.
+  • USE precise terms where they fit: expedite, facilitate, comprehensive, subsequently,
+    articulate, leverage, paramount, accordingly, endeavor, prior to.
+  • Prefer varied sentence structure (clauses, transitions) over choppy simple sentences.
+  • COMPLEXITY must NEVER change tone or length — "advanced" does not mean more formal
+    and does not mean more paragraphs.""",
 }
 
 TONE_PRESET_GUIDANCE: dict[str, str] = {
     "formal": """\
-TONE — how it sounds only (independent of length and complexity):
-  • Opening: "Dear [Name]"
-  • Body sentences: professional and respectful
-  • Sign-off: "Sincerely" then the user's name from profile when saved
-  • Subject line must sound formal""",
+TONE — voice/personality only (independent of length and complexity):
+  • Professional language, no contractions, no slang, structured sentences.
+  • Opening: "Dear …," when a recipient is known; otherwise "Dear Sir or Madam," or "Hello,"
+  • Sign-off: "Sincerely," then the user's name from profile when saved; otherwise "Sincerely," alone
+  • Subject line must sound formal
+  • TONE must NEVER change how long the output is or how advanced the vocabulary is —
+    "formal" does not mean longer, and does not mean more advanced words.""",
     "friendly": """\
-TONE — how it sounds only (independent of length and complexity):
-  • Opening: "Hi [Name]"
-  • Body sentences: warm and human but get to the point fast
-  • On medium or long length only: optional one-line opener like "Hope you're having a good one"
-  • On short length: skip any body opener — first body sentence is the point
-  • NEVER use "I hope you're doing well" or any variation — completely banned
-  • Sign-off: "Best" then the user's name from profile when saved
-  • Subject line must sound warm but clear""",
+TONE — voice/personality only (independent of length and complexity):
+  • Warm, approachable, personable phrasing; contractions okay.
+  • Opening: "Hi …," when a recipient is known; otherwise "Hi," or "Hi there,"
+  • Sign-off: "Best," then the user's name from profile when saved; otherwise "Best," alone
+  • Subject line must sound warm but clear
+  • TONE must NEVER change how long the output is or how advanced the vocabulary is —
+    "friendly" does not mean shorter or simpler words.""",
     "casual": """\
-TONE — how it sounds only (independent of length and complexity):
-  • Opening: "Hey [Name]" or just their name
-  • Body sentences: direct and conversational — get to the point fast
-  • No body warm-up or filler lines at any length
-  • NEVER use "I hope you're doing well" or any variation — completely banned
-  • Sign-off: "Thanks" then the user's name from profile when saved (if natural)
-  • Subject line must sound informal""",
+TONE — voice/personality only (independent of length and complexity):
+  • Relaxed, conversational; contractions and informal phrasing okay.
+  • Opening: "Hey …," when a recipient is known; otherwise "Hey," or "Hey there,"
+  • Sign-off: "Thanks," then the user's name from profile when saved; otherwise "Thanks," alone
+  • Subject line must sound informal
+  • TONE must NEVER change how long the output is or how advanced the vocabulary is —
+    "casual" does not mean shorter or simpler words.""",
 }
 
 TONE_EMAIL_CONVENTIONS: dict[str, str] = {
@@ -181,20 +164,61 @@ TONE_EMAIL_CONVENTIONS: dict[str, str] = {
 }
 
 TONE_BANNED_FILLER_PHRASES = """\
-BANNED FILLER:
-  • Friendly and casual tones: NEVER "I hope you're doing well", "I hope this finds you well",
-    or any variation — at any length. No polite warm-up lines on short length.
-  • Formal tone only: at most ONE short polite opener line in the body on medium/long length;
-    on short length the body starts with the point — no opener.
-  • All tones: "Looking forward to hearing from you", "Thank you for your time and consideration",
-    "Please do not hesitate to contact me" — never use."""
+BANNED FILLER (tone only — do not add or remove paragraphs to satisfy this):
+  • Never invent padding just to sound polite.
+  • Avoid stock lines: "Looking forward to hearing from you",
+    "Thank you for your time and consideration", "Please do not hesitate to contact me"."""
+
+_FORMAL_CONTRACTION_EXPANSIONS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bdon't\b", re.I), "do not"),
+    (re.compile(r"\bdoesn't\b", re.I), "does not"),
+    (re.compile(r"\bdidn't\b", re.I), "did not"),
+    (re.compile(r"\bcan't\b", re.I), "cannot"),
+    (re.compile(r"\bcouldn't\b", re.I), "could not"),
+    (re.compile(r"\bwon't\b", re.I), "will not"),
+    (re.compile(r"\bwouldn't\b", re.I), "would not"),
+    (re.compile(r"\bshouldn't\b", re.I), "should not"),
+    (re.compile(r"\bisn't\b", re.I), "is not"),
+    (re.compile(r"\baren't\b", re.I), "are not"),
+    (re.compile(r"\bwasn't\b", re.I), "was not"),
+    (re.compile(r"\bweren't\b", re.I), "were not"),
+    (re.compile(r"\bhaven't\b", re.I), "have not"),
+    (re.compile(r"\bhasn't\b", re.I), "has not"),
+    (re.compile(r"\bhadn't\b", re.I), "had not"),
+    (re.compile(r"\bI'm\b"), "I am"),
+    (re.compile(r"\bI've\b"), "I have"),
+    (re.compile(r"\bI'll\b"), "I will"),
+    (re.compile(r"\bI'd\b"), "I would"),
+    (re.compile(r"\bwe're\b", re.I), "we are"),
+    (re.compile(r"\bwe've\b", re.I), "we have"),
+    (re.compile(r"\bwe'll\b", re.I), "we will"),
+    (re.compile(r"\bthey're\b", re.I), "they are"),
+    (re.compile(r"\bthey've\b", re.I), "they have"),
+    (re.compile(r"\bit's\b", re.I), "it is"),
+    (re.compile(r"\bthat's\b", re.I), "that is"),
+    (re.compile(r"\bthere's\b", re.I), "there is"),
+    (re.compile(r"\byou're\b", re.I), "you are"),
+    (re.compile(r"\byou've\b", re.I), "you have"),
+    (re.compile(r"\byou'll\b", re.I), "you will"),
+    (re.compile(r"\blet's\b", re.I), "let us"),
+)
+
+
+def _apply_formal_tone_voice(text: str) -> str:
+    """Expand contractions for formal tone only — does not change length or vocabulary level."""
+    result = text
+    for pattern, replacement in _FORMAL_CONTRACTION_EXPANSIONS:
+        result = pattern.sub(replacement, result)
+    return result
 
 GENERATE_SHORT_CONTENT_RULES = """\
 SHORT LENGTH CONTENT (mandatory when length is short):
+  • 1 short paragraph or 2–3 sentences — core message only, no padding.
   • Include ONLY information from the seed input and any informational user note.
   • Never add sentences, instructions, or topics the user did not mention.
   • Do NOT add "please review changes", "provide feedback", "let me know if you have questions",
-    or similar unless the user specifically said those in the input."""
+    or similar unless the user specifically said those in the input.
+  • Do not change tone or vocabulary — LENGTH only controls how much text."""
 
 TONE_PRESET_TO_VOICE: dict[str, str] = {
     "formal": "formal",
@@ -626,6 +650,13 @@ _SIMPLE_COMPLEXITY_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bin order to\b", re.IGNORECASE), "to"),
     (re.compile(r"\butilize\b", re.IGNORECASE), "use"),
     (re.compile(r"\bcommence\b", re.IGNORECASE), "start"),
+    (re.compile(r"\bfacilitate\b", re.IGNORECASE), "help"),
+    (re.compile(r"\bexpedite\b", re.IGNORECASE), "speed up"),
+    (re.compile(r"\bcomprehensive\b", re.IGNORECASE), "full"),
+    (re.compile(r"\bendeavor\b", re.IGNORECASE), "try"),
+    (re.compile(r"\bsubsequently\b", re.IGNORECASE), "then"),
+    (re.compile(r"\bprior to\b", re.IGNORECASE), "before"),
+    (re.compile(r"\bregarding\b", re.IGNORECASE), "about"),
     (re.compile(r"\bpursuant to\b", re.IGNORECASE), "under"),
     (re.compile(r"\bat this point in time\b", re.IGNORECASE), "now"),
     (re.compile(r"\bwith regard to\b", re.IGNORECASE), "about"),
@@ -900,30 +931,145 @@ def _count_email_body_paragraphs(text: str) -> int:
     return len([paragraph for paragraph in re.split(r"\n\s*\n", body) if paragraph.strip()])
 
 
+def _count_body_sentences(text: str, format_type: str) -> int:
+    if format_type == "email":
+        body = _parse_email_sections(text).get("body", "")
+    else:
+        body = text
+    if not body.strip():
+        return 0
+    return len([s for s in _split_sentences(body) if s.strip()])
+
+
 def _meets_generate_length_requirement(text: str, format_type: str, length: str) -> bool:
-    if format_type != "email" or length == "short":
-        return True
-    paragraph_count = _count_email_body_paragraphs(text)
+    """Check body structure only — never inspect tone or vocabulary."""
+    if format_type == "email":
+        paragraph_count = _count_email_body_paragraphs(text)
+        sentence_count = _count_body_sentences(text, format_type)
+    else:
+        paragraphs = [p for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+        paragraph_count = len(paragraphs)
+        sentence_count = _count_body_sentences(text, format_type)
+
+    if length == "short":
+        # 1 short paragraph or 2–3 sentences; must have content, no padding
+        return paragraph_count <= 1 and 1 <= sentence_count <= 3
     if length == "medium":
-        return paragraph_count >= 2
+        return 2 <= paragraph_count <= 3
     if length == "long":
         return paragraph_count >= 4
     return True
 
 
+def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
+    """Adjust paragraph/sentence count only — never rewrite words (tone/complexity stay)."""
+    if not text or not text.strip():
+        return text
+
+    if format_type == "email":
+        sections = _parse_email_sections(text)
+        body = sections.get("body", "")
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+
+        if length == "short":
+            if not paragraphs:
+                return text
+            sentences = _split_sentences(paragraphs[0])[:3]
+            if not sentences and paragraphs:
+                sentences = [paragraphs[0]]
+            sections["body"] = _join_sentences(sentences)
+            return _reassemble_email_sections(sections)
+
+        if length == "medium":
+            if len(paragraphs) == 1:
+                sentences = _split_sentences(paragraphs[0])
+                if len(sentences) >= 2:
+                    mid = max(1, len(sentences) // 2)
+                    paragraphs = [
+                        _join_sentences(sentences[:mid]),
+                        _join_sentences(sentences[mid:]),
+                    ]
+            elif len(paragraphs) > 3:
+                paragraphs = paragraphs[:2] + [" ".join(paragraphs[2:])]
+            sections["body"] = "\n\n".join(paragraphs)
+            return _reassemble_email_sections(sections)
+
+        if length == "long":
+            while len(paragraphs) < 4:
+                best_i = -1
+                best_sents: list[str] = []
+                for index, paragraph in enumerate(paragraphs):
+                    sentences = _split_sentences(paragraph)
+                    if len(sentences) >= 2 and len(sentences) > len(best_sents):
+                        best_i = index
+                        best_sents = sentences
+                if best_i < 0:
+                    break
+                mid = max(1, len(best_sents) // 2)
+                paragraphs[best_i : best_i + 1] = [
+                    _join_sentences(best_sents[:mid]),
+                    _join_sentences(best_sents[mid:]),
+                ]
+            sections["body"] = "\n\n".join(paragraphs)
+            return _reassemble_email_sections(sections)
+
+        return text
+
+    # Essay / prose
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+    if length == "short":
+        if not paragraphs:
+            return text
+        return _join_sentences(_split_sentences(paragraphs[0])[:3])
+    if length == "medium":
+        if len(paragraphs) == 1:
+            sentences = _split_sentences(paragraphs[0])
+            if len(sentences) >= 2:
+                mid = max(1, len(sentences) // 2)
+                return "\n\n".join(
+                    [_join_sentences(sentences[:mid]), _join_sentences(sentences[mid:])]
+                )
+        if len(paragraphs) > 3:
+            return "\n\n".join(paragraphs[:2] + [" ".join(paragraphs[2:])])
+        return text
+    if length == "long":
+        while len(paragraphs) < 4:
+            best_i = -1
+            best_sents = []
+            for index, paragraph in enumerate(paragraphs):
+                sentences = _split_sentences(paragraph)
+                if len(sentences) >= 2 and len(sentences) > len(best_sents):
+                    best_i = index
+                    best_sents = sentences
+            if best_i < 0:
+                break
+            mid = max(1, len(best_sents) // 2)
+            paragraphs[best_i : best_i + 1] = [
+                _join_sentences(best_sents[:mid]),
+                _join_sentences(best_sents[mid:]),
+            ]
+        return "\n\n".join(paragraphs)
+    return text
+
+
 def _build_length_retry_instruction(length: str, format_type: str) -> str:
-    if format_type != "email" or length == "short":
-        return ""
+    kind = "email" if format_type == "email" else "essay"
+    if length == "short":
+        return (
+            "LENGTH RETRY — previous draft was too long. "
+            f"Output ONE {kind} only with 1 short body paragraph or 2–3 body sentences. "
+            "Core message only, no padding. Do not change tone or vocabulary."
+        )
     if length == "medium":
         return (
-            "LENGTH RETRY — your previous draft body had too few paragraphs. "
-            "Output ONE email only with exactly 3 body paragraphs, each with exactly 3 sentences, "
-            "separated by blank lines. Do not repeat or stack multiple drafts."
+            "LENGTH RETRY — previous draft body had the wrong paragraph count. "
+            f"Output ONE {kind} only with 2–3 body paragraphs separated by blank lines. "
+            "Do not change tone or vocabulary."
         )
     return (
-        "LENGTH RETRY — your previous draft body had too few paragraphs. "
-        "Output ONE email only with at least 4 body paragraphs, each with 3–4 sentences, "
-        "separated by blank lines. Do not repeat or stack multiple drafts."
+        "LENGTH RETRY — previous draft body had too few paragraphs. "
+        f"Output ONE {kind} only with at least 4 body paragraphs of full detail. "
+        "Do not change tone or vocabulary."
     )
 
 
@@ -1047,8 +1193,8 @@ def apply_generate_hard_filters(
 
     filtered = text
     if tone_preset in {"friendly", "casual"}:
-        allow_good_one = tone_preset == "friendly" and length in {"medium", "long"}
-        filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=allow_good_one)
+        # Tone-only cleanup — never depends on length setting
+        filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
 
     if format_type == "email":
         sections = _parse_email_sections(filtered)
@@ -1057,9 +1203,18 @@ def apply_generate_hard_filters(
             tone_preset=tone_preset,
             length=length,
         )
+        sections["greeting"] = _enforce_tone_greeting_line(
+            sections.get("greeting", ""), tone_preset
+        )
+        sections["footer"] = _enforce_tone_signoff(
+            sections.get("footer", ""), tone_preset, normalized.get("profile") or {}
+        )
         filtered = _reassemble_email_sections(sections)
     else:
         filtered = _filter_prose_block(filtered, tone_preset=tone_preset, length=length)
+
+    if tone_preset == "formal":
+        filtered = _apply_formal_tone_voice(filtered)
 
     if complexity == "simple":
         filtered = _apply_simple_complexity_replacements(filtered)
@@ -1077,6 +1232,67 @@ def apply_generate_hard_filters(
     return filtered
 
 
+def _enforce_tone_greeting_line(greeting: str, tone_preset: str) -> str:
+    """Force greeting prefix by tone only — no placeholder brackets."""
+    stripped = (greeting or "").strip()
+    name = ""
+    match = _GREETING_WITH_NAME_RE.match(stripped) if stripped else None
+    if match:
+        name = match.group(2).strip().rstrip(",")
+        if name in ("[Name]", "[Your Name]", "Name", "Your Name"):
+            name = ""
+        elif name.startswith("[") and name.endswith("]"):
+            name = ""
+    elif stripped and not re.match(r"^(Dear|Hi|Hey|Hello)\b", stripped, re.I):
+        name = stripped.rstrip(",")
+    prefix = {"formal": "Dear", "friendly": "Hi", "casual": "Hey"}.get(
+        tone_preset, "Hi"
+    )
+    if name:
+        return f"{prefix} {name}"
+    if tone_preset == "formal":
+        return "Hello"
+    if tone_preset == "casual":
+        return "Hey"
+    return "Hi"
+
+
+def _enforce_tone_signoff(
+    footer: str, tone_preset: str, profile: dict[str, Any]
+) -> str:
+    """Force sign-off word by tone only — no placeholder brackets."""
+    saved_name = _extract_profile_full_name(profile)
+    lines = [ln.strip() for ln in (footer or "").split("\n") if ln.strip()]
+    name = saved_name
+    if not name and len(lines) >= 2:
+        candidate = lines[-1]
+        if (
+            candidate not in ("[Name]", "[Your Name]", "Name", "Your Name")
+            and not (candidate.startswith("[") and candidate.endswith("]"))
+            and not _is_signoff_line(candidate)
+        ):
+            name = candidate
+    elif not name and lines and not _is_signoff_line(lines[0]):
+        candidate = lines[0]
+        if candidate not in ("[Name]", "[Your Name]") and not (
+            candidate.startswith("[") and candidate.endswith("]")
+        ):
+            name = candidate
+    # Prefer saved sign-off from profile when present
+    preferred = str(
+        profile.get("signOff") or profile.get("sign_off") or ""
+    ).strip()
+    if preferred:
+        signoff = preferred if preferred.endswith((",", "!")) else f"{preferred},"
+    else:
+        signoff = {"formal": "Sincerely,", "friendly": "Best,", "casual": "Thanks,"}.get(
+            tone_preset, "Best,"
+        )
+    if name:
+        return f"{signoff}\n{name}"
+    return signoff
+
+
 _GREETING_WITH_NAME_RE = re.compile(
     r"^(Dear|Hi|Hey|Hello)\s+(.+)$",
     re.IGNORECASE,
@@ -1092,12 +1308,25 @@ def _extract_profile_full_name(profile: dict[str, Any]) -> str:
     return str(profile.get("fullName") or profile.get("full_name") or "").strip()
 
 
+def _is_placeholder_name(value: str) -> bool:
+    text = (value or "").strip()
+    if not text:
+        return True
+    if text in ("[Name]", "[Your Name]", "Name", "Your Name"):
+        return True
+    return bool(re.fullmatch(r"\[[^\]]+\]", text))
+
+
 def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
     if not text or not text.strip():
         return text
 
     saved_name = _extract_profile_full_name(profile)
-    signoff_name = saved_name or "[Your Name]"
+    # Strip any leftover placeholder brackets from the model
+    text = re.sub(r"\[Your Name\]", saved_name or "", text)
+    text = re.sub(r"\[Name\]", "", text)
+    text = re.sub(r" {2,}", " ", text)
+
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     normalized_lines: list[str] = []
 
@@ -1111,29 +1340,36 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
         if greeting_match:
             prefix = greeting_match.group(1)
             name_part = greeting_match.group(2).strip().rstrip(",")
-            if name_part in ("[Name]", "[Your Name]"):
-                normalized_lines.append(line)
+            if _is_placeholder_name(name_part):
+                normalized_lines.append(prefix)
                 continue
             if saved_name and name_part.lower() == saved_name.lower():
                 normalized_lines.append(line)
                 continue
-            if name_part.lower().startswith("professor"):
-                normalized_lines.append(f"{prefix} Professor [Name]")
-            else:
-                normalized_lines.append(f"{prefix} [Name]")
+            # Drop invented recipient names — keep generic greeting only
+            normalized_lines.append(prefix)
             continue
 
         signoff_match = _SIGNOFF_INLINE_NAME_RE.match(stripped)
         if signoff_match:
             prefix = signoff_match.group(1)
             name_part = signoff_match.group(2).strip()
-            if name_part in ("[Name]", "[Your Name]"):
-                normalized_lines.append(line)
+            if _is_placeholder_name(name_part):
+                normalized_lines.append(prefix if prefix.endswith(",") else f"{prefix},")
                 continue
             if saved_name and name_part.lower() == saved_name.lower():
                 normalized_lines.append(line)
                 continue
-            normalized_lines.append(f"{prefix} {signoff_name}")
+            if saved_name:
+                normalized_lines.append(f"{prefix} {saved_name}")
+            else:
+                normalized_lines.append(prefix if prefix.endswith(",") else f"{prefix},")
+            continue
+
+        if _is_placeholder_name(stripped):
+            if saved_name:
+                normalized_lines.append(saved_name)
+            # else drop the placeholder line entirely
             continue
 
         normalized_lines.append(line)
@@ -1145,14 +1381,16 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
         nxt = result_lines[index + 1].strip()
         if not _is_signoff_line(current) or not nxt:
             continue
-        if nxt in ("[Name]", "[Your Name]"):
+        if _is_placeholder_name(nxt):
+            result_lines[index + 1] = saved_name if saved_name else ""
             continue
         if saved_name and nxt.lower() == saved_name.lower():
             continue
         if re.fullmatch(r"[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?", nxt):
-            result_lines[index + 1] = signoff_name
+            # Drop invented sender names when no profile is saved
+            result_lines[index + 1] = saved_name if saved_name else ""
 
-    return "\n".join(result_lines)
+    return "\n".join(line for line in result_lines if line is not None)
 
 
 def format_document_context(context: dict[str, Any] | None) -> str:
@@ -1492,37 +1730,39 @@ def _extract_permanent_note(profile: dict[str, Any]) -> str:
 
 
 def _format_generate_profile(profile: dict[str, Any]) -> str:
+    """Format profile as comma-separated key-value pairs for prompt injection."""
     labels = {
-        "fullName": "Full name",
-        "full_name": "Full name",
-        "signOff": "Preferred sign-off",
-        "sign_off": "Preferred sign-off",
-        "jobTitle": "Job title",
-        "job_title": "Job title",
-        "companyName": "Company name",
-        "company_name": "Company name",
-        "schoolName": "School name",
-        "school_name": "School name",
-        "email": "Email address",
-        "phone": "Phone number",
+        "fullName": "full name",
+        "full_name": "full name",
+        "signOff": "preferred sign-off",
+        "sign_off": "preferred sign-off",
+        "jobTitle": "job title",
+        "job_title": "job title",
+        "companyName": "company name",
+        "company_name": "company name",
+        "schoolName": "school name",
+        "school_name": "school name",
+        "email": "email",
+        "phone": "phone",
     }
-    lines: list[str] = []
+    pairs: list[str] = []
+    seen_labels: set[str] = set()
     for key, label in labels.items():
+        if label in seen_labels:
+            continue
         value = str(profile.get(key) or "").strip()
         if value:
-            lines.append(f"- {label}: {value}")
-    if not lines:
+            pairs.append(f"{label}={value}")
+            seen_labels.add(label)
+    if not pairs:
         return ""
-    extra = (
-        "\n- If a preferred sign-off is saved, use that exact line instead of the default "
-        "tone sign-off when they differ."
-        "\n- Always use the saved full name on the sign-off line when available — "
-        "never output [Your Name] or similar placeholders."
-    )
     return (
-        "USER PROFILE (use automatically — especially in sign-offs and contact details):\n"
-        + "\n".join(lines)
-        + extra
+        "PERSONAL PROFILE (comma-separated key-value pairs — auto-inject; "
+        "reference name, role, or other details without the user typing them):\n"
+        + ", ".join(pairs)
+        + "\nUse the saved full name on the sign-off line. "
+        "If a preferred sign-off is saved, use that exact line. "
+        "Never invent names. Never output placeholder brackets."
     )
 
 
@@ -1559,11 +1799,11 @@ def _build_generate_system_prompt(
     parts = [
         WRITING_AGENT_SYSTEM_PROMPT,
         GENERATE_INDEPENDENCE_RULES,
-        "ACTIVE LENGTH — structure only (never change tone or vocabulary):",
+        "=== LENGTH INSTRUCTION (structure only) ===",
         _build_length_rules(length),
-        "ACTIVE TONE — voice/personality only (never change length or vocabulary difficulty):",
+        "=== TONE INSTRUCTION (voice only) ===",
         _build_tone_rules(tone_preset, format_type),
-        "ACTIVE COMPLEXITY — vocabulary only (never change tone or length):",
+        "=== COMPLEXITY INSTRUCTION (vocabulary only) ===",
         _build_complexity_rules(complexity),
         GENERATE_STRICT_RULES,
     ]
@@ -1586,13 +1826,17 @@ def _build_generate_settings_block(
     complexity: str,
     format_type: str,
 ) -> str:
+    # Three separate instructions — never merged into one combined instruction.
     return "\n\n".join(
         [
             GENERATE_INDEPENDENCE_RULES,
-            GENERATE_STRICT_RULES,
+            "=== LENGTH INSTRUCTION (structure only) ===",
             _build_length_rules(length),
+            "=== TONE INSTRUCTION (voice only) ===",
             _build_tone_rules(tone_preset, format_type),
+            "=== COMPLEXITY INSTRUCTION (vocabulary only) ===",
             _build_complexity_rules(complexity),
+            GENERATE_STRICT_RULES,
         ]
     )
 
@@ -1651,8 +1895,13 @@ def build_generate_prompt(
         sections.append(profile_block)
     else:
         sections.append(
-            "USER PROFILE: No saved profile — use [Name] for the recipient and "
-            "[Your Name] for the sender. Do not invent names."
+            "PERSONAL PROFILE: empty — use generic phrasing only. "
+            "No placeholder text (no brackets, no [Name], no [Your Name]). "
+            "Do not invent names. Do not error."
+        )
+    if not permanent_note:
+        sections.append(
+            "PERMANENT NOTE: empty — no standing instruction. Proceed normally."
         )
     if context_block:
         sections.append(context_block)
@@ -1680,15 +1929,19 @@ def build_generate_prompt(
     )
     if length == "short":
         sections.append(GENERATE_SHORT_CONTENT_RULES)
+        sections.append(
+            "FINAL LENGTH CHECK: Body must be 1 short paragraph or 2–3 sentences only. "
+            "No padding. Do not change tone or vocabulary."
+        )
     elif length == "medium":
         sections.append(
-            "FINAL LENGTH CHECK: The email body MUST be exactly 3 paragraphs with 3 sentences "
-            "each, separated by blank lines. Count before you finish."
+            "FINAL LENGTH CHECK: Body must be 2–3 paragraphs separated by blank lines. "
+            "Email includes greeting, body, and closing. Do not change tone or vocabulary."
         )
     elif length == "long":
         sections.append(
-            "FINAL LENGTH CHECK: The email body MUST be at least 4 paragraphs with 3–4 sentences "
-            "each, separated by blank lines. Count before you finish."
+            "FINAL LENGTH CHECK: Body must be 4 or more paragraphs with full detail. "
+            "Do not change tone or vocabulary."
         )
     return "\n\n".join(sections)
 
@@ -1812,26 +2065,28 @@ class WritingAgent:
         )
         cleaned = _clean_output(raw)
         cleaned = _take_first_complete_draft(cleaned)
-        if length in {"medium", "long"}:
-            retry_instruction = _build_length_retry_instruction(length, format_type)
-            if retry_instruction and not _meets_generate_length_requirement(
+        retry_instruction = _build_length_retry_instruction(length, format_type)
+        for _attempt in range(2):
+            if not retry_instruction or _meets_generate_length_requirement(
                 cleaned, format_type, length
             ):
-                retry_prompt = f"{prompt}\n\n{retry_instruction}"
-                raw = _call_llm(
-                    retry_prompt,
-                    task="generate",
-                    system=system_prompt,
-                    num_predict=num_predict,
-                    ai_config=ai_config,
-                )
-                cleaned = _take_first_complete_draft(_clean_output(raw))
+                break
+            retry_prompt = f"{prompt}\n\n{retry_instruction}"
+            raw = _call_llm(
+                retry_prompt,
+                task="generate",
+                system=system_prompt,
+                num_predict=num_predict,
+                ai_config=ai_config,
+            )
+            cleaned = _take_first_complete_draft(_clean_output(raw))
         cleaned = apply_generate_hard_filters(
             cleaned,
             format_type=format_type,
             settings=effective_settings,
             seed_baseline=seed_baseline,
         )
+        cleaned = _enforce_length_structure(cleaned, format_type, length)
         return _normalize_email_spacing(cleaned)
 
 

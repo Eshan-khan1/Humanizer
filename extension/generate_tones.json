@@ -23,17 +23,17 @@
     {
       "id": "short",
       "label": "Short",
-      "description": "Body: exactly 2 sentences, one paragraph. Structure only."
+      "description": "1 short paragraph or 2–3 sentences. Core message only — never changes tone or vocabulary."
     },
     {
       "id": "medium",
       "label": "Medium",
-      "description": "Body: 3 paragraphs, 3 sentences each. Structure only — never changes tone or vocabulary."
+      "description": "2–3 paragraphs (greeting, body, closing for email). Structure only — never changes tone or vocabulary."
     },
     {
       "id": "long",
       "label": "Long",
-      "description": "Body: 4+ paragraphs with full detail. Structure only — never changes tone or vocabulary."
+      "description": "4+ paragraphs with full detail. Structure only — never changes tone or vocabulary."
     }
   ],
   "complexityLevels": [
