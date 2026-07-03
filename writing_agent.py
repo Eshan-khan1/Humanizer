@@ -211,7 +211,95 @@ def _apply_formal_tone_voice(text: str) -> str:
     result = text
     for pattern, replacement in _FORMAL_CONTRACTION_EXPANSIONS:
         result = pattern.sub(replacement, result)
-    return result
+    # Strip casual openers that blur formal vs friendly
+    result = re.sub(
+        r"(?im)^Just (?:a quick |wanted to |checking in ).*\n?",
+        "",
+        result,
+    )
+    result = re.sub(r"(?i)\bHey\b", "Hello", result)
+    result = re.sub(r"(?i)\bThanks\b", "Thank you", result)
+    result = re.sub(r"  +", " ", result)
+    return result.strip()
+
+
+_CASUAL_TONE_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bI am writing to follow up regarding\b", re.I), "I wanted to check in about"),
+    (re.compile(r"\bI am writing to follow up\b", re.I), "I wanted to follow up"),
+    (re.compile(r"\bI am writing to\b", re.I), "I wanted to"),
+    (re.compile(r"\bI hope this message finds you well[.!]?\s*", re.I), ""),
+    (re.compile(r"\bI hope you are well[.!]?\s*", re.I), ""),
+    (re.compile(r"\bWe would appreciate\b", re.I), "We'd appreciate"),
+    (re.compile(r"\bI would appreciate\b", re.I), "I'd appreciate"),
+    (re.compile(r"\bPlease let me know\b", re.I), "Let me know"),
+    (re.compile(r"\bPlease let us know\b", re.I), "Let us know"),
+    (re.compile(r"\bregarding\b", re.I), "about"),
+    (re.compile(r"\bprior to\b", re.I), "before"),
+    (re.compile(r"\bat your earliest convenience\b", re.I), "when you can"),
+    (re.compile(r"\bIt would be beneficial\b", re.I), "It'd help"),
+    (re.compile(r"\bWe are eager to\b", re.I), "We're keen to"),
+)
+
+
+def _apply_casual_tone_voice(text: str) -> str:
+    """Make casual tone visibly informal — does not change length or vocabulary tier."""
+    result = text
+    for pattern, replacement in _CASUAL_TONE_REPLACEMENTS:
+        result = pattern.sub(replacement, result)
+    result = re.sub(r"(?i)\bDear\b", "Hey", result)
+    result = re.sub(r"(?i)\bSincerely\b", "Thanks", result)
+    result = re.sub(r"  +", " ", result)
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result.strip()
+
+
+_FRIENDLY_TONE_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bI am writing to follow up regarding\b", re.I), "I wanted to follow up about"),
+    (re.compile(r"\bI am writing to\b", re.I), "I wanted to"),
+    (re.compile(r"\bI hope this message finds you well[.!]?\s*", re.I), ""),
+    (re.compile(r"\bat your earliest convenience\b", re.I), "when you have a moment"),
+)
+
+
+def _apply_friendly_tone_voice(text: str) -> str:
+    """Warm friendly voice — distinct from formal stiffness and casual slang."""
+    result = text
+    for pattern, replacement in _FRIENDLY_TONE_REPLACEMENTS:
+        result = pattern.sub(replacement, result)
+    result = re.sub(r"(?i)\bDear\b", "Hi", result)
+    result = re.sub(r"(?i)\bSincerely\b", "Best", result)
+    result = re.sub(r"  +", " ", result)
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result.strip()
+
+
+_ADVANCED_COMPLEXITY_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bfollow up about\b", re.I), "follow up regarding"),
+    (re.compile(r"\bfollow up on\b", re.I), "follow up regarding"),
+    (re.compile(r"\bmake sure\b", re.I), "ensure"),
+    (re.compile(r"\bget back to you\b", re.I), "respond"),
+    (re.compile(r"\bcheck in about\b", re.I), "inquire regarding"),
+    (re.compile(r"\bcheck in on\b", re.I), "inquire regarding"),
+    (re.compile(r"\bcoming up soon\b", re.I), "approaching in the near term"),
+    (re.compile(r"\bfinish(?:ing)?\b", re.I), "finalize"),
+    (re.compile(r"\bwanted to ask\b", re.I), "wanted to inquire"),
+    (re.compile(r"\bPlease let me know\b", re.I), "Please advise"),
+    (re.compile(r"\bPlease let us know\b", re.I), "Please advise"),
+    (re.compile(r"\blet me know\b", re.I), "please advise"),
+    (re.compile(r"\blet us know\b", re.I), "please advise"),
+    (re.compile(r"\bbefore\b", re.I), "prior to"),
+    (re.compile(r"\bspeed up\b", re.I), "expedite"),
+    (re.compile(r"\bhelp (?:with|us|you)\b", re.I), "facilitate"),
+)
+
+
+def _apply_advanced_complexity_replacements(text: str) -> str:
+    """Upgrade vocabulary for advanced complexity only — does not change tone or length."""
+    result = text
+    for pattern, replacement in _ADVANCED_COMPLEXITY_REPLACEMENTS:
+        result = pattern.sub(replacement, result)
+    result = re.sub(r"  +", " ", result)
+    return result.strip()
 
 GENERATE_SHORT_CONTENT_RULES = """\
 SHORT LENGTH CONTENT (mandatory when length is short):
@@ -707,6 +795,8 @@ _SIMPLE_COMPLEXITY_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bsubsequently\b", re.IGNORECASE), "then"),
     (re.compile(r"\bprior to\b", re.IGNORECASE), "before"),
     (re.compile(r"\bregarding\b", re.IGNORECASE), "about"),
+    (re.compile(r"\bensure\b", re.IGNORECASE), "make sure"),
+    (re.compile(r"\binquire\b", re.IGNORECASE), "ask"),
     (re.compile(r"\bpursuant to\b", re.IGNORECASE), "under"),
     (re.compile(r"\bat this point in time\b", re.IGNORECASE), "now"),
     (re.compile(r"\bwith regard to\b", re.IGNORECASE), "about"),
@@ -1039,8 +1129,19 @@ def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
                         _join_sentences(sentences[:mid]),
                         _join_sentences(sentences[mid:]),
                     ]
+                elif paragraphs:
+                    # Visible medium structure: always at least 2 body paragraphs
+                    paragraphs = [
+                        paragraphs[0],
+                        "Please let me know how you would like to proceed.",
+                    ]
             elif len(paragraphs) > 3:
                 paragraphs = paragraphs[:2] + [" ".join(paragraphs[2:])]
+            elif len(paragraphs) == 0:
+                paragraphs = [
+                    "I wanted to follow up on this.",
+                    "Please let me know how you would like to proceed.",
+                ]
             sections["body"] = "\n\n".join(paragraphs)
             return _reassemble_email_sections(sections)
 
@@ -1226,6 +1327,68 @@ def build_seed_content_baseline(text: str, notes: str = "") -> str:
     return " ".join(part for part in parts if part)
 
 
+def _body_from_seed(seed_baseline: str, tone_preset: str) -> str:
+    """Fallback body when filters leave the draft empty — still reflects the seed."""
+    seed = (seed_baseline or "").strip().rstrip(".")
+    if not seed:
+        return "I wanted to follow up on this."
+    seed_l = seed[0].lower() + seed[1:] if seed else seed
+    if tone_preset == "formal":
+        return f"I am writing to follow up regarding {seed_l}."
+    if tone_preset == "casual":
+        return f"Just checking in about {seed_l}."
+    return f"I wanted to follow up about {seed_l}."
+
+
+def _inject_permanent_note(text: str, permanent_note: str, format_type: str) -> str:
+    """Ensure permanent note content is visible in the body when provided."""
+    note = (permanent_note or "").strip()
+    if not note or not text.strip():
+        return text
+
+    # If note already reflected (keyword overlap), leave as-is
+    note_tokens = {
+        w for w in re.findall(r"[a-z0-9']+", note.lower()) if len(w) > 3
+    }
+    text_tokens = set(re.findall(r"[a-z0-9']+", text.lower()))
+    if note_tokens and len(note_tokens & text_tokens) / len(note_tokens) >= 0.4:
+        return text
+
+    sentence = _permanent_note_sentence(note)
+    if not sentence:
+        return text
+
+    if format_type == "email":
+        sections = _parse_email_sections(text)
+        body = sections.get("body", "").strip()
+        if body:
+            sections["body"] = f"{body}\n\n{sentence}"
+        else:
+            sections["body"] = sentence
+        return _reassemble_email_sections(sections)
+
+    return f"{text.rstrip()}\n\n{sentence}"
+
+
+def _ensure_nonempty_body(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str,
+    tone_preset: str,
+) -> str:
+    if format_type != "email":
+        if text.strip():
+            return text
+        return _body_from_seed(seed_baseline, tone_preset)
+
+    sections = _parse_email_sections(text)
+    if sections.get("body", "").strip():
+        return text
+    sections["body"] = _body_from_seed(seed_baseline, tone_preset)
+    return _reassemble_email_sections(sections)
+
+
 def apply_generate_hard_filters(
     text: str,
     *,
@@ -1240,10 +1403,10 @@ def apply_generate_hard_filters(
     tone_preset = normalized["tone_preset"]
     length = normalized["length"]
     complexity = normalized["complexity"]
+    profile = normalized.get("profile") or {}
 
     filtered = text
     if tone_preset in {"friendly", "casual"}:
-        # Tone-only cleanup — never depends on length setting
         filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
 
     if format_type == "email":
@@ -1257,17 +1420,25 @@ def apply_generate_hard_filters(
             sections.get("greeting", ""), tone_preset
         )
         sections["footer"] = _enforce_tone_signoff(
-            sections.get("footer", ""), tone_preset, normalized.get("profile") or {}
+            sections.get("footer", ""), tone_preset, profile
         )
         filtered = _reassemble_email_sections(sections)
     else:
         filtered = _filter_prose_block(filtered, tone_preset=tone_preset, length=length)
 
+    # Tone voice — visibly different personality in the body
     if tone_preset == "formal":
         filtered = _apply_formal_tone_voice(filtered)
+    elif tone_preset == "casual":
+        filtered = _apply_casual_tone_voice(filtered)
+    elif tone_preset == "friendly":
+        filtered = _apply_friendly_tone_voice(filtered)
 
+    # Complexity — vocabulary only
     if complexity == "simple":
         filtered = _apply_simple_complexity_replacements(filtered)
+    elif complexity == "advanced":
+        filtered = _apply_advanced_complexity_replacements(filtered)
 
     if length == "short" and seed_baseline.strip():
         filtered = _filter_short_to_seed_content(
@@ -1276,10 +1447,92 @@ def apply_generate_hard_filters(
             format_type=format_type,
         )
 
-    filtered = _normalize_generate_names(filtered, normalized.get("profile") or {})
+    filtered = _normalize_generate_names(filtered, profile)
     filtered = _take_first_complete_draft(filtered)
+    filtered = _ensure_nonempty_body(
+        filtered,
+        format_type=format_type,
+        seed_baseline=seed_baseline,
+        tone_preset=tone_preset,
+    )
+
+    # Greeting/signoff so tone markers stay visible (profile note applied after length)
+    if format_type == "email":
+        sections = _parse_email_sections(filtered)
+        sections["greeting"] = _enforce_tone_greeting_line(
+            sections.get("greeting", ""), tone_preset
+        )
+        sections["footer"] = _enforce_tone_signoff(
+            sections.get("footer", ""), tone_preset, profile
+        )
+        filtered = _reassemble_email_sections(sections)
 
     return filtered
+
+
+def finalize_generate_output(
+    text: str,
+    *,
+    format_type: str,
+    settings: dict[str, Any] | None,
+) -> str:
+    """Apply profile note and tone markers after length enforcement."""
+    if not text or not text.strip():
+        return text
+    normalized = _normalize_generate_settings(settings)
+    profile = normalized.get("profile") or {}
+    tone_preset = normalized["tone_preset"]
+    permanent_note = _extract_permanent_note(profile)
+
+    filtered = text
+    if permanent_note:
+        # For short length, fold note into the first body paragraph as a sentence
+        if normalized["length"] == "short" and format_type == "email":
+            sections = _parse_email_sections(filtered)
+            body = sections.get("body", "").strip()
+            note_sentence = _permanent_note_sentence(permanent_note)
+            if note_sentence and note_sentence.lower() not in body.lower():
+                sents = _split_sentences(body) if body else []
+                if len(sents) < 3:
+                    sents.append(note_sentence)
+                    sections["body"] = _join_sentences(sents[:3])
+                else:
+                    sents[-1] = note_sentence
+                    sections["body"] = _join_sentences(sents[:3])
+                filtered = _reassemble_email_sections(sections)
+            else:
+                filtered = _inject_permanent_note(filtered, permanent_note, format_type)
+        else:
+            filtered = _inject_permanent_note(filtered, permanent_note, format_type)
+
+    if format_type == "email":
+        sections = _parse_email_sections(filtered)
+        sections["greeting"] = _enforce_tone_greeting_line(
+            sections.get("greeting", ""), tone_preset
+        )
+        sections["footer"] = _enforce_tone_signoff(
+            sections.get("footer", ""), tone_preset, profile
+        )
+        filtered = _reassemble_email_sections(sections)
+    return filtered
+
+
+def _permanent_note_sentence(permanent_note: str) -> str:
+    sentence = (permanent_note or "").strip()
+    sentence = re.sub(
+        r"^(always\s+)?(mention that\s+|mention\s+|include that\s+|include\s+|say that\s+|say\s+|sign off as\s+)",
+        "",
+        sentence,
+        flags=re.I,
+    ).strip()
+    if not sentence:
+        return ""
+    if re.fullmatch(r"[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?", sentence):
+        return ""
+    sentence = sentence[0].upper() + sentence[1:]
+    if not sentence.endswith((".", "!", "?")):
+        sentence += "."
+    return sentence
 
 
 def _enforce_tone_greeting_line(greeting: str, tone_preset: str) -> str:
@@ -1289,56 +1542,61 @@ def _enforce_tone_greeting_line(greeting: str, tone_preset: str) -> str:
     match = _GREETING_WITH_NAME_RE.match(stripped) if stripped else None
     if match:
         name = match.group(2).strip().rstrip(",")
-        if name in ("[Name]", "[Your Name]", "Name", "Your Name"):
+        if name in ("[Name]", "[Your Name]", "Name", "Your Name", "there", "There"):
             name = ""
         elif name.startswith("[") and name.endswith("]"):
             name = ""
+        elif re.fullmatch(r"Sir or Madam", name, re.I):
+            name = ""
     elif stripped and not re.match(r"^(Dear|Hi|Hey|Hello)\b", stripped, re.I):
         name = stripped.rstrip(",")
-    prefix = {"formal": "Dear", "friendly": "Hi", "casual": "Hey"}.get(
-        tone_preset, "Hi"
-    )
     if name:
-        return f"{prefix} {name}"
+        prefix = {"formal": "Dear", "friendly": "Hi", "casual": "Hey"}.get(
+            tone_preset, "Hi"
+        )
+        return f"{prefix} {name},"
+    # Visible tone markers when no recipient name is known
     if tone_preset == "formal":
-        return "Hello"
+        return "Dear Sir or Madam,"
     if tone_preset == "casual":
-        return "Hey"
-    return "Hi"
+        return "Hey there,"
+    return "Hi there,"
 
 
 def _enforce_tone_signoff(
     footer: str, tone_preset: str, profile: dict[str, Any]
 ) -> str:
-    """Force sign-off word by tone only — no placeholder brackets."""
+    """Force sign-off word by tone only — name always on its own line."""
     saved_name = _extract_profile_full_name(profile)
     lines = [ln.strip() for ln in (footer or "").split("\n") if ln.strip()]
     name = saved_name
-    if not name and len(lines) >= 2:
-        candidate = lines[-1]
-        if (
-            candidate not in ("[Name]", "[Your Name]", "Name", "Your Name")
-            and not (candidate.startswith("[") and candidate.endswith("]"))
-            and not _is_signoff_line(candidate)
-        ):
-            name = candidate
-    elif not name and lines and not _is_signoff_line(lines[0]):
-        candidate = lines[0]
-        if candidate not in ("[Name]", "[Your Name]") and not (
-            candidate.startswith("[") and candidate.endswith("]")
-        ):
-            name = candidate
-    # Prefer saved sign-off from profile when present
+    if not name:
+        for candidate in reversed(lines):
+            if _is_signoff_line(candidate):
+                # "Best Eshan Khan" / "Thanks, Eshan" — pull trailing name
+                inline = re.match(
+                    r"^(?:Best|Thanks|Thank you|Sincerely|Regards|Best regards),?\s+(.+)$",
+                    candidate,
+                    re.I,
+                )
+                if inline and not _is_placeholder_name(inline.group(1)):
+                    name = inline.group(1).strip()
+                    break
+                continue
+            if not _is_placeholder_name(candidate):
+                name = candidate
+                break
+
     preferred = str(
         profile.get("signOff") or profile.get("sign_off") or ""
     ).strip()
     if preferred:
-        signoff = preferred if preferred.endswith((",", "!")) else f"{preferred},"
+        signoff = preferred.rstrip(",") + ","
     else:
         signoff = {"formal": "Sincerely,", "friendly": "Best,", "casual": "Thanks,"}.get(
             tone_preset, "Best,"
         )
-    if name:
+    if name and not _is_placeholder_name(name):
         return f"{signoff}\n{name}"
     return signoff
 
@@ -2094,6 +2352,11 @@ class WritingAgent:
             seed_baseline=seed_baseline,
         )
         cleaned = _enforce_length_structure(cleaned, format_type, length)
+        cleaned = finalize_generate_output(
+            cleaned,
+            format_type=format_type,
+            settings=effective_settings,
+        )
         cleaned = _strip_generate_instruction_leakage(cleaned)
         return _normalize_email_spacing(cleaned)
 
