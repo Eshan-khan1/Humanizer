@@ -15,6 +15,9 @@ OLLAMA_WRITING_MODEL = os.environ.get("OLLAMA_WRITING_MODEL", "humanizer-writing
 OLLAMA_REWRITE_TEMPERATURE = float(os.environ.get("OLLAMA_REWRITE_TEMPERATURE", "0.55"))
 OLLAMA_REWRITE_NUM_PREDICT = int(os.environ.get("OLLAMA_REWRITE_NUM_PREDICT", "1024"))
 OLLAMA_GENERATE_TEMPERATURE = float(os.environ.get("OLLAMA_GENERATE_TEMPERATURE", "0.6"))
+OLLAMA_GENERATE_NUM_PREDICT_SHORT = int(
+    os.environ.get("OLLAMA_GENERATE_NUM_PREDICT_SHORT", "512")
+)
 OLLAMA_GENERATE_NUM_PREDICT = int(os.environ.get("OLLAMA_GENERATE_NUM_PREDICT", "2048"))
 OLLAMA_GENERATE_NUM_PREDICT_MEDIUM = int(
     os.environ.get("OLLAMA_GENERATE_NUM_PREDICT_MEDIUM", "2560")
@@ -309,7 +312,7 @@ def _apply_advanced_complexity_replacements(text: str) -> str:
 
 GENERATE_SHORT_CONTENT_RULES = """\
 SHORT LENGTH CONTENT (mandatory when length is short):
-  • 1 short paragraph or 2–3 sentences — core message only, no padding.
+  • 1 short paragraph with at most 2 sentences — core message only, no padding.
   • Include ONLY information from the seed input and any informational user note.
   • Never add sentences, instructions, or topics the user did not mention.
   • Do NOT add "please review changes", "provide feedback", "let me know if you have questions",
@@ -1052,12 +1055,20 @@ def _filter_email_body(
     if not paragraphs:
         return body
 
-    first_sentences = _split_sentences(paragraphs[0])
     if length == "short":
-        first_sentences = _strip_leading_warmup_sentences(
-            first_sentences, tone_preset=tone_preset, length=length
-        )
-    elif tone_preset == "formal" and length in {"medium", "long"}:
+        all_sentences: list[str] = []
+        for paragraph in paragraphs:
+            all_sentences.extend(_split_sentences(paragraph))
+        # Seed grounding (later) removes filler; don't strip openers that may carry the seed topic.
+        filtered_body = _join_sentences(all_sentences[:2])
+        if tone_preset in {"friendly", "casual"}:
+            filtered_body = _strip_friendly_casual_hope_phrases(
+                filtered_body, allow_good_one=False
+            )
+        return filtered_body
+
+    first_sentences = _split_sentences(paragraphs[0])
+    if tone_preset == "formal" and length in {"medium", "long"}:
         first_sentences = _trim_formal_body_openers(first_sentences)
     elif tone_preset == "friendly" and length in {"medium", "long"}:
         first_sentences = _strip_leading_warmup_sentences(
@@ -1123,8 +1134,8 @@ def _meets_generate_length_requirement(text: str, format_type: str, length: str)
         sentence_count = _count_body_sentences(text, format_type)
 
     if length == "short":
-        # 1 short paragraph or 2–3 sentences; must have content, no padding
-        return paragraph_count <= 1 and 1 <= sentence_count <= 3
+        # 1 short paragraph, at most 2 body sentences — core message only
+        return paragraph_count <= 1 and 1 <= sentence_count <= 2
     if length == "medium":
         return 2 <= paragraph_count <= 3
     if length == "long":
@@ -1145,7 +1156,10 @@ def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
         if length == "short":
             if not paragraphs:
                 return text
-            sentences = _split_sentences(paragraphs[0])[:3]
+            sentences: list[str] = []
+            for paragraph in paragraphs:
+                sentences.extend(_split_sentences(paragraph))
+            sentences = sentences[:2]
             if not sentences and paragraphs:
                 sentences = [paragraphs[0]]
             sections["body"] = _join_sentences(sentences)
@@ -1203,7 +1217,10 @@ def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
     if length == "short":
         if not paragraphs:
             return text
-        return _join_sentences(_split_sentences(paragraphs[0])[:3])
+        sentences: list[str] = []
+        for paragraph in paragraphs:
+            sentences.extend(_split_sentences(paragraph))
+        return _join_sentences(sentences[:2])
     if length == "medium":
         if len(paragraphs) == 1:
             sentences = _split_sentences(paragraphs[0])
@@ -1240,7 +1257,7 @@ def _build_length_retry_instruction(length: str, format_type: str) -> str:
     if length == "short":
         return (
             "LENGTH RETRY — previous draft was too long. "
-            f"Output ONE {kind} only with 1 short body paragraph or 2–3 body sentences. "
+            f"Output ONE {kind} only with 1 short body paragraph and at most 2 body sentences. "
             "Core message only, no padding. Do not change tone or vocabulary."
         )
     if length == "medium":
@@ -1321,12 +1338,22 @@ def _filter_short_body_to_seed(body: str, seed_baseline: str) -> str:
     if not paragraphs:
         return body
 
-    sentences = _split_sentences(paragraphs[0])
+    sentences: list[str] = []
+    for paragraph in paragraphs:
+        sentences.extend(_split_sentences(paragraph))
     kept = [sentence for sentence in sentences if _sentence_grounded_in_seed(sentence, seed_baseline)]
     if not kept and sentences:
-        kept = [sentences[0]]
-    paragraphs[0] = _join_sentences(kept[:2])
-    return "\n\n".join(paragraph for paragraph in paragraphs if paragraph.strip())
+        seed_tokens = _seed_content_tokens(seed_baseline)
+        if seed_tokens:
+            best = max(
+                sentences,
+                key=lambda sentence: len(_seed_content_tokens(sentence) & seed_tokens),
+            )
+            if _seed_content_tokens(best) & seed_tokens:
+                kept = [best]
+        if not kept:
+            kept = [sentences[0]]
+    return _join_sentences(kept[:2])
 
 
 def _filter_short_to_seed_content(
@@ -1343,12 +1370,22 @@ def _filter_short_to_seed_content(
     paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", text) if paragraph.strip()]
     if not paragraphs:
         return text
-    sentences = _split_sentences(paragraphs[0])
+    sentences: list[str] = []
+    for paragraph in paragraphs:
+        sentences.extend(_split_sentences(paragraph))
     kept = [sentence for sentence in sentences if _sentence_grounded_in_seed(sentence, seed_baseline)]
     if not kept and sentences:
-        kept = [sentences[0]]
-    paragraphs[0] = _join_sentences(kept[:2])
-    return "\n\n".join(paragraph for paragraph in paragraphs if paragraph.strip())
+        seed_tokens = _seed_content_tokens(seed_baseline)
+        if seed_tokens:
+            best = max(
+                sentences,
+                key=lambda sentence: len(_seed_content_tokens(sentence) & seed_tokens),
+            )
+            if _seed_content_tokens(best) & seed_tokens:
+                kept = [best]
+        if not kept:
+            kept = [sentences[0]]
+    return _join_sentences(kept[:2])
 
 
 def build_seed_content_baseline(text: str, notes: str = "") -> str:
@@ -1528,12 +1565,12 @@ def finalize_generate_output(
             note_sentence = _permanent_note_sentence(permanent_note)
             if note_sentence and note_sentence.lower() not in body.lower():
                 sents = _split_sentences(body) if body else []
-                if len(sents) < 3:
+                if len(sents) < 2:
                     sents.append(note_sentence)
-                    sections["body"] = _join_sentences(sents[:3])
+                    sections["body"] = _join_sentences(sents[:2])
                 else:
                     sents[-1] = note_sentence
-                    sections["body"] = _join_sentences(sents[:3])
+                    sections["body"] = _join_sentences(sents[:2])
                 filtered = _reassemble_email_sections(sections)
             else:
                 filtered = _inject_permanent_note(filtered, permanent_note, format_type)
@@ -1549,7 +1586,7 @@ def finalize_generate_output(
             sections.get("footer", ""), tone_preset, profile
         )
         filtered = _reassemble_email_sections(sections)
-    if format_type == "email" and normalized["length"] in {"medium", "long"}:
+    if normalized["length"] in {"short", "medium", "long"}:
         filtered = _enforce_length_structure(
             filtered, format_type=format_type, length=normalized["length"]
         )
@@ -2177,6 +2214,8 @@ def _generate_num_predict_for_length(length: str) -> int:
         return OLLAMA_GENERATE_NUM_PREDICT_LONG
     if length == "medium":
         return OLLAMA_GENERATE_NUM_PREDICT_MEDIUM
+    if length == "short":
+        return OLLAMA_GENERATE_NUM_PREDICT_SHORT
     return OLLAMA_GENERATE_NUM_PREDICT
 
 
