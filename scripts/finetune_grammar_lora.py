@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fine-tune Qwen2.5-7B-Instruct for grammar correction with MLX LoRA.
+Fine-tune Qwen2.5-Instruct (3B or 7B) for grammar + writing with MLX LoRA.
 
 Steps:
   1. prepare_data.py → train_data.jsonl / val_data.jsonl (task, input, output)
@@ -10,8 +10,9 @@ Steps:
 Usage:
   pip install -r requirements-finetune.txt
   .venv/bin/python prepare_data.py          # build train_data.jsonl / val_data.jsonl
-  .venv/bin/python scripts/finetune_grammar_lora.py --prepare-only
-  .venv/bin/python scripts/finetune_grammar_lora.py --skip-export
+  .venv/bin/python scripts/finetune_grammar_lora.py --model-size 3b --prepare-only
+  .venv/bin/python scripts/finetune_grammar_lora.py --model-size 3b --skip-export
+  .venv/bin/python scripts/finetune_grammar_lora.py --model-size 3b
 
 Optional for GGUF export (Qwen2.5 is not supported by mlx_lm --export-gguf):
   git clone https://github.com/ggml-org/llama.cpp
@@ -45,10 +46,31 @@ FINETUNE_DATA_PATH = TEST_DATA / "finetune_pairs.json"
 TRAIN_DATA_PATH = ROOT / "train_data.jsonl"
 VAL_DATA_PATH = ROOT / "val_data.jsonl"
 MLX_DATA_DIR = TEST_DATA / "mlx_lora"
-OUTPUT_DIR = ROOT / "models" / "humanizer-grammar"
+OLLAMA_MODEL_NAME = "humanizer-grammar"
+OLLAMA_WRITING_MODEL_NAME = "humanizer-writing"
+
+MODEL_PRESETS: dict[str, dict[str, Any]] = {
+    "7b": {
+        "base_model": "mlx-community/Qwen2.5-7B-Instruct-4bit",
+        "output_dir": ROOT / "models" / "humanizer-grammar",
+        "label": "Qwen2.5-7B-Instruct",
+        "num_layers": 8,
+    },
+    "3b": {
+        "base_model": "mlx-community/Qwen2.5-3B-Instruct-4bit",
+        "output_dir": ROOT / "models" / "humanizer-3b",
+        "label": "Qwen2.5-3B-Instruct",
+        "num_layers": 8,
+    },
+}
+
+# Set by parse_args() → apply_model_preset()
+BASE_MODEL = MODEL_PRESETS["7b"]["base_model"]
+OUTPUT_DIR = MODEL_PRESETS["7b"]["output_dir"]
 LORA_DIR = OUTPUT_DIR / "lora"
 MERGED_DIR = OUTPUT_DIR / "merged"
 GGUF_DIR = OUTPUT_DIR / "gguf"
+MODEL_LABEL = MODEL_PRESETS["7b"]["label"]
 
 PAIR_FILES = (
     TEST_DATA / "pairs.json",
@@ -56,10 +78,17 @@ PAIR_FILES = (
     TEST_DATA / "synthetic_pairs.json",
 )
 
-# 4-bit MLX weights → QLoRA (fits ~16–32 GB unified memory).
-BASE_MODEL = "mlx-community/Qwen2.5-7B-Instruct-4bit"
-OLLAMA_MODEL_NAME = "humanizer-grammar"
-OLLAMA_WRITING_MODEL_NAME = "humanizer-writing"
+
+def apply_model_preset(model_size: str) -> None:
+    """Switch global paths and base model for the selected size."""
+    global BASE_MODEL, OUTPUT_DIR, LORA_DIR, MERGED_DIR, GGUF_DIR, MODEL_LABEL
+    preset = MODEL_PRESETS[model_size]
+    BASE_MODEL = preset["base_model"]
+    OUTPUT_DIR = preset["output_dir"]
+    LORA_DIR = OUTPUT_DIR / "lora"
+    MERGED_DIR = OUTPUT_DIR / "merged"
+    GGUF_DIR = OUTPUT_DIR / "gguf"
+    MODEL_LABEL = preset["label"]
 
 DEEP_FIX_RULES = """Fix grammar errors. Rules:
 - Irregular verbs: buy→bought, go→went, see→saw, run→ran
@@ -786,7 +815,7 @@ def export_for_ollama(quantization: str = "q4_k_m") -> None:
 
 
 def _build_modelfile(gguf_filename: str) -> str:
-    return f"""# Humanizer grammar fine-tune (Qwen2.5-7B-Instruct + MLX LoRA)
+    return f"""# Humanizer grammar fine-tune ({MODEL_LABEL} + MLX LoRA)
 # Build: ollama create {OLLAMA_MODEL_NAME} -f Modelfile
 # Run from: models/humanizer-grammar/gguf/
 
@@ -810,7 +839,7 @@ PARAMETER stop "<|endoftext|>"
 
 
 def _build_writing_modelfile(gguf_filename: str) -> str:
-    return f"""# Humanizer Writing Agent — Rewrite + Generate (Qwen2.5-7B + MLX LoRA)
+    return f"""# Humanizer Writing Agent — Rewrite + Generate ({MODEL_LABEL} + MLX LoRA)
 # Build: ollama create {OLLAMA_WRITING_MODEL_NAME} -f Modelfile.writing
 # Run from: models/humanizer-grammar/gguf/
 
@@ -839,7 +868,13 @@ PARAMETER stop "<|endoftext|>"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Fine-tune Qwen2.5-7B for grammar with MLX LoRA on Apple Silicon"
+        description="Fine-tune Qwen2.5-Instruct (3B or 7B) with MLX LoRA on Apple Silicon"
+    )
+    parser.add_argument(
+        "--model-size",
+        choices=sorted(MODEL_PRESETS),
+        default="7b",
+        help="Base model size (default: 7b). Use 3b for qwen2.5:3b-instruct training.",
     )
     parser.add_argument(
         "--prepare-only",
@@ -877,7 +912,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lora-rank", type=int, default=8)
     parser.add_argument("--learning-rate", type=float, default=1e-5)
     parser.add_argument("--batch-size", type=int, default=1)
-    parser.add_argument("--num-layers", type=int, default=8)
+    parser.add_argument(
+        "--num-layers",
+        type=int,
+        default=None,
+        help="LoRA layers (default: preset value, usually 8)",
+    )
     parser.add_argument("--grad-accumulation-steps", type=int, default=4)
     parser.add_argument(
         "--quantization",
@@ -889,6 +929,11 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    apply_model_preset(args.model_size)
+    if args.num_layers is None:
+        args.num_layers = MODEL_PRESETS[args.model_size]["num_layers"]
+    log(f"Model size: {args.model_size} ({MODEL_LABEL})")
+    log(f"Output directory: {OUTPUT_DIR}")
     use_prepared = TRAIN_DATA_PATH.is_file() and not args.legacy_data
 
     if args.export_only:

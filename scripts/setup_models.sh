@@ -19,9 +19,14 @@ has_model() {
   ollama list 2>/dev/null | awk '{print $1}' | grep -qx "$1"
 }
 
-# Grammar model — use local Modelfile if bundled, else pull a small base model
+# Grammar model — prefer fine-tuned 3B, then 7B, then pull a small base model
+GRAMMAR_3B_MODEFILE="$ROOT/models/humanizer-3b/gguf/Modelfile"
 GRAMMAR_MODEFILE="$ROOT/models/humanizer-grammar/gguf/Modelfile"
-if [[ -f "$GRAMMAR_MODEFILE" ]]; then
+if [[ -f "$GRAMMAR_3B_MODEFILE" ]]; then
+  echo "==> Creating humanizer-grammar from fine-tuned 3B Modelfile..."
+  (cd "$ROOT/models/humanizer-3b/gguf" && ollama create humanizer-grammar -f Modelfile)
+  (cd "$ROOT/models/humanizer-3b/gguf" && ollama create humanizer-writing -f Modelfile.writing)
+elif [[ -f "$GRAMMAR_MODEFILE" ]]; then
   echo "==> Creating humanizer-grammar from local Modelfile..."
   ollama create humanizer-grammar -f "$GRAMMAR_MODEFILE" 2>/dev/null || ollama create humanizer-grammar -f "$GRAMMAR_MODEFILE"
 elif has_model humanizer-grammar; then
@@ -40,9 +45,9 @@ if [[ -f "$WRITING_MODEFILE" ]]; then
 elif has_model humanizer-writing; then
   echo "==> humanizer-writing already installed"
 else
-  echo "==> Pulling base model for writing (qwen2.5:3b)..."
-  ollama pull qwen2.5:3b
-  ollama cp qwen2.5:3b humanizer-writing 2>/dev/null || true
+  echo "==> Pulling base model for writing (qwen2.5:3b-instruct)..."
+  ollama pull qwen2.5:3b-instruct
+  ollama cp qwen2.5:3b-instruct humanizer-writing 2>/dev/null || true
 fi
 
 echo ""
