@@ -244,6 +244,10 @@ def run_humanize(base: str) -> dict:
         issues.append(f"http {status}: {body}")
     elif not output or output.strip() == text.strip():
         issues.append("humanize returned unchanged text")
+    elif "this are" in text.lower() and "this are" in output.lower():
+        issues.append("subject-verb agreement not fixed")
+    elif "grammer" in text.lower() and "grammer" in output.lower():
+        issues.append("spelling error (grammer) not fixed")
     return {
         "feature": "humanize",
         "name": "Humanize improves text",

@@ -227,32 +227,21 @@ class HealthResponse(BaseModel):
     cloud_ai_providers: list[str] = ["groq", "openai"]
 
 
-def _build_ollama_humanize_prompt(text: str) -> str:
-    return f"""You are a professional human writer. Rewrite the text below so it sounds like a real person wrote it.
-
-Rules:
-- Mix short and long sentences naturally
-- Use contractions (it's, don't, you'll)
-- Occasionally start sentences with And, But, So
-- Add mild filler phrases like "honestly", "to be fair", "the thing is"
-- Avoid bullet points, avoid perfect structure
-- Use simple everyday vocabulary, avoid fancy words
-- Include a tiny imperfection or casual phrasing now and then
-- Never sound like a list or an essay
-- Keep the original meaning fully intact
-
-Text: {text}
-
-Rewritten (just output the text, nothing else):"""
-
-
-def _build_casual_second_pass_prompt(text: str) -> str:
-    return (
-        "Take this text and make it sound more casual and personal. "
-        "Vary the rhythm, make it feel like someone speaking directly to the reader. "
-        "Output only the rewritten text, nothing else.\n\n"
-        f"{text}"
-    )
+def _humanize_is_sane(original: str, corrected: str) -> bool:
+    """Reject humanize output that drifts too far from the source."""
+    if not corrected or not corrected.strip():
+        return False
+    orig_words = set(re.findall(r"[a-z]+", original.lower()))
+    out_words = set(re.findall(r"[a-z]+", corrected.lower()))
+    if orig_words:
+        overlap = len(orig_words & out_words) / len(orig_words)
+        if overlap < 0.45:
+            return False
+    orig_count = len(original.split())
+    out_count = len(corrected.split())
+    if orig_count and out_count > max(orig_count * 2, orig_count + 12):
+        return False
+    return True
 
 
 def _split_paragraphs(text: str) -> list[str]:
@@ -811,24 +800,28 @@ def _ollama_generate(
 
 
 def humanize_text(text: str) -> str:
-    """
-    Humanize text via Ollama (qwen2.5:7b).
-
-    Each paragraph is rewritten with the main prompt, combined, then passed
-    through a second casual/personal pass.
-    """
+    """Fix grammar and spelling via the grammar model — minimal safe edits only."""
     if not text or not text.strip():
         return ""
 
     paragraphs = _split_paragraphs(text)
     humanized_paragraphs: list[str] = []
     for paragraph in paragraphs:
-        prompt = _build_ollama_humanize_prompt(paragraph)
-        humanized_paragraphs.append(_ollama_generate(prompt))
+        try:
+            raw = _ollama_generate(
+                _build_deep_fix_prompt(paragraph),
+                temperature=OLLAMA_GRAMMAR_TEMPERATURE,
+                grammar=True,
+                model=OLLAMA_GRAMMAR_MODEL,
+            )
+            corrected = _clean_deep_fix_response(raw)
+        except OllamaError:
+            corrected = paragraph
+        if not _humanize_is_sane(paragraph, corrected):
+            corrected = paragraph
+        humanized_paragraphs.append(corrected or paragraph)
 
-    combined = "\n\n".join(humanized_paragraphs)
-    second_pass_prompt = _build_casual_second_pass_prompt(combined)
-    return _ollama_generate(second_pass_prompt)
+    return "\n\n".join(humanized_paragraphs)
 
 
 def _build_ollama_grammar_prompt(text: str) -> str:

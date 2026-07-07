@@ -963,6 +963,31 @@ def _is_signoff_line(line: str) -> bool:
     return bool(_SIGNOFF_LINE_RE.match(line.strip()))
 
 
+_STANDALONE_SIGNOFF_PARAGRAPH_RE = re.compile(
+    r"^(?:best|thanks|thank you|sincerely|regards|kind regards|warm regards|cheers|take care)"
+    r"[,.!]?\s*(?:\[.+\]|[A-Z][a-z].*)?$",
+    re.IGNORECASE,
+)
+
+
+def _is_standalone_signoff_paragraph(paragraph: str) -> bool:
+    stripped = paragraph.strip()
+    if not stripped:
+        return True
+    if _is_signoff_line(stripped):
+        return True
+    return bool(_STANDALONE_SIGNOFF_PARAGRAPH_RE.match(stripped))
+
+
+def _substantive_body_paragraphs(body: str) -> list[str]:
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+    return [p for p in paragraphs if not _is_standalone_signoff_paragraph(p)]
+
+
+def _strip_standalone_signoffs_from_body(body: str) -> str:
+    return "\n\n".join(_substantive_body_paragraphs(body))
+
+
 def _parse_email_sections(text: str) -> dict[str, str]:
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     prefix_lines: list[str] = []
@@ -1074,7 +1099,7 @@ def _count_email_body_paragraphs(text: str) -> int:
     body = sections.get("body", "")
     if not body.strip():
         return 0
-    return len([paragraph for paragraph in re.split(r"\n\s*\n", body) if paragraph.strip()])
+    return len(_substantive_body_paragraphs(body))
 
 
 def _count_body_sentences(text: str, format_type: str) -> int:
@@ -1114,8 +1139,8 @@ def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
 
     if format_type == "email":
         sections = _parse_email_sections(text)
-        body = sections.get("body", "")
-        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+        body = _strip_standalone_signoffs_from_body(sections.get("body", ""))
+        paragraphs = _substantive_body_paragraphs(body)
 
         if length == "short":
             if not paragraphs:
@@ -1127,6 +1152,7 @@ def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
             return _reassemble_email_sections(sections)
 
         if length == "medium":
+            paragraphs = _substantive_body_paragraphs(body)
             if len(paragraphs) == 1:
                 sentences = _split_sentences(paragraphs[0])
                 if len(sentences) >= 2:
@@ -1417,10 +1443,12 @@ def apply_generate_hard_filters(
 
     if format_type == "email":
         sections = _parse_email_sections(filtered)
-        sections["body"] = _filter_email_body(
-            sections["body"],
-            tone_preset=tone_preset,
-            length=length,
+        sections["body"] = _strip_standalone_signoffs_from_body(
+            _filter_email_body(
+                sections["body"],
+                tone_preset=tone_preset,
+                length=length,
+            )
         )
         sections["greeting"] = _enforce_tone_greeting_line(
             sections.get("greeting", ""), tone_preset
@@ -1465,6 +1493,7 @@ def apply_generate_hard_filters(
     # Greeting/signoff so tone markers stay visible (profile note applied after length)
     if format_type == "email":
         sections = _parse_email_sections(filtered)
+        sections["body"] = _strip_standalone_signoffs_from_body(sections.get("body", ""))
         sections["greeting"] = _enforce_tone_greeting_line(
             sections.get("greeting", ""), tone_preset
         )
@@ -1520,6 +1549,10 @@ def finalize_generate_output(
             sections.get("footer", ""), tone_preset, profile
         )
         filtered = _reassemble_email_sections(sections)
+    if format_type == "email" and normalized["length"] in {"medium", "long"}:
+        filtered = _enforce_length_structure(
+            filtered, format_type=format_type, length=normalized["length"]
+        )
     return filtered
 
 
