@@ -351,8 +351,10 @@ def sanitize_ai_config(raw: dict[str, Any] | None) -> dict[str, Any] | None:
     provider = str(raw.get("provider") or raw.get("aiProvider") or "local").strip().lower()
     if provider in {"", "local", "ollama"}:
         return None
-    if provider not in {"groq", "openai"}:
-        raise HTTPException(status_code=400, detail="ai.provider must be groq or openai")
+    if provider not in {"groq", "openai", "api"}:
+        raise HTTPException(
+            status_code=400, detail="ai.provider must be api, groq, or openai"
+        )
     api_key = str(raw.get("api_key") or raw.get("apiKey") or "").strip()
     reject_unsafe_text(api_key, field="ai.apiKey")
     if not api_key:
@@ -362,9 +364,22 @@ def sanitize_ai_config(raw: dict[str, Any] | None) -> dict[str, Any] | None:
     model = str(raw.get("model") or "").strip()
     if model and len(model) > 128:
         raise HTTPException(status_code=413, detail="ai.model is too long")
+    base_url = str(raw.get("base_url") or raw.get("baseUrl") or "").strip()
+    if base_url:
+        reject_unsafe_text(base_url, field="ai.baseUrl")
+        if len(base_url) > 512:
+            raise HTTPException(status_code=413, detail="ai.baseUrl is too long")
+        if not (
+            base_url.startswith("https://") or base_url.startswith("http://")
+        ):
+            raise HTTPException(
+                status_code=400, detail="ai.baseUrl must start with http:// or https://"
+            )
     cleaned: dict[str, Any] = {"provider": provider, "api_key": api_key}
     if model:
         cleaned["model"] = model
+    if base_url:
+        cleaned["base_url"] = base_url
     return cleaned
 
 

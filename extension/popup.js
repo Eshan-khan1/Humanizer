@@ -23,30 +23,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const aiKeySectionEl = document.getElementById("ai-key-section");
   const aiKeyHintEl = document.getElementById("ai-key-hint");
   const aiApiKeyEl = document.getElementById("ai-api-key");
+  const aiBaseUrlEl = document.getElementById("ai-base-url");
+  const aiConnectBtnEl = document.getElementById("ai-connect-btn");
+  const aiConnectStatusEl = document.getElementById("ai-connect-status");
   const aiNavSubtitleEl = document.getElementById("ai-nav-subtitle");
 
   const AI_PROVIDER_OPTIONS = [
     {
       id: "local",
-      label: "Local Ollama",
-      description: "Uses your machine. Default — no API key needed.",
+      label: "Local",
+      description: "Uses Ollama on your machine. No API key needed.",
     },
     {
-      id: "groq",
-      label: "Groq cloud",
-      description: "Fast cloud models. Requires a free Groq API key.",
-    },
-    {
-      id: "openai",
-      label: "OpenAI",
-      description: "GPT models. Requires an OpenAI API key.",
+      id: "api",
+      label: "API",
+      description: "Any OpenAI-compatible API key (OpenAI, Groq, OpenRouter, etc.).",
     },
   ];
 
-  const AI_KEY_HINTS = {
-    groq: "Groq keys usually start with gsk_. Create one at console.groq.com/keys.",
-    openai: "OpenAI keys usually start with sk-. Create one at platform.openai.com/api-keys.",
-  };
+  let aiConnected = false;
+  let aiConnectTimer = null;
 
   if (
     !statusEl ||
@@ -584,32 +580,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadGenerateConfig();
 
-  function getAiProviderLabel(providerId) {
-    return AI_PROVIDER_OPTIONS.find((item) => item.id === providerId)?.label || "Local Ollama";
+  function normalizeAiProvider(providerId) {
+    const value = String(providerId || "local").trim().toLowerCase();
+    if (value === "groq" || value === "openai" || value === "api") {
+      return "api";
+    }
+    return "local";
   }
 
-  function updateAiNavSubtitle(providerId, hasKey) {
+  function getAiProviderLabel(providerId) {
+    return AI_PROVIDER_OPTIONS.find((item) => item.id === providerId)?.label || "Local";
+  }
+
+  function setAiConnectStatus(message, state) {
+    if (!aiConnectStatusEl) return;
+    aiConnectStatusEl.textContent = message || "";
+    aiConnectStatusEl.classList.remove(
+      "ai-connect-status--ok",
+      "ai-connect-status--error",
+      "ai-connect-status--pending"
+    );
+    if (state) {
+      aiConnectStatusEl.classList.add(`ai-connect-status--${state}`);
+    }
+  }
+
+  function updateAiConnectedUi(connected) {
+    aiConnected = Boolean(connected);
+    if (aiApiKeyEl) {
+      aiApiKeyEl.classList.toggle("settings-input--connected", aiConnected);
+      aiApiKeyEl.setAttribute("aria-invalid", aiConnected ? "false" : "false");
+    }
+  }
+
+  function updateAiNavSubtitle(providerId, hasKey, connected) {
     if (!aiNavSubtitleEl) return;
     if (providerId === "local" || !providerId) {
-      aiNavSubtitleEl.textContent = "Local Ollama · no cloud key";
+      aiNavSubtitleEl.textContent = "Local · Ollama";
       return;
     }
-    const label = getAiProviderLabel(providerId);
-    aiNavSubtitleEl.textContent = hasKey
-      ? `${label} · key saved`
-      : `${label} · add API key`;
+    if (connected) {
+      aiNavSubtitleEl.textContent = "API · connected";
+      return;
+    }
+    aiNavSubtitleEl.textContent = hasKey ? "API · not connected" : "API · add key";
   }
 
   function updateAiKeySection(providerId) {
-    const useCloud = providerId !== "local";
-    aiKeySectionEl.classList.toggle("ai-key-section--hidden", !useCloud);
-    if (aiKeyHintEl) {
-      aiKeyHintEl.textContent = AI_KEY_HINTS[providerId] || "";
+    const useApi = providerId === "api";
+    aiKeySectionEl.classList.toggle("ai-key-section--hidden", !useApi);
+    if (aiApiKeyEl) {
+      aiApiKeyEl.disabled = !useApi;
+      aiApiKeyEl.placeholder = useApi
+        ? "Paste your API key"
+        : "Select API above";
     }
-    aiApiKeyEl.disabled = !useCloud;
-    aiApiKeyEl.placeholder = useCloud
-      ? `Paste your ${getAiProviderLabel(providerId)} key`
-      : "Select a cloud provider above";
+    if (aiBaseUrlEl) {
+      aiBaseUrlEl.disabled = !useApi;
+    }
+    if (aiConnectBtnEl) {
+      aiConnectBtnEl.disabled = !useApi;
+    }
+    if (!useApi) {
+      updateAiConnectedUi(false);
+      setAiConnectStatus("", null);
+    }
   }
 
   function buildAiProviderOptions(selectedProvider) {
@@ -621,25 +656,139 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function applyAiSettings(providerId, apiKey) {
-    const provider = providerId || "local";
+  function applyAiSettings(providerId, apiKey, baseUrl, connected) {
+    const provider = normalizeAiProvider(providerId);
     buildAiProviderOptions(provider);
     if (aiApiKeyEl) {
       aiApiKeyEl.value = apiKey || "";
     }
+    if (aiBaseUrlEl) {
+      aiBaseUrlEl.value = baseUrl || "";
+    }
     updateAiKeySection(provider);
-    updateAiNavSubtitle(provider, Boolean(String(apiKey || "").trim()));
+    updateAiConnectedUi(provider === "api" && connected && Boolean(String(apiKey || "").trim()));
+    updateAiNavSubtitle(
+      provider,
+      Boolean(String(apiKey || "").trim()),
+      aiConnected
+    );
+    if (provider === "api" && aiConnected) {
+      setAiConnectStatus("Connected", "ok");
+    } else if (provider === "api" && String(apiKey || "").trim()) {
+      setAiConnectStatus("Not connected — click Connect", "error");
+    } else {
+      setAiConnectStatus("", null);
+    }
+  }
+
+  function persistAiSettings(extra = {}) {
+    return new Promise((resolve) => {
+      const provider = normalizeAiProvider(
+        document.querySelector('input[name="aiProvider"]:checked')?.value || "local"
+      );
+      const payload = {
+        aiProvider: provider,
+        aiApiKey: (aiApiKeyEl?.value || "").trim(),
+        aiBaseUrl: (aiBaseUrlEl?.value || "").trim(),
+        aiConnected: provider === "api" ? aiConnected : false,
+        ...extra,
+      };
+      chrome.storage.local.set(payload, () => resolve(payload));
+    });
+  }
+
+  function disconnectAi(message) {
+    updateAiConnectedUi(false);
+    setAiConnectStatus(message || "Disconnected", message ? "error" : null);
+    return persistAiSettings({ aiConnected: false });
+  }
+
+  function testAiConnection() {
+    const apiKey = (aiApiKeyEl?.value || "").trim();
+    const baseUrl = (aiBaseUrlEl?.value || "").trim();
+    if (!apiKey) {
+      disconnectAi("Enter an API key first");
+      return;
+    }
+
+    if (aiConnectBtnEl) {
+      aiConnectBtnEl.disabled = true;
+      aiConnectBtnEl.textContent = "Connecting…";
+    }
+    setAiConnectStatus("Checking API…", "pending");
+    updateAiConnectedUi(false);
+
+    chrome.runtime.sendMessage(
+      {
+        type: "testAiConnection",
+        provider: "api",
+        apiKey,
+        baseUrl,
+      },
+      (response) => {
+        if (aiConnectBtnEl) {
+          aiConnectBtnEl.disabled = false;
+          aiConnectBtnEl.textContent = "Connect";
+        }
+        if (chrome.runtime.lastError) {
+          disconnectAi(chrome.runtime.lastError.message || "Connection failed");
+          return;
+        }
+        if (!response?.ok) {
+          disconnectAi(response?.error || "API key was rejected");
+          return;
+        }
+        updateAiConnectedUi(true);
+        setAiConnectStatus("Connected", "ok");
+        persistAiSettings({ aiConnected: true }).then((stored) => {
+          updateAiNavSubtitle(stored.aiProvider, true, true);
+        });
+      }
+    );
+  }
+
+  function scheduleAiReconnect() {
+    if (aiConnectTimer) {
+      clearTimeout(aiConnectTimer);
+    }
+    const provider = normalizeAiProvider(
+      document.querySelector('input[name="aiProvider"]:checked')?.value || "local"
+    );
+    if (provider !== "api") {
+      return;
+    }
+    updateAiConnectedUi(false);
+    setAiConnectStatus("Key changed — click Connect", "error");
+    persistAiSettings({ aiConnected: false }).then((stored) => {
+      updateAiNavSubtitle(stored.aiProvider, Boolean(stored.aiApiKey), false);
+    });
   }
 
   function wireAiControls() {
     aiProviderOptionsEl.addEventListener("change", (event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement) || !target.checked) return;
-      const provider = target.value;
-      chrome.storage.local.set({ aiProvider: provider }, () => {
-        updateAiKeySection(provider);
-        updateAiNavSubtitle(provider, Boolean(aiApiKeyEl.value.trim()));
+      const provider = normalizeAiProvider(target.value);
+      updateAiKeySection(provider);
+      if (provider === "local") {
+        updateAiConnectedUi(false);
+        setAiConnectStatus("", null);
+        chrome.storage.local.set(
+          { aiProvider: "local", aiConnected: false },
+          () => updateAiNavSubtitle("local", false, false)
+        );
+        return;
+      }
+      persistAiSettings({ aiProvider: "api", aiConnected: false }).then((stored) => {
+        updateAiNavSubtitle("api", Boolean(stored.aiApiKey), false);
+        if (stored.aiApiKey) {
+          setAiConnectStatus("Not connected — click Connect", "error");
+        }
       });
+    });
+
+    aiConnectBtnEl?.addEventListener("click", () => {
+      testAiConnection();
     });
   }
 
@@ -654,18 +803,38 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  chrome.storage.local.get({ aiProvider: "local", aiApiKey: "" }, (result) => {
-    applyAiSettings(String(result.aiProvider || "local"), String(result.aiApiKey || ""));
-  });
+  chrome.storage.local.get(
+    {
+      aiProvider: "local",
+      aiApiKey: "",
+      aiBaseUrl: "",
+      aiConnected: false,
+    },
+    (result) => {
+      applyAiSettings(
+        String(result.aiProvider || "local"),
+        String(result.aiApiKey || ""),
+        String(result.aiBaseUrl || ""),
+        Boolean(result.aiConnected)
+      );
+    }
+  );
 
   if (aiApiKeyEl) {
+    aiApiKeyEl.addEventListener("input", () => {
+      scheduleAiReconnect();
+    });
     aiApiKeyEl.addEventListener("change", () => {
-      const apiKey = aiApiKeyEl.value.trim();
-      chrome.storage.local.set({ aiApiKey: apiKey }, () => {
-        chrome.storage.local.get({ aiProvider: "local" }, (stored) => {
-          updateAiNavSubtitle(String(stored.aiProvider || "local"), Boolean(apiKey));
-        });
-      });
+      scheduleAiReconnect();
+    });
+  }
+
+  if (aiBaseUrlEl) {
+    aiBaseUrlEl.addEventListener("input", () => {
+      scheduleAiReconnect();
+    });
+    aiBaseUrlEl.addEventListener("change", () => {
+      scheduleAiReconnect();
     });
   }
 

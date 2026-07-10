@@ -26,7 +26,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from cloud_ai import CloudAIError, normalize_ai_config
+from cloud_ai import CloudAIError, normalize_ai_config, test_ai_connection
 from security import (
     API_TOKEN,
     MAX_NOTES_CHARS,
@@ -113,8 +113,18 @@ class OllamaError(Exception):
     """Ollama is unavailable, failed to start, or returned an error."""
 
 
+class AiConfig(BaseModel):
+    provider: Literal["local", "ollama", "groq", "openai", "api"] = "local"
+    api_key: str = Field("", alias="apiKey", max_length=512)
+    model: str = Field("", max_length=128)
+    base_url: str = Field("", alias="baseUrl", max_length=512)
+
+    model_config = {"populate_by_name": True}
+
+
 class TextRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_TEXT_CHARS)
+    ai: Optional[AiConfig] = None
 
 
 class GrammarMatch(BaseModel):
@@ -168,14 +178,6 @@ class RewriteResponse(BaseModel):
     rewritten: str
 
 
-class AiConfig(BaseModel):
-    provider: Literal["local", "ollama", "groq", "openai"] = "local"
-    api_key: str = Field("", alias="apiKey", max_length=512)
-    model: str = Field("", max_length=128)
-
-    model_config = {"populate_by_name": True}
-
-
 class GenerateProfile(BaseModel):
     full_name: str = Field("", alias="fullName", max_length=MAX_PROFILE_FIELD_CHARS)
     sign_off: str = Field("", alias="signOff", max_length=MAX_PROFILE_FIELD_CHARS)
@@ -224,7 +226,7 @@ class HealthResponse(BaseModel):
     grammar_model: str = OLLAMA_GRAMMAR_MODEL
     writing_model: str = OLLAMA_WRITING_MODEL
     writing_agent: str = "rewrite, generate"
-    cloud_ai_providers: list[str] = ["groq", "openai"]
+    cloud_ai_providers: list[str] = ["api", "groq", "openai"]
 
 
 def _humanize_is_sane(original: str, corrected: str) -> bool:
@@ -799,8 +801,8 @@ def _ollama_generate(
     return text
 
 
-def humanize_text(text: str) -> str:
-    """Fix grammar and spelling via the grammar model — minimal safe edits only."""
+def humanize_text(text: str, ai_config: dict[str, Any] | None = None) -> str:
+    """Fix grammar and spelling — local Ollama or any OpenAI-compatible API."""
     if not text or not text.strip():
         return ""
 
@@ -808,13 +810,34 @@ def humanize_text(text: str) -> str:
     humanized_paragraphs: list[str] = []
     for paragraph in paragraphs:
         try:
-            raw = _ollama_generate(
-                _build_deep_fix_prompt(paragraph),
-                temperature=OLLAMA_GRAMMAR_TEMPERATURE,
-                grammar=True,
-                model=OLLAMA_GRAMMAR_MODEL,
-            )
+            if ai_config:
+                from cloud_ai import call_cloud_chat  # noqa: PLC0415
+
+                raw = call_cloud_chat(
+                    provider=ai_config["provider"],
+                    api_key=ai_config["api_key"],
+                    model=ai_config["model"],
+                    system=(
+                        "You are a grammar correction assistant. Fix grammar and "
+                        "spelling with minimal, safe edits. Return only the "
+                        "corrected text."
+                    ),
+                    prompt=_build_deep_fix_prompt(paragraph),
+                    temperature=OLLAMA_GRAMMAR_TEMPERATURE,
+                    max_tokens=max(128, min(2048, len(paragraph) * 3 + 64)),
+                    base_url=str(ai_config.get("base_url") or ""),
+                    url=ai_config.get("url"),
+                )
+            else:
+                raw = _ollama_generate(
+                    _build_deep_fix_prompt(paragraph),
+                    temperature=OLLAMA_GRAMMAR_TEMPERATURE,
+                    grammar=True,
+                    model=OLLAMA_GRAMMAR_MODEL,
+                )
             corrected = _clean_deep_fix_response(raw)
+        except CloudAIError:
+            raise
         except OllamaError:
             corrected = paragraph
         if not _humanize_is_sane(paragraph, corrected):
@@ -1495,13 +1518,50 @@ def humanize(body: TextRequest) -> HumanizeResponse:
     text = assert_text_length(body.text, field="text")
 
     try:
-        result = humanize_text(text)
+        ai_config = normalize_ai_config(
+            sanitize_ai_config(body.ai.model_dump(by_alias=False) if body.ai else None)
+        )
+        result = humanize_text(text, ai_config=ai_config)
+    except CloudAIError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except OllamaError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=safe_error_detail(exc)) from exc
 
     return HumanizeResponse(text=text, result=result)
+
+
+class AiTestRequest(BaseModel):
+    ai: AiConfig
+
+
+class AiTestResponse(BaseModel):
+    ok: bool
+    provider: str = ""
+    model: str = ""
+    endpoint: str = ""
+    detail: str = ""
+
+
+@app.post("/ai/test", response_model=AiTestResponse, dependencies=[Depends(_secure_endpoint)])
+def ai_test(body: AiTestRequest) -> AiTestResponse:
+    try:
+        cleaned = sanitize_ai_config(body.ai.model_dump(by_alias=False))
+        result = test_ai_connection(cleaned)
+        return AiTestResponse(
+            ok=True,
+            provider=str(result.get("provider") or ""),
+            model=str(result.get("model") or ""),
+            endpoint=str(result.get("endpoint") or ""),
+        )
+    except CloudAIError as exc:
+        return AiTestResponse(ok=False, detail=str(exc))
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, str) else "Invalid AI settings"
+        return AiTestResponse(ok=False, detail=detail)
+    except Exception as exc:  # noqa: BLE001
+        return AiTestResponse(ok=False, detail=safe_error_detail(exc))
 
 
 @app.post("/rewrite", response_model=RewriteResponse, dependencies=[Depends(_secure_endpoint)])

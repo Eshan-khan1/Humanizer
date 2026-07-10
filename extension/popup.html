@@ -141,8 +141,8 @@
 
       <div class="settings-scroll">
         <p class="section-hint">
-          Choose how Rewrite and Generate run. Keys stay on this device and are sent only to your
-          local Humanizer server.
+          Choose Local (Ollama on your machine) or API (any OpenAI-compatible key). Keys stay on
+          this device and are sent only through your local Humanizer server.
         </p>
 
         <div class="generate-subsection">
@@ -163,14 +163,18 @@
 
         <div class="generate-subsection">
           <h3 class="subsection-label">AI backend</h3>
-          <p class="subsection-hint">Used for Rewrite and Generate only. Grammar still runs locally.</p>
+          <p class="subsection-hint">
+            Used for Humanize, Rewrite, and Generate. Grammar underlines still run locally.
+          </p>
           <div id="ai-provider-options" class="option-cards" role="radiogroup" aria-label="AI backend"></div>
         </div>
 
         <div id="ai-key-section" class="generate-subsection ai-key-section--hidden">
           <label class="field-row" for="ai-api-key">
-            <span class="field-label">Your AI API key</span>
-            <span id="ai-key-hint" class="field-hint"></span>
+            <span class="field-label">API key</span>
+            <span id="ai-key-hint" class="field-hint">
+              Works with OpenAI, Groq, OpenRouter, and other OpenAI-compatible APIs.
+            </span>
             <input
               id="ai-api-key"
               class="settings-input"
@@ -180,9 +184,24 @@
               placeholder="Paste your API key"
             />
           </label>
+          <label class="field-row" for="ai-base-url">
+            <span class="field-label">Base URL <span class="field-optional">(optional)</span></span>
+            <span class="field-hint">Leave blank for OpenAI / Groq auto-detect. Example: https://api.openai.com/v1</span>
+            <input
+              id="ai-base-url"
+              class="settings-input"
+              type="url"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="https://api.openai.com/v1"
+            />
+          </label>
+          <div class="ai-connect-row">
+            <button type="button" id="ai-connect-btn" class="ai-connect-btn">Connect</button>
+            <p id="ai-connect-status" class="ai-connect-status" aria-live="polite"></p>
+          </div>
           <p class="hint hint--compact">
-            Get a free Groq key at
-            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a>.
+            Click Connect to verify the key. A green key field means the API is connected.
           </p>
         </div>
       </div>

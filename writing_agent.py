@@ -2332,6 +2332,8 @@ def _call_llm(
                 system=effective_system,
                 prompt=prompt,
                 temperature=temperature,
+                base_url=str(ai_config.get("base_url") or ""),
+                url=ai_config.get("url"),
                 max_tokens=effective_predict,
             )
         except CloudAIError:

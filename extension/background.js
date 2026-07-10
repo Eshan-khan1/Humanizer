@@ -74,14 +74,58 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     (async () => {
       try {
         const headers = await humanizerApiHeaders();
+        const ai = await humanizerAiPayload();
         const response = await fetch(`${API_BASE}/humanize`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ text: textCheck.value }),
+          body: JSON.stringify({
+            text: textCheck.value,
+            ai,
+          }),
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(data.detail || `Humanize failed (${response.status})`);
+        }
+        sendResponse({ ok: true, data });
+      } catch (error) {
+        sendResponse({ ok: false, error: error.message || String(error) });
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "testAiConnection") {
+    (async () => {
+      try {
+        const headers = await humanizerApiHeaders();
+        const provider = String(message.provider || "api").trim().toLowerCase();
+        const apiKey = String(message.apiKey || "").trim();
+        const baseUrl = String(message.baseUrl || "").trim();
+        const model = String(message.model || "").trim();
+        if (!apiKey) {
+          sendResponse({ ok: false, error: "Enter an API key first" });
+          return;
+        }
+        const ai = { provider: provider === "local" ? "api" : provider, apiKey };
+        if (baseUrl) ai.baseUrl = baseUrl;
+        if (model) ai.model = model;
+        const response = await fetch(`${API_BASE}/ai/test`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ ai }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.detail || `Connection test failed (${response.status})`);
+        }
+        if (!data.ok) {
+          sendResponse({
+            ok: false,
+            error: data.detail || "API key was rejected",
+            data,
+          });
+          return;
         }
         sendResponse({ ok: true, data });
       } catch (error) {
