@@ -1,6 +1,11 @@
 {
   "version": 1,
   "hooks": {
+    "subagentStart": [
+      {
+        "command": ".cursor/hooks/pull-github.sh"
+      }
+    ],
     "stop": [
       {
         "command": ".cursor/hooks/sync-github.sh"

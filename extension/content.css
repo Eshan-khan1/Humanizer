@@ -401,8 +401,9 @@
 .humanizer-rewrite-box {
   position: fixed;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   padding: 10px 12px;
   background: var(--color-bg-dark);
   border: 1px solid var(--border-subtle);
@@ -415,6 +416,12 @@
     opacity var(--transition-normal),
     transform var(--transition-normal),
     box-shadow var(--transition-normal);
+}
+
+.humanizer-rewrite-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .humanizer-rewrite-box--hidden {
@@ -446,7 +453,30 @@
   background: var(--color-bg-mid);
   border-radius: 8px;
   padding: 8px 10px;
-  color: var(--color-white);
+  color: var(--color-text-primary);
+}
+
+.humanizer-rewrite-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.humanizer-rewrite-preset {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--color-bg-mid);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.humanizer-rewrite-preset:hover {
+  color: var(--color-text-primary);
+  border-color: rgba(255, 77, 141, 0.35);
+  background: rgba(255, 77, 141, 0.08);
 }
 
 .humanizer-rewrite-box input::placeholder {

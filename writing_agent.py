@@ -12,7 +12,7 @@ import re
 from typing import Any, Literal
 
 OLLAMA_WRITING_MODEL = os.environ.get("OLLAMA_WRITING_MODEL", "humanizer-writing")
-OLLAMA_REWRITE_TEMPERATURE = float(os.environ.get("OLLAMA_REWRITE_TEMPERATURE", "0.55"))
+OLLAMA_REWRITE_TEMPERATURE = float(os.environ.get("OLLAMA_REWRITE_TEMPERATURE", "0.45"))
 OLLAMA_REWRITE_NUM_PREDICT = int(os.environ.get("OLLAMA_REWRITE_NUM_PREDICT", "1024"))
 OLLAMA_GENERATE_TEMPERATURE = float(os.environ.get("OLLAMA_GENERATE_TEMPERATURE", "0.6"))
 OLLAMA_GENERATE_NUM_PREDICT_SHORT = int(
@@ -30,8 +30,8 @@ EMAIL_SIGNATURE_PLACEHOLDER = "[Your Name]"
 
 WRITING_AGENT_SYSTEM_PROMPT = (
     "You are the Humanizer Writing Agent. You only do two jobs:\n"
-    "1. REWRITE — change tone/style of selected text with bold edits to word choice, "
-    "structure, and length.\n"
+    "1. REWRITE — change tone/style of selected text by editing word choice and sentence "
+    "structure only. Keep the same information, structure, and roughly the same length.\n"
     "2. GENERATE — expand short notes, bullets, or prompts into complete emails or essays.\n"
     "For GENERATE: three independent settings — LENGTH (structure), TONE (sound), "
     "COMPLEXITY (vocabulary). Each controls one thing only; never let them bleed together. "
@@ -335,8 +335,47 @@ REWRITE RULES (non-negotiable):
   • Only change words and sentence structure to match the requested tone.
   • If the user says "make it friendly", make the existing sentences sound warmer.
   • If the user says "make it formal", make the existing sentences sound more professional.
+  • If the user says "make it casual", use contractions and simpler everyday words.
+  • If the user says "make it concise", shorten wording but keep every fact.
+  • Preserve line breaks, greetings, and sign-offs that already exist in the selection.
   • Nothing gets added; nothing removed except what is necessary to change the tone.
   • Output must read like the same message in a different voice — not a different message."""
+
+TONE_REWRITE_EXAMPLES: dict[str, str] = {
+    "formal": """\
+EXAMPLE (formal):
+  Before: "Hey, can you send me that file when you get a sec?"
+  After: "Could you please send the file at your earliest convenience?"
+  (Same request, more professional wording — no new sentences.)""",
+    "friendly": """\
+EXAMPLE (friendly):
+  Before: "Please submit the form by Friday."
+  After: "If you can, please send the form in by Friday — appreciate it."
+  (Warmer wording inside the same sentence — no greeting or thanks added.)""",
+    "casual": """\
+EXAMPLE (casual):
+  Before: "Please be advised that the office will be closed on Monday."
+  After: "Heads up — the office is closed on Monday."
+  (Simpler, conversational words — same fact, no filler.)""",
+    "concise": """\
+EXAMPLE (concise):
+  Before: "I am writing to inform you that the meeting has been rescheduled to 3pm."
+  After: "The meeting is rescheduled to 3pm."
+  (Shorter, same fact — may remove padding words only.)""",
+    "simple": """\
+EXAMPLE (simple):
+  Before: "We must expedite the procurement process to mitigate further delays."
+  After: "We need to speed up buying so we don't fall further behind."
+  (Plain words a non-expert would use — same meaning.)""",
+}
+
+TONE_REWRITE_PRESET_INSTRUCTIONS: dict[str, str] = {
+    "formal": "Rewrite in a professional, formal tone.",
+    "friendly": "Rewrite in a warm and friendly tone.",
+    "casual": "Rewrite in a casual, natural tone.",
+    "concise": "Rewrite to be more concise.",
+    "simple": "Rewrite using simpler, easier-to-understand words.",
+}
 
 TONE_REWRITE_OUTPUT_RULE = " Return only the rewritten text, nothing else."
 
@@ -388,6 +427,152 @@ def _strip_generate_instruction_leakage(text: str) -> str:
     return cleaned.strip()
 
 
+def _is_concise_rewrite_instruction(instruction: str) -> bool:
+    lower = (instruction or "").lower()
+    return any(
+        token in lower
+        for token in ("concise", "shorter", "shorten", "brief", "trim", "condense")
+    )
+
+
+def _detect_rewrite_tone_preset(instruction: str) -> str | None:
+    lower = (instruction or "").lower()
+    if any(token in lower for token in ("formal", "professional", "businesslike")):
+        return "formal"
+    if "casual" in lower or "relaxed" in lower or "informal" in lower:
+        return "casual"
+    if "friendly" in lower or "warm" in lower:
+        return "friendly"
+    if _is_concise_rewrite_instruction(instruction):
+        return "concise"
+    if any(token in lower for token in ("simple", "simpler", "plain", "easier")):
+        return "simple"
+    return None
+
+
+def _rewrite_tone_examples_block(instruction: str) -> str:
+    preset = _detect_rewrite_tone_preset(instruction)
+    if preset and preset in TONE_REWRITE_EXAMPLES:
+        return TONE_REWRITE_EXAMPLES[preset]
+    return ""
+
+
+def _original_has_closing_block(original: str) -> bool:
+    lines = [line.strip() for line in original.replace("\r\n", "\n").split("\n") if line.strip()]
+    if not lines:
+        return False
+    return any(
+        _rewrite_line_is_signoff(line) or _rewrite_line_is_thanks_closing(line)
+        for line in lines[-2:]
+    )
+
+
+def _closing_sentence_protected(sentence: str, original: str) -> bool:
+    if not _original_has_closing_block(original):
+        return False
+    stripped = sentence.strip()
+    if _rewrite_line_is_signoff(stripped) or _rewrite_line_is_thanks_closing(stripped):
+        return True
+    orig_lines = [line.strip() for line in original.replace("\r\n", "\n").split("\n") if line.strip()]
+    if orig_lines and stripped.lower() == orig_lines[-1].lower():
+        return True
+    return False
+
+
+def _extract_closing_lines(original: str) -> list[str]:
+    lines = original.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    last_signoff_idx = -1
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if _rewrite_line_is_signoff(stripped) or _rewrite_line_is_thanks_closing(stripped):
+            last_signoff_idx = index
+
+    if last_signoff_idx < 0:
+        return []
+
+    end_idx = last_signoff_idx
+    while end_idx + 1 < len(lines):
+        nxt = lines[end_idx + 1].strip()
+        if not nxt:
+            end_idx += 1
+            continue
+        if len(nxt.split()) <= 3:
+            end_idx += 1
+            continue
+        break
+
+    return lines[last_signoff_idx : end_idx + 1]
+
+
+def _rewritten_has_closing_block(rewritten: str, original: str) -> bool:
+    if not _original_has_closing_block(original):
+        return True
+    closing = _extract_closing_lines(original)
+    if not closing:
+        return False
+    rewritten_lower = rewritten.lower()
+    return any(part.strip().lower() in rewritten_lower for part in closing if part.strip())
+
+
+def _restore_missing_closing_lines(original: str, rewritten: str) -> str:
+    closing = _extract_closing_lines(original)
+    if not closing or _rewritten_has_closing_block(rewritten, original):
+        return rewritten
+
+    result = rewritten.rstrip()
+    if result:
+        result += "\n\n"
+    result += "\n".join(closing)
+    return result.strip()
+
+
+def _rewrite_length_bounds(instruction: str) -> tuple[float, float]:
+    if _is_concise_rewrite_instruction(instruction):
+        return 0.40, 1.0
+    return 0.85, 1.15
+
+
+def check_rewrite_quality(
+    original: str,
+    rewritten: str,
+    instruction: str = "",
+) -> dict[str, Any]:
+    issues: list[str] = []
+    source = (original or "").strip()
+    result = (rewritten or "").strip()
+    if not result:
+        issues.append("empty")
+
+    orig_words = len(source.split())
+    out_words = len(result.split())
+    min_ratio, max_ratio = _rewrite_length_bounds(instruction)
+    ratio = out_words / max(orig_words, 1)
+    if orig_words and (ratio < min_ratio or ratio > max_ratio):
+        issues.append("length_ratio")
+
+    for pattern in _REWRITE_FILLER_PATTERNS:
+        if pattern.search(result) and not pattern.search(source):
+            issues.append("filler_leak")
+            break
+
+    if _original_has_closing_block(source) and not _rewritten_has_closing_block(result, source):
+        issues.append("missing_closing")
+
+    preset = _detect_rewrite_tone_preset(instruction)
+    if preset == "casual":
+        has_contraction = bool(re.search(r"\b\w+'\w+\b", result))
+        simple_markers = ("just", "hey", "yeah", "gonna", "kinda", "pretty")
+        if orig_words >= 8 and not has_contraction and not any(m in result.lower() for m in simple_markers):
+            orig_avg = sum(len(word) for word in source.split()) / max(orig_words, 1)
+            out_avg = sum(len(word) for word in result.split()) / max(out_words, 1)
+            if out_avg >= orig_avg:
+                issues.append("weak_casual_tone")
+
+    return {"ok": not issues, "issues": issues, "length_ratio": ratio}
+
+
 def _clean_output(raw: str) -> str:
     cleaned = (raw or "").strip()
     if cleaned.startswith("```"):
@@ -436,6 +621,7 @@ _REWRITE_FILLER_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bjust a quick update\b", re.IGNORECASE),
     re.compile(r"\bi wanted to reach out\b", re.IGNORECASE),
     re.compile(r"\bi(?:'m| am) reaching out\b", re.IGNORECASE),
+    re.compile(r"\breach out\b", re.IGNORECASE),
     re.compile(r"\b(?:i\s+)?hope you(?:'re|are)\s+doing\s+well\b", re.IGNORECASE),
     re.compile(r"\b(?:i\s+)?hope this(?:\s+email)?\s+finds\s+you\s+well\b", re.IGNORECASE),
     re.compile(r"\bjust wanted to\b", re.IGNORECASE),
@@ -560,16 +746,26 @@ def _remove_added_greeting_signoff_lines(original: str, rewritten: str) -> str:
             lines.pop(0)
             continue
         if not original_has_greeting and _rewrite_line_is_greeting(stripped):
-            stripped = re.sub(
+            updated = re.sub(
                 r"^(?:Dear|Hi|Hey|Hello)\s+[^,\n]+,\s*",
                 "",
                 stripped,
                 flags=re.IGNORECASE,
             )
-            if stripped:
-                lines[0] = stripped
-            else:
+            if updated == stripped:
+                updated = re.sub(
+                    r"^(?:Dear|Hi|Hey|Hello)\b[!,.\s]*",
+                    "",
+                    stripped,
+                    count=1,
+                    flags=re.IGNORECASE,
+                ).lstrip()
+            if updated and updated != stripped:
+                lines[0] = updated
+            elif _rewrite_line_is_standalone_greeting(stripped):
                 lines.pop(0)
+            else:
+                break
             continue
         break
 
@@ -665,12 +861,17 @@ def _remove_added_filler_sentences(original: str, rewritten: str) -> str:
     return "\n\n".join(filtered_paragraphs).strip()
 
 
-def _strip_excess_rewrite_sentences(original: str, rewritten: str) -> str:
+def _strip_excess_rewrite_sentences(
+    original: str,
+    rewritten: str,
+    *,
+    instruction: str = "",
+) -> str:
     original_count = _rewrite_content_line_count(original)
     if original_count == 0:
         return rewritten
 
-    max_allowed = original_count + 1
+    max_allowed = original_count + (0 if _is_concise_rewrite_instruction(instruction) else 1)
     if len(_split_sentences(rewritten)) <= max_allowed:
         return rewritten
     paragraphs = rewritten.split("\n\n")
@@ -691,8 +892,11 @@ def _strip_excess_rewrite_sentences(original: str, rewritten: str) -> str:
             all_sentences.pop(0)
             removed = True
         elif all_sentences and (
-            _rewrite_line_is_thanks_closing(all_sentences[-1])
-            or _rewrite_sentence_is_added(all_sentences[-1], original)
+            not _closing_sentence_protected(all_sentences[-1], original)
+            and (
+                _rewrite_line_is_thanks_closing(all_sentences[-1])
+                or _rewrite_sentence_is_added(all_sentences[-1], original)
+            )
         ):
             all_sentences.pop()
             removed = True
@@ -729,7 +933,12 @@ def _fix_rewrite_leading_artifacts(text: str) -> str:
     return re.sub(r"^[\s.,;:!?\-–—]+", "", text).strip()
 
 
-def apply_rewrite_hard_filters(original: str, rewritten: str) -> str:
+def apply_rewrite_hard_filters(
+    original: str,
+    rewritten: str,
+    *,
+    instruction: str = "",
+) -> str:
     if not rewritten or not original:
         return rewritten
 
@@ -739,9 +948,10 @@ def apply_rewrite_hard_filters(original: str, rewritten: str) -> str:
     result = _remove_added_content_lines(source, result)
     result = _remove_added_filler_sentences(source, result)
     result = _strip_added_thanks_closing(source, result)
-    result = _strip_excess_rewrite_sentences(source, result)
+    result = _strip_excess_rewrite_sentences(source, result, instruction=instruction)
     result = _fix_rewrite_exclamation_marks(source, result)
     result = _fix_rewrite_leading_artifacts(result)
+    result = _restore_missing_closing_lines(source, result)
     return result.strip()
 
 
@@ -1841,6 +2051,10 @@ def format_document_context(context: dict[str, Any] | None) -> str:
 
 def _normalize_tone_instruction(instruction: str) -> str:
     text = (instruction or "").strip()
+    preset = _detect_rewrite_tone_preset(text)
+    if preset and preset in TONE_REWRITE_PRESET_INSTRUCTIONS:
+        if not text or text.lower() in {preset, f"{preset} tone", f"make it {preset}"}:
+            text = TONE_REWRITE_PRESET_INSTRUCTIONS[preset]
     if not text:
         text = "Rewrite to sound clear and natural."
     lower = text.lower()
@@ -1849,6 +2063,25 @@ def _normalize_tone_instruction(instruction: str) -> str:
             text += "."
         text += TONE_REWRITE_OUTPUT_RULE
     return text.strip()
+
+
+def _build_rewrite_sections(
+    text: str,
+    instruction: str,
+    context: dict[str, Any] | None,
+) -> list[str]:
+    tone_instruction = _normalize_tone_instruction(instruction)
+    sections: list[str] = [TONE_REWRITE_STRICT_RULES]
+    examples = _rewrite_tone_examples_block(instruction)
+    if examples:
+        sections.append(examples)
+    context_block = format_document_context(context)
+    if context_block:
+        sections.append(context_block)
+    sections.append(
+        f"USER INSTRUCTION:\n{tone_instruction}\n\nSELECTED TEXT TO REWRITE:\n{text}"
+    )
+    return sections
 
 
 def build_rewrite_prompt(
@@ -1862,12 +2095,7 @@ def build_rewrite_prompt(
     context_block = format_document_context(context)
 
     if direct:
-        tone_instruction = _normalize_tone_instruction(instruction)
-        sections: list[str] = [TONE_REWRITE_STRICT_RULES]
-        if context_block:
-            sections.append(context_block)
-        sections.append(f"USER INSTRUCTION:\n{tone_instruction}\n\nSELECTED TEXT TO REWRITE:\n{text}")
-        return "\n\n".join(sections)
+        return "\n\n".join(_build_rewrite_sections(text, instruction, context))
 
     if not instruction:
         instruction = "Rewrite to sound clear and natural."
@@ -1891,6 +2119,9 @@ def build_rewrite_prompt(
     )
 
     sections = [planning]
+    examples = _rewrite_tone_examples_block(instruction)
+    if examples:
+        sections.append(examples)
     if context_block:
         sections.append(context_block)
     sections.append(f"\nUSER INSTRUCTION:\n{instruction}")
@@ -2393,7 +2624,23 @@ class WritingAgent:
         prompt = build_rewrite_prompt(text, user_instruction, context, direct=direct)
         raw = _call_llm(prompt, task="rewrite", ai_config=ai_config)
         cleaned = _clean_output(raw)
-        cleaned = apply_rewrite_hard_filters(text, cleaned)
+        cleaned = apply_rewrite_hard_filters(
+            text,
+            cleaned,
+            instruction=user_instruction,
+        )
+        quality = check_rewrite_quality(text, cleaned, user_instruction)
+        if not quality["ok"] and "missing_closing" in quality["issues"]:
+            retry_prompt = (
+                f"{prompt}\n\nIMPORTANT: Keep every greeting and sign-off line from the "
+                "original selection. Do not remove closing lines such as Thanks or a name."
+            )
+            raw = _call_llm(retry_prompt, task="rewrite", ai_config=ai_config)
+            cleaned = apply_rewrite_hard_filters(
+                text,
+                _clean_output(raw),
+                instruction=user_instruction,
+            )
         return _normalize_email_spacing(cleaned)
 
     def generate(

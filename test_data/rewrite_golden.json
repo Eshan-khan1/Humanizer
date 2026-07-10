@@ -1,0 +1,51 @@
+[
+  {
+    "id": "email_signoff_preserved",
+    "input": "Dear team,\n\nPlease review the attached document by Friday.\n\nThanks,\nJordan",
+    "prompt": "make it more professional",
+    "preserve_lines": ["Thanks", "Jordan"],
+    "must_not_contain": ["hope you", "reach out"],
+    "length_ratio_min": 0.8,
+    "length_ratio_max": 1.2
+  },
+  {
+    "id": "casual_contractions",
+    "input": "Please be advised that the office will be closed on Monday.",
+    "prompt": "Rewrite in a casual, natural tone.",
+    "must_not_contain": ["please be advised", "hope you"],
+    "length_ratio_min": 0.75,
+    "length_ratio_max": 1.15
+  },
+  {
+    "id": "formal_request",
+    "input": "Hey, can you send me that file when you get a sec?",
+    "prompt": "Rewrite in a professional, formal tone.",
+    "must_not_contain": ["hey", "get a sec"],
+    "length_ratio_min": 0.8,
+    "length_ratio_max": 1.2
+  },
+  {
+    "id": "concise_padding",
+    "input": "I am writing to inform you that the meeting has been rescheduled to 3pm.",
+    "prompt": "Rewrite to be more concise.",
+    "must_contain": ["3pm"],
+    "length_ratio_min": 0.4,
+    "length_ratio_max": 1.0
+  },
+  {
+    "id": "friendly_no_filler",
+    "input": "Please submit the form by Friday.",
+    "prompt": "Rewrite in a warm and friendly tone.",
+    "must_not_contain": ["hope you", "reach out", "awesome", "hey!"],
+    "length_ratio_min": 0.8,
+    "length_ratio_max": 1.2
+  },
+  {
+    "id": "simple_words",
+    "input": "We must expedite the procurement process to mitigate further delays.",
+    "prompt": "Rewrite using simpler, easier-to-understand words.",
+    "must_not_contain": ["expedite", "procurement", "mitigate"],
+    "length_ratio_min": 0.7,
+    "length_ratio_max": 1.2
+  }
+]

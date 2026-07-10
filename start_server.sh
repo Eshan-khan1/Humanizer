@@ -5,6 +5,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
+# Stay in sync with GitHub before starting the server.
+bash "$ROOT/scripts/pull-github.sh" 2>/dev/null || true
+
 # shellcheck source=scripts/ollama_gpu_env.sh
 source "$ROOT/scripts/ollama_gpu_env.sh"
 

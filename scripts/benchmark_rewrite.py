@@ -25,6 +25,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parent.parent
 VAL_PATH = ROOT / "val_data.jsonl"
+GOLDEN_PATH = ROOT / "test_data" / "rewrite_golden.json"
 REWRITE_URL = "http://127.0.0.1:8000/rewrite"
 HEALTH_URL = "http://127.0.0.1:8000/health"
 REQUEST_TIMEOUT = 180
@@ -77,6 +78,8 @@ class RewriteResult:
     output: str
     spacing_ok: bool | None = None
     structure_ok: bool | None = None
+    quality_ok: bool | None = None
+    quality_issues: list[str] = field(default_factory=list)
     error: str = ""
 
 
@@ -176,12 +179,23 @@ def evaluate_case(case: RewriteCase) -> RewriteResult:
         sim = similarity(output, case.reference)
         spacing_ok = None
         structure_ok = None
+        quality_ok = None
+        quality_issues: list[str] = []
 
         if "spacing" in case.checks:
             spacing_ok = max_blank_run(output) <= 2
 
         if "structure" in case.checks:
             structure_ok = structure_line_count(output) >= 2
+
+        try:
+            from writing_agent import check_rewrite_quality
+
+            quality = check_rewrite_quality(case.input, output, case.prompt)
+            quality_ok = quality["ok"]
+            quality_issues = list(quality.get("issues") or [])
+        except Exception:  # noqa: BLE001
+            quality_ok = None
 
         return RewriteResult(
             case_id=case.case_id,
@@ -197,6 +211,8 @@ def evaluate_case(case: RewriteCase) -> RewriteResult:
             output=output,
             spacing_ok=spacing_ok,
             structure_ok=structure_ok,
+            quality_ok=quality_ok,
+            quality_issues=quality_issues,
         )
     except Exception as exc:  # noqa: BLE001
         return RewriteResult(
@@ -255,6 +271,12 @@ def summarize(results: list[RewriteResult]) -> dict[str, Any]:
             sum(1 for r in structure if r.structure_ok) / len(structure), 3
         )
 
+    quality = [r for r in ok if r.quality_ok is not None]
+    if quality:
+        summary["quality_pass_rate"] = round(
+            sum(1 for r in quality if r.quality_ok) / len(quality), 3
+        )
+
     summary["by_task"] = {}
     for task, rows in sorted(by_task.items()):
         summary["by_task"][task] = {
@@ -292,6 +314,9 @@ def print_report(results: list[RewriteResult], summary: dict[str, Any]) -> None:
 
     if "structure_preserved" in summary:
         print(f"Email structure preserved: {summary['structure_preserved']:.1%}")
+
+    if "quality_pass_rate" in summary:
+        print(f"Rewrite quality checks passed: {summary['quality_pass_rate']:.1%}")
 
     if summary.get("by_task"):
         print("\nBy task:")

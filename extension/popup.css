@@ -1,5 +1,11 @@
 /* Humanizer popup — Claude-inspired editorial UI */
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   font-family: var(--font-serif);
   margin: 0;
