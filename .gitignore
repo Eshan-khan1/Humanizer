@@ -8,3 +8,10 @@ build/
 !.cursor/hooks/
 auto_tune.log
 *.log
+llama.cpp/
+models/**/*.gguf
+models/**/*.safetensors
+train_data.jsonl
+val_data.jsonl
+*.safetensors
+pr.txt

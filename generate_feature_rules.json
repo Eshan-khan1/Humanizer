@@ -1,0 +1,42 @@
+{
+  "version": "1.1",
+  "feature": "generate",
+  "source": "Generate_rules.text",
+  "summary": "Expand a short highlighted idea into a full email or paragraph using three independent settings.",
+  "settings": {
+    "length": {
+      "controls": "how much text is produced (structure only)",
+      "mustNotAffect": ["tone", "vocabulary", "wording_style"],
+      "values": {
+        "short": "1 short paragraph or 2–3 sentences; core message, no padding",
+        "medium": "2–3 paragraphs; greeting, body, and closing for email",
+        "long": "4+ paragraphs; full detail, context, and elaboration"
+      }
+    },
+    "tone": {
+      "controls": "personality and voice only",
+      "mustNotAffect": ["length", "paragraph_count", "vocabulary", "complexity"],
+      "values": {
+        "formal": "professional language, no contractions, no slang, structured sentences",
+        "friendly": "warm, approachable, contractions okay, personable phrasing",
+        "casual": "relaxed, conversational, contractions and informal phrasing okay"
+      }
+    },
+    "complexity": {
+      "controls": "vocabulary and sentence difficulty only",
+      "mustNotAffect": ["tone", "length", "paragraph_count"],
+      "values": {
+        "simple": "short common words, short sentences, minimal jargon",
+        "standard": "everyday professional vocabulary, moderate sentence length",
+        "advanced": "sophisticated vocabulary, longer/more complex sentence structures"
+      }
+    }
+  },
+  "independence": "Length, Tone, and Complexity are three separate prompt instructions, applied together but never merged. Changing one while holding the other two fixed must only change that dimension.",
+  "profile": {
+    "format": "comma-separated key-value pairs auto-injected into the prompt",
+    "permanentNote": "standing instruction always included in every generation",
+    "whenEmpty": "generic phrasing, no placeholder text, no errors"
+  },
+  "persistence": "All settings saved in the popup auto-apply to every future generation without re-entry."
+}

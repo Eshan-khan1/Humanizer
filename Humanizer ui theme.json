@@ -1,0 +1,211 @@
+{
+    "meta": {
+      "name": "Humanizer UI Theme — Claude-Inspired",
+      "version": "1.0.0",
+      "description": "Design tokens for restyling the Humanizer popup/UI to match a Claude.ai-style editorial interface: warm cream background, serif type, orange accent, borderless composer, hover-only action bars.",
+      "font_family": {
+        "primary": "font-serif",
+        "stack": "\"Tiempos Text\", \"Georgia\", \"Charter\", serif",
+        "usage": "Applied on every surface — headings, body, composer input, buttons — for the editorial feel. No sans-serif fallback in normal UI text."
+      }
+    },
+  
+    "colors": {
+      "light": {
+        "background": "#F0ECE0",
+        "composerSurface": "#FFFFFF",
+        "composerBorder": "#E5E0D6",
+        "userBubble": "#E5E0D6",
+        "primaryText": "#1a1a18",
+        "mutedText": "#5b5950",
+        "primaryAction": "#c96442",
+        "primaryActionHover": "#b5563a",
+        "primaryActionText": "#FFFFFF",
+        "divider": "#E5E0D6",
+        "iconDefault": "#5b5950",
+        "iconHover": "#1a1a18",
+        "chipBorder": "#E5E0D6",
+        "chipBackground": "transparent",
+        "chipActiveBackground": "#E5E0D6"
+      },
+      "dark": {
+        "background": "#2b2a27",
+        "composerSurface": "#1f1e1b",
+        "composerBorder": "#3d3a35",
+        "userBubble": "#393937",
+        "primaryText": "#eeeeee",
+        "mutedText": "#a3a098",
+        "primaryAction": "#c96442",
+        "primaryActionHover": "#d97650",
+        "primaryActionText": "#FFFFFF",
+        "divider": "#3d3a35",
+        "iconDefault": "#a3a098",
+        "iconHover": "#eeeeee",
+        "chipBorder": "#3d3a35",
+        "chipBackground": "transparent",
+        "chipActiveBackground": "#393937"
+      }
+    },
+  
+    "typography": {
+      "heading": {
+        "text": "How can I help you today?",
+        "alignment": "center",
+        "fontSize": "1.75rem",
+        "fontWeight": 400,
+        "fontFamily": "font-serif",
+        "icon": {
+          "name": "Sparkle",
+          "color": "#c96442",
+          "size": "1.5rem",
+          "position": "inline-before-text"
+        }
+      },
+      "body": {
+        "fontSize": "0.9375rem",
+        "lineHeight": 1.6,
+        "fontFamily": "font-serif"
+      },
+      "muted": {
+        "fontSize": "0.8125rem",
+        "fontFamily": "font-serif",
+        "color": "mutedText"
+      }
+    },
+  
+    "radius": {
+      "message": "1rem",
+      "composer": "1rem",
+      "chip": "0.5rem",
+      "button": "0.5rem",
+      "iconButton": "9999px"
+    },
+  
+    "shadow": {
+      "composer": "none",
+      "message": "none",
+      "note": "Borderless, shadowless composer is intentional — matches claude.ai's stripped-down look. Only border-[composerBorder] is used, no box-shadow anywhere."
+    },
+  
+    "spacing": {
+      "messagePaddingX": "1rem",
+      "messagePaddingY": "0.625rem",
+      "composerPaddingX": "1rem",
+      "composerPaddingY": "0.75rem",
+      "chipPaddingX": "0.75rem",
+      "chipPaddingY": "0.375rem",
+      "actionBarGap": "0.25rem"
+    },
+  
+    "components": {
+      "messageBubble": {
+        "user": {
+          "background": "userBubble",
+          "textColor": "primaryText",
+          "radius": "message",
+          "padding": "messagePaddingY messagePaddingX",
+          "shadow": "none",
+          "maxWidth": "80%",
+          "alignment": "right"
+        },
+        "assistant": {
+          "background": "transparent",
+          "textColor": "primaryText",
+          "radius": "message",
+          "padding": "messagePaddingY messagePaddingX",
+          "shadow": "none",
+          "maxWidth": "100%",
+          "alignment": "left"
+        }
+      },
+  
+      "actionBar": {
+        "visibility": "hover-only",
+        "behavior": {
+          "default": "opacity-0",
+          "onGroupHover": "opacity-100",
+          "transition": "opacity 150ms ease",
+          "hideWhenRunning": true,
+          "autohide": "not-last"
+        },
+        "userActions": ["Edit", "Copy"],
+        "assistantActions": ["Copy", "ThumbsUp", "ThumbsDown", "Reload"],
+        "iconSize": "1rem",
+        "iconColor": "iconDefault",
+        "iconColorHover": "iconHover",
+        "gap": "actionBarGap"
+      },
+  
+      "composer": {
+        "surface": "composerSurface",
+        "border": "1px solid composerBorder",
+        "shadow": "none",
+        "radius": "composer",
+        "placeholder": "Message Humanizer...",
+        "placeholderColor": "mutedText",
+        "fontFamily": "font-serif",
+        "primaryActionButton": {
+          "states": ["Send", "Cancel", "StopDictation", "Dictate"],
+          "stateLogic": {
+            "idle_with_text": "Send",
+            "idle_empty": "Dictate",
+            "generating": "Cancel",
+            "dictating": "StopDictation"
+          },
+          "background": "primaryAction",
+          "backgroundHover": "primaryActionHover",
+          "iconColor": "primaryActionText",
+          "shape": "circle",
+          "size": "2.25rem",
+          "icons": {
+            "Send": "ArrowUp",
+            "Cancel": "Square",
+            "StopDictation": "Square",
+            "Dictate": "Mic"
+          }
+        }
+      },
+  
+      "modelPicker": {
+        "type": "dropdown",
+        "options": ["Sonnet 4.5", "Opus 4.7", "Haiku 4.5"],
+        "footerOption": "More options",
+        "textColor": "mutedText",
+        "textColorSelected": "primaryText",
+        "fontFamily": "font-serif",
+        "fontSize": "0.8125rem",
+        "chevronIcon": "ChevronDown",
+        "background": "transparent",
+        "hoverBackground": "chipActiveBackground",
+        "radius": "chip"
+      },
+  
+      "modeTabs": {
+        "type": "chip-row",
+        "options": ["Write", "Learn", "Code", "From Drive", "From Calendar"],
+        "shape": "rounded-lg",
+        "border": "1px solid chipBorder",
+        "background": "chipBackground",
+        "activeBackground": "chipActiveBackground",
+        "textColor": "mutedText",
+        "activeTextColor": "primaryText",
+        "fontFamily": "font-serif",
+        "fontSize": "0.8125rem",
+        "padding": "chipPaddingY chipPaddingX",
+        "gap": "0.5rem"
+      }
+    },
+  
+    "component_markup_reference": {
+      "note": "Reference structure only — actual implementation is JS/JSX and should be handed to Cursor, not generated from this token file directly.",
+      "messagePrimitiveExample": "<MessagePrimitive.Root className=\"group/message\"><div className=\"rounded-2xl bg-[#E5E0D6] px-4 py-2.5\"><MessagePrimitive.Parts components={{ Text: MarkdownText }} /></div><ActionBarPrimitive.Root hideWhenRunning autohide=\"not-last\" className=\"opacity-0 transition-opacity group-hover/message:opacity-100\"><ActionBarPrimitive.Edit /><ActionBarPrimitive.Copy /></ActionBarPrimitive.Root></MessagePrimitive.Root>"
+    },
+  
+    "theming_notes": [
+      "Serif font applies everywhere — headings, body, composer, buttons, chips, model picker. No sans-serif anywhere in normal UI text.",
+      "Composer has zero shadow and a single thin border in composerBorder — this is the core 'borderless, stripped-down' look.",
+      "Action bars are invisible until hover over the parent message group (group/message → group-hover/message).",
+      "Primary action button cycles through four states based on composer context, not four separate buttons.",
+      "Orange (#c96442) is the only accent color in the entire system — used for the heading icon and the primary action button only. Everything else is neutral cream/charcoal/muted-brown."
+    ]
+  }

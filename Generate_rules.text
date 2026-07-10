@@ -1,0 +1,37 @@
+Rules — Generate
+Length (structure only)
+
+Short → 1 short paragraph or 2–3 sentences. Just the core message, no padding.
+Medium → 2–3 paragraphs. Includes greeting, body, and closing if it's an email.
+Long → 4+ paragraphs. Full detail, context, and elaboration.
+Length must never change vocabulary difficulty or tone — a "long, casual, simple" output should still use simple words, just more of them.
+
+Tone (voice only)
+
+Formal → professional language, no contractions, no slang, structured sentences.
+Friendly → warm, approachable, contractions okay, personable phrasing.
+Casual → relaxed, conversational, contractions and informal phrasing okay.
+Tone must never change how long the output is or how advanced the vocabulary is — "formal" doesn't mean longer, "casual" doesn't mean simpler words.
+
+Complexity (vocabulary only)
+
+Simple → short, common words, short sentences, minimal jargon.
+Standard → everyday professional vocabulary, moderate sentence length.
+Advanced → sophisticated vocabulary, longer/more complex sentence structures.
+Complexity must never change tone or length — "advanced" doesn't mean more formal, "simple" doesn't mean shorter output.
+
+Independence rule (core constraint)
+
+Length, Tone, and Complexity are three separate prompt instructions to the model, applied together but never merged into one instruction.
+Changing one setting while holding the other two fixed must only change the dimension it controls. Example: Short + Formal + Advanced vs. Long + Formal + Advanced should differ only in amount of text, not in formality or word choice.
+
+Context fields
+
+Personal profile info (comma-separated key-value pairs) → auto-injected into the prompt so generated text can reference name, role, or other saved details without the user typing them.
+Permanent Note → additional standing instruction always included in every generation (e.g. "always sign off as Eshan").
+Both are optional — if empty, generation proceeds with generic phrasing, no errors.
+Email signature → every generated email ends with the sign-off line, then the writer's full name on the next line. If full name is saved in profile, use it. If not, use exactly "[Your Name]".
+
+Persistence
+
+All settings (Length, Tone, Complexity, profile, note) are saved in the popup and auto-apply to every future generation without re-entry.

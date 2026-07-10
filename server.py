@@ -655,35 +655,23 @@ def _find_llama_server_binary() -> str | None:
     return None
 
 
-def _find_ollama_binary() -> str:
-    """
-    Prefer the official Ollama.app CLI over the broken Homebrew formula.
-
-    Homebrew `ollama` 0.30.x often lacks `llama-server`; run ./scripts/fix_ollama.sh.
-    """
-    candidates = [
-        "/Applications/Ollama.app/Contents/Resources/ollama",
-        shutil.which("ollama"),
-    ]
-    for path in candidates:
-        if path and os.path.isfile(path) and os.access(path, os.X_OK):
-            if "/Cellar/ollama/" in path and not _find_llama_server_binary():
-                continue
-            return path
-    raise OllamaError(
-        "Ollama is not installed or not on PATH. "
-        "Run: ./scripts/fix_ollama.sh  (or install from https://ollama.com) "
-        "then: ollama pull qwen2.5:7b"
-    )
-
-
 def _ollama_gpu_env_defaults(env: dict[str, str]) -> dict[str, str]:
-    """Apply Metal + unified-memory limits for Apple Silicon (see scripts/ollama_gpu_env.sh)."""
+    """Apply platform GPU defaults for Ollama (Metal on macOS only)."""
+    env.setdefault("OLLAMA_KEEP_ALIVE", "30m")
+    env.setdefault("OLLAMA_FLASH_ATTENTION", "1")
+
+    if sys.platform != "darwin":
+        # Do not force Metal on Windows/Linux — let Ollama pick CUDA/ROCm/CPU.
+        if not os.environ.get("OLLAMA_LLM_LIBRARY"):
+            env.pop("OLLAMA_LLM_LIBRARY", None)
+        elif env.get("OLLAMA_LLM_LIBRARY") == "metal":
+            env.pop("OLLAMA_LLM_LIBRARY", None)
+        return env
+
     fraction = float(env.get("OLLAMA_GPU_MEMORY_FRACTION") or "0.75")
     env.setdefault("OLLAMA_GPU_MEMORY_FRACTION", str(fraction))
-    env.setdefault("OLLAMA_FLASH_ATTENTION", "1")
     env.setdefault("OLLAMA_LLM_LIBRARY", "metal")
-    if sys.platform == "darwin" and not env.get("OLLAMA_GPU_OVERHEAD"):
+    if not env.get("OLLAMA_GPU_OVERHEAD"):
         try:
             total_mem = int(
                 subprocess.check_output(
@@ -705,6 +693,39 @@ def _ollama_subprocess_env() -> dict[str, str]:
     return env
 
 
+def _find_ollama_binary() -> str:
+    """
+    Prefer the official Ollama.app CLI on macOS; otherwise use PATH.
+
+    Homebrew `ollama` 0.30.x often lacks `llama-server`; run ./scripts/fix_ollama.sh.
+    """
+    candidates: list[str | None] = []
+    if sys.platform == "darwin":
+        candidates.append("/Applications/Ollama.app/Contents/Resources/ollama")
+    if sys.platform == "win32":
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        if local_app:
+            candidates.append(os.path.join(local_app, "Programs", "Ollama", "ollama.exe"))
+        candidates.append(os.path.expandvars(r"%ProgramFiles%\Ollama\ollama.exe"))
+    candidates.append(shutil.which("ollama"))
+
+    for path in candidates:
+        if not path:
+            continue
+        if sys.platform == "win32":
+            if os.path.isfile(path):
+                return path
+        elif os.path.isfile(path) and os.access(path, os.X_OK):
+            if "/Cellar/ollama/" in path and not _find_llama_server_binary():
+                continue
+            return path
+    raise OllamaError(
+        "Ollama is not installed or not on PATH. "
+        "Install from https://ollama.com then restart the terminal. "
+        "On macOS you can also run: ./scripts/fix_ollama.sh"
+    )
+
+
 def start_ollama() -> None:
     """Start `ollama serve` in the background if the API is not up."""
     global _ollama_process
@@ -713,13 +734,21 @@ def start_ollama() -> None:
         return
 
     binary = _find_ollama_binary()
-    _ollama_process = subprocess.Popen(
-        [binary, "serve"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-        env=_ollama_subprocess_env(),
-    )
+    popen_kwargs: dict[str, Any] = {
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+        "env": _ollama_subprocess_env(),
+    }
+    if sys.platform == "win32":
+        # Detach from the console without requiring POSIX start_new_session.
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(
+            subprocess, "DETACHED_PROCESS", 0
+        )
+        popen_kwargs["close_fds"] = True
+    else:
+        popen_kwargs["start_new_session"] = True
+
+    _ollama_process = subprocess.Popen([binary, "serve"], **popen_kwargs)
 
     deadline = time.monotonic() + OLLAMA_START_TIMEOUT_SEC
     while time.monotonic() < deadline:
