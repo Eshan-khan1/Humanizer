@@ -1,0 +1,283 @@
+{
+  "run_at": "2026-07-07T04:12:23.189889+00:00",
+  "base_url": "http://127.0.0.1:8000",
+  "summary": {
+    "total": 18,
+    "passed": 18,
+    "failed": 0
+  },
+  "results": [
+    {
+      "feature": "health",
+      "name": "Server health",
+      "status": "pass",
+      "http_status": 200,
+      "output": {
+        "ok": true,
+        "ollama_available": true,
+        "grammar_available": true,
+        "grammar_model": "humanizer-grammar",
+        "writing_model": "humanizer-writing",
+        "writing_agent": "rewrite, generate",
+        "cloud_ai_providers": [
+          "groq",
+          "openai"
+        ]
+      },
+      "issues": []
+    },
+    {
+      "feature": "grammar",
+      "test_id": "g1",
+      "name": "Spelling error detected",
+      "status": "pass",
+      "duration_ms": 100.6,
+      "match_count": 2,
+      "issues": []
+    },
+    {
+      "feature": "grammar",
+      "test_id": "g2",
+      "name": "Clean text passes",
+      "status": "pass",
+      "duration_ms": 26.8,
+      "match_count": 0,
+      "issues": []
+    },
+    {
+      "feature": "humanize",
+      "name": "Humanize improves text",
+      "status": "pass",
+      "duration_ms": 348.2,
+      "input": "This are a test sentence with bad grammer.",
+      "output": "This is a test sentence with bad grammar.",
+      "issues": []
+    },
+    {
+      "test_id": 1,
+      "test_name": "Tone Separation",
+      "feature": "generate",
+      "variant": 1,
+      "input": "I need the report by Monday or the project will be delayed.",
+      "note": null,
+      "variant_settings": {
+        "tone": "formal",
+        "length": "short",
+        "complexity": "simple"
+      },
+      "output": "Subject: Urgent: Report Submission\n\nDear Sir or Madam,\n\nI need the report by Monday or the project will be delayed.\n\nSincerely,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 3215.9,
+      "issues": []
+    },
+    {
+      "test_id": 1,
+      "test_name": "Tone Separation",
+      "feature": "generate",
+      "variant": 2,
+      "input": "I need the report by Monday or the project will be delayed.",
+      "note": null,
+      "variant_settings": {
+        "tone": "friendly",
+        "length": "short",
+        "complexity": "simple"
+      },
+      "output": "Subject: Urgent: Report Submission Needed\n\nHi there,\n\nThe report is due by Monday and I need to submit it on time for the project to be completed on schedule. Is there anything specific that needs to be included in the report?\n\nBest,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 5336.0,
+      "issues": []
+    },
+    {
+      "test_id": 1,
+      "test_name": "Tone Separation",
+      "feature": "generate",
+      "variant": 3,
+      "input": "I need the report by Monday or the project will be delayed.",
+      "note": null,
+      "variant_settings": {
+        "tone": "casual",
+        "length": "short",
+        "complexity": "simple"
+      },
+      "output": "Subject: Report Urgency\n\nHey there,\n\nI wanted to remind that a crucial report is due on Monday and any delays could potentially cause our project to be postponed.\n\nThanks,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 1352.3,
+      "issues": []
+    },
+    {
+      "test_id": 2,
+      "test_name": "Length Separation",
+      "feature": "generate",
+      "variant": 1,
+      "input": "Follow up with the client about the contract.",
+      "note": null,
+      "variant_settings": {
+        "tone": "friendly",
+        "length": "short",
+        "complexity": "simple"
+      },
+      "output": "Subject: Follow-up on Contract\n\nHi there,\n\nJust a quick follow-up about our contract terms.\n\nBest,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 4979.9,
+      "issues": []
+    },
+    {
+      "test_id": 2,
+      "test_name": "Length Separation",
+      "feature": "generate",
+      "variant": 2,
+      "input": "Follow up with the client about the contract.",
+      "note": null,
+      "variant_settings": {
+        "tone": "friendly",
+        "length": "medium",
+        "complexity": "simple"
+      },
+      "output": "Subject: Follow-up on our contract\n\nHi there,\n\nI wanted to touch base about the contract we discussed last week.\n\nWe've made some progress since then, and I believe it's important to review and make sure everything is in place for our upcoming project. Could you please confirm that all of your team's availability has been updated? If there are any changes or more requirements, don't hesitate to let us know so we can adjust accordingly.\n\nBest,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 10066.6,
+      "issues": []
+    },
+    {
+      "test_id": 2,
+      "test_name": "Length Separation",
+      "feature": "generate",
+      "variant": 3,
+      "input": "Follow up with the client about the contract.",
+      "note": null,
+      "variant_settings": {
+        "tone": "friendly",
+        "length": "long",
+        "complexity": "simple"
+      },
+      "output": "Subject: Follow-up on Contract Details\n\nHi there,\n\nAs I mentioned during our last meeting, we have made good progress and are ready to move forward on the contract. I wanted to take a moment to touch base on all of the details that were discussed and make sure everything is clear before proceeding further.\n\nFirstly, about the terms of service, it was agreed upon that you would be providing [specific detail or task description]. The timeline for this work has been set at [start date] through [end date], with a total duration of approximately 3 months. I believe these timelines are appropriate to meet both our needs and your availability.\n\nabout the payment structure, we have decided on an upfront fee of $[amount] plus $[more amount per month for each more month worked]. This is based on the expectation that work will be completed within [number] months. Please let me know if you need any adjustments to this plan or if there are other terms you would like to include in our contract.\n\nAdditionally, I have attached a detailed document of the agreed upon terms and conditions for your review and approval. If you find anything missing or require further changes, please do not hesitate to reach out as we move forward with signing off on this document.\n\nI look forward to receiving your feedback on this revised version of the contract. Let me know when you have a moment if there are any concerns or more questions that need answering before proceeding.\n\nBest,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 10834.4,
+      "issues": []
+    },
+    {
+      "test_id": 3,
+      "test_name": "Complexity Separation",
+      "feature": "generate",
+      "variant": 1,
+      "input": "Ask the team to submit their updates before the meeting.",
+      "note": null,
+      "variant_settings": {
+        "tone": "formal",
+        "length": "medium",
+        "complexity": "simple"
+      },
+      "output": "Subject: Urgent: Team Update Submission\n\nDear Sir or Madam,\n\nI hope this message finds you well.\n\nAs we approach our upcoming meeting, I please request that all team members submit their updates as soon as possible. This will make sure that everyone is prepared and informed for the discussion ahead. Please make sure to review your contributions and send them in before [Meeting Date], so that we can have a full overview of the project developments.\n\nSincerely,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 2528.1,
+      "issues": []
+    },
+    {
+      "test_id": 3,
+      "test_name": "Complexity Separation",
+      "feature": "generate",
+      "variant": 2,
+      "input": "Ask the team to submit their updates before the meeting.",
+      "note": null,
+      "variant_settings": {
+        "tone": "formal",
+        "length": "medium",
+        "complexity": "standard"
+      },
+      "output": "Subject: Urgent Meeting Update Submission\n\nDear Sir or Madam,\n\nWe are approaching our scheduled meeting and it is essential that all team members have had an opportunity to review and provide feedback on the latest project developments. Your timely submissions will be crucial in ensuring we make informed decisions during this critical session.\n\nTo facilitate a productive exchange, I kindly request that each of you submit your updates by [Specific Date] at the latest. This deadline is important for us to have comprehensive coverage of all relevant areas.\n\nIf there are any specific topics or issues you need further clarification on before submitting your updates, please reach out to me directly and we will work together to address them promptly.\n\nSincerely,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 3498.0,
+      "issues": []
+    },
+    {
+      "test_id": 3,
+      "test_name": "Complexity Separation",
+      "feature": "generate",
+      "variant": 3,
+      "input": "Ask the team to submit their updates before the meeting.",
+      "note": null,
+      "variant_settings": {
+        "tone": "formal",
+        "length": "medium",
+        "complexity": "advanced"
+      },
+      "output": "Subject: Urgent: Team Meeting Update Submission\n\nDear Sir or Madam,\n\nWe kindly request that all team members submit any necessary updates by [Date of Submission Deadline]. This will ensure we have comprehensive information for our upcoming meeting on [Meeting Date], scheduled for [Start Time] to [End Time].\n\nYour timely submission is crucial, and we appreciate your cooperation in this matter. Please take the opportunity to review our previous discussions and prepare accordingly.\n\nWe look forward to your responses and assure you of a productive team meeting.\n\nSincerely,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 3045.9,
+      "issues": []
+    },
+    {
+      "test_id": 4,
+      "test_name": "Note Information Only",
+      "feature": "generate",
+      "variant": 1,
+      "input": "Email my professor asking for an extension.",
+      "note": "I have a family emergency this week.",
+      "variant_settings": {
+        "tone": "friendly",
+        "length": "short",
+        "complexity": "simple"
+      },
+      "output": "Subject: Requiring Extension Due to Family Emergency\n\nHi there,\n\nUnfortunately, this week has been very busy with a family emergency that required significant attention and support.\n\nBest,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 4318.6,
+      "issues": []
+    },
+    {
+      "test_id": 5,
+      "test_name": "Note Tone Override",
+      "feature": "generate",
+      "variant": 1,
+      "input": "Email my professor asking for an extension.",
+      "note": "Make it more formal than usual.",
+      "variant_settings": {
+        "tone": "casual",
+        "length": "short",
+        "complexity": "simple"
+      },
+      "output": "Subject: Request for Extension on Assignment Submission\n\nDear Sir or Madam,\n\nI wanted to ask an extension of the deadline for my assignment submitted yesterday about the [Course Subject] module.\n\nSincerely,\n[Your Name]",
+      "status": "pass",
+      "duration_ms": 10657.2,
+      "issues": []
+    },
+    {
+      "test_id": 6,
+      "test_name": "Rewrite Length Stays Same",
+      "feature": "rewrite",
+      "variant": 1,
+      "input": "The meeting has been moved to Thursday.",
+      "note": null,
+      "instruction": "make it formal",
+      "output": "On Thursday, we have rescheduled our meeting.",
+      "status": "pass",
+      "duration_ms": 448.0,
+      "issues": []
+    },
+    {
+      "test_id": 6,
+      "test_name": "Rewrite Length Stays Same",
+      "feature": "rewrite",
+      "variant": 2,
+      "input": "The meeting has been moved to Thursday.",
+      "note": null,
+      "instruction": "make it casual",
+      "output": "We've got the meeting on Thurs. See you then.",
+      "status": "pass",
+      "duration_ms": 473.3,
+      "issues": []
+    },
+    {
+      "test_id": 6,
+      "test_name": "Rewrite Length Stays Same",
+      "feature": "rewrite",
+      "variant": 3,
+      "input": "The meeting has been moved to Thursday.",
+      "note": null,
+      "instruction": "make it friendly",
+      "output": "It's now happening on Thursday instead. How does that sound?",
+      "status": "pass",
+      "duration_ms": 651.2,
+      "issues": []
+    }
+  ]
+}
