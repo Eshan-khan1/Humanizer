@@ -10,6 +10,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const generateBackEl = document.getElementById("generate-back");
   const aiOpenEl = document.getElementById("ai-open");
   const aiBackEl = document.getElementById("ai-back");
+  const themeToggleEl = document.getElementById("theme-toggle");
+  const themeSegmentBtns = Array.from(
+    document.querySelectorAll(".theme-segment-btn[data-theme-choice]")
+  );
   const toggleRows = Array.from(document.querySelectorAll(".toggle-row[data-setting]"));
   const profileFieldsEl = document.getElementById("generate-profile-fields");
   const profileAddEl = document.getElementById("generate-profile-add");
@@ -43,6 +47,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let aiConnected = false;
   let aiConnectTimer = null;
+  let currentTheme = "light";
+
+  function applyTheme(theme) {
+    const next = theme === "dark" ? "dark" : "light";
+    currentTheme = next;
+    document.documentElement.setAttribute("data-theme", next);
+    if (themeToggleEl) {
+      themeToggleEl.setAttribute(
+        "aria-label",
+        next === "dark" ? "Switch to light mode" : "Switch to dark mode"
+      );
+      themeToggleEl.title = next === "dark" ? "Light mode" : "Dark mode";
+    }
+    for (const btn of themeSegmentBtns) {
+      const choice = btn.getAttribute("data-theme-choice");
+      btn.classList.toggle("is-active", choice === next);
+    }
+  }
+
+  function persistTheme(theme) {
+    applyTheme(theme);
+    chrome.storage.sync.set({ uiTheme: currentTheme });
+  }
+
+  chrome.storage.sync.get({ uiTheme: "light" }, (result) => {
+    applyTheme(String(result.uiTheme || "light"));
+  });
+
+  themeToggleEl?.addEventListener("click", () => {
+    persistTheme(currentTheme === "dark" ? "light" : "dark");
+  });
+
+  for (const btn of themeSegmentBtns) {
+    btn.addEventListener("click", () => {
+      persistTheme(btn.getAttribute("data-theme-choice") || "light");
+    });
+  }
 
   if (
     !statusEl ||
