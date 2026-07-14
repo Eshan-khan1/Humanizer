@@ -177,9 +177,11 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             "email",
             settings={"tonePreset": "friendly", "length": "long", "complexity": "simple"},
         )
-        self.assertIn("If the user's idea does NOT include a reason", system)
-        self.assertIn("do NOT invent one", system)
+        self.assertIn("NO REASON RULE", system)
+        self.assertIn("NOT include any reason at all", system)
         self.assertIn("must NOT shorten the draft", system)
+        self.assertIn("these are RULES, not text to paste", system)
+        self.assertNotIn("I am not adding a separate reason", system)
 
     def test_signoff_permanent_note_is_closing_only(self) -> None:
         name, remaining, only = _parse_signoff_permanent_note(
@@ -219,8 +221,11 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             "Subject: Hello\n\nHi there,\n\nI need an extension.\n\nPlease help.\n\n"
             "Best,\nEshan\n"
         )
+        idea = "asking my professor for a deadline extension"
         medium = _enforce_length_structure(short_seed, format_type="email", length="medium")
-        long = _enforce_length_structure(short_seed, format_type="email", length="long")
+        long = _enforce_length_structure(
+            short_seed, format_type="email", length="long", seed_baseline=idea
+        )
         self.assertTrue(_meets_generate_length_requirement(long, "email", "long"))
         self.assertGreaterEqual(_count_email_body_paragraphs(long), 5)
         self.assertGreaterEqual(_body_word_count(long, "email"), 220)
@@ -228,6 +233,9 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             _body_word_count(long, "email"),
             _body_word_count(medium, "email") + 40,
         )
+        lower = long.lower()
+        self.assertNotIn("i am not adding a separate reason", lower)
+        self.assertNotIn("to keep this simple", lower)
 
 
 class RewritePromptIndependenceTests(unittest.TestCase):

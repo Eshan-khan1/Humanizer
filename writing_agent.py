@@ -51,11 +51,14 @@ RULE — MEANING & FIDELITY (always on):
   • Do not change the meaning of the user's input.
   • Do not invent facts, names, requests, excuses, dates, assignment titles, health issues,
     family emergencies, prior conversations, or any other detail the user did not imply.
-  • If the user's idea does NOT include a reason, do NOT invent one — keep the request
-    generic, or state the ask without a reason (e.g. simply request the extension).
+  • NO REASON RULE (critical): If the user's idea does NOT state a reason, the output must
+    NOT include any reason at all — not health, workload, personal circumstances,
+    "unforeseen" events, or any other justification. The request must stand alone.
+    This applies for short, medium, AND long length equally; never invent a reason to fill space.
   • Do not add new information beyond what the user implied.
-  • For longer drafts, develop ONLY the given request (clarify the ask, what you need next,
-    how they can reply) — never invent a backstory to fill space.
+  • For longer drafts, develop ONLY the substance of the ask (what is being requested,
+    what outcome you want, and a polite close) — never invent a backstory, and never
+    write commentary about the rules, instructions, or writing process.
   • Expand or rephrase what they gave you — never replace their intent with a different message."""
 
 EMAIL_GENERATION_GUIDE = """\
@@ -76,7 +79,8 @@ General rules:
   • Weave informational user notes into the body naturally; do not paste them as a bullet list.
   • If a user note is informational only, it adds facts — it must not change tone or style.
   • If a user note includes a one-time tone instruction, follow that tone for this generation only.
-  • If no reason is provided in the idea, do not invent one.
+  • If no reason is provided in the idea, include no reason whatsoever — do not invent one.
+  • Never write meta commentary about instructions, rules, length, or the drafting process.
   • Use exactly ONE blank line between major sections (after subject, between paragraphs).
   • If the seed is already a near-complete draft, polish and complete missing parts only."""
 GENERATE_INDEPENDENCE_RULES = """\
@@ -104,13 +108,16 @@ OUTPUT RULES (non-negotiable):
   • Sign-off permanent notes affect ONLY the closing signature — never the salutation.
   • Never leave bracketed instructions or template text in the output.
   • NEVER print rules, setting names, instruction headers, profile labels, or meta notes
-    in the draft — only the finished email or essay."""
+    in the draft — only the finished email or essay.
+  • Never write sentences that narrate the drafting process (e.g. that you are not adding
+    a reason, that this is a restatement for clarity, or that the reader should just
+    reply yes/no because of the instructions)."""
 
 GENERATE_LENGTH_GUIDANCE: dict[str, str] = {
     "short": """\
 LENGTH — structure only (independent of tone and complexity):
   • Body: 1 short paragraph, at most 2 sentences (~20–50 words).
-  • Just the core request — no padding, no invented excuses.
+  • Just the core request — no padding, no invented excuses or reasons.
   • Email: greeting and sign-off are allowed but the BODY is only the core message.
   • Essay: 1 short paragraph or 2 sentences total.
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
@@ -120,19 +127,25 @@ LENGTH — structure only (independent of tone and complexity):
   • Noticeably longer than short, but clearly shorter than long.
   • Email: greeting, 2–3 body paragraphs, closing/sign-off.
   • Essay: 2–3 paragraphs of content.
-  • Do not invent reasons/dates — develop only what the user said.
+  • Develop only what the user said. If they gave no reason, include none.
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
     "long": """\
 LENGTH — structure only (independent of tone and complexity):
-  • Body: at least 5 paragraphs AND at least ~220 words in the body — clearly longer
-    than medium (not just a few extra words).
-  • Email: greeting, 5+ developed body paragraphs, closing/sign-off.
-  • Essay: 5+ paragraphs with supporting detail.
-  • Develop by restating the request clearly, spelling out what you need, and asking
-    how to proceed — WITHOUT inventing excuses, dates, medical/family backstories, or
-    other facts the user did not give.
-  • LENGTH must NEVER change vocabulary difficulty or tone — a "long, casual, simple"
-    output must still use simple words and casual voice, just more of them.""",
+  • Target: at least 5 body paragraphs and ~220+ body words — clearly more developed
+    than medium.
+  • How to add length (content only — these are RULES, not text to paste into the draft):
+      1) Open with the request itself, stated fully and clearly.
+      2) Elaborate what you are asking for (scope, timing flexibility, or the outcome
+         you want) using only details present in the user's idea.
+      3) Add courteous paragraphs that stay on the request: willingness to follow the
+         recipient's process, readiness to provide whatever they need next related to
+         THIS ask, appreciation for their help.
+  • Forbidden filler: invented excuses/reasons, dates, assignment titles, health/workload/
+    personal backstories, and any meta talk about instructions, rules, wording strategy,
+    or the writing process.
+  • If the idea has no reason, long drafts still have NO reason — more paragraphs of the
+    request itself, not a justification.
+  • LENGTH must NEVER change vocabulary difficulty or tone.""",
 }
 
 GENERATE_COMPLEXITY_GUIDANCE: dict[str, str] = {
@@ -1392,7 +1405,13 @@ def _meets_generate_length_requirement(text: str, format_type: str, length: str)
     return True
 
 
-def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
+def _enforce_length_structure(
+    text: str,
+    format_type: str,
+    length: str,
+    *,
+    seed_baseline: str = "",
+) -> str:
     """Adjust paragraph/sentence count only — never rewrite words (tone/complexity stay)."""
     if not text or not text.strip():
         return text
@@ -1456,22 +1475,12 @@ def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
                     _join_sentences(best_sents[:mid]),
                     _join_sentences(best_sents[mid:]),
                 ]
-            # Still short on structure: add generic request-structure paragraphs that
-            # do not invent excuses/dates (safe elaboration of process, not backstory).
-            safe_extra = [
-                "I wanted to make this request clearly so there is no confusion about what I need.",
-                "Please let me know whether this works on your end, or what else you need from me.",
-                "I am available to follow up if helpful and appreciate your consideration.",
-                "If anything in this request is unclear, I am happy to clarify.",
-                "Thank you for taking the time to consider this.",
-            ]
-            for extra in safe_extra:
+            for extra in _long_request_elaboration_paragraphs(seed_baseline):
                 if len(paragraphs) >= 5:
                     break
                 if extra.lower() not in " ".join(paragraphs).lower():
                     paragraphs.append(extra)
-            # Pad body length so "long" is clearly above medium (~220+ words).
-            paragraphs = _pad_long_body_paragraphs(paragraphs)
+            paragraphs = _pad_long_body_paragraphs(paragraphs, seed_baseline=seed_baseline)
             sections["body"] = "\n\n".join(paragraphs)
             return _reassemble_email_sections(sections)
 
@@ -1513,42 +1522,85 @@ def _enforce_length_structure(text: str, format_type: str, length: str) -> str:
                 _join_sentences(best_sents[:mid]),
                 _join_sentences(best_sents[mid:]),
             ]
-        safe_extra = [
-            "I wanted to make this request clearly so there is no confusion about what I need.",
-            "Please let me know whether this works on your end, or what else you need from me.",
-            "I am available to follow up if helpful and appreciate your consideration.",
-            "If anything in this request is unclear, I am happy to clarify.",
-            "Thank you for taking the time to consider this.",
-        ]
-        for extra in safe_extra:
+        for extra in _long_request_elaboration_paragraphs(seed_baseline):
             if len(paragraphs) >= 5:
                 break
             if extra.lower() not in " ".join(paragraphs).lower():
                 paragraphs.append(extra)
-        return "\n\n".join(_pad_long_body_paragraphs(paragraphs))
+        return "\n\n".join(
+            _pad_long_body_paragraphs(paragraphs, seed_baseline=seed_baseline)
+        )
     return text
 
 
-_LONG_BODY_WORD_PADS = (
-    "To keep this simple, here is the ask again in plain terms: please respond when you can with a yes, a no, or what you need from me next.",
-    "I am not adding a separate reason beyond what I already said — I just need a clear answer so I can plan around it.",
-    "Whenever you have a moment, a short reply is enough. I will adjust based on what you tell me.",
-    "If it helps, you can reply with the next step only, and I will take care of the rest on my side.",
-    "I wanted to write this out carefully so the request is easy to review and act on without guessing what I meant.",
-    "Please feel free to tell me if timing or format needs to change; I can adapt once I hear from you.",
-    "Again, this is the same request restated for clarity — nothing new beyond the ask itself.",
-    "Looking forward to your guidance so I know how to move forward from here.",
-    "I can provide more detail about the request itself if that would help you respond, but I do not have a separate story to add.",
-    "Thanks again for considering this — a brief response when you can is all I need to continue.",
-)
+def _long_request_elaboration_paragraphs(seed_baseline: str = "") -> list[str]:
+    """On-topic request elaboration only — never invented reasons or meta instructions."""
+    seed = (seed_baseline or "").strip().lower()
+    ask_bits: list[str] = []
+    if "extension" in seed or "deadline" in seed:
+        ask_bits = [
+            "I am requesting an extension on the current deadline and would appreciate your approval if that is possible.",
+            "A bit more time would let me finish the work carefully and submit something that meets the expected standard.",
+            "Please let me know what revised timeline would work on your side so I can plan the submission accordingly.",
+            "I am ready to follow whatever process you use for deadline changes and can provide any materials you need for this request.",
+            "Thank you for considering this extension request — I appreciate your time and any flexibility you can offer.",
+            "If you prefer a shorter extension than what is typical, I am happy to work with whatever schedule you recommend.",
+            "I will use the additional time to complete remaining pieces of the work and review everything before submitting.",
+            "Please tell me whether you would like me to submit what I already finished while I continue working during an extension.",
+        ]
+    elif "leak" in seed or "landlord" in seed or "sink" in seed:
+        ask_bits = [
+            "I wanted to report that the sink is leaking and ask that someone come look at it this week.",
+            "The leak needs attention soon so it does not get worse, and I would like help arranged as soon as you can.",
+            "Please let me know when someone can visit this week, or what information you need from me to schedule the repair.",
+            "I can be available to provide access and will follow any steps you prefer for maintenance requests.",
+            "Thank you for taking care of this — I appreciate a prompt response so we can get the sink fixed this week.",
+            "If you already have a preferred plumber or maintenance contact, I am glad to work with them at a time that works.",
+            "Please share any access instructions or building procedures I should follow when the repair visit is scheduled.",
+            "I will keep an eye on the sink in the meantime and update you if the leak becomes more urgent before the visit.",
+        ]
+    else:
+        ask_bits = [
+            "I wanted to make this request clearly and hope you can help with it.",
+            "Please take a look at what I am asking for and let me know how we should move forward.",
+            "I am ready to follow your preferred process and can provide anything else you need related to this request.",
+            "If a slight adjustment to the details would make this easier to approve, I am happy to work with that.",
+            "Thank you for considering this — I appreciate your time and look forward to your reply.",
+            "Please share the next step on your side so I can prepare whatever you need from me.",
+            "I am available to discuss this further if a short conversation would make the request easier to handle.",
+            "Once we align on how to proceed, I will follow through promptly on my end.",
+        ]
+    return ask_bits
 
 
-def _pad_long_body_paragraphs(paragraphs: list[str], *, min_words: int = 230) -> list[str]:
-    """Grow body with generic process/clarification paragraphs — never invented excuses."""
+def _pad_long_body_paragraphs(
+    paragraphs: list[str],
+    *,
+    min_words: int = 230,
+    seed_baseline: str = "",
+) -> list[str]:
+    """Grow long drafts with on-topic request detail — never meta or invented excuses."""
     result = list(paragraphs)
     body_so_far = "\n\n".join(result)
     words = len(re.findall(r"[A-Za-z0-9']+", body_so_far))
-    for pad in _LONG_BODY_WORD_PADS:
+    for pad in _long_request_elaboration_paragraphs(seed_baseline):
+        if words >= min_words:
+            break
+        if pad.lower() in body_so_far.lower():
+            continue
+        result.append(pad)
+        body_so_far = "\n\n".join(result)
+        words = len(re.findall(r"[A-Za-z0-9']+", body_so_far))
+    # Extra courteous request-focused pads if still short (still no invented reason).
+    extras = [
+        "I hope this is a reasonable request and that we can settle on a plan that works for you.",
+        "Please reply when you have a moment so I know how to proceed with this request.",
+        "I remain flexible on the smaller details as long as the main ask can be accommodated.",
+        "Once I hear from you, I will move ahead according to your guidance on this request.",
+        "Thank you again for your attention to this — I know these requests take time to review.",
+        "I am grateful for any update you can share once you have considered this request.",
+    ]
+    for pad in extras:
         if words >= min_words:
             break
         if pad.lower() in body_so_far.lower():
@@ -1565,22 +1617,24 @@ def _build_length_retry_instruction(length: str, format_type: str) -> str:
         return (
             "LENGTH RETRY — previous draft was too long. "
             f"Output ONE {kind} only with 1 short body paragraph and at most 2 body sentences. "
-            "Core message only, no padding, no invented reasons. Do not change tone or vocabulary."
+            "Core message only. If the idea gave no reason, include no reason. "
+            "Do not change tone or vocabulary."
         )
     if length == "medium":
         return (
             "LENGTH RETRY — previous draft body was the wrong size. "
             f"Output ONE {kind} only with 2–3 body paragraphs (~90–160 body words). "
-            "Do not invent reasons/dates. Do not change tone or vocabulary. "
-            "Complexity must not shrink this draft."
+            "If the idea gave no reason, include no reason or excuse. "
+            "Do not change tone or vocabulary. Complexity must not shrink this draft."
         )
     return (
-        "LENGTH RETRY — previous draft was too close to medium / too short for LONG. "
-        f"Output ONE {kind} only with at least 5 body paragraphs and ~220+ body words — "
-        "clearly more developed than a medium draft. "
-        "Elaborate the same request without inventing excuses, dates, or backstory. "
-        "Do not change tone or vocabulary."
+        "LENGTH RETRY — previous draft was too short for LONG. "
+        f"Output ONE {kind} only with at least 5 body paragraphs and ~220+ body words. "
+        "Add genuine detail about the request itself (what you are asking for and how "
+        "to proceed). Do NOT invent a reason/excuse. Do NOT write meta commentary about "
+        "rules, instructions, or the writing process. Do not change tone or vocabulary."
     )
+
 
 
 _SHORT_SEED_STOPWORDS = frozenset(
@@ -1775,6 +1829,142 @@ def _ensure_nonempty_body(
     return _reassemble_email_sections(sections)
 
 
+_SEED_REASON_HINT_RE = re.compile(
+    r"(?i)\b("
+    r"because|due to|since|reason|excuse|health|sick|illness|ill|medical|"
+    r"family|emergency|workload|circumstances|personal (matter|issue|challenge)|"
+    r"busy with|conflict|travel|unexpected|unforeseen"
+    r")\b"
+)
+
+_INVENTED_REASON_CLAUSE_RE = re.compile(
+    r"(?i)\b("
+    r"due to (unforeseen|unexpected|personal|some)\b[^.]{0,120}"
+    r"|unforeseen (personal )?(circumstances|events|issues|challenges|matters)\b[^.]{0,80}"
+    r"|unexpected (personal )?(circumstances|events|issues|challenges|matters|work responsibilities)\b[^.]{0,80}"
+    r"|personal (circumstances|matters|issues|challenges)\b[^.]{0,80}"
+    r"|health issues?\b[^.]{0,80}"
+    r"|family emergency\b[^.]{0,80}"
+    r"|recent workload has been quite challenging\b[^.]{0,80}"
+    r"|my current schedule has been quite hectic\b[^.]{0,100}"
+    r"|been (more )?(quite )?challenging than (expected|anticipated)\b[^.]{0,80}"
+    r")\.?"
+)
+
+_META_INSTRUCTION_COMMENTARY_RE = re.compile(
+    r"(?is)(?:^|\n\n)\s*("
+    r"to keep this simple,? here is the ask[^.]*\."
+    r"|i am not adding a separate reason[^.]*\."
+    r"|again,? this is the same request restated[^.]*\."
+    r"|i can provide more detail about the request itself if that would help[^.]*\."
+    r"|i do not have a separate story to add[^.]*\."
+    r"|nothing new beyond the ask itself[^.]*\."
+    r"|i wanted to write this out carefully so the request[^.]*\."
+    r"|please respond when you can with a yes,? a no,? or what you need from me next\."
+    r")\s*"
+)
+
+
+def _seed_states_a_reason(seed_baseline: str) -> bool:
+    return bool(_SEED_REASON_HINT_RE.search(seed_baseline or ""))
+
+
+def _strip_meta_instruction_commentary(text: str, format_type: str) -> str:
+    """Remove paragraphs that narrate instructions / drafting strategy."""
+    if not text or not text.strip():
+        return text
+
+    def _clean_body(body: str) -> str:
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+        kept: list[str] = []
+        for paragraph in paragraphs:
+            lower = paragraph.lower()
+            if _META_INSTRUCTION_COMMENTARY_RE.search(paragraph):
+                continue
+            if any(
+                marker in lower
+                for marker in (
+                    "i am not adding a separate reason",
+                    "to keep this simple, here is the ask",
+                    "same request restated for clarity",
+                    "separate story to add",
+                    "nothing new beyond the ask",
+                    "write this out carefully so the request",
+                    "reply with a yes, a no",
+                    "yes, a no, or what you need",
+                )
+            ):
+                continue
+            kept.append(paragraph)
+        return "\n\n".join(kept)
+
+    if format_type == "email":
+        sections = _parse_email_sections(text)
+        sections["body"] = _clean_body(sections.get("body", ""))
+        return _reassemble_email_sections(sections)
+    return _clean_body(text)
+
+
+def _strip_invented_reasons_if_absent(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str,
+) -> str:
+    """If the idea gave no reason, delete invented justification clauses/sentences."""
+    if not text or not text.strip() or _seed_states_a_reason(seed_baseline):
+        return text
+
+    def _clean_body(body: str) -> str:
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+        cleaned_paras: list[str] = []
+        for paragraph in paragraphs:
+            sentences = _split_sentences(paragraph)
+            kept_sents: list[str] = []
+            for sentence in sentences:
+                if _INVENTED_REASON_CLAUSE_RE.search(sentence):
+                    # Drop whole sentence if it is mainly a fabricated reason.
+                    # Keep only if a clear request survives without the clause.
+                    stripped = _INVENTED_REASON_CLAUSE_RE.sub("", sentence)
+                    stripped = re.sub(r"\s{2,}", " ", stripped).strip(" ,;")
+                    stripped = re.sub(r"\bas\b\s*$", "", stripped, flags=re.I).strip(" ,;")
+                    lower = stripped.lower()
+                    if not stripped or len(stripped.split()) < 4:
+                        continue
+                    if any(
+                        cue in lower
+                        for cue in (
+                            "request",
+                            "extension",
+                            "deadline",
+                            "asking",
+                            "ask",
+                            "please",
+                            "would it be",
+                            "could you",
+                            "let me know",
+                            "leaking",
+                            "repair",
+                        )
+                    ):
+                        if stripped and not stripped.endswith((".", "!", "?")):
+                            stripped += "."
+                        if stripped:
+                            stripped = stripped[0].upper() + stripped[1:]
+                        kept_sents.append(stripped)
+                    continue
+                kept_sents.append(sentence)
+            if kept_sents:
+                cleaned_paras.append(_join_sentences(kept_sents))
+        return "\n\n".join(cleaned_paras)
+
+    if format_type == "email":
+        sections = _parse_email_sections(text)
+        sections["body"] = _clean_body(sections.get("body", ""))
+        return _reassemble_email_sections(sections)
+    return _clean_body(text)
+
+
 def apply_generate_hard_filters(
     text: str,
     *,
@@ -1792,6 +1982,10 @@ def apply_generate_hard_filters(
     profile = normalized.get("profile") or {}
 
     filtered = text
+    filtered = _strip_meta_instruction_commentary(filtered, format_type)
+    filtered = _strip_invented_reasons_if_absent(
+        filtered, format_type=format_type, seed_baseline=seed_baseline
+    )
     if tone_preset in {"friendly", "casual"}:
         filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
 
@@ -1864,6 +2058,7 @@ def finalize_generate_output(
     *,
     format_type: str,
     settings: dict[str, Any] | None,
+    seed_baseline: str = "",
 ) -> str:
     """Apply profile note and tone markers after length enforcement."""
     if not text or not text.strip():
@@ -1907,8 +2102,16 @@ def finalize_generate_output(
         filtered = _reassemble_email_sections(sections)
     if normalized["length"] in {"short", "medium", "long"}:
         filtered = _enforce_length_structure(
-            filtered, format_type=format_type, length=normalized["length"]
+            filtered,
+            format_type=format_type,
+            length=normalized["length"],
+            seed_baseline=seed_baseline,
         )
+    # Length pads / model text can reintroduce bad filler — strip again.
+    filtered = _strip_meta_instruction_commentary(filtered, format_type)
+    filtered = _strip_invented_reasons_if_absent(
+        filtered, format_type=format_type, seed_baseline=seed_baseline
+    )
     return filtered
 
 
@@ -3015,13 +3218,29 @@ class WritingAgent:
             settings=effective_settings,
             seed_baseline=seed_baseline,
         )
-        cleaned = _enforce_length_structure(cleaned, format_type, length)
+        cleaned = _enforce_length_structure(
+            cleaned, format_type, length, seed_baseline=seed_baseline
+        )
         cleaned = finalize_generate_output(
             cleaned,
             format_type=format_type,
             settings=effective_settings,
+            seed_baseline=seed_baseline,
         )
         cleaned = _strip_generate_instruction_leakage(cleaned)
+        cleaned = _strip_meta_instruction_commentary(cleaned, format_type)
+        cleaned = _strip_invented_reasons_if_absent(
+            cleaned, format_type=format_type, seed_baseline=seed_baseline
+        )
+        # Re-assert long structure after strips removed filler.
+        if length == "long":
+            cleaned = _enforce_length_structure(
+                cleaned, format_type, length, seed_baseline=seed_baseline
+            )
+            cleaned = _strip_meta_instruction_commentary(cleaned, format_type)
+            cleaned = _strip_invented_reasons_if_absent(
+                cleaned, format_type=format_type, seed_baseline=seed_baseline
+            )
         return _normalize_email_spacing(cleaned)
 
 
