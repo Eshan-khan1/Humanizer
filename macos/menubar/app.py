@@ -1,4 +1,4 @@
-"""Humanizer macOS menu-bar app (native AppKit — works on macOS 26+)."""
+"""Humanizer macOS app — control window + right-side menu bar icon."""
 
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import sys
 import threading
 from pathlib import Path
 
-# Allow `python -m macos.menubar.app` from repo root
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from macos.menubar import autostart, manager  # noqa: E402
+from macos.menubar.icons_util import write_status_icons  # noqa: E402
 
 logging.basicConfig(
     filename=str(manager.logs_dir() / "menubar.log"),
@@ -22,6 +22,15 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
 )
 logger = logging.getLogger("humanizer.menubar")
+
+# Claude-inspired tokens from Humanizer ui theme.json
+_BG = (0.941, 0.925, 0.878, 1.0)  # #F0ECE0
+_CARD = (1.0, 1.0, 1.0, 1.0)
+_TEXT = (0.102, 0.102, 0.094, 1.0)  # #1a1a18
+_MUTED = (0.357, 0.349, 0.314, 1.0)  # #5b5950
+_ACCENT = (0.788, 0.392, 0.259, 1.0)  # #c96442
+_OK = (0.23, 0.60, 0.40, 1.0)
+_OFF = (0.55, 0.52, 0.48, 1.0)
 
 
 def _reexec_native_if_needed() -> None:
@@ -35,6 +44,19 @@ def _reexec_native_if_needed() -> None:
 
 
 _reexec_native_if_needed()
+
+
+def bootstrap_root() -> Path:
+    resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
+    if resources.is_dir() and (resources / "HumanizerHome" / "server.py").is_file():
+        return manager.ensure_home_payload(resources)
+    return manager.resolve_project_root()
+
+
+def _icon_dir() -> Path:
+    base = Path(__file__).resolve().parent / "icons"
+    write_status_icons(base)
+    return base
 
 
 def main() -> None:
@@ -62,6 +84,15 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001
         logger.warning("Autostart setup failed: %s", exc)
 
+    icon_dir = _icon_dir()
+    online_icon_path = str(icon_dir / "status-online.png")
+    offline_icon_path = str(icon_dir / "status-offline.png")
+    mark_path = str(icon_dir / "humanizer-mark.png")
+
+    def color(rgba):
+        r, g, b, a = rgba
+        return AppKit.NSColor.colorWithCalibratedRed_green_blue_alpha_(r, g, b, a)
+
     def notify_user(title: str, message: str) -> None:
         try:
             note = AppKit.NSUserNotification.alloc().init()
@@ -73,6 +104,14 @@ def main() -> None:
         except Exception:  # noqa: BLE001
             logger.info("Notify: %s — %s", title, message)
 
+    def load_template_image(path: str):
+        image = AppKit.NSImage.alloc().initWithContentsOfFile_(path)
+        if image is None:
+            return None
+        image.setTemplate_(True)
+        image.setSize_((18.0, 18.0))
+        return image
+
     class AppDelegate(Foundation.NSObject):
         def init(self):
             self = objc.super(AppDelegate, self).init()
@@ -80,10 +119,19 @@ def main() -> None:
                 return None
             self.status_item = None
             self.status_menu_item = None
-            self.restart_menu_item = None
+            self.window = None
+            self.brand_label = None
+            self.status_title = None
+            self.status_detail = None
+            self.status_dot = None
+            self.power_switch = None
+            self.mark_view = None
             self.root_path = None
             self.busy = False
             self.notified_ready = False
+            self.server_online = False
+            self.online_image = load_template_image(online_icon_path)
+            self.offline_image = load_template_image(offline_icon_path)
             return self
 
         def applicationDidFinishLaunching_(self, _notification):
@@ -91,29 +139,168 @@ def main() -> None:
             AppKit.NSApp.setActivationPolicy_(
                 AppKit.NSApplicationActivationPolicyRegular
             )
+            self.buildMainWindow()
             self.buildStatusItem()
             self.startServerAsync()
             self.scheduleHealthTimer()
-            notify_user(
-                "Humanizer is running",
-                'Look for "Hz" near the clock (top-right). Click the Dock icon anytime for a tip.',
-            )
+            self.showMainWindow()
 
-        def applicationShouldHandleReopen_hasVisibleWindows_(self, _app, _flag):
-            notify_user(
-                "Humanizer",
-                'No window — use the "Hz" item in the menu bar (top-right).',
-            )
-            self.popStatusMenu()
+        def applicationShouldHandleReopen_hasVisibleWindows_(self, _app, has_visible):
+            self.showMainWindow()
             return True
 
+        def applicationShouldTerminateAfterLastWindowClosed_(self, _app):
+            # Closing the window keeps the menu-bar icon / server alive.
+            return False
+
+        def buildMainWindow(self):
+            style = (
+                AppKit.NSWindowStyleMaskTitled
+                | AppKit.NSWindowStyleMaskClosable
+                | AppKit.NSWindowStyleMaskMiniaturizable
+            )
+            frame = Foundation.NSMakeRect(0, 0, 420, 280)
+            window = AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+                frame,
+                style,
+                AppKit.NSBackingStoreBuffered,
+                False,
+            )
+            window.setTitle_("Humanizer")
+            window.setBackgroundColor_(color(_BG))
+            window.center()
+            window.setReleasedWhenClosed_(False)
+
+            content = window.contentView()
+
+            # Brand mark (left)
+            mark = AppKit.NSImageView.alloc().initWithFrame_(
+                Foundation.NSMakeRect(28, 188, 56, 56)
+            )
+            mark_img = AppKit.NSImage.alloc().initWithContentsOfFile_(mark_path)
+            if mark_img is not None:
+                mark.setImage_(mark_img)
+            mark.setImageScaling_(AppKit.NSImageScaleProportionallyUpOrDown)
+            content.addSubview_(mark)
+            self.mark_view = mark
+
+            # Title
+            title = AppKit.NSTextField.labelWithString_("Humanizer")
+            title.setFont_(
+                AppKit.NSFont.fontWithName_size_("Georgia", 28.0)
+                or AppKit.NSFont.systemFontOfSize_weight_(28.0, AppKit.NSFontWeightRegular)
+            )
+            title.setTextColor_(color(_TEXT))
+            title.setFrame_(Foundation.NSMakeRect(98, 214, 200, 34))
+            content.addSubview_(title)
+            self.brand_label = title
+
+            subtitle = AppKit.NSTextField.labelWithString_("Local writing server")
+            subtitle.setFont_(AppKit.NSFont.systemFontOfSize_(13.0))
+            subtitle.setTextColor_(color(_MUTED))
+            subtitle.setFrame_(Foundation.NSMakeRect(98, 192, 200, 20))
+            content.addSubview_(subtitle)
+
+            # Power / status cluster on the RIGHT
+            right_x = 300
+            status_caption = AppKit.NSTextField.labelWithString_("Server")
+            status_caption.setFont_(AppKit.NSFont.systemFontOfSize_(11.0))
+            status_caption.setTextColor_(color(_MUTED))
+            status_caption.setAlignment_(AppKit.NSTextAlignmentRight)
+            status_caption.setFrame_(Foundation.NSMakeRect(right_x, 232, 90, 16))
+            content.addSubview_(status_caption)
+
+            switch = AppKit.NSSwitch.alloc().initWithFrame_(
+                Foundation.NSMakeRect(right_x + 48, 200, 51, 31)
+            )
+            switch.setTarget_(self)
+            switch.setAction_("onPowerToggle:")
+            content.addSubview_(switch)
+            self.power_switch = switch
+
+            # Card
+            card = AppKit.NSView.alloc().initWithFrame_(
+                Foundation.NSMakeRect(28, 72, 364, 100)
+            )
+            card.setWantsLayer_(True)
+            card.layer().setBackgroundColor_(color(_CARD).CGColor())
+            card.layer().setCornerRadius_(14.0)
+            content.addSubview_(card)
+
+            dot = AppKit.NSView.alloc().initWithFrame_(
+                Foundation.NSMakeRect(20, 58, 12, 12)
+            )
+            dot.setWantsLayer_(True)
+            dot.layer().setCornerRadius_(6.0)
+            dot.layer().setBackgroundColor_(color(_OFF).CGColor())
+            card.addSubview_(dot)
+            self.status_dot = dot
+
+            status_title = AppKit.NSTextField.labelWithString_("Checking…")
+            status_title.setFont_(
+                AppKit.NSFont.systemFontOfSize_weight_(16.0, AppKit.NSFontWeightMedium)
+            )
+            status_title.setTextColor_(color(_TEXT))
+            status_title.setFrame_(Foundation.NSMakeRect(44, 52, 280, 24))
+            card.addSubview_(status_title)
+            self.status_title = status_title
+
+            status_detail = AppKit.NSTextField.labelWithString_(
+                "Starting Ollama and the grammar server…"
+            )
+            status_detail.setFont_(AppKit.NSFont.systemFontOfSize_(12.0))
+            status_detail.setTextColor_(color(_MUTED))
+            status_detail.setFrame_(Foundation.NSMakeRect(44, 28, 300, 20))
+            card.addSubview_(status_detail)
+            self.status_detail = status_detail
+
+            restart = AppKit.NSButton.buttonWithTitle_target_action_(
+                "Restart server", self, "onRestart:"
+            )
+            restart.setBezelStyle_(AppKit.NSBezelStyleRounded)
+            restart.setFrame_(Foundation.NSMakeRect(28, 24, 140, 32))
+            content.addSubview_(restart)
+
+            quit_btn = AppKit.NSButton.buttonWithTitle_target_action_(
+                "Quit", self, "onQuit:"
+            )
+            quit_btn.setBezelStyle_(AppKit.NSBezelStyleRounded)
+            quit_btn.setFrame_(Foundation.NSMakeRect(180, 24, 80, 32))
+            content.addSubview_(quit_btn)
+
+            tip = AppKit.NSTextField.labelWithString_(
+                "Menu bar icon sits on the right, near the clock."
+            )
+            tip.setFont_(AppKit.NSFont.systemFontOfSize_(11.0))
+            tip.setTextColor_(color(_MUTED))
+            tip.setFrame_(Foundation.NSMakeRect(28, 4, 364, 16))
+            content.addSubview_(tip)
+
+            self.window = window
+
+        def showMainWindow(self):
+            if self.window is None:
+                return
+            self.window.makeKeyAndOrderFront_(None)
+            AppKit.NSApp.activateIgnoringOtherApps_(True)
+
         def buildStatusItem(self):
+            # systemStatusBar items always live on the RIGHT side of the menu bar.
             bar = AppKit.NSStatusBar.systemStatusBar()
-            item = bar.statusItemWithLength_(AppKit.NSVariableStatusItemLength)
+            item = bar.statusItemWithLength_(AppKit.NSSquareStatusItemLength)
             button = item.button()
             if button is not None:
-                button.setTitle_("Hz…")
-                button.setToolTip_("Humanizer — local writing server")
+                if self.offline_image is not None:
+                    button.setImage_(self.offline_image)
+                    button.setTitle_("")
+                else:
+                    button.setTitle_("Hz")
+                button.setToolTip_("Humanizer — click for status")
+                # Prefer appearing toward the right (near clock); macOS may still reorder.
+                try:
+                    item.setBehavior_(1)  # NSStatusItemBehaviorTerminationOnRemoval-ish / mid
+                except Exception:  # noqa: BLE001
+                    pass
             menu = AppKit.NSMenu.alloc().init()
 
             self.status_menu_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
@@ -123,11 +310,18 @@ def main() -> None:
             menu.addItem_(self.status_menu_item)
             menu.addItem_(AppKit.NSMenuItem.separatorItem())
 
-            self.restart_menu_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+            open_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Open Humanizer", "showWindow:", ""
+            )
+            open_item.setTarget_(self)
+            menu.addItem_(open_item)
+
+            restart_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
                 "Restart server", "onRestart:", ""
             )
-            self.restart_menu_item.setTarget_(self)
-            menu.addItem_(self.restart_menu_item)
+            restart_item.setTarget_(self)
+            menu.addItem_(restart_item)
+            menu.addItem_(AppKit.NSMenuItem.separatorItem())
 
             quit_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
                 "Quit Humanizer", "onQuit:", "q"
@@ -137,15 +331,10 @@ def main() -> None:
 
             item.setMenu_(menu)
             self.status_item = item
-            logger.info("Menu bar status item created: %s", type(item).__name__)
+            logger.info("Menu bar status item created (right system bar): %s", type(item).__name__)
 
-        def popStatusMenu(self):
-            try:
-                button = self.status_item.button() if self.status_item else None
-                if button is not None:
-                    button.performClick_(None)
-            except Exception:  # noqa: BLE001
-                pass
+        def showWindow_(self, _sender):
+            self.showMainWindow()
 
         def scheduleHealthTimer(self):
             Foundation.NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
@@ -160,17 +349,37 @@ def main() -> None:
             self.applyHealth_detail_(snap.server_ok, snap.detail)
 
         def applyHealth_detail_(self, online, detail):
+            self.server_online = bool(online)
             if self.status_menu_item is not None:
                 self.status_menu_item.setTitle_(f"Status: {detail}")
+
             button = self.status_item.button() if self.status_item else None
             if button is not None:
-                button.setTitle_("Hz" if online else "Hz…")
+                img = self.online_image if online else self.offline_image
+                if img is not None:
+                    button.setImage_(img)
+                    button.setTitle_("")
+                else:
+                    button.setTitle_("Hz" if online else "Hz…")
+
+            if self.power_switch is not None:
+                self.power_switch.setState_(
+                    AppKit.NSControlStateValueOn if online else AppKit.NSControlStateValueOff
+                )
+            if self.status_title is not None:
+                self.status_title.setStringValue_(
+                    "Server online" if online else "Server offline"
+                )
+            if self.status_detail is not None:
+                self.status_detail.setStringValue_(str(detail))
+            if self.status_dot is not None and self.status_dot.layer() is not None:
+                self.status_dot.layer().setBackgroundColor_(
+                    color(_OK if online else _OFF).CGColor()
+                )
+
             if online and not self.notified_ready:
                 self.notified_ready = True
-                notify_user(
-                    "Server online",
-                    'Humanizer is ready — look for "Hz" in the menu bar.',
-                )
+                notify_user("Server online", "Humanizer is ready.")
 
         def startServerAsync(self):
             def work():
@@ -182,15 +391,34 @@ def main() -> None:
 
             threading.Thread(target=work, daemon=True).start()
 
+        def onPowerToggle_(self, sender):
+            # Switch on the right: ON starts/restarts, OFF stops the local server.
+            if self.busy:
+                return
+            want_on = sender.state() == AppKit.NSControlStateValueOn
+            self.busy = True
+
+            def work():
+                try:
+                    if want_on:
+                        ok = manager.restart_server(self.root_path)
+                        detail = "Server online" if ok else "Server offline"
+                    else:
+                        manager.stop_server()
+                        ok = False
+                        detail = "Server offline"
+                    AppHelper.callAfter(self.applyHealth_detail_, ok, detail)
+                finally:
+                    self.busy = False
+
+            threading.Thread(target=work, daemon=True).start()
+
         def onRestart_(self, _sender):
             if self.busy:
                 return
             self.busy = True
-            if self.status_menu_item is not None:
-                self.status_menu_item.setTitle_("Status: Restarting…")
-            button = self.status_item.button() if self.status_item else None
-            if button is not None:
-                button.setTitle_("Hz…")
+            if self.status_title is not None:
+                self.status_title.setStringValue_("Restarting…")
 
             def work():
                 try:
@@ -214,16 +442,8 @@ def main() -> None:
     delegate = AppDelegate.alloc().init()
     delegate.root_path = root
     app.setDelegate_(delegate)
-    # Ensure finish-launching runs even when started without a normal GUI session.
     AppKit.NSApp.finishLaunching()
     AppHelper.runEventLoop()
-
-
-def bootstrap_root() -> Path:
-    resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
-    if resources.is_dir() and (resources / "HumanizerHome" / "server.py").is_file():
-        return manager.ensure_home_payload(resources)
-    return manager.resolve_project_root()
 
 
 if __name__ == "__main__":
