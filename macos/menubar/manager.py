@@ -20,7 +20,7 @@ logger = logging.getLogger("humanizer.menubar")
 DEFAULT_PORT = 8000
 HEALTH_URL = f"http://127.0.0.1:{DEFAULT_PORT}/health"
 OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
-_DEPS_PROBE = "import fastapi, uvicorn, language_tool_python, rumps"
+_DEPS_PROBE = "import fastapi, uvicorn, language_tool_python; import AppKit"
 
 
 @dataclass
@@ -301,7 +301,7 @@ def ensure_venv(root: Path) -> Path:
             stderr=subprocess.DEVNULL,
         )
     subprocess.run(
-        _native_argv([str(python), "-m", "pip", "install", "rumps"]),
+        _native_argv([str(python), "-m", "pip", "install", "rumps", "pyobjc-framework-Cocoa"]),
         check=False,
         cwd=str(root),
         stdout=subprocess.DEVNULL,
