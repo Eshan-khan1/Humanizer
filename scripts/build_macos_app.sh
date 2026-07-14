@@ -151,35 +151,14 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-# Native Mach-O launcher linked to Python.framework so Dock shows Humanizer (not Python.app).
-LAUNCHER_SRC="$ROOT/macos/launcher/humanizer_main.c"
-PYTHON_FRAMEWORK_ROOT=""
-for candidate in \
-  "/Library/Developer/CommandLineTools/Library/Frameworks" \
-  "/Applications/Xcode.app/Contents/Developer/Library/Frameworks" \
-  "/Library/Frameworks"
-do
-  if [[ -d "$candidate/Python3.framework" ]]; then
-    PYTHON_FRAMEWORK_ROOT="$candidate"
-    break
-  fi
-done
-if [[ -z "$PYTHON_FRAMEWORK_ROOT" ]]; then
-  echo "Error: Python3.framework not found (install Xcode CLT or python.org Python)"
-  exit 1
-fi
-
-PYTHON_HEADERS="$PYTHON_FRAMEWORK_ROOT/Python3.framework/Versions/Current/Headers"
-if [[ ! -d "$PYTHON_HEADERS" ]]; then
-  PYTHON_HEADERS="$PYTHON_FRAMEWORK_ROOT/Python3.framework/Headers"
-fi
-
-echo "  compiling menu-bar launcher against $PYTHON_FRAMEWORK_ROOT/Python3.framework"
-clang -Os -arch arm64 -arch x86_64 \
-  -I"$PYTHON_HEADERS" \
-  -F"$PYTHON_FRAMEWORK_ROOT" \
-  -framework Python3 \
-  -Wl,-rpath,"$PYTHON_FRAMEWORK_ROOT" \
+# Native AppKit host (Swift). Required on macOS 26 so Humanizer appears in
+# System Settings → Menu Bar. A Python-embedded executable is NOT listed there.
+LAUNCHER_SRC="$ROOT/macos/launcher/HumanizerApp.swift"
+echo "  compiling native menu-bar host (Swift/AppKit)"
+swiftc -O \
+  -target arm64-apple-macos12.0 \
+  -sdk "$(xcrun --show-sdk-path)" \
+  -framework AppKit -framework Foundation \
   -o "$MACOS/Humanizer" \
   "$LAUNCHER_SRC"
 
@@ -191,8 +170,8 @@ echo ""
 echo "Built: $APP"
 echo ""
 echo "To use:"
-echo "  1. Open the app once (or drag into /Applications, then open it)"
-echo "  2. Look for “Hz” in the menu bar (top-right) — not an app named Python"
-echo "  3. After restart/login it opens by itself"
+echo "  1. Drag into /Applications and open once"
+echo "  2. System Settings → Menu Bar → turn Humanizer ON"
+echo "  3. Look for the H icon near the clock"
 echo ""
 echo "Needs: Python 3, Ollama app, Chrome extension loaded from extension/"

@@ -30,10 +30,11 @@ https://github.com/Eshan-khan1/Humanizer/releases/latest
 1. Drag **Humanizer.app** into your **Applications** folder
 2. Open it once (double-click)
    - If macOS says the app can’t be opened, right-click **Humanizer.app** → **Open** → **Open**
-3. You should see **Hz** in the menu bar (top-right). There is no Dock icon or window — that is normal.
-4. A notification also says Humanizer is starting
-5. The app quietly starts Ollama (if needed) and the grammar server in the background
-6. The first time it opens, it also sets itself to relaunch after restart or login. No Terminal steps are required for that.
+3. You should see the Humanizer window and an **H** icon near the clock
+4. If the icon is missing: System Settings → **Menu Bar** → turn **Humanizer** ON  
+   (or click **Add to Menu Bar…** in the app window)
+5. The first time it opens, it also sets itself to relaunch after restart or login
+
 
 Menu bar actions:
 
