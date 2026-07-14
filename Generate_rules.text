@@ -30,7 +30,7 @@ Context fields
 Personal profile info (comma-separated key-value pairs) → auto-injected into the prompt so generated text can reference name, role, or other saved details without the user typing them.
 Permanent Note → additional standing instruction always included in every generation (e.g. "always sign off as Eshan").
 Both are optional — if empty, generation proceeds with generic phrasing, no errors.
-Email signature → every generated email ends with the sign-off line, then the writer's full name on the next line. If full name is saved in profile, use it. If not, use exactly "[Your Name]".
+Email signature → every generated email ends with the sign-off line, then the writer's full name on the next line when a name is saved. If no name is saved, sign off with only the closing word (e.g. Best, / Sincerely,) and no name line — never use a bracketed placeholder.
 
 Persistence
 

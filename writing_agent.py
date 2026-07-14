@@ -26,7 +26,7 @@ OLLAMA_GENERATE_NUM_PREDICT_LONG = int(
     os.environ.get("OLLAMA_GENERATE_NUM_PREDICT_LONG", "4096")
 )
 
-EMAIL_SIGNATURE_PLACEHOLDER = "[Your Name]"
+EMAIL_SIGNATURE_PLACEHOLDER = ""  # no name line when profile name is missing (never brackets)
 
 WRITING_AGENT_SYSTEM_PROMPT = (
     "You are the Humanizer Writing Agent. You only do two jobs:\n"
@@ -70,12 +70,14 @@ Email structure:
     in the greeting / salutation)
   • Body — must follow tone, length, and complexity rules exactly
   • Sign-off — must follow the tone rules, then the writer's name on the next line
-  • Email signature — always end with the writer's full name from profile / sign-off note;
-    otherwise use exactly "[Your Name]" on its own line after the sign-off
+  • Email signature — always put the writer's full name from profile / sign-off note
+    after the sign-off when a name is saved; if no name is saved, end with only the
+    closing word and no name line. Never use a bracketed placeholder for the name
+    or anything else.
   • Sign-off / signature instructions NEVER affect the greeting at the top
 
 General rules:
-  • Produce send-ready text — no fragments, no "[mention ...]" / "[Date]" placeholders.
+  • Produce send-ready text — no fragments and no bracketed placeholders of any kind.
   • Weave informational user notes into the body naturally; do not paste them as a bullet list.
   • If a user note is informational only, it adds facts — it must not change tone or style.
   • If a user note includes a one-time tone instruction, follow that tone for this generation only.
@@ -102,9 +104,10 @@ OUTPUT RULES (non-negotiable):
   • Never put the writer's own name in the greeting — writer name is only the signature line.
   • If a user profile is provided, apply name/role only where appropriate (signature, not greeting).
   • If profile/permanent note are empty: use generic phrasing for greetings and body
-    (no [Name], no bracketed blanks in the body) and do not error.
+    and do not error.
   • Email signature: always put the writer's saved full name after the sign-off; if no
-    name is saved, use exactly "[Your Name]" on its own line — never omit the signature.
+    name is saved, sign off with just the closing word ("Best," or "Sincerely,") and
+    no name line — never use a bracketed placeholder for the name or anything else.
   • Sign-off permanent notes affect ONLY the closing signature — never the salutation.
   • Never leave bracketed instructions or template text in the output.
   • NEVER print rules, setting names, instruction headers, profile labels, or meta notes
@@ -181,7 +184,8 @@ TONE_PRESET_GUIDANCE: dict[str, str] = {
 TONE — voice/personality only (independent of length and complexity):
   • Professional language, no contractions, no slang, structured sentences.
   • Opening: "Dear …," when a recipient is known; otherwise "Dear Sir or Madam," or "Hello,"
-  • Sign-off: "Sincerely," then the writer's name on the next line (profile name or "[Your Name]")
+  • Sign-off: "Sincerely," then the writer's saved name on the next line when available;
+    if no name is saved, sign off with only "Sincerely," and no name line
   • Subject line must sound formal
   • TONE must NEVER change how long the output is or how advanced the vocabulary is —
     "formal" does not mean longer, and does not mean more advanced words.""",
@@ -189,7 +193,8 @@ TONE — voice/personality only (independent of length and complexity):
 TONE — voice/personality only (independent of length and complexity):
   • Warm, approachable, personable phrasing; contractions okay.
   • Opening: "Hi …," when a recipient is known; otherwise "Hi," or "Hi there,"
-  • Sign-off: "Best," then the writer's name on the next line (profile name or "[Your Name]")
+  • Sign-off: "Best," then the writer's saved name on the next line when available;
+    if no name is saved, sign off with only "Best," and no name line
   • Subject line must sound warm but clear
   • TONE must NEVER change how long the output is or how advanced the vocabulary is —
     "friendly" does not mean shorter or simpler words.""",
@@ -197,7 +202,8 @@ TONE — voice/personality only (independent of length and complexity):
 TONE — voice/personality only (independent of length and complexity):
   • Relaxed, conversational; contractions and informal phrasing okay.
   • Opening: "Hey …," when a recipient is known; otherwise "Hey," or "Hey there,"
-  • Sign-off: "Thanks," then the writer's name on the next line (profile name or "[Your Name]")
+  • Sign-off: "Thanks," then the writer's saved name on the next line when available;
+    if no name is saved, sign off with only "Thanks," and no name line
   • Subject line must sound informal
   • TONE must NEVER change how long the output is or how advanced the vocabulary is —
     "casual" does not mean shorter or simpler words.""",
@@ -2184,9 +2190,8 @@ def _enforce_tone_greeting_line(
 def _enforce_tone_signoff(
     footer: str, tone_preset: str, profile: dict[str, Any]
 ) -> str:
-    """Force sign-off word by tone; writer name always on its own line after."""
+    """Force sign-off word by tone; writer name on next line only when saved."""
     signature_name = _email_signature_name(profile)
-    lines = [ln.strip() for ln in (footer or "").split("\n") if ln.strip()]
 
     preferred = str(
         profile.get("signOff") or profile.get("sign_off") or ""
@@ -2197,7 +2202,9 @@ def _enforce_tone_signoff(
         signoff = {"formal": "Sincerely,", "friendly": "Best,", "casual": "Thanks,"}.get(
             tone_preset, "Best,"
         )
-    return f"{signoff}\n{signature_name}"
+    if signature_name:
+        return f"{signoff}\n{signature_name}"
+    return signoff
 
 
 _GREETING_WITH_NAME_RE = re.compile(
@@ -2216,11 +2223,11 @@ def _extract_profile_full_name(profile: dict[str, Any]) -> str:
 
 
 def _email_signature_name(profile: dict[str, Any]) -> str:
-    """Writer name for the email signature line."""
+    """Writer name for the email signature line — empty when none saved (no placeholders)."""
     saved_name = _extract_profile_full_name(profile)
     if saved_name and not _is_placeholder_name(saved_name):
         return saved_name
-    return EMAIL_SIGNATURE_PLACEHOLDER
+    return ""
 
 
 def _is_placeholder_name(value: str) -> bool:
@@ -2305,7 +2312,8 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
                 normalized_lines.append(
                     prefix if prefix.endswith(",") else f"{prefix},"
                 )
-                normalized_lines.append(signature_name)
+                if signature_name:
+                    normalized_lines.append(signature_name)
                 continue
             if _is_placeholder_name(name_part):
                 normalized_lines.append(prefix if prefix.endswith(",") else f"{prefix},")
@@ -2320,15 +2328,15 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
             continue
 
         if _is_placeholder_name(stripped):
-            if in_footer:
+            if in_footer and signature_name:
                 normalized_lines.append(signature_name)
             elif saved_name:
                 normalized_lines.append(saved_name)
-            # else drop placeholder lines from greeting/body
+            # else drop placeholder / unnamed signature lines
             continue
 
         if not in_footer:
-            stripped = re.sub(r"\[Name\]", "", stripped).strip()
+            stripped = re.sub(r"\[[^\]]+\]", "", stripped).strip()
             if not stripped:
                 continue
             if stripped != line.strip():
@@ -2345,13 +2353,13 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
         if not _is_signoff_line(current) or not nxt:
             continue
         if _is_placeholder_name(nxt):
-            result_lines[index + 1] = signature_name
+            result_lines[index + 1] = signature_name or None
             continue
         if saved_name and nxt.lower() == saved_name.lower():
             continue
         if re.fullmatch(r"[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?", nxt):
             # Drop invented sender names when no profile is saved
-            result_lines[index + 1] = signature_name
+            result_lines[index + 1] = signature_name or None
 
     return "\n".join(line for line in result_lines if line is not None)
 
@@ -2903,7 +2911,7 @@ def build_generate_system_instruction(
         if profile_block
         else (
             "RULE 4 — PERSONAL INFO (reference only if relevant; independent of tone/length/vocabulary):\n"
-            "  None provided. Use generic phrasing (no bracketed blanks in the body). "
+            "  None provided. Use generic phrasing. "
             "Personal info must NEVER change tone, length, or vocabulary."
         )
     )
