@@ -340,6 +340,17 @@ def start_server(root: Path) -> bool:
     env.setdefault("OLLAMA_FLASH_ATTENTION", "1")
     if "OLLAMA_LLM_LIBRARY" not in env:
         env["OLLAMA_LLM_LIBRARY"] = "metal"
+    try:
+        from macos.menubar.settings import apply_to_env
+
+        env = apply_to_env(env)
+        logger.info(
+            "Starting server with grammar=%s writing=%s",
+            env.get("OLLAMA_GRAMMAR_MODEL"),
+            env.get("OLLAMA_WRITING_MODEL"),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not apply model settings: %s", exc)
 
     process = subprocess.Popen(
         _native_argv([str(python), "server.py"]),
