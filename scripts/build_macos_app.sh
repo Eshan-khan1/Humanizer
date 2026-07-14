@@ -162,6 +162,10 @@ cat > "$LAUNCH_AGENTS_DIR/com.humanizer.app.agent.plist" <<'AGENT'
 <dict>
   <key>Label</key>
   <string>com.humanizer.app.agent</string>
+  <key>AssociatedBundleIdentifiers</key>
+  <array>
+    <string>com.humanizer.app</string>
+  </array>
   <key>BundleProgram</key>
   <string>Contents/MacOS/Humanizer</string>
   <key>RunAtLoad</key>
@@ -171,6 +175,53 @@ cat > "$LAUNCH_AGENTS_DIR/com.humanizer.app.agent.plist" <<'AGENT'
 </dict>
 </plist>
 AGENT
+
+# Login Item helper (same pattern Stats / Raycast use). This is what gets
+# Humanizer a row in System Settings → Login Items & Background Activity.
+LOGIN_ITEM_APP="$CONTENTS/Library/LoginItems/LaunchAtLogin.app"
+LOGIN_ITEM_CONTENTS="$LOGIN_ITEM_APP/Contents"
+LOGIN_ITEM_MACOS="$LOGIN_ITEM_CONTENTS/MacOS"
+mkdir -p "$LOGIN_ITEM_MACOS"
+cat > "$LOGIN_ITEM_CONTENTS/Info.plist" <<'LOGINPLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleExecutable</key>
+  <string>LaunchAtLogin</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.humanizer.app.LaunchAtLogin</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>Humanizer</string>
+  <key>CFBundleDisplayName</key>
+  <string>Humanizer</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.9.2</string>
+  <key>CFBundleVersion</key>
+  <string>1.9.2</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>13.0</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>LSBackgroundOnly</key>
+  <true/>
+</dict>
+</plist>
+LOGINPLIST
+echo "  compiling LaunchAtLogin helper"
+swiftc -O \
+  -target arm64-apple-macos13.0 \
+  -sdk "$(xcrun --show-sdk-path)" \
+  -framework AppKit -framework Foundation \
+  -o "$LOGIN_ITEM_MACOS/LaunchAtLogin" \
+  "$ROOT/macos/launcher/LaunchAtLogin.swift"
+codesign --force --sign - "$LOGIN_ITEM_APP" >/dev/null 2>&1 || true
 
 # Native AppKit host (Swift). Required on macOS 26 so Humanizer appears in
 # System Settings → Menu Bar / Background Activity.
