@@ -7,3 +7,4 @@ language-tool-python==2.8.1
 requests
 datasets
 zstandard
+rumps; sys_platform == "darwin"

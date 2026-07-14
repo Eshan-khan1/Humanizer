@@ -162,32 +162,18 @@ Then paste:
 cd Humanizer
 ```
 
-**Step 3: Paste this into Terminal**
+**Step 3: Paste this into Terminal (build the Mac app once)**
 
 ```bash
-chmod +x scripts/install.sh start_server.sh "Start Humanizer.command"
+chmod +x scripts/build_macos_app.sh
+./scripts/build_macos_app.sh
 ```
 
-Then paste:
+**Step 4: Open the app (no terminal after this)**
 
-```bash
-./scripts/install.sh
-```
-
-If needed (Ollama is open):
-
-```bash
-./scripts/setup_models.sh
-```
-
-**Step 4: Paste this into Terminal**
-
-```bash
-./start_server.sh
-```
-
-Keep that Terminal window open.  
-Or double-click `Start Humanizer.command` in Finder.
+1. Open `dist/Humanizer.app`, or drag it into **Applications** and open it
+2. A Humanizer icon appears in the menu bar
+3. It quietly starts the server and sets itself to reopen after login or restart
 
 **Step 5: Load the extension in Chrome**
 

@@ -1,97 +1,84 @@
 # Install Humanizer on macOS
 
-Follow these steps in order.
+Setup is meant to feel like a normal Mac app: open once, then forget.
 
 ## Step 1: Download these apps
 
-Install each one before you continue:
+Install each one:
 
 1. [Google Chrome](https://www.google.com/chrome/)
-2. [Python 3.10+](https://www.python.org/downloads/) (or run `brew install python` if you use Homebrew)
-3. [Ollama](https://ollama.com) (open the app once after installing)
+2. [Python 3.10+](https://www.python.org/downloads/) (or `brew install python`)
+3. [Ollama](https://ollama.com) (open the Ollama app once after installing)
 4. Java 11+ ([Adoptium](https://adoptium.net/) or `brew install openjdk@17`)
 
 ## Step 2: Download Humanizer
 
-Open Terminal, then paste this and press Enter:
+1. Open https://github.com/Eshan-khan1/Humanizer
+2. Click **Code**, then **Download ZIP** (or clone with Git)
+3. Unzip the folder somewhere easy to find
+
+If you use Terminal instead:
 
 ```bash
 git clone https://github.com/Eshan-khan1/Humanizer.git
-```
-
-Then paste this and press Enter:
-
-```bash
 cd Humanizer
 ```
 
-**No Git?** Download the ZIP instead:
+## Step 3: Build or open the menu bar app
 
-1. Open https://github.com/Eshan-khan1/Humanizer
-2. Click **Code**, then **Download ZIP**
-3. Unzip the folder
-4. In Terminal, go into that folder (example):
+From the Humanizer folder, paste this into Terminal once to create the Mac app:
 
 ```bash
-cd ~/Downloads/Humanizer-main
+chmod +x scripts/build_macos_app.sh
+./scripts/build_macos_app.sh
 ```
 
-## Step 3: Paste this into Terminal (one-time setup)
+Then:
 
-Paste this and press Enter:
+1. Open `dist/Humanizer.app` (double-click), or drag it into **Applications** and open it from there
+2. A Humanizer icon appears in the menu bar at the top of your screen
+3. The app quietly starts Ollama (if needed) and the grammar server in the background
+4. The first time it opens, it also sets itself to relaunch after restart or login. You will not be asked to paste any extra command for that.
 
-```bash
-chmod +x scripts/install.sh start_server.sh "Start Humanizer.command"
-```
+Menu bar actions:
 
-Then paste this and press Enter:
+- **Status** shows whether the server is healthy
+- **Restart server** if something looks stuck
+- **Quit Humanizer** leaves the Chrome extension for later (the local server may stay running)
 
-```bash
-./scripts/install.sh
-```
+The icon changes when the server is online vs offline.
 
-Wait until it finishes. Make sure the Ollama app is open.
-
-If models were not set up yet, paste this and press Enter:
-
-```bash
-./scripts/setup_models.sh
-```
-
-## Step 4: Paste this into Terminal (start the server)
-
-Paste this and press Enter:
-
-```bash
-./start_server.sh
-```
-
-Keep that Terminal window open.
-
-**Shortcut:** you can also double-click `Start Humanizer.command` in Finder.
-
-Check that it worked: open http://127.0.0.1:8000/health  
-You should see `"ok": true`.
-
-## Step 5: Load the Chrome extension
+## Step 4: Load the Chrome extension
 
 1. Open Chrome and go to `chrome://extensions`
-2. Turn on **Developer mode** (top right)
+2. Turn on **Developer mode**
 3. Click **Load unpacked**
 4. Select the `extension` folder inside your Humanizer folder
 
-## Step 6: Try it
+## Step 5: Try it
 
-1. Type in Gmail, Docs, or any text box
-2. Mistakes should get underlines
-3. Select text to Rewrite or Generate
-4. Click the Humanizer icon in Chrome for Settings
+1. Confirm the menu bar icon shows the server as online
+2. Type in Gmail, Docs, or any text box
+3. Mistakes should get underlines
+4. Select text to Rewrite or Generate
+
+Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Ollama errors | Open the Ollama app, then run `./scripts/setup_models.sh` |
-| Port 8000 busy | `./start_server.sh` usually clears it. Close anything else using port 8000 |
-| No underlines | Install Java, restart the server, reload the extension |
-| Extension cannot connect | Confirm http://127.0.0.1:8000/health works, then reload the extension |
+| No menu bar icon | Open `Humanizer.app` again. Check Console or `~/Library/Logs/Humanizer/` |
+| Server stays offline | Open the Ollama app, then choose **Restart server** from the menu |
+| Extension cannot connect | Confirm the menu bar status is online, then reload the extension |
+| Python missing | Install Python 3 from python.org, reopen the app |
+| Port 8000 busy | Use **Restart server** from the menu |
+
+## Optional: terminal-only setup
+
+If you prefer not to use the menu bar app, see the older script flow:
+
+```bash
+./scripts/install.sh
+./start_server.sh
+```
