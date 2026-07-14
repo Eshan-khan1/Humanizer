@@ -140,7 +140,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>LSMinimumSystemVersion</key>
-  <string>12.0</string>
+  <string>13.0</string>
   <key>LSUIElement</key>
   <true/>
   <key>NSHighResolutionCapable</key>
@@ -151,14 +151,35 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
+# Bundled LaunchAgent — required for System Settings → Login Items &
+# Background Activity (“Allow in the Background”) via SMAppService.
+LAUNCH_AGENTS_DIR="$CONTENTS/Library/LaunchAgents"
+mkdir -p "$LAUNCH_AGENTS_DIR"
+cat > "$LAUNCH_AGENTS_DIR/com.humanizer.app.agent.plist" <<'AGENT'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.humanizer.app.agent</string>
+  <key>BundleProgram</key>
+  <string>Contents/MacOS/Humanizer</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>ProcessType</key>
+  <string>Interactive</string>
+</dict>
+</plist>
+AGENT
+
 # Native AppKit host (Swift). Required on macOS 26 so Humanizer appears in
-# System Settings → Menu Bar. A Python-embedded executable is NOT listed there.
+# System Settings → Menu Bar / Background Activity.
 LAUNCHER_SRC="$ROOT/macos/launcher/HumanizerApp.swift"
-echo "  compiling native menu-bar host (Swift/AppKit)"
+echo "  compiling native menu-bar host (Swift/AppKit + ServiceManagement)"
 swiftc -O \
-  -target arm64-apple-macos12.0 \
+  -target arm64-apple-macos13.0 \
   -sdk "$(xcrun --show-sdk-path)" \
-  -framework AppKit -framework Foundation \
+  -framework AppKit -framework Foundation -framework ServiceManagement \
   -o "$MACOS/Humanizer" \
   "$LAUNCHER_SRC"
 
