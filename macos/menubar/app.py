@@ -43,6 +43,20 @@ def _reexec_native_if_needed() -> None:
 _reexec_native_if_needed()
 
 
+def _prefer_humanizer_process_name() -> None:
+    """Avoid showing Apple's Python.app name in the Dock / app switcher."""
+    try:
+        from AppKit import NSApplication, NSApplicationActivationPolicyAccessory
+        from Foundation import NSProcessInfo
+
+        NSProcessInfo.processInfo().setProcessName_("Humanizer")
+        NSApplication.sharedApplication().setActivationPolicy_(
+            NSApplicationActivationPolicyAccessory
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _try_import_rumps():
     try:
         import rumps  # type: ignore
@@ -64,6 +78,7 @@ def _try_import_rumps():
 
 
 rumps = _try_import_rumps()
+_prefer_humanizer_process_name()
 
 
 class HumanizerMenuBarApp(rumps.App):

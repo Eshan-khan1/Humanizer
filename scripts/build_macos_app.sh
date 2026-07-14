@@ -151,91 +151,40 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-cat > "$MACOS/Humanizer" <<'LAUNCHER'
-#!/bin/bash
-set -euo pipefail
-
-SELF="$(cd "$(dirname "$0")" && pwd)"
-CONTENTS="$(cd "$SELF/.." && pwd)"
-RESOURCES="$CONTENTS/Resources"
-APP_BUNDLE="$(cd "$CONTENTS/.." && pwd)"
-
-# Clear Download quarantine so macOS will actually launch the unsigned menu-bar app.
-xattr -dr com.apple.quarantine "$APP_BUNDLE" >/dev/null 2>&1 || true
-
-# GUI/login launches often omit Homebrew from PATH.
-export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
-
-export HUMANIZER_APP_EXECUTABLE="$SELF/Humanizer"
-export HUMANIZER_BUNDLE_RESOURCES="$RESOURCES"
-export PYTHONUNBUFFERED=1
-
-HOME_PAYLOAD="$RESOURCES/HumanizerHome"
-SUPPORT_HOME="$HOME/Library/Application Support/Humanizer/Home"
-mkdir -p "$HOME/Library/Logs/Humanizer"
-mkdir -p "$HOME/Library/Application Support/Humanizer"
-
-# Prefer one menu-bar instance: restarting clears older invisible copies.
-pkill -f 'macos.menubar.app' >/dev/null 2>&1 || true
-sleep 0.4
-
-# Force native CPU if this .app was opened under Rosetta.
-PREFERRED_ARCH="x86_64"
-if [[ "$(sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" == "1" ]]; then
-  PREFERRED_ARCH="arm64"
-fi
-if [[ "${HUMANIZER_ARCH_OK:-0}" != "1" ]]; then
-  export HUMANIZER_ARCH_OK=1
-  exec /usr/bin/arch -"$PREFERRED_ARCH" /bin/bash "$0" "$@"
-fi
-
-pick_python() {
-  # Prefer a healthy Application Support venv once it exists.
-  if [[ -x "$SUPPORT_HOME/.venv/bin/python" ]]; then
-    if "$SUPPORT_HOME/.venv/bin/python" -c "import fastapi, uvicorn, rumps" >/dev/null 2>&1; then
-      echo "$SUPPORT_HOME/.venv/bin/python"
-      return
-    fi
+# Native Mach-O launcher linked to Python.framework so Dock shows Humanizer (not Python.app).
+LAUNCHER_SRC="$ROOT/macos/launcher/humanizer_main.c"
+PYTHON_FRAMEWORK_ROOT=""
+for candidate in \
+  "/Library/Developer/CommandLineTools/Library/Frameworks" \
+  "/Applications/Xcode.app/Contents/Developer/Library/Frameworks" \
+  "/Library/Frameworks"
+do
+  if [[ -d "$candidate/Python3.framework" ]]; then
+    PYTHON_FRAMEWORK_ROOT="$candidate"
+    break
   fi
-  for candidate in \
-    /opt/homebrew/bin/python3.12 \
-    /opt/homebrew/bin/python3.11 \
-    /opt/homebrew/bin/python3.10 \
-    /usr/bin/python3 \
-    /opt/homebrew/bin/python3 \
-    /usr/local/bin/python3
-  do
-    if [[ -x "$candidate" ]]; then
-      echo "$candidate"
-      return
-    fi
-  done
-  if command -v python3 >/dev/null 2>&1; then
-    command -v python3
-    return
-  fi
-  echo "/usr/bin/python3"
-}
-
-PYTHON="$(pick_python)"
-export PYTHONPATH="$HOME_PAYLOAD${PYTHONPATH:+:$PYTHONPATH}"
-if [[ -d "$SUPPORT_HOME" ]]; then
-  export PYTHONPATH="$SUPPORT_HOME:$PYTHONPATH"
+done
+if [[ -z "$PYTHON_FRAMEWORK_ROOT" ]]; then
+  echo "Error: Python3.framework not found (install Xcode CLT or python.org Python)"
+  exit 1
 fi
 
-# rumps is installed into the managed venv on first run; best-effort for host python.
-"$PYTHON" -m pip install --user rumps >/dev/null 2>&1 || \
-  "$PYTHON" -m pip install rumps >/dev/null 2>&1 || true
+PYTHON_HEADERS="$PYTHON_FRAMEWORK_ROOT/Python3.framework/Versions/Current/Headers"
+if [[ ! -d "$PYTHON_HEADERS" ]]; then
+  PYTHON_HEADERS="$PYTHON_FRAMEWORK_ROOT/Python3.framework/Headers"
+fi
 
-cd "$HOME_PAYLOAD"
-exec /usr/bin/arch -"$PREFERRED_ARCH" "$PYTHON" -m macos.menubar.app \
-  >>"$HOME/Library/Logs/Humanizer/menubar.stdout.log" \
-  2>>"$HOME/Library/Logs/Humanizer/menubar.stderr.log"
-LAUNCHER
-
-chmod +x "$MACOS/Humanizer"
+echo "  compiling menu-bar launcher against $PYTHON_FRAMEWORK_ROOT/Python3.framework"
+clang -Os -arch arm64 -arch x86_64 \
+  -I"$PYTHON_HEADERS" \
+  -F"$PYTHON_FRAMEWORK_ROOT" \
+  -framework Python3 \
+  -Wl,-rpath,"$PYTHON_FRAMEWORK_ROOT" \
+  -o "$MACOS/Humanizer" \
+  "$LAUNCHER_SRC"
 
 # Ad-hoc sign so Gatekeeper is less likely to block double-click opens.
+codesign --force --sign - "$MACOS/Humanizer" >/dev/null 2>&1 || true
 codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
 
 echo ""
@@ -243,7 +192,7 @@ echo "Built: $APP"
 echo ""
 echo "To use:"
 echo "  1. Open the app once (or drag into /Applications, then open it)"
-echo "  2. Look for “Hz” in the menu bar (top-right)"
+echo "  2. Look for “Hz” in the menu bar (top-right) — not an app named Python"
 echo "  3. After restart/login it opens by itself"
 echo ""
 echo "Needs: Python 3, Ollama app, Chrome extension loaded from extension/"
