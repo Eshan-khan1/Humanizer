@@ -1,6 +1,6 @@
 # Install Humanizer on macOS
 
-Setup is meant to feel like a normal Mac app: open once, then forget.
+Setup is meant to feel like a normal Mac app: download once, open once, then forget.
 
 ## Step 1: Download these apps
 
@@ -11,34 +11,28 @@ Install each one:
 3. [Ollama](https://ollama.com) (open the Ollama app once after installing)
 4. Java 11+ ([Adoptium](https://adoptium.net/) or `brew install openjdk@17`)
 
-## Step 2: Download Humanizer
+## Step 2: Download Humanizer.app
 
-1. Open https://github.com/Eshan-khan1/Humanizer
-2. Click **Code**, then **Download ZIP** (or clone with Git)
-3. Unzip the folder somewhere easy to find
+Open the latest release page:
 
-If you use Terminal instead:
+**[Download Humanizer for Mac](https://github.com/Eshan-khan1/Humanizer/releases/latest)**
 
-```bash
-git clone https://github.com/Eshan-khan1/Humanizer.git
-cd Humanizer
-```
+1. Under **Assets**, download `Humanizer-macOS.zip` (or `Humanizer-macOS-v….zip`)
+2. Also download `humanizer-extension-mac-….zip` for the Chrome extension
+3. Unzip both downloads
 
-## Step 3: Build or open the menu bar app
+Direct app download (latest release):
 
-From the Humanizer folder, paste this into Terminal once to create the Mac app:
+https://github.com/Eshan-khan1/Humanizer/releases/latest
 
-```bash
-chmod +x scripts/build_macos_app.sh
-./scripts/build_macos_app.sh
-```
+## Step 3: Install the menu bar app
 
-Then:
-
-1. Open `dist/Humanizer.app` (double-click), or drag it into **Applications** and open it from there
-2. A Humanizer icon appears in the menu bar at the top of your screen
-3. The app quietly starts Ollama (if needed) and the grammar server in the background
-4. The first time it opens, it also sets itself to relaunch after restart or login. You will not be asked to paste any extra command for that.
+1. Drag **Humanizer.app** into your **Applications** folder
+2. Open it once (double-click)
+   - If macOS says the app can’t be opened, right-click **Humanizer.app** → **Open** → **Open**
+3. A Humanizer icon appears in the menu bar at the top of your screen
+4. The app quietly starts Ollama (if needed) and the grammar server in the background
+5. The first time it opens, it also sets itself to relaunch after restart or login. No Terminal steps are required for that.
 
 Menu bar actions:
 
@@ -53,7 +47,7 @@ The icon changes when the server is online vs offline.
 1. Open Chrome and go to `chrome://extensions`
 2. Turn on **Developer mode**
 3. Click **Load unpacked**
-4. Select the `extension` folder inside your Humanizer folder
+4. Select the unzipped extension folder (from `humanizer-extension-mac-….zip`), or the `extension` folder if you cloned the repo
 
 ## Step 5: Try it
 
@@ -69,14 +63,25 @@ Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 | Problem | Fix |
 |---------|-----|
 | No menu bar icon | Open `Humanizer.app` again. Check Console or `~/Library/Logs/Humanizer/` |
+| “App can’t be opened” | Right-click the app → **Open** → **Open** |
 | Server stays offline | Open the Ollama app, then choose **Restart server** from the menu |
 | Extension cannot connect | Confirm the menu bar status is online, then reload the extension |
 | Python missing | Install Python 3 from python.org, reopen the app |
 | Port 8000 busy | Use **Restart server** from the menu |
 
-## Optional: terminal-only setup
+## Optional: build from source
 
-If you prefer not to use the menu bar app, see the older script flow:
+If you prefer to build the `.app` yourself instead of downloading it:
+
+```bash
+git clone https://github.com/Eshan-khan1/Humanizer.git
+cd Humanizer
+chmod +x scripts/build_macos_app.sh
+./scripts/build_macos_app.sh
+open dist/Humanizer.app
+```
+
+Older terminal-only server flow (no menu bar app):
 
 ```bash
 ./scripts/install.sh

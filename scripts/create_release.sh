@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build extension zips and create/update a GitHub Release (requires gh CLI).
+# Build extension zips + macOS app and create/update a GitHub Release (requires gh CLI).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,14 +11,30 @@ if ! command -v gh >/dev/null 2>&1; then
 fi
 
 bash "$ROOT/scripts/package_extension.sh"
+bash "$ROOT/scripts/build_macos_app.sh"
 
 VERSION="$(python3 -c "import json; print(json.load(open('extension/manifest.json'))['version'])")"
 TAG="v${VERSION}"
 MAC_ZIP="$ROOT/dist/humanizer-extension-mac-v${VERSION}.zip"
 WIN_ZIP="$ROOT/dist/humanizer-extension-windows-v${VERSION}.zip"
 GENERIC_ZIP="$ROOT/dist/humanizer-extension-v${VERSION}.zip"
+APP_ZIP="$ROOT/dist/Humanizer-macOS-v${VERSION}.zip"
+APP_ZIP_STABLE="$ROOT/dist/Humanizer-macOS.zip"
 
-for f in "$MAC_ZIP" "$WIN_ZIP" "$GENERIC_ZIP"; do
+if [[ ! -d "$ROOT/dist/Humanizer.app" ]]; then
+  echo "Error: dist/Humanizer.app not found"
+  exit 1
+fi
+
+echo "==> Zipping Humanizer.app"
+rm -f "$APP_ZIP" "$APP_ZIP_STABLE"
+(
+  cd "$ROOT/dist"
+  ditto -c -k --keepParent Humanizer.app "Humanizer-macOS-v${VERSION}.zip"
+  cp "Humanizer-macOS-v${VERSION}.zip" "Humanizer-macOS.zip"
+)
+
+for f in "$MAC_ZIP" "$WIN_ZIP" "$GENERIC_ZIP" "$APP_ZIP" "$APP_ZIP_STABLE"; do
   if [[ ! -f "$f" ]]; then
     echo "Error: $f not found"
     exit 1
@@ -30,39 +46,30 @@ NOTES="$(cat <<EOF
 
 Chrome extension + local writing server for **Windows** and **macOS**.
 
-## Install the extension
+## macOS — menu bar app (recommended)
 
-1. Download the zip for your platform below (or the generic \`humanizer-extension-v${VERSION}.zip\` — same extension).
-2. Unzip it.
-3. Chrome → \`chrome://extensions\` → **Developer mode** → **Load unpacked** → select the unzipped folder.
+1. Download **[Humanizer-macOS.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Humanizer-macOS.zip)**
+2. Download **[humanizer-extension-mac-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/humanizer-extension-mac-v${VERSION}.zip)**
+3. Unzip the app zip → drag **Humanizer.app** into **Applications** → open it once
+4. Unzip the extension → Chrome → \`chrome://extensions\` → **Developer mode** → **Load unpacked**
+5. Leave the menu bar icon running; it starts the server and relaunches after login
 
-## Run the local server
+Full guide: **[Install on Mac](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_MAC.md)**
 
-You still need the full repo for the Python server:
+## Windows
 
-\`\`\`bash
-git clone https://github.com/Eshan-khan1/Humanizer.git
-cd Humanizer
-\`\`\`
+1. Download **[humanizer-extension-windows-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/humanizer-extension-windows-v${VERSION}.zip)**
+2. Follow **[Install on Windows](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_WINDOWS.md)** (clone the repo, run \`scripts\\install.bat\`, then \`Start Humanizer.bat\`)
 
-### Windows
-See **[docs/INSTALL_WINDOWS.md](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_WINDOWS.md)**
+## Health check
 
-1. \`scripts\\install.bat\`
-2. Open Ollama, then \`scripts\\setup_models.bat\` if needed
-3. Double-click \`Start Humanizer.bat\`
-
-### macOS
-See **[docs/INSTALL_MAC.md](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_MAC.md)**
-
-1. \`./scripts/install.sh\`
-2. \`./start_server.sh\` (or double-click \`Start Humanizer.command\`)
-
-Health check: http://127.0.0.1:8000/health
+http://127.0.0.1:8000/health should show \`"ok": true\`.
 EOF
 )"
 
 ASSETS=(
+  "$APP_ZIP"
+  "$APP_ZIP_STABLE"
   "$MAC_ZIP"
   "$WIN_ZIP"
   "$GENERIC_ZIP"
@@ -82,3 +89,4 @@ else
 fi
 
 echo "Release: https://github.com/Eshan-khan1/Humanizer/releases/tag/${TAG}"
+echo "Mac app: https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Humanizer-macOS.zip"

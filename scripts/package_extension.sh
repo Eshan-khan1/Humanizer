@@ -55,10 +55,13 @@ Humanizer for macOS
 ===================
 
 1. Install Python 3.10+, Ollama, and Java 11+ (e.g. brew install openjdk@17).
-2. Clone the Humanizer repo.
-3. Run ./scripts/install.sh then ./start_server.sh (or double-click Start Humanizer.command).
-4. Unzip this extension zip (or use the repo's extension/ folder).
+2. From the GitHub release, download Humanizer-macOS.zip and humanizer-extension-mac-….zip:
+   https://github.com/Eshan-khan1/Humanizer/releases/latest
+3. Unzip Humanizer-macOS.zip, drag Humanizer.app into Applications, and open it once.
+4. Unzip the extension zip.
 5. Chrome → chrome://extensions → Developer mode → Load unpacked → select the unzipped folder.
+
+The menu bar app starts the local server and relaunches after login.
 
 Full guide: docs/INSTALL_MAC.md in the repo
 https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_MAC.md

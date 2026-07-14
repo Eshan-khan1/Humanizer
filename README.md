@@ -82,10 +82,12 @@ Humanizer is two parts that talk over `localhost`:
 
 Follow the guide for your computer. Each guide is written as simple numbered steps.
 
-| Platform | Full step-by-step guide |
-|----------|-------------------------|
-| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) |
-| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) |
+| Platform | Full step-by-step guide | Download |
+|----------|-------------------------|----------|
+| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Humanizer/releases/latest) (extension zip) |
+| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Humanizer.app**](https://github.com/Eshan-khan1/Humanizer/releases/latest) (menu bar app + extension) |
+
+Mac users: download **`Humanizer-macOS.zip`** from the latest release, drag **Humanizer.app** into Applications, and open it once. No Terminal required.
 
 ---
 
@@ -148,39 +150,29 @@ More detail: **[docs/INSTALL_WINDOWS.md](docs/INSTALL_WINDOWS.md)**
 - [Ollama](https://ollama.com) (open it once after install)
 - Java 11+ ([Adoptium](https://adoptium.net/) or `brew install openjdk@17`)
 
-**Step 2: Download Humanizer**
+**Step 2: Download Humanizer.app**
 
-Open Terminal, then paste:
+Open the latest GitHub release and download the Mac app:
 
-```bash
-git clone https://github.com/Eshan-khan1/Humanizer.git
-```
+**[Download Humanizer for Mac](https://github.com/Eshan-khan1/Humanizer/releases/latest)**
 
-Then paste:
+1. Download **`Humanizer-macOS.zip`** from **Assets**
+2. Also download **`humanizer-extension-mac-….zip`** for Chrome
+3. Unzip both files
 
-```bash
-cd Humanizer
-```
+**Step 3: Install the app (no Terminal)**
 
-**Step 3: Paste this into Terminal (build the Mac app once)**
+1. Drag **Humanizer.app** into **Applications**
+2. Open it once (if macOS blocks it: right-click → **Open** → **Open**)
+3. A Humanizer icon appears in the menu bar
+4. It quietly starts the server and sets itself to reopen after login or restart
 
-```bash
-chmod +x scripts/build_macos_app.sh
-./scripts/build_macos_app.sh
-```
-
-**Step 4: Open the app (no terminal after this)**
-
-1. Open `dist/Humanizer.app`, or drag it into **Applications** and open it
-2. A Humanizer icon appears in the menu bar
-3. It quietly starts the server and sets itself to reopen after login or restart
-
-**Step 5: Load the extension in Chrome**
+**Step 4: Load the extension in Chrome**
 
 1. Go to `chrome://extensions`
 2. Turn on **Developer mode**
 3. Click **Load unpacked**
-4. Select the `extension` folder
+4. Select the unzipped extension folder
 
 More detail: **[docs/INSTALL_MAC.md](docs/INSTALL_MAC.md)**
 
@@ -424,5 +416,6 @@ Open source — use, study, and modify on your own machine. See the repository f
 ## Links
 
 - **Repository:** https://github.com/Eshan-khan1/Humanizer
-- **Releases (extension zip):** https://github.com/Eshan-khan1/Humanizer/releases
+- **Download Mac app + extension:** https://github.com/Eshan-khan1/Humanizer/releases/latest
+- **Releases:** https://github.com/Eshan-khan1/Humanizer/releases
 - **Issues:** https://github.com/Eshan-khan1/Humanizer/issues
