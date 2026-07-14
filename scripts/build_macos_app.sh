@@ -124,7 +124,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
   <key>CFBundleExecutable</key>
   <string>Humanizer</string>
   <key>CFBundleIdentifier</key>
-  <string>com.humanizer.app</string>
+  <string>com.humanizer.macos</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
@@ -155,16 +155,16 @@ PLIST
 # Background Activity (“Allow in the Background”) via SMAppService.
 LAUNCH_AGENTS_DIR="$CONTENTS/Library/LaunchAgents"
 mkdir -p "$LAUNCH_AGENTS_DIR"
-cat > "$LAUNCH_AGENTS_DIR/com.humanizer.app.agent.plist" <<'AGENT'
+cat > "$LAUNCH_AGENTS_DIR/com.humanizer.macos.agent.plist" <<'AGENT'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.humanizer.app.agent</string>
+  <string>com.humanizer.macos.agent</string>
   <key>AssociatedBundleIdentifiers</key>
   <array>
-    <string>com.humanizer.app</string>
+    <string>com.humanizer.macos</string>
   </array>
   <key>BundleProgram</key>
   <string>Contents/MacOS/Humanizer</string>
@@ -192,7 +192,7 @@ cat > "$LOGIN_ITEM_CONTENTS/Info.plist" <<'LOGINPLIST'
   <key>CFBundleExecutable</key>
   <string>LaunchAtLogin</string>
   <key>CFBundleIdentifier</key>
-  <string>com.humanizer.app.LaunchAtLogin</string>
+  <string>com.humanizer.macos.LaunchAtLogin</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
