@@ -9,7 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger("humanizer.menubar")
 
-LAUNCH_AGENT_LABEL = "com.humanizer.menubar"
+LAUNCH_AGENT_LABEL = "com.humanizer.app"
 LAUNCH_AGENT_PATH = (
     Path.home() / "Library" / "LaunchAgents" / f"{LAUNCH_AGENT_LABEL}.plist"
 )

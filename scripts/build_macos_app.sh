@@ -124,7 +124,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
   <key>CFBundleExecutable</key>
   <string>Humanizer</string>
   <key>CFBundleIdentifier</key>
-  <string>com.humanizer.menubar</string>
+  <string>com.humanizer.app</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
@@ -142,7 +142,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
   <key>LSUIElement</key>
-  <false/>
+  <true/>
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSHumanReadableCopyright</key>
