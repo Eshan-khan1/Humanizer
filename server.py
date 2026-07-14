@@ -338,6 +338,11 @@ def _clean_deep_fix_response(raw: str) -> str:
     return cleaned
 
 
+def _strip_bracket_leakage(text: str) -> str:
+    """Remove any leftover [bracketed] placeholders the model may have emitted."""
+    return re.sub(r"\[[^\]]{0,80}\]", "", text or "").strip()
+
+
 def _tokenize_for_diff(text: str) -> list[str]:
     return _WORD_TOKEN_RE.findall(text)
 
@@ -1767,6 +1772,7 @@ def generate(body: GenerateRequest) -> GenerateResponse:
             settings=settings,
             ai_config=ai_config,
         )
+        generated = _strip_bracket_leakage(generated)
     except CloudAIError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except OllamaError as exc:
