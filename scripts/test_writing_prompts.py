@@ -15,10 +15,18 @@ from writing_agent import (  # noqa: E402
     GENERATE_COMPLEXITY_GUIDANCE,
     GENERATE_LENGTH_GUIDANCE,
     TONE_PRESET_GUIDANCE,
+    apply_generate_hard_filters,
     build_generate_system_instruction,
     build_generate_user_message,
     build_rewrite_system_instruction,
     build_rewrite_user_message,
+    finalize_generate_output,
+    resolve_effective_generate_settings,
+    _body_word_count,
+    _count_email_body_paragraphs,
+    _enforce_length_structure,
+    _meets_generate_length_requirement,
+    _parse_signoff_permanent_note,
 )
 
 
@@ -161,6 +169,65 @@ class GeneratePromptIndependenceTests(unittest.TestCase):
                         GENERATE_LENGTH_GUIDANCE[length].splitlines()[0][:40],
                         system,
                     )
+
+
+class GenerateFidelityAndLengthTests(unittest.TestCase):
+    def test_no_reason_rule_in_system(self) -> None:
+        system = build_generate_system_instruction(
+            "email",
+            settings={"tonePreset": "friendly", "length": "long", "complexity": "simple"},
+        )
+        self.assertIn("If the user's idea does NOT include a reason", system)
+        self.assertIn("do NOT invent one", system)
+        self.assertIn("must NOT shorten the draft", system)
+
+    def test_signoff_permanent_note_is_closing_only(self) -> None:
+        name, remaining, only = _parse_signoff_permanent_note(
+            "Always sign off with my name, Eshan."
+        )
+        self.assertTrue(only)
+        self.assertEqual(name, "Eshan")
+        self.assertEqual(remaining, "")
+
+        settings = {
+            "tonePreset": "friendly",
+            "length": "medium",
+            "complexity": "standard",
+            "profile": {"permanentNote": "Always sign off with my name, Eshan."},
+        }
+        effective = resolve_effective_generate_settings(settings)
+        self.assertTrue(effective["profile"].get("_signoff_note_only"))
+        self.assertEqual(effective["profile"].get("fullName"), "Eshan")
+
+        system = build_generate_system_instruction("email", settings=settings)
+        self.assertIn("sign-off / signature only", system)
+        self.assertIn("NEVER put this name in the greeting", system)
+
+        draft = (
+            "Subject: Extension\n\nHi Eshan,\n\nI need an extension.\n\nBest,\nSomeone\n"
+        )
+        out = apply_generate_hard_filters(
+            draft, format_type="email", settings=settings, seed_baseline="extension"
+        )
+        out = finalize_generate_output(out, format_type="email", settings=settings)
+        self.assertNotIn("Hi Eshan", out)
+        self.assertIn("Eshan", out)
+        self.assertRegex(out, r"(?m)^(Best|Thanks|Sincerely),?\s*$")
+
+    def test_long_is_clearly_longer_than_medium(self) -> None:
+        short_seed = (
+            "Subject: Hello\n\nHi there,\n\nI need an extension.\n\nPlease help.\n\n"
+            "Best,\nEshan\n"
+        )
+        medium = _enforce_length_structure(short_seed, format_type="email", length="medium")
+        long = _enforce_length_structure(short_seed, format_type="email", length="long")
+        self.assertTrue(_meets_generate_length_requirement(long, "email", "long"))
+        self.assertGreaterEqual(_count_email_body_paragraphs(long), 5)
+        self.assertGreaterEqual(_body_word_count(long, "email"), 220)
+        self.assertGreater(
+            _body_word_count(long, "email"),
+            _body_word_count(medium, "email") + 40,
+        )
 
 
 class RewritePromptIndependenceTests(unittest.TestCase):
