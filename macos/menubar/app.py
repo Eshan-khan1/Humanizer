@@ -44,14 +44,14 @@ _reexec_native_if_needed()
 
 
 def _prefer_humanizer_process_name() -> None:
-    """Avoid showing Apple's Python.app name in the Dock / app switcher."""
+    """Show as Humanizer in the Dock / app switcher (not Apple's Python)."""
     try:
-        from AppKit import NSApplication, NSApplicationActivationPolicyAccessory
+        from AppKit import NSApplication, NSApplicationActivationPolicyRegular
         from Foundation import NSProcessInfo
 
         NSProcessInfo.processInfo().setProcessName_("Humanizer")
         NSApplication.sharedApplication().setActivationPolicy_(
-            NSApplicationActivationPolicyAccessory
+            NSApplicationActivationPolicyRegular
         )
     except Exception:  # noqa: BLE001
         pass
