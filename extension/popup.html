@@ -74,11 +74,18 @@
           How can I help you today?
         </h2>
         <p class="hero-subtitle">
-          Grammar, rewrite, and generate — quietly, in any text field.
+          Fix grammar, rewrite tone, and generate drafts right in any text field.
         </p>
       </section>
 
-      <div id="status" class="status composer-card">Checking server…</div>
+      <div class="server-status-row">
+        <span
+          id="status"
+          class="server-tag server-tag--checking"
+          role="status"
+          aria-live="polite"
+        >Checking server…</span>
+      </div>
 
       <div class="chip-row" role="list">
         <span class="chip chip--active" role="listitem">Write</span>
@@ -89,13 +96,14 @@
       <ul class="legend">
         <li>
           <span class="swatch swatch-correctness" aria-hidden="true"></span>
-          Correctness — soft underline on mistakes
+          Mistakes get a soft underline you can click to fix
         </li>
       </ul>
 
       <p class="hint">
-        Type anywhere Humanizer is active. Mistakes get underlines; with auto-fix on, corrections
-        apply until the text is clean. Start the server with <code>./start_server.sh</code>.
+        Type anywhere Humanizer is active. Mistakes get underlines. With auto-fix on, corrections
+        keep applying until the text is clean. Start the server with <code>./start_server.sh</code>
+        (or <code>Start Humanizer.bat</code> on Windows).
       </p>
     </div>
 
@@ -264,7 +272,7 @@
           <label class="field-row" for="generate-permanent-note">
             <span class="field-label">Permanent note</span>
             <span class="field-hint">
-              A standing instruction applied silently to every generation — e.g. "always sound professional"
+              A standing instruction applied to every generation, like "always sound professional"
               or "keep emails concise."
             </span>
             <textarea

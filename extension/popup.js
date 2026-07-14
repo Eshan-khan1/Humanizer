@@ -716,7 +716,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (provider === "api" && aiConnected) {
       setAiConnectStatus("Connected", "ok");
     } else if (provider === "api" && String(apiKey || "").trim()) {
-      setAiConnectStatus("Not connected — click Connect", "error");
+      setAiConnectStatus("Not connected. Click Connect.", "error");
     } else {
       setAiConnectStatus("", null);
     }
@@ -799,7 +799,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     updateAiConnectedUi(false);
-    setAiConnectStatus("Key changed — click Connect", "error");
+    setAiConnectStatus("Key changed. Click Connect.", "error");
     persistAiSettings({ aiConnected: false }).then((stored) => {
       updateAiNavSubtitle(stored.aiProvider, Boolean(stored.aiApiKey), false);
     });
@@ -823,7 +823,7 @@ document.addEventListener("DOMContentLoaded", () => {
       persistAiSettings({ aiProvider: "api", aiConnected: false }).then((stored) => {
         updateAiNavSubtitle("api", Boolean(stored.aiApiKey), false);
         if (stored.aiApiKey) {
-          setAiConnectStatus("Not connected — click Connect", "error");
+          setAiConnectStatus("Not connected. Click Connect.", "error");
         }
       });
     });
@@ -898,17 +898,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) throw new Error("Server unavailable");
       return response.json();
     })
-    .then((data) => {
-      const ollama = data.ollama_available ? " · Ollama ready" : " · Ollama offline";
-      const grammar = data.grammar_available
-        ? " · Grammar ready"
-        : " · Grammar offline (restart server after ./start_server.sh)";
-      statusEl.textContent = `Server connected${grammar}${ollama}`;
-      statusEl.classList.add(data.grammar_available ? "ok" : "error");
+    .then(() => {
+      statusEl.textContent = "Server online";
+      statusEl.classList.remove("server-tag--checking", "server-tag--offline", "ok", "error");
+      statusEl.classList.add("server-tag--online");
+      statusEl.title = "Connected to the local Humanizer server";
     })
     .catch(() => {
-      statusEl.textContent = "Server offline — run ./start_server.sh";
-      statusEl.classList.add("error");
+      statusEl.textContent = "Server offline";
+      statusEl.classList.remove("server-tag--checking", "server-tag--online", "ok", "error");
+      statusEl.classList.add("server-tag--offline");
+      statusEl.title = "Start the server with ./start_server.sh or Start Humanizer.bat";
     });
   })();
 });

@@ -155,8 +155,7 @@ h1 {
   line-height: 1.5;
 }
 
-.composer-card,
-.status {
+.composer-card {
   font-size: 0.8125rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-lg);
@@ -165,6 +164,57 @@ h1 {
   box-shadow: none;
   margin-bottom: 14px;
   color: var(--hz-text-muted);
+}
+
+.server-status-row {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 16px;
+}
+
+.server-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hz-border);
+  background: var(--hz-surface);
+  color: var(--hz-text-muted);
+  font-size: 0.75rem;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.server-tag::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.server-tag--checking {
+  color: var(--hz-text-muted);
+}
+
+.server-tag--online {
+  color: #1f7a3f;
+  background: color-mix(in srgb, #22c55e 14%, var(--hz-surface));
+  border-color: color-mix(in srgb, #22c55e 45%, var(--hz-border));
+}
+
+html[data-theme="dark"] .server-tag--online {
+  color: #6fbf7a;
+  background: color-mix(in srgb, #22c55e 18%, var(--hz-surface));
+}
+
+.server-tag--offline {
+  color: var(--hz-danger);
+  background: color-mix(in srgb, var(--hz-danger) 10%, var(--hz-surface));
+  border-color: color-mix(in srgb, var(--hz-danger) 35%, var(--hz-border));
 }
 
 .status.ok {

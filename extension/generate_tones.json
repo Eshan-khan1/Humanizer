@@ -23,34 +23,34 @@
     {
       "id": "short",
       "label": "Short",
-      "description": "1 short paragraph or 2–3 sentences. Core message only — never changes tone or vocabulary."
+      "description": "One short paragraph, or 2 to 3 sentences. Just the core message. Does not change tone or vocabulary."
     },
     {
       "id": "medium",
       "label": "Medium",
-      "description": "2–3 paragraphs (greeting, body, closing for email). Structure only — never changes tone or vocabulary."
+      "description": "2 to 3 paragraphs, with greeting, body, and closing for email. Changes structure only."
     },
     {
       "id": "long",
       "label": "Long",
-      "description": "4+ paragraphs with full detail. Structure only — never changes tone or vocabulary."
+      "description": "4 or more paragraphs with full detail. Changes structure only."
     }
   ],
   "complexityLevels": [
     {
       "id": "simple",
       "label": "Simple",
-      "description": "Everyday words only — vocabulary choice, not length or tone."
+      "description": "Everyday words only. Changes vocabulary, not length or tone."
     },
     {
       "id": "standard",
       "label": "Standard",
-      "description": "Normal professional vocabulary — word choice only."
+      "description": "Normal professional vocabulary. Word choice only."
     },
     {
       "id": "advanced",
       "label": "Advanced",
-      "description": "Sophisticated words and varied sentences — vocabulary only."
+      "description": "More sophisticated words and varied sentences. Vocabulary only."
     }
   ],
   "profileFields": [
