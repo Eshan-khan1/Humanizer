@@ -13,7 +13,8 @@ sys.path.insert(0, str(ROOT))
 
 from writing_agent import (  # noqa: E402
     apply_rewrite_hard_filters,
-    build_rewrite_prompt,
+    build_rewrite_system_instruction,
+    build_rewrite_user_message,
     check_rewrite_quality,
     _restore_missing_closing_lines,
 )
@@ -23,14 +24,17 @@ GOLDEN_PATH = ROOT / "test_data" / "rewrite_golden.json"
 
 class RewriteQualityTests(unittest.TestCase):
     def test_prompt_includes_strict_rules_and_examples(self) -> None:
-        prompt = build_rewrite_prompt(
-            "Please submit the form by Friday.",
+        system = build_rewrite_system_instruction(
             "Rewrite in a casual, natural tone.",
             direct=True,
         )
-        self.assertIn("REWRITE RULES", prompt)
-        self.assertIn("EXAMPLE (casual)", prompt)
-        self.assertIn("never add", prompt.lower())
+        user = build_rewrite_user_message("Please submit the form by Friday.")
+        self.assertIn("REWRITE RULES", system)
+        self.assertIn("EXAMPLE (casual)", system)
+        self.assertIn("never add", system.lower())
+        self.assertIn("RULE 1 — TONE", system)
+        self.assertEqual(user, "Please submit the form by Friday.")
+        self.assertNotIn("REWRITE RULES", user)
 
     def test_restore_missing_closing_lines(self) -> None:
         original = (

@@ -33,11 +33,25 @@ WRITING_AGENT_SYSTEM_PROMPT = (
     "1. REWRITE — change tone/style of selected text by editing word choice and sentence "
     "structure only. Keep the same information, structure, and roughly the same length.\n"
     "2. GENERATE — expand short notes, bullets, or prompts into complete emails or essays.\n"
-    "For GENERATE: three independent settings — LENGTH (structure), TONE (sound), "
-    "COMPLEXITY (vocabulary). Each controls one thing only; never let them bleed together. "
-    "Apply all three simultaneously.\n"
     "Return only the final plain text — no markdown or meta explanations."
 )
+
+SETTINGS_INDEPENDENCE_HEADER = """\
+SEPARATE AND INDEPENDENT RULES
+These rules are separate. Apply every rule that is present. No rule may influence another:
+  • Tone must NEVER affect length or vocabulary.
+  • Length must NEVER affect tone or vocabulary.
+  • Vocabulary must NEVER affect tone or length.
+  • Personal info must NEVER change tone, length, or vocabulary — only who/what you may reference.
+  • Permanent note must NEVER change tone, length, or vocabulary — only standing preferences.
+  • Changing one setting while holding others fixed must change ONLY that setting's dimension."""
+
+MEANING_FIDELITY_RULE = """\
+RULE — MEANING & FIDELITY (always on):
+  • Do not change the meaning of the user's input.
+  • Do not invent facts, names, requests, or details the user did not imply.
+  • Do not add new information beyond what the user implied.
+  • Expand or rephrase what they gave you — never replace their intent with a different message."""
 
 EMAIL_GENERATION_GUIDE = """\
 TASK: GENERATE a complete email from the seed text, user notes, and document context.
@@ -2065,23 +2079,72 @@ def _normalize_tone_instruction(instruction: str) -> str:
     return text.strip()
 
 
-def _build_rewrite_sections(
-    text: str,
-    instruction: str,
-    context: dict[str, Any] | None,
-) -> list[str]:
-    tone_instruction = _normalize_tone_instruction(instruction)
-    sections: list[str] = [TONE_REWRITE_STRICT_RULES]
-    examples = _rewrite_tone_examples_block(instruction)
-    if examples:
-        sections.append(examples)
+def _normalize_rewrite_instruction(user_instruction: str, *, direct: bool = False) -> str:
+    instruction = (user_instruction or "").strip()
+    if direct:
+        return _normalize_tone_instruction(instruction)
+    if not instruction:
+        return "Rewrite to sound clear and natural."
+    if len(instruction.split()) <= 2 and not any(char in instruction for char in ".!?,:;"):
+        return f"Rewrite in a {instruction} tone."
+    if not instruction.lower().startswith("rewrite"):
+        return f"Rewrite the text as follows: {instruction}"
+    return instruction
+
+
+def build_rewrite_system_instruction(
+    user_instruction: str,
+    context: dict[str, Any] | None = None,
+    *,
+    direct: bool = False,
+) -> str:
+    """One clear system instruction for Rewrite — settings as independent rules."""
+    tone_instruction = _normalize_rewrite_instruction(user_instruction, direct=direct)
+    examples = _rewrite_tone_examples_block(tone_instruction)
     context_block = format_document_context(context)
+
+    parts = [
+        WRITING_AGENT_SYSTEM_PROMPT,
+        "TASK: REWRITE the user's selected text. Return only the rewritten plain text.",
+        SETTINGS_INDEPENDENCE_HEADER,
+        MEANING_FIDELITY_RULE,
+        "RULE 1 — TONE (voice only; independent of length and vocabulary):\n"
+        f"  Apply this tone instruction to word choice and sentence structure only:\n"
+        f"  {tone_instruction}\n"
+        "  Tone must NEVER add new facts, greeting/sign-off lines that were not present,\n"
+        "  or change how long the message is beyond the wording needed for the voice.",
+        "RULE 2 — LENGTH (structure only; independent of tone and vocabulary):\n"
+        "  Keep roughly the same length as the original selection.\n"
+        "  Do not pad for friendliness or cut substance for formality.\n"
+        "  Length must NEVER change tone or vocabulary level.",
+        "RULE 3 — VOCABULARY (word choice only; independent of tone and length):\n"
+        "  Change words only as needed to match the tone instruction.\n"
+        "  Vocabulary must NEVER change meaning, add facts, or force a different length.",
+        "RULE 4 — PERSONAL INFO:\n"
+        "  Not used for rewrite unless already present in the selected text. "
+        "Do not invent personal details.",
+        "RULE 5 — PERMANENT NOTE:\n"
+        "  None for this rewrite request.",
+        TONE_REWRITE_STRICT_RULES,
+    ]
+    if examples:
+        parts.append(examples)
     if context_block:
-        sections.append(context_block)
-    sections.append(
-        f"USER INSTRUCTION:\n{tone_instruction}\n\nSELECTED TEXT TO REWRITE:\n{text}"
+        parts.append(
+            "Document context (awareness only — rewrite ONLY the user message text; "
+            "do not rewrite surrounding document text):\n"
+            f"{context_block}"
+        )
+    parts.append(
+        "OUTPUT: Return the COMPLETE rewritten selection as plain text only. "
+        "No diffs, labels, markdown, or explanations."
     )
-    return sections
+    return "\n\n".join(parts)
+
+
+def build_rewrite_user_message(text: str) -> str:
+    """User message is only the selected text to rewrite."""
+    return (text or "").strip()
 
 
 def build_rewrite_prompt(
@@ -2091,42 +2154,15 @@ def build_rewrite_prompt(
     *,
     direct: bool = False,
 ) -> str:
-    instruction = (user_instruction or "").strip()
-    context_block = format_document_context(context)
+    """Backward-compatible combined view for tests/debug.
 
-    if direct:
-        return "\n\n".join(_build_rewrite_sections(text, instruction, context))
-
-    if not instruction:
-        instruction = "Rewrite to sound clear and natural."
-    elif len(instruction.split()) <= 2 and not any(
-        char in instruction for char in ".!?,:;"
-    ):
-        instruction = f"Rewrite in a {instruction} tone."
-    elif not instruction.lower().startswith("rewrite"):
-        instruction = f"Rewrite the text as follows: {instruction}"
-
-    planning = (
-        "TASK: REWRITE the selected passage.\n"
-        "1. Read document context and surrounding text.\n"
-        "2. Rewrite ONLY the selection — not text before or after.\n"
-        "3. Change word choice and sentence structure only to match the requested tone.\n"
-        "4. Keep the same information and roughly the same length — do not add or remove content.\n"
-        "5. Fit the layout: list items stay parallel; preserve existing line structure.\n\n"
-        f"{TONE_REWRITE_STRICT_RULES}\n\n"
-        "OUTPUT: Return the COMPLETE rewritten selection as plain text only. "
-        "No diffs, labels, or partial edits."
+    Live calls use build_rewrite_system_instruction + build_rewrite_user_message.
+    """
+    system = build_rewrite_system_instruction(
+        user_instruction, context, direct=direct
     )
-
-    sections = [planning]
-    examples = _rewrite_tone_examples_block(instruction)
-    if examples:
-        sections.append(examples)
-    if context_block:
-        sections.append(context_block)
-    sections.append(f"\nUSER INSTRUCTION:\n{instruction}")
-    sections.append(f"\nSELECTED TEXT TO REWRITE:\n{text}")
-    return "\n\n".join(sections)
+    user = build_rewrite_user_message(text)
+    return f"{system}\n\n---USER MESSAGE---\n\n{user}"
 
 
 def _normalize_generate_settings(
@@ -2416,6 +2452,120 @@ def _build_complexity_rules(complexity: str) -> str:
     )
 
 
+def build_generate_system_instruction(
+    format_type: str,
+    notes: str = "",
+    context: dict[str, Any] | None = None,
+    settings: dict[str, Any] | None = None,
+) -> str:
+    """One clear system instruction for Generate — each setting is its own rule."""
+    format_type = (format_type or "essay").strip().lower()
+    user_notes = (notes or "").strip()
+    parsed_note = _parse_generation_note(user_notes)
+    effective = resolve_effective_generate_settings(settings, user_notes)
+    tone_preset = effective["tone_preset"]
+    length = effective["length"]
+    complexity = effective["complexity"]
+    include_subject = effective["include_subject"]
+    profile = effective["profile"]
+    permanent_note = _extract_permanent_note(profile)
+    profile_block = _format_generate_profile(profile)
+    context_block = format_document_context(context)
+
+    if format_type == "email":
+        subject_rule = (
+            'Include a subject line on the first line ("Subject: ...").'
+            if include_subject
+            else "Do not include a subject line."
+        )
+        format_rules = f"{EMAIL_GENERATION_GUIDE}\n\n{subject_rule}"
+    else:
+        format_rules = (
+            "Write a complete essay from the user's idea.\n"
+            "Replace the idea entirely with finished prose."
+        )
+
+    tone_rule = _build_tone_rules(tone_preset, format_type)
+    if parsed_note["has_tone_instruction"]:
+        tone_rule = (
+            f"{tone_rule}\n\n"
+            "ONE-TIME TONE OVERRIDE for this request only (does not change length or vocabulary):\n"
+            f"  {parsed_note['tone_instruction']}\n"
+            "  Ignore the saved tone preset voice for THIS draft only; "
+            "length and vocabulary rules still apply unchanged."
+        )
+
+    personal_rule = (
+        "RULE 4 — PERSONAL INFO (reference only if relevant; independent of tone/length/vocabulary):\n"
+        "  Use these writer details when natural. Do not print the label list. "
+        "Do not invent missing fields. Personal info must NEVER change tone, length, or vocabulary.\n"
+        f"  {profile_block}"
+        if profile_block
+        else (
+            "RULE 4 — PERSONAL INFO (reference only if relevant; independent of tone/length/vocabulary):\n"
+            "  None provided. Use generic phrasing (no bracketed blanks in the body). "
+            "Personal info must NEVER change tone, length, or vocabulary."
+        )
+    )
+
+    permanent_rule = (
+        "RULE 5 — PERMANENT NOTE (standing preference only; independent of tone/length/vocabulary):\n"
+        "  Always follow this standing note. Do not print the note itself. "
+        "It must NEVER change tone, length, or vocabulary.\n"
+        f"  {permanent_note}"
+        if permanent_note
+        else (
+            "RULE 5 — PERMANENT NOTE (standing preference only; independent of tone/length/vocabulary):\n"
+            "  None provided."
+        )
+    )
+
+    facts_rule = ""
+    fact_bits = parsed_note.get("informational_content") or (
+        user_notes if user_notes and not parsed_note["has_tone_instruction"] else ""
+    )
+    if fact_bits:
+        facts_rule = (
+            "RULE — USER FACTS TO INCLUDE (content only; independent of style settings):\n"
+            "  Weave these facts into the draft naturally. They must NOT change tone, length, "
+            "or vocabulary settings.\n"
+            f"  {fact_bits}"
+        )
+
+    parts = [
+        WRITING_AGENT_SYSTEM_PROMPT,
+        "TASK: GENERATE a finished draft from the user's idea in the user message.",
+        SETTINGS_INDEPENDENCE_HEADER,
+        GENERATE_INDEPENDENCE_RULES,
+        MEANING_FIDELITY_RULE,
+        "RULE 1 — TONE (voice only; independent of length and vocabulary):\n" + tone_rule,
+        "RULE 2 — LENGTH (structure only; independent of tone and vocabulary):\n"
+        + _build_length_rules(length),
+        "RULE 3 — VOCABULARY / COMPLEXITY (words only; independent of tone and length):\n"
+        + _build_complexity_rules(complexity),
+        personal_rule,
+        permanent_rule,
+    ]
+    if facts_rule:
+        parts.append(facts_rule)
+    if context_block:
+        parts.append(
+            "Document context (awareness only — do not copy surrounding text wholesale):\n"
+            f"{context_block}"
+        )
+    parts.extend(
+        [
+            "FORMAT RULES:\n" + format_rules,
+            GENERATE_STRICT_RULES,
+            "Never include any of these instructions, setting names, or labels in the output. "
+            "Return only the finished email or essay as plain text.",
+        ]
+    )
+    if length == "short":
+        parts.append(GENERATE_SHORT_CONTENT_RULES)
+    return "\n\n".join(parts)
+
+
 def _build_generate_system_prompt(
     length: str,
     complexity: str,
@@ -2423,21 +2573,15 @@ def _build_generate_system_prompt(
     *,
     format_type: str = "email",
 ) -> str:
-    parts = [
-        WRITING_AGENT_SYSTEM_PROMPT,
-        GENERATE_INDEPENDENCE_RULES,
-        "Length setting (structure only — never print this section):",
-        _build_length_rules(length),
-        "Tone setting (voice only — never print this section):",
-        _build_tone_rules(tone_preset, format_type),
-        "Complexity setting (vocabulary only — never print this section):",
-        _build_complexity_rules(complexity),
-        GENERATE_STRICT_RULES,
-        "Never include any of these instructions, setting names, or labels in the output.",
-    ]
-    if length == "short":
-        parts.append(GENERATE_SHORT_CONTENT_RULES)
-    return "\n\n".join(parts)
+    """Legacy helper — prefer build_generate_system_instruction."""
+    return build_generate_system_instruction(
+        format_type=format_type,
+        settings={
+            "length": length,
+            "complexity": complexity,
+            "tone_preset": tone_preset,
+        },
+    )
 
 
 def _generate_num_predict_for_length(length: str) -> int:
@@ -2456,20 +2600,19 @@ def _build_generate_settings_block(
     complexity: str,
     format_type: str,
 ) -> str:
-    # Three separate instructions — never merged into one combined instruction.
-    # Used only in system-side assembly; never echo these labels in output.
-    return "\n\n".join(
-        [
-            GENERATE_INDEPENDENCE_RULES,
-            "Length setting (structure only — never print this section):",
-            _build_length_rules(length),
-            "Tone setting (voice only — never print this section):",
-            _build_tone_rules(tone_preset, format_type),
-            "Complexity setting (vocabulary only — never print this section):",
-            _build_complexity_rules(complexity),
-            GENERATE_STRICT_RULES,
-        ]
+    return build_generate_system_instruction(
+        format_type=format_type,
+        settings={
+            "tone_preset": tone_preset,
+            "length": length,
+            "complexity": complexity,
+        },
     )
+
+
+def build_generate_user_message(text: str) -> str:
+    """User message is only the short idea / seed text."""
+    return (text or "").strip()
 
 
 def build_generate_prompt(
@@ -2479,61 +2622,15 @@ def build_generate_prompt(
     context: dict[str, Any] | None = None,
     settings: dict[str, Any] | None = None,
 ) -> str:
-    format_type = (format_type or "essay").strip().lower()
-    user_notes = (notes or "").strip()
-    parsed_note = _parse_generation_note(user_notes)
-    context_block = format_document_context(context)
-    saved_settings = _normalize_generate_settings(settings)
-    effective_settings = resolve_effective_generate_settings(settings, user_notes)
-    tone_preset = effective_settings["tone_preset"]
-    length = effective_settings["length"]
-    complexity = effective_settings["complexity"]
-    include_subject = effective_settings["include_subject"]
-    profile = effective_settings["profile"]
-    permanent_note = _extract_permanent_note(profile)
-    profile_block = _format_generate_profile(profile)
+    """Backward-compatible combined view for tests/debug.
 
-    # Rules live in the system prompt only. User prompt is content-only so the
-    # model is less likely to echo instruction labels into the draft.
-    if format_type == "email":
-        subject_rule = (
-            'Include a subject line on the first line ("Subject: ...").'
-            if include_subject
-            else "Do not include a subject line."
-        )
-        format_rules = f"{EMAIL_GENERATION_GUIDE}\n\n{subject_rule}"
-    else:
-        format_rules = (
-            "Write a complete essay from the seed below.\n"
-            "Replace the seed entirely with finished prose."
-        )
-
-    sections = [
-        format_rules,
-        "Return only the finished email or essay as plain text. "
-        "Never print instructions, setting names, labels, or meta commentary.",
-    ]
-    if permanent_note:
-        sections.append(f"Always follow this standing note (do not print the note itself):\n{permanent_note}")
-    if profile_block:
-        sections.append(profile_block)
-    if context_block:
-        sections.append(context_block)
-
-    if parsed_note["has_tone_instruction"]:
-        sections.append(
-            f"For this draft only, use this voice: {parsed_note['tone_instruction']}"
-        )
-
-    if parsed_note["informational_content"]:
-        sections.append(
-            f"Include these facts naturally in the body:\n{parsed_note['informational_content']}"
-        )
-    elif user_notes and not parsed_note["has_tone_instruction"]:
-        sections.append(f"Include these facts naturally in the body:\n{user_notes}")
-
-    sections.append(f"Idea to expand:\n{text}")
-    return "\n\n".join(sections)
+    Live calls use build_generate_system_instruction + build_generate_user_message.
+    """
+    system = build_generate_system_instruction(
+        format_type, notes=notes, context=context, settings=settings
+    )
+    user = build_generate_user_message(text)
+    return f"{system}\n\n---USER MESSAGE---\n\n{user}"
 
 
 def _call_llm(
@@ -2621,8 +2718,16 @@ class WritingAgent:
     ) -> str:
         if not text or not text.strip():
             return ""
-        prompt = build_rewrite_prompt(text, user_instruction, context, direct=direct)
-        raw = _call_llm(prompt, task="rewrite", ai_config=ai_config)
+        system_prompt = build_rewrite_system_instruction(
+            user_instruction, context, direct=direct
+        )
+        user_message = build_rewrite_user_message(text)
+        raw = _call_llm(
+            user_message,
+            task="rewrite",
+            system=system_prompt,
+            ai_config=ai_config,
+        )
         cleaned = _clean_output(raw)
         cleaned = apply_rewrite_hard_filters(
             text,
@@ -2631,11 +2736,16 @@ class WritingAgent:
         )
         quality = check_rewrite_quality(text, cleaned, user_instruction)
         if not quality["ok"] and "missing_closing" in quality["issues"]:
-            retry_prompt = (
-                f"{prompt}\n\nIMPORTANT: Keep every greeting and sign-off line from the "
+            retry_system = (
+                f"{system_prompt}\n\nIMPORTANT: Keep every greeting and sign-off line from the "
                 "original selection. Do not remove closing lines such as Thanks or a name."
             )
-            raw = _call_llm(retry_prompt, task="rewrite", ai_config=ai_config)
+            raw = _call_llm(
+                user_message,
+                task="rewrite",
+                system=retry_system,
+                ai_config=ai_config,
+            )
             cleaned = apply_rewrite_hard_filters(
                 text,
                 _clean_output(raw),
@@ -2656,16 +2766,17 @@ class WritingAgent:
             return ""
         effective_settings = resolve_effective_generate_settings(settings, notes)
         length = effective_settings["length"]
-        complexity = effective_settings["complexity"]
-        tone_preset = effective_settings["tone_preset"]
         seed_baseline = build_seed_content_baseline(text, notes)
-        system_prompt = _build_generate_system_prompt(
-            length, complexity, tone_preset, format_type=format_type
+        system_prompt = build_generate_system_instruction(
+            format_type,
+            notes=notes,
+            context=context,
+            settings=settings,
         )
+        user_message = build_generate_user_message(text)
         num_predict = _generate_num_predict_for_length(length)
-        prompt = build_generate_prompt(text, format_type, notes, context, settings)
         raw = _call_llm(
-            prompt,
+            user_message,
             task="generate",
             system=system_prompt,
             num_predict=num_predict,
@@ -2679,11 +2790,11 @@ class WritingAgent:
                 cleaned, format_type, length
             ):
                 break
-            retry_prompt = f"{prompt}\n\n{retry_instruction}"
+            retry_system = f"{system_prompt}\n\n{retry_instruction}"
             raw = _call_llm(
-                retry_prompt,
+                user_message,
                 task="generate",
-                system=system_prompt,
+                system=retry_system,
                 num_predict=num_predict,
                 ai_config=ai_config,
             )
