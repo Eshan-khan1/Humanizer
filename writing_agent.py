@@ -61,6 +61,16 @@ RULE — MEANING & FIDELITY (always on):
     write commentary about the rules, instructions, or writing process.
   • Expand or rephrase what they gave you — never replace their intent with a different message."""
 
+GENERATE_EXAMPLES = """\
+EXAMPLE — idea has no reason stated:
+Idea: "asking my professor for a deadline extension"
+Correct output body: "I'm writing to request an extension on the upcoming assignment. Would it be possible to have a few extra days?"
+Wrong: adding any reason, excuse, or bracketed placeholder like "[reason here]".
+
+EXAMPLE — idea has a reason stated:
+Idea: "asking my professor for extension, I was sick"
+Correct output body: includes being sick as the reason. Nothing else invented."""
+
 EMAIL_GENERATION_GUIDE = """\
 TASK: GENERATE a complete email from the seed text, user notes, and document context.
 
@@ -2959,6 +2969,7 @@ def build_generate_system_instruction(
         SETTINGS_INDEPENDENCE_HEADER,
         GENERATE_INDEPENDENCE_RULES,
         MEANING_FIDELITY_RULE,
+        GENERATE_EXAMPLES,
         "RULE 1 — TONE (voice only; independent of length and vocabulary):\n" + tone_rule,
         "RULE 2 — LENGTH (structure only; independent of tone and vocabulary):\n"
         + _build_length_rules(length),
