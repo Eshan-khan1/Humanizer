@@ -80,65 +80,136 @@ Humanizer is two parts that talk over `localhost`:
 
 ## Download & install
 
-Pick your platform:
+Follow the guide for your computer. Each guide is written as simple numbered steps.
 
-| Platform | Guide |
-|----------|--------|
-| **Windows** | [docs/INSTALL_WINDOWS.md](docs/INSTALL_WINDOWS.md) — use `scripts\install.bat` and `Start Humanizer.bat` |
-| **macOS** | [docs/INSTALL_MAC.md](docs/INSTALL_MAC.md) — use `./scripts/install.sh` and `Start Humanizer.command` |
+| Platform | Full step-by-step guide |
+|----------|-------------------------|
+| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) |
+| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) |
 
-### Requirements
+---
 
-| Tool | Why |
-|------|-----|
-| [Google Chrome](https://www.google.com/chrome/) | Extension host |
-| [Python 3.10+](https://www.python.org/downloads/) | API server |
-| [Ollama](https://ollama.com) | Local Rewrite / Generate (and optional grammar model) |
-| [Java 11+](https://adoptium.net/) | LanguageTool grammar engine |
+### Windows (step by step)
 
-### Windows (quick start)
+**Step 1: Download these apps**
 
-1. Install Python 3.10+ (**Add to PATH**), [Ollama](https://ollama.com/download), and [Java](https://adoptium.net/).
-2. Download or clone this repo, then double-click **`scripts\install.bat`**.
-3. Open the Ollama app, then run **`scripts\setup_models.bat`** if models were not set up yet.
-4. Double-click **`Start Humanizer.bat`** (keep the window open).
-5. Chrome → `chrome://extensions` → Developer mode → **Load unpacked** → select the `extension` folder.
+- [Chrome](https://www.google.com/chrome/)
+- [Python 3.10+](https://www.python.org/downloads/) (check **Add python.exe to PATH**)
+- [Ollama](https://ollama.com/download) (open it once after install)
+- [Java 11+](https://adoptium.net/)
 
-Full walkthrough: **[Install on Windows](docs/INSTALL_WINDOWS.md)**.
+**Step 2: Download Humanizer**
 
-### macOS (quick start)
+1. Open https://github.com/Eshan-khan1/Humanizer
+2. Click **Code**, then **Download ZIP**
+3. Unzip the folder (example: `C:\Users\YourName\Humanizer`)
+
+**Step 3: Paste this into Command Prompt**
+
+Open Command Prompt, go into the Humanizer folder, then paste:
+
+```bat
+scripts\install.bat
+```
+
+If needed (Ollama is open):
+
+```bat
+scripts\setup_models.bat
+```
+
+**Step 4: Start the server**
+
+Double-click `Start Humanizer.bat`, or paste:
+
+```bat
+start_server.bat
+```
+
+Keep that window open.
+
+**Step 5: Load the extension in Chrome**
+
+1. Go to `chrome://extensions`
+2. Turn on **Developer mode**
+3. Click **Load unpacked**
+4. Select the `extension` folder
+
+More detail: **[docs/INSTALL_WINDOWS.md](docs/INSTALL_WINDOWS.md)**
+
+---
+
+### Mac (step by step)
+
+**Step 1: Download these apps**
+
+- [Chrome](https://www.google.com/chrome/)
+- [Python 3.10+](https://www.python.org/downloads/) (or `brew install python`)
+- [Ollama](https://ollama.com) (open it once after install)
+- Java 11+ ([Adoptium](https://adoptium.net/) or `brew install openjdk@17`)
+
+**Step 2: Download Humanizer**
+
+Open Terminal, then paste:
 
 ```bash
 git clone https://github.com/Eshan-khan1/Humanizer.git
+```
+
+Then paste:
+
+```bash
 cd Humanizer
+```
+
+**Step 3: Paste this into Terminal**
+
+```bash
 chmod +x scripts/install.sh start_server.sh "Start Humanizer.command"
+```
+
+Then paste:
+
+```bash
 ./scripts/install.sh
+```
+
+If needed (Ollama is open):
+
+```bash
+./scripts/setup_models.sh
+```
+
+**Step 4: Paste this into Terminal**
+
+```bash
 ./start_server.sh
 ```
 
-Or double-click **`Start Humanizer.command`** in Finder.
+Keep that Terminal window open.  
+Or double-click `Start Humanizer.command` in Finder.
 
-Then Chrome → `chrome://extensions` → Developer mode → **Load unpacked** → select `extension/`.
+**Step 5: Load the extension in Chrome**
 
-Full walkthrough: **[Install on macOS](docs/INSTALL_MAC.md)**.
-
-### Verify the server
-
-Open [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) — you should see a JSON OK response.
-
-### Load the Chrome extension
-
-1. Open `chrome://extensions`
-2. Enable **Developer mode** (top-right)
+1. Go to `chrome://extensions`
+2. Turn on **Developer mode**
 3. Click **Load unpacked**
-4. Select the `extension/` folder from this repo  
-   (or unzip a release asset from [GitHub Releases](https://github.com/Eshan-khan1/Humanizer/releases))
+4. Select the `extension` folder
+
+More detail: **[docs/INSTALL_MAC.md](docs/INSTALL_MAC.md)**
+
+---
+
+### Check that the server is running
+
+Open http://127.0.0.1:8000/health  
+You should see `"ok": true`.
 
 ### Try it
 
-- Type in any text box → underlines on errors
-- Select text → **Rewrite** or **Generate**
-- Toolbar icon → **Settings** for Local vs API, theme, and Generate profile
+- Type in any text box to see underlines on mistakes
+- Select text to use Rewrite or Generate
+- Click the Humanizer toolbar icon for Settings
 
 ---
 

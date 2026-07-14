@@ -1,95 +1,111 @@
 # Install Humanizer on Windows
 
-Humanizer has two parts: a **local Python server** and a **Chrome extension**. Both run on your Windows laptop.
+Follow these steps in order.
 
-## Requirements
+## Step 1: Download these apps
 
-| Tool | Download | Notes |
-|------|----------|--------|
-| [Google Chrome](https://www.google.com/chrome/) | — | Extension host |
-| [Python 3.10+](https://www.python.org/downloads/) | Windows installer | **Check “Add python.exe to PATH”** |
-| [Ollama](https://ollama.com/download) | Windows app | For Rewrite / Generate / Humanize |
-| [Java 11+](https://adoptium.net/) | Temurin JRE | For LanguageTool grammar |
+Install each one before you continue:
 
-## Step 1 — Get the code
+1. [Google Chrome](https://www.google.com/chrome/)
+2. [Python 3.10+](https://www.python.org/downloads/)  
+   Important: during setup, check **Add python.exe to PATH**
+3. [Ollama for Windows](https://ollama.com/download)  
+   Open the Ollama app once after installing
+4. [Java 11+](https://adoptium.net/) (Temurin JRE is fine)
 
-**Option A — Git**
+## Step 2: Download Humanizer
+
+**Option A: Download ZIP (easiest)**
+
+1. Open https://github.com/Eshan-khan1/Humanizer
+2. Click **Code**, then **Download ZIP**
+3. Unzip it to a simple folder, for example:
+   `C:\Users\YourName\Humanizer`
+4. Open that folder in File Explorer
+
+**Option B: Git**
+
+Open **Command Prompt** or **PowerShell**, then paste this and press Enter:
 
 ```bat
 git clone https://github.com/Eshan-khan1/Humanizer.git
+```
+
+Then paste this and press Enter:
+
+```bat
 cd Humanizer
 ```
 
-**Option B — ZIP**
+## Step 3: Paste this into Command Prompt (one-time setup)
 
-1. Open [https://github.com/Eshan-khan1/Humanizer](https://github.com/Eshan-khan1/Humanizer)
-2. Click **Code → Download ZIP**
-3. Unzip to a folder such as `C:\Users\YourName\Humanizer`
-4. Open that folder in File Explorer
+1. Open **Command Prompt**
+2. Go into your Humanizer folder. Example: paste this and press Enter (change the path if yours is different):
 
-## Step 2 — One-time install
+```bat
+cd C:\Users\YourName\Humanizer
+```
 
-In File Explorer, open the `scripts` folder and **double-click** `install.bat`.
-
-Or from **Command Prompt** / **PowerShell** inside the repo:
+3. Paste this and press Enter:
 
 ```bat
 scripts\install.bat
 ```
 
-This creates `.venv`, installs Python packages, and (if Ollama is running) registers the models.
+Wait until it finishes. Keep the Ollama app open.
 
-If Ollama was not running during install:
-
-1. Open **Ollama** from the Start menu
-2. Run:
+If models were not set up yet, paste this and press Enter:
 
 ```bat
 scripts\setup_models.bat
 ```
 
-## Step 3 — Start the server
+**No Command Prompt?** In File Explorer, open the `scripts` folder and double-click `install.bat`.
 
-**Easiest:** double-click `Start Humanizer.bat` in the project root.
+## Step 4: Start the server
 
-Or:
+In your Humanizer folder, double-click:
+
+`Start Humanizer.bat`
+
+Or in Command Prompt, paste this and press Enter:
 
 ```bat
 start_server.bat
 ```
 
-Keep that window open. Confirm the server is up:
+Keep that window open while you use Humanizer.
 
-[http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+Check that it worked: open http://127.0.0.1:8000/health  
+You should see `"ok": true`.
 
-You should see JSON with `"ok": true`.
+## Step 5: Load the Chrome extension
 
-## Step 4 — Load the Chrome extension
-
-1. Open `chrome://extensions`
+1. Open Chrome and go to `chrome://extensions`
 2. Turn on **Developer mode** (top right)
 3. Click **Load unpacked**
-4. Select the `extension` folder inside this repo  
-   (or unzip `humanizer-extension-windows-v*.zip` from [Releases](https://github.com/Eshan-khan1/Humanizer/releases) and select that folder)
+4. Select the `extension` folder inside your Humanizer folder
 
-## Step 5 — Use it
+You can also download the Windows extension zip from [Releases](https://github.com/Eshan-khan1/Humanizer/releases), unzip it, and load that folder.
 
-- Type in Gmail, Docs, or any text field → underlines on mistakes
-- Select text → Rewrite or Generate
-- Click the Humanizer toolbar icon → Settings (Local vs API, theme, Generate profile)
+## Step 6: Try it
 
-## Windows troubleshooting
+1. Type in Gmail, Docs, or any text box
+2. Mistakes should get underlines
+3. Select text to Rewrite or Generate
+4. Click the Humanizer icon in Chrome for Settings
+
+## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| `python` not found | Reinstall Python and enable **Add to PATH**, then open a **new** Command Prompt |
-| `scripts\install.bat` fails on pip | Run Command Prompt **as Administrator**, or: `python -m pip install -r requirements.txt` inside `.venv` |
-| Port 8000 in use | `start_server.bat` tries to free it; or close the other app using 8000 |
-| Ollama errors | Open the Ollama app; run `ollama list`; then `scripts\setup_models.bat` |
-| No grammar underlines | Install Java 11+ from Adoptium; restart the server |
-| Extension cannot reach server | Confirm [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health); reload the extension |
-| Antivirus blocks Python | Allow `python.exe` / `uvicorn` for localhost |
+| `python` not found | Reinstall Python with **Add to PATH**, then open a new Command Prompt |
+| Install fails | Open Command Prompt as Administrator and run `scripts\install.bat` again |
+| Port 8000 in use | Close the other app using 8000, or run `start_server.bat` again |
+| Ollama errors | Open the Ollama app, then run `scripts\setup_models.bat` |
+| No underlines | Install Java, restart the server, reload the extension |
+| Extension cannot connect | Confirm http://127.0.0.1:8000/health works, then reload the extension |
 
-## Optional: cloud API instead of local models
+## Optional: use a cloud API key
 
-In the extension popup → **Settings → AI & API keys → API**, paste an OpenAI-compatible key, click **Connect**. Humanize / Rewrite / Generate will use that API; grammar underlines still use the local server + LanguageTool.
+In the extension popup, open **Settings**, then **AI & API keys**, choose **API**, paste your key, and click **Connect**.
