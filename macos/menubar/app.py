@@ -269,12 +269,19 @@ def main() -> None:
             content.addSubview_(quit_btn)
 
             tip = AppKit.NSTextField.labelWithString_(
-                "Menu bar icon sits on the right, near the clock."
+                "On macOS 26: System Settings → Menu Bar → turn Humanizer ON."
             )
             tip.setFont_(AppKit.NSFont.systemFontOfSize_(11.0))
             tip.setTextColor_(color(_MUTED))
             tip.setFrame_(Foundation.NSMakeRect(28, 4, 364, 16))
             content.addSubview_(tip)
+
+            menu_bar_btn = AppKit.NSButton.buttonWithTitle_target_action_(
+                "Add to Menu Bar…", self, "openMenuBarSettings:"
+            )
+            menu_bar_btn.setBezelStyle_(AppKit.NSBezelStyleRounded)
+            menu_bar_btn.setFrame_(Foundation.NSMakeRect(268, 24, 124, 32))
+            content.addSubview_(menu_bar_btn)
 
             self.window = window
 
@@ -285,9 +292,19 @@ def main() -> None:
             AppKit.NSApp.activateIgnoringOtherApps_(True)
 
         def buildStatusItem(self):
-            # systemStatusBar items always live on the RIGHT side of the menu bar.
+            # Registers with the system menu bar (right side, near the clock).
+            # autosaveName lets macOS Menu Bar / Control Center remember visibility.
             bar = AppKit.NSStatusBar.systemStatusBar()
-            item = bar.statusItemWithLength_(AppKit.NSSquareStatusItemLength)
+            item = bar.statusItemWithLength_(AppKit.NSVariableStatusItemLength)
+            try:
+                item.setAutosaveName_("com.humanizer.menubar.statusItem")
+            except Exception:  # noqa: BLE001
+                logger.warning("Could not set status item autosaveName")
+            try:
+                item.setVisible_(True)
+            except Exception:  # noqa: BLE001
+                pass
+
             button = item.button()
             if button is not None:
                 if self.offline_image is not None:
@@ -295,12 +312,8 @@ def main() -> None:
                     button.setTitle_("")
                 else:
                     button.setTitle_("Hz")
-                button.setToolTip_("Humanizer — click for status")
-                # Prefer appearing toward the right (near clock); macOS may still reorder.
-                try:
-                    item.setBehavior_(1)  # NSStatusItemBehaviorTerminationOnRemoval-ish / mid
-                except Exception:  # noqa: BLE001
-                    pass
+                button.setToolTip_("Humanizer — local writing server")
+
             menu = AppKit.NSMenu.alloc().init()
 
             self.status_menu_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
@@ -315,6 +328,12 @@ def main() -> None:
             )
             open_item.setTarget_(self)
             menu.addItem_(open_item)
+
+            settings_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                "Menu Bar Settings…", "openMenuBarSettings:", ""
+            )
+            settings_item.setTarget_(self)
+            menu.addItem_(settings_item)
 
             restart_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
                 "Restart server", "onRestart:", ""
@@ -331,7 +350,75 @@ def main() -> None:
 
             item.setMenu_(menu)
             self.status_item = item
-            logger.info("Menu bar status item created (right system bar): %s", type(item).__name__)
+            logger.info(
+                "Menu bar status item registered (autosaveName=com.humanizer.menubar.statusItem)"
+            )
+            # After Control Center settles, warn if macOS is still hiding the icon.
+            Foundation.NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+                1.2, self, "checkStatusItemVisibility:", None, False
+            )
+
+        def openMenuBarSettings_(self, _sender):
+            # Opens System Settings where the user can enable Humanizer in the menu bar.
+            opened = False
+            for url in (
+                "x-apple.systempreferences:com.apple.ControlCenter-Settings.extension",
+                "x-apple.systempreferences:com.apple.preference.dock?MenuBar",
+            ):
+                try:
+                    ok = AppKit.NSWorkspace.sharedWorkspace().openURL_(
+                        Foundation.NSURL.URLWithString_(url)
+                    )
+                    if ok:
+                        opened = True
+                        break
+                except Exception:  # noqa: BLE001
+                    continue
+            if not opened:
+                AppKit.NSWorkspace.sharedWorkspace().launchApplication_("System Settings")
+            notify_user(
+                "Add Humanizer to the menu bar",
+                "In System Settings, open Menu Bar (or Control Center) and turn Humanizer ON / Show in Menu Bar.",
+            )
+
+        def checkStatusItemVisibility_(self, _timer):
+            item = self.status_item
+            if item is None:
+                return
+            visible = True
+            try:
+                visible = bool(item.isVisible())
+            except Exception:  # noqa: BLE001
+                visible = True
+            button = item.button()
+            screen = None
+            try:
+                if button is not None:
+                    screen = button.window().screen() if button.window() else None
+            except Exception:  # noqa: BLE001
+                screen = None
+            if visible and screen is not None:
+                logger.info("Menu bar icon is visible on screen")
+                return
+            logger.warning(
+                "Menu bar icon may be hidden by macOS (visible=%s screen=%s)",
+                visible,
+                screen,
+            )
+            alert = AppKit.NSAlert.alloc().init()
+            alert.setMessageText_("Show Humanizer in the menu bar")
+            alert.setInformativeText_(
+                "macOS may be hiding the Humanizer icon.\n\n"
+                "1. Open System Settings → Menu Bar (or Control Center)\n"
+                "2. Find Humanizer\n"
+                "3. Turn it ON / set “Show in Menu Bar”\n\n"
+                "You can also click “Add to Menu Bar…” in the Humanizer window."
+            )
+            alert.addButtonWithTitle_("Open Settings")
+            alert.addButtonWithTitle_("Later")
+            response = alert.runModal()
+            if response == AppKit.NSAlertFirstButtonReturn:
+                self.openMenuBarSettings_(None)
 
         def showWindow_(self, _sender):
             self.showMainWindow()
