@@ -11,23 +11,29 @@ def write_status_icons(directory: Path) -> tuple[Path, Path]:
     directory.mkdir(parents=True, exist_ok=True)
     online = directory / "status-online.png"
     offline = directory / "status-offline.png"
-    write_circle_png(online, filled=True)
-    write_circle_png(offline, filled=False)
+    # 44px retina menu-bar assets render more reliably than tiny 32px dots.
+    write_circle_png(online, filled=True, size=44)
+    write_circle_png(offline, filled=False, size=44)
     return online, offline
 
 
-def write_circle_png(path: Path, *, filled: bool, size: int = 32) -> None:
+def write_circle_png(path: Path, *, filled: bool, size: int = 44) -> None:
     def pixel(x: int, y: int) -> tuple[int, int, int, int]:
         cx = cy = (size - 1) / 2
         dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-        outer = size * 0.36
-        inner = size * 0.22
+        outer = size * 0.38
+        inner = size * 0.20
+        # Slightly soft edge helps menu-bar template rendering.
         if filled:
             if dist <= outer:
                 return (0, 0, 0, 255)
+            if dist <= outer + 1.2:
+                return (0, 0, 0, 120)
             return (0, 0, 0, 0)
         if inner <= dist <= outer:
             return (0, 0, 0, 255)
+        if abs(dist - outer) <= 1.2 or abs(dist - inner) <= 1.2:
+            return (0, 0, 0, 120)
         return (0, 0, 0, 0)
 
     raw = b""

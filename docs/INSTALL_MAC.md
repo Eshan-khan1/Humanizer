@@ -30,9 +30,10 @@ https://github.com/Eshan-khan1/Humanizer/releases/latest
 1. Drag **Humanizer.app** into your **Applications** folder
 2. Open it once (double-click)
    - If macOS says the app can’t be opened, right-click **Humanizer.app** → **Open** → **Open**
-3. A Humanizer icon appears in the menu bar at the top of your screen
-4. The app quietly starts Ollama (if needed) and the grammar server in the background
-5. The first time it opens, it also sets itself to relaunch after restart or login. No Terminal steps are required for that.
+3. You should see **Hz** in the menu bar (top-right). There is no Dock icon or window — that is normal.
+4. A notification also says Humanizer is starting
+5. The app quietly starts Ollama (if needed) and the grammar server in the background
+6. The first time it opens, it also sets itself to relaunch after restart or login. No Terminal steps are required for that.
 
 Menu bar actions:
 
@@ -62,8 +63,8 @@ Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 
 | Problem | Fix |
 |---------|-----|
-| No menu bar icon | Open `Humanizer.app` again. Check Console or `~/Library/Logs/Humanizer/` |
-| “App can’t be opened” | Right-click the app → **Open** → **Open** |
+| No menu bar icon | Look for **Hz** top-right. Open `Humanizer.app` again. Soften Focus / check Control Center › Menu Bar. Logs: `~/Library/Logs/Humanizer/` |
+| “App can’t be opened” | Right-click the app → **Open** → **Open**. Or drag a fresh copy from the zip into Applications. |
 | Server stays offline | Open the Ollama app, then choose **Restart server** from the menu |
 | Extension cannot connect | Confirm the menu bar status is online, then reload the extension |
 | Python missing | Install Python 3 from python.org, reopen the app |

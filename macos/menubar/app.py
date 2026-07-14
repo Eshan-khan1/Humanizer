@@ -24,6 +24,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("humanizer.menubar")
 
+# Always show short text in the menu bar so the app is findable even if icons fail.
+_MENU_TITLE_ONLINE = "Hz"
+_MENU_TITLE_OFFLINE = "Hz…"
+
 
 def _reexec_native_if_needed() -> None:
     """Avoid Rosetta/x86_64 Python on Apple Silicon (breaks native wheels)."""
@@ -68,7 +72,7 @@ class HumanizerMenuBarApp(rumps.App):
         icon_online, icon_offline = _icon_paths()
         super().__init__(
             name="Humanizer",
-            title="",
+            title=_MENU_TITLE_OFFLINE,
             icon=str(icon_offline),
             template=True,
             quit_button=None,
@@ -85,13 +89,25 @@ class HumanizerMenuBarApp(rumps.App):
             self.quit_item,
         ]
         self._busy = False
+        self._notified_ready = False
 
     def _set_online(self, online: bool, detail: str) -> None:
         self.status_item.title = f"Status: {detail}"
+        self.title = _MENU_TITLE_ONLINE if online else _MENU_TITLE_OFFLINE
         try:
             self.icon = str(self.icon_online if online else self.icon_offline)
         except Exception:  # noqa: BLE001
-            self.title = "●" if online else "○"
+            pass
+        if online and not self._notified_ready:
+            self._notified_ready = True
+            try:
+                rumps.notification(
+                    title="Humanizer",
+                    subtitle="",
+                    message='Running in the menu bar — look for "Hz" at the top of the screen.',
+                )
+            except Exception:  # noqa: BLE001
+                pass
 
     def _refresh_status(self) -> None:
         snap = manager.check_health()
@@ -108,6 +124,7 @@ class HumanizerMenuBarApp(rumps.App):
             return
         self._busy = True
         self.status_item.title = "Status: Restarting…"
+        self.title = _MENU_TITLE_OFFLINE
 
         def work():
             try:
@@ -132,11 +149,8 @@ class HumanizerMenuBarApp(rumps.App):
 
 def _icon_paths() -> tuple[Path, Path]:
     base = Path(__file__).resolve().parent / "icons"
-    online = base / "status-online.png"
-    offline = base / "status-offline.png"
-    if not online.is_file() or not offline.is_file():
-        return write_status_icons(base)
-    return online, offline
+    # Always refresh icons so older installs get the clearer artwork.
+    return write_status_icons(base)
 
 
 def bootstrap_root() -> Path:
@@ -164,6 +178,16 @@ def main() -> None:
             logger.exception("Startup failed: %s", exc)
 
     threading.Thread(target=warmup, daemon=True).start()
+
+    try:
+        rumps.notification(
+            title="Humanizer",
+            subtitle="",
+            message='Starting… Look for "Hz" in the menu bar (top-right).',
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
     HumanizerMenuBarApp(root).run()
 
 

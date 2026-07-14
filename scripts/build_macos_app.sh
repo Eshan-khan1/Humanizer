@@ -134,9 +134,9 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.9.1</string>
+  <string>1.9.2</string>
   <key>CFBundleVersion</key>
-  <string>1.9.1</string>
+  <string>1.9.2</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>LSMinimumSystemVersion</key>
@@ -158,6 +158,10 @@ set -euo pipefail
 SELF="$(cd "$(dirname "$0")" && pwd)"
 CONTENTS="$(cd "$SELF/.." && pwd)"
 RESOURCES="$CONTENTS/Resources"
+APP_BUNDLE="$(cd "$CONTENTS/.." && pwd)"
+
+# Clear Download quarantine so macOS will actually launch the unsigned menu-bar app.
+xattr -dr com.apple.quarantine "$APP_BUNDLE" >/dev/null 2>&1 || true
 
 # GUI/login launches often omit Homebrew from PATH.
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
@@ -170,6 +174,10 @@ HOME_PAYLOAD="$RESOURCES/HumanizerHome"
 SUPPORT_HOME="$HOME/Library/Application Support/Humanizer/Home"
 mkdir -p "$HOME/Library/Logs/Humanizer"
 mkdir -p "$HOME/Library/Application Support/Humanizer"
+
+# Prefer one menu-bar instance: restarting clears older invisible copies.
+pkill -f 'macos.menubar.app' >/dev/null 2>&1 || true
+sleep 0.4
 
 # Force native CPU if this .app was opened under Rosetta.
 PREFERRED_ARCH="x86_64"
@@ -227,12 +235,15 @@ LAUNCHER
 
 chmod +x "$MACOS/Humanizer"
 
+# Ad-hoc sign so Gatekeeper is less likely to block double-click opens.
+codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
+
 echo ""
 echo "Built: $APP"
 echo ""
 echo "To use:"
 echo "  1. Open the app once (or drag into /Applications, then open it)"
-echo "  2. A Humanizer icon appears in the menu bar"
+echo "  2. Look for “Hz” in the menu bar (top-right)"
 echo "  3. After restart/login it opens by itself"
 echo ""
 echo "Needs: Python 3, Ollama app, Chrome extension loaded from extension/"

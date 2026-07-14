@@ -164,7 +164,7 @@ Open the latest GitHub release and download the Mac app:
 
 1. Drag **Humanizer.app** into **Applications**
 2. Open it once (if macOS blocks it: right-click → **Open** → **Open**)
-3. A Humanizer icon appears in the menu bar
+3. Look for **Hz** in the menu bar (top-right) — there is no Dock icon
 4. It quietly starts the server and sets itself to reopen after login or restart
 
 **Step 4: Load the extension in Chrome**
