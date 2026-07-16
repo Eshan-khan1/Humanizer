@@ -180,8 +180,10 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("NO REASON RULE", system)
         self.assertIn("NOT include any reason at all", system)
         self.assertIn("must NOT shorten the draft", system)
-        self.assertIn("these are RULES, not text to paste", system)
+        self.assertIn("EXAMPLE — WITH REASON", system)
+        self.assertIn("EXAMPLE — WITHOUT REASON", system)
         self.assertNotIn("I am not adding a separate reason", system)
+        self.assertNotIn("I am requesting an extension on the current deadline and would appreciate", system)
 
     def test_signoff_permanent_note_is_closing_only(self) -> None:
         name, remaining, only = _parse_signoff_permanent_note(
@@ -216,26 +218,34 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("Eshan", out)
         self.assertRegex(out, r"(?m)^(Best|Thanks|Sincerely),?\s*$")
 
-    def test_long_is_clearly_longer_than_medium(self) -> None:
+    def test_long_guidance_examples_and_no_pad_boilerplate(self) -> None:
+        system = build_generate_system_instruction(
+            "email",
+            settings={"tonePreset": "friendly", "length": "long", "complexity": "standard"},
+        )
+        length_rule = _rule_section(system, "RULE 2 — LENGTH")
+        self.assertIn("EXAMPLE — WITH REASON", length_rule)
+        self.assertIn("EXAMPLE — WITHOUT REASON", length_rule)
+        self.assertIn("I'd like a bit more time to make sure the final submission is thorough", length_rule)
+        # Only the two long examples — no old canned pad sentences in the length rule
+        self.assertNotIn(
+            "I am requesting an extension on the current deadline and would appreciate your approval",
+            length_rule,
+        )
+
         short_seed = (
             "Subject: Hello\n\nHi there,\n\nI need an extension.\n\nPlease help.\n\n"
             "Best,\nEshan\n"
         )
         idea = "asking my professor for a deadline extension"
-        medium = _enforce_length_structure(short_seed, format_type="email", length="medium")
         long = _enforce_length_structure(
             short_seed, format_type="email", length="long", seed_baseline=idea
         )
-        self.assertTrue(_meets_generate_length_requirement(long, "email", "long"))
-        self.assertGreaterEqual(_count_email_body_paragraphs(long), 5)
-        self.assertGreaterEqual(_body_word_count(long, "email"), 220)
-        self.assertGreater(
-            _body_word_count(long, "email"),
-            _body_word_count(medium, "email") + 40,
-        )
         lower = long.lower()
+        # Enforcement must not inject paraphrased boilerplate pads
+        self.assertNotIn("i am requesting an extension on the current deadline", lower)
+        self.assertNotIn("a bit more time would let me finish the work carefully", lower)
         self.assertNotIn("i am not adding a separate reason", lower)
-        self.assertNotIn("to keep this simple", lower)
 
 
 class RewritePromptIndependenceTests(unittest.TestCase):

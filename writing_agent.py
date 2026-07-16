@@ -146,19 +146,47 @@ LENGTH — structure only (independent of tone and complexity):
 LENGTH — structure only (independent of tone and complexity):
   • Target: at least 5 body paragraphs and ~220+ body words — clearly more developed
     than medium.
-  • How to add length (content only — these are RULES, not text to paste into the draft):
-      1) Open with the request itself, stated fully and clearly.
-      2) Elaborate what you are asking for (scope, timing flexibility, or the outcome
-         you want) using only details present in the user's idea.
-      3) Add courteous paragraphs that stay on the request: willingness to follow the
-         recipient's process, readiness to provide whatever they need next related to
-         THIS ask, appreciation for their help.
-  • Forbidden filler: invented excuses/reasons, dates, assignment titles, health/workload/
-    personal backstories, and any meta talk about instructions, rules, wording strategy,
-    or the writing process.
-  • If the idea has no reason, long drafts still have NO reason — more paragraphs of the
-    request itself, not a justification.
-  • LENGTH must NEVER change vocabulary difficulty or tone.""",
+  • CRITICAL — pick exactly ONE example shape below:
+      - Idea STATES a reason → use WITH REASON shape, substituting the user's actual reason
+        (never the sample's workload/course story unless the user said that).
+      - Idea states NO reason → use WITHOUT REASON shape ONLY. Do not borrow workload,
+        stacked courses, research-progress, or any other justification from WITH REASON.
+  • Never invent excuses, dates, assignment titles, or backstory. Never copy these
+    examples verbatim — match their shape and depth for the user's actual idea.
+  • Do not repeat the same ask in slightly different wording across paragraphs.
+  • Sign off with only the closing word when no writer name is saved (no name line).
+  • LENGTH must NEVER change vocabulary difficulty or tone.
+
+EXAMPLE — WITH REASON (idea included a reason; use this shape only when the idea has one):
+Subject: Request for Deadline Extension
+
+Hi Professor,
+
+I'm writing to request an extension on the upcoming assignment, currently due next Friday.
+
+Over the past week, my workload across a couple of courses has stacked up more than I anticipated, and I'd rather take a bit more time than submit something rushed. I've already outlined my approach and started the research, so the extra time would go toward refining the analysis and making sure the final draft is well-supported.
+
+Would it be possible to get until the following Monday? If a shorter extension works better on your end, I'm happy to work with whatever timeline you're able to offer. I'm also glad to share what I have so far if that's helpful in considering the request.
+
+Thank you for taking the time to consider this — I know deadlines matter for grading and course pacing, and I don't take the flexibility for granted.
+
+Best,
+
+EXAMPLE — WITHOUT REASON (idea gave no reason; do not invent one):
+Subject: Request for Deadline Extension
+
+Hi Professor,
+
+I'm writing to request an extension on the upcoming assignment, currently due next Friday.
+
+I'd like a bit more time to make sure the final submission is thorough and well put together rather than rushed. Would it be possible to get until the following Monday, or whatever timeline works best on your end?
+
+I'm glad to share my progress so far if that's useful, and happy to work within whatever process you typically use for extension requests.
+
+Thank you for considering this — I appreciate any flexibility you're able to offer.
+
+Best,
+""",
 }
 
 GENERATE_COMPLEXITY_GUIDANCE: dict[str, str] = {
@@ -1476,6 +1504,8 @@ def _enforce_length_structure(
             return _reassemble_email_sections(sections)
 
         if length == "long":
+            # Structure only: split long paragraphs into more paragraphs.
+            # Do NOT append canned elaboration — that becomes copy-paste boilerplate.
             while len(paragraphs) < 5:
                 best_i = -1
                 best_sents: list[str] = []
@@ -1491,12 +1521,6 @@ def _enforce_length_structure(
                     _join_sentences(best_sents[:mid]),
                     _join_sentences(best_sents[mid:]),
                 ]
-            for extra in _long_request_elaboration_paragraphs(seed_baseline):
-                if len(paragraphs) >= 5:
-                    break
-                if extra.lower() not in " ".join(paragraphs).lower():
-                    paragraphs.append(extra)
-            paragraphs = _pad_long_body_paragraphs(paragraphs, seed_baseline=seed_baseline)
             sections["body"] = "\n\n".join(paragraphs)
             return _reassemble_email_sections(sections)
 
@@ -1538,93 +1562,8 @@ def _enforce_length_structure(
                 _join_sentences(best_sents[:mid]),
                 _join_sentences(best_sents[mid:]),
             ]
-        for extra in _long_request_elaboration_paragraphs(seed_baseline):
-            if len(paragraphs) >= 5:
-                break
-            if extra.lower() not in " ".join(paragraphs).lower():
-                paragraphs.append(extra)
-        return "\n\n".join(
-            _pad_long_body_paragraphs(paragraphs, seed_baseline=seed_baseline)
-        )
+        return "\n\n".join(paragraphs)
     return text
-
-
-def _long_request_elaboration_paragraphs(seed_baseline: str = "") -> list[str]:
-    """On-topic request elaboration only — never invented reasons or meta instructions."""
-    seed = (seed_baseline or "").strip().lower()
-    ask_bits: list[str] = []
-    if "extension" in seed or "deadline" in seed:
-        ask_bits = [
-            "I am requesting an extension on the current deadline and would appreciate your approval if that is possible.",
-            "A bit more time would let me finish the work carefully and submit something that meets the expected standard.",
-            "Please let me know what revised timeline would work on your side so I can plan the submission accordingly.",
-            "I am ready to follow whatever process you use for deadline changes and can provide any materials you need for this request.",
-            "Thank you for considering this extension request — I appreciate your time and any flexibility you can offer.",
-            "If you prefer a shorter extension than what is typical, I am happy to work with whatever schedule you recommend.",
-            "I will use the additional time to complete remaining pieces of the work and review everything before submitting.",
-            "Please tell me whether you would like me to submit what I already finished while I continue working during an extension.",
-        ]
-    elif "leak" in seed or "landlord" in seed or "sink" in seed:
-        ask_bits = [
-            "I wanted to report that the sink is leaking and ask that someone come look at it this week.",
-            "The leak needs attention soon so it does not get worse, and I would like help arranged as soon as you can.",
-            "Please let me know when someone can visit this week, or what information you need from me to schedule the repair.",
-            "I can be available to provide access and will follow any steps you prefer for maintenance requests.",
-            "Thank you for taking care of this — I appreciate a prompt response so we can get the sink fixed this week.",
-            "If you already have a preferred plumber or maintenance contact, I am glad to work with them at a time that works.",
-            "Please share any access instructions or building procedures I should follow when the repair visit is scheduled.",
-            "I will keep an eye on the sink in the meantime and update you if the leak becomes more urgent before the visit.",
-        ]
-    else:
-        ask_bits = [
-            "I wanted to make this request clearly and hope you can help with it.",
-            "Please take a look at what I am asking for and let me know how we should move forward.",
-            "I am ready to follow your preferred process and can provide anything else you need related to this request.",
-            "If a slight adjustment to the details would make this easier to approve, I am happy to work with that.",
-            "Thank you for considering this — I appreciate your time and look forward to your reply.",
-            "Please share the next step on your side so I can prepare whatever you need from me.",
-            "I am available to discuss this further if a short conversation would make the request easier to handle.",
-            "Once we align on how to proceed, I will follow through promptly on my end.",
-        ]
-    return ask_bits
-
-
-def _pad_long_body_paragraphs(
-    paragraphs: list[str],
-    *,
-    min_words: int = 230,
-    seed_baseline: str = "",
-) -> list[str]:
-    """Grow long drafts with on-topic request detail — never meta or invented excuses."""
-    result = list(paragraphs)
-    body_so_far = "\n\n".join(result)
-    words = len(re.findall(r"[A-Za-z0-9']+", body_so_far))
-    for pad in _long_request_elaboration_paragraphs(seed_baseline):
-        if words >= min_words:
-            break
-        if pad.lower() in body_so_far.lower():
-            continue
-        result.append(pad)
-        body_so_far = "\n\n".join(result)
-        words = len(re.findall(r"[A-Za-z0-9']+", body_so_far))
-    # Extra courteous request-focused pads if still short (still no invented reason).
-    extras = [
-        "I hope this is a reasonable request and that we can settle on a plan that works for you.",
-        "Please reply when you have a moment so I know how to proceed with this request.",
-        "I remain flexible on the smaller details as long as the main ask can be accommodated.",
-        "Once I hear from you, I will move ahead according to your guidance on this request.",
-        "Thank you again for your attention to this — I know these requests take time to review.",
-        "I am grateful for any update you can share once you have considered this request.",
-    ]
-    for pad in extras:
-        if words >= min_words:
-            break
-        if pad.lower() in body_so_far.lower():
-            continue
-        result.append(pad)
-        body_so_far = "\n\n".join(result)
-        words = len(re.findall(r"[A-Za-z0-9']+", body_so_far))
-    return result
 
 
 def _build_length_retry_instruction(length: str, format_type: str) -> str:
@@ -1646,9 +1585,11 @@ def _build_length_retry_instruction(length: str, format_type: str) -> str:
     return (
         "LENGTH RETRY — previous draft was too short for LONG. "
         f"Output ONE {kind} only with at least 5 body paragraphs and ~220+ body words. "
-        "Add genuine detail about the request itself (what you are asking for and how "
-        "to proceed). Do NOT invent a reason/excuse. Do NOT write meta commentary about "
-        "rules, instructions, or the writing process. Do not change tone or vocabulary."
+        "Follow the LONG length examples in the system prompt (WITH REASON vs WITHOUT REASON). "
+        "Do NOT invent a reason if the idea had none. Do NOT repeat the same ask in "
+        "slightly different wording across paragraphs. Do NOT write meta commentary. "
+        "Sign off with only the closing word when no writer name is saved. "
+        "Do not change tone or vocabulary."
     )
 
 
@@ -1858,13 +1799,30 @@ _INVENTED_REASON_CLAUSE_RE = re.compile(
     r"due to (unforeseen|unexpected|personal|some)\b[^.]{0,120}"
     r"|unforeseen (personal )?(circumstances|events|issues|challenges|matters)\b[^.]{0,80}"
     r"|unexpected (personal )?(circumstances|events|issues|challenges|matters|work responsibilities)\b[^.]{0,80}"
-    r"|personal (circumstances|matters|issues|challenges)\b[^.]{0,80}"
+    r"|personal (circumstances|matters|issues|challenges|commitments)\b[^.]{0,80}"
     r"|health issues?\b[^.]{0,80}"
     r"|family emergency\b[^.]{0,80}"
     r"|recent workload has been quite challenging\b[^.]{0,80}"
     r"|my current schedule has been quite hectic\b[^.]{0,100}"
     r"|been (more )?(quite )?challenging than (expected|anticipated)\b[^.]{0,80}"
+    r"|workload\b[^.]{0,120}"
+    r"|particularly busy with\b[^.]{0,120}"
+    r"|busy with a range of projects\b[^.]{0,120}"
+    r"|heavier (than expected|workload)\b[^.]{0,120}"
+    r"|commitments across (multiple |a couple of |several (of )?my )?courses\b[^.]{0,80}"
+    r"|across several of my courses\b[^.]{0,80}"
+    r"|i('ve| have) already outlined my approach\b[^.]{0,160}"
+    r"|given that i('ve| have) had\b[^.]{0,160}"
     r")\.?"
+)
+
+_INVENTED_REASON_PARAGRAPH_RE = re.compile(
+    r"(?is)^(?=.*\b("
+    r"workload|stacked up|particularly busy|across (multiple |a couple of )?courses|"
+    r"outlined my approach|started the research|begun the research|"
+    r"personal (circumstances|matters|commitments)|unforeseen|family emergency|"
+    r"health issues?"
+    r")\b).+$"
 )
 
 _META_INSTRUCTION_COMMENTARY_RE = re.compile(
@@ -1935,10 +1893,30 @@ def _strip_invented_reasons_if_absent(
         paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
         cleaned_paras: list[str] = []
         for paragraph in paragraphs:
+            # Drop whole justification paragraphs leaked from WITH REASON examples.
+            if _INVENTED_REASON_PARAGRAPH_RE.match(paragraph):
+                # Keep if it also contains the core ask and can be cleaned sentence-wise;
+                # drop if it is mostly backstory.
+                ask_cues = (
+                    "request", "extension", "deadline", "would it be possible",
+                    "could you", "please let me know",
+                )
+                lower_p = paragraph.lower()
+                if not any(cue in lower_p for cue in ask_cues):
+                    continue
             sentences = _split_sentences(paragraph)
             kept_sents: list[str] = []
             for sentence in sentences:
-                if _INVENTED_REASON_CLAUSE_RE.search(sentence):
+                if _INVENTED_REASON_CLAUSE_RE.search(sentence) or (
+                    _INVENTED_REASON_PARAGRAPH_RE.match(sentence)
+                    and not any(
+                        cue in sentence.lower()
+                        for cue in (
+                            "request", "extension", "deadline", "would it be",
+                            "could you", "please", "let me know",
+                        )
+                    )
+                ):
                     # Drop whole sentence if it is mainly a fabricated reason.
                     # Keep only if a clear request survives without the clause.
                     stripped = _INVENTED_REASON_CLAUSE_RE.sub("", sentence)
