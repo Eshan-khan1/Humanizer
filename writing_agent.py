@@ -26,7 +26,7 @@ OLLAMA_GENERATE_NUM_PREDICT_LONG = int(
     os.environ.get("OLLAMA_GENERATE_NUM_PREDICT_LONG", "4096")
 )
 
-EMAIL_SIGNATURE_PLACEHOLDER = ""  # no name line when profile name is missing (never brackets)
+EMAIL_SIGNATURE_PLACEHOLDER = "[Your Name]"
 
 WRITING_AGENT_SYSTEM_PROMPT = (
     "You are the Humanizer Writing Agent. You only do two jobs:\n"
@@ -65,7 +65,7 @@ GENERATE_EXAMPLES = """\
 EXAMPLE — idea has no reason stated:
 Idea: "asking my professor for a deadline extension"
 Correct output body: "I'm writing to request an extension on the upcoming assignment. Would it be possible to have a few extra days?"
-Wrong: adding any reason, excuse, or bracketed placeholder like "[reason here]".
+Wrong: adding any reason, excuse, or missing-detail placeholder.
 
 EXAMPLE — idea has a reason stated:
 Idea: "asking my professor for extension, I was sick"
@@ -80,14 +80,15 @@ Email structure:
     in the greeting / salutation)
   • Body — must follow tone, length, and complexity rules exactly
   • Sign-off — must follow the tone rules, then the writer's name on the next line
-  • Email signature — always put the writer's full name from profile / sign-off note
-    after the sign-off when a name is saved; if no name is saved, end with only the
-    closing word and no name line. Never use a bracketed placeholder for the name
-    or anything else.
+  • Email signature — put the writer's full name from profile / sign-off note after
+    the sign-off when a name is saved. Otherwise put exactly "[Your Name]" on the
+    line after the closing word. This final signature line is the ONLY allowed
+    bracketed placeholder anywhere in the output.
   • Sign-off / signature instructions NEVER affect the greeting at the top
 
 General rules:
-  • Produce send-ready text — no fragments and no bracketed placeholders of any kind.
+  • Produce send-ready text — no fragments. Never use brackets in the subject,
+    greeting, or body for missing reasons, dates, names, or any other detail.
   • Weave informational user notes into the body naturally; do not paste them as a bullet list.
   • If a user note is informational only, it adds facts — it must not change tone or style.
   • If a user note includes a one-time tone instruction, follow that tone for this generation only.
@@ -116,8 +117,10 @@ OUTPUT RULES (non-negotiable):
   • If profile/permanent note are empty: use generic phrasing for greetings and body
     and do not error.
   • Email signature: always put the writer's saved full name after the sign-off; if no
-    name is saved, sign off with just the closing word ("Best," or "Sincerely,") and
-    no name line — never use a bracketed placeholder for the name or anything else.
+    name is saved and no permanent note supplies one, put exactly "[Your Name]" on
+    the line after the closing word ("Best," or "Sincerely,").
+  • "[Your Name]" is the one and only bracketed placeholder allowed, and only as the
+    final signature line. Brackets must NEVER appear in the subject, greeting, or body.
   • Sign-off permanent notes affect ONLY the closing signature — never the salutation.
   • Never leave bracketed instructions or template text in the output.
   • NEVER print rules, setting names, instruction headers, profile labels, or meta notes
@@ -154,7 +157,8 @@ LENGTH — structure only (independent of tone and complexity):
   • Never invent excuses, dates, assignment titles, or backstory. Never copy these
     examples verbatim — match their shape and depth for the user's actual idea.
   • Do not repeat the same ask in slightly different wording across paragraphs.
-  • Sign off with only the closing word when no writer name is saved (no name line).
+  • If no writer name is saved, end with the closing word and then exactly
+    "[Your Name]" on the final line.
   • LENGTH must NEVER change vocabulary difficulty or tone.
 
 EXAMPLE — WITH REASON (idea included a reason; use this shape only when the idea has one):
@@ -171,6 +175,7 @@ Would it be possible to get until the following Monday? If a shorter extension w
 Thank you for taking the time to consider this — I know deadlines matter for grading and course pacing, and I don't take the flexibility for granted.
 
 Best,
+[Your Name]
 
 EXAMPLE — WITHOUT REASON (idea gave no reason; do not invent one):
 Subject: Request for Deadline Extension
@@ -186,6 +191,7 @@ I'm glad to share my progress so far if that's useful, and happy to work within 
 Thank you for considering this — I appreciate any flexibility you're able to offer.
 
 Best,
+[Your Name]
 """,
 }
 
@@ -223,7 +229,7 @@ TONE — voice/personality only (independent of length and complexity):
   • Professional language, no contractions, no slang, structured sentences.
   • Opening: "Dear …," when a recipient is known; otherwise "Dear Sir or Madam," or "Hello,"
   • Sign-off: "Sincerely," then the writer's saved name on the next line when available;
-    if no name is saved, sign off with only "Sincerely," and no name line
+    if no name is saved, put exactly "[Your Name]" on the next line
   • Subject line must sound formal
   • TONE must NEVER change how long the output is or how advanced the vocabulary is —
     "formal" does not mean longer, and does not mean more advanced words.""",
@@ -232,7 +238,7 @@ TONE — voice/personality only (independent of length and complexity):
   • Warm, approachable, personable phrasing; contractions okay.
   • Opening: "Hi …," when a recipient is known; otherwise "Hi," or "Hi there,"
   • Sign-off: "Best," then the writer's saved name on the next line when available;
-    if no name is saved, sign off with only "Best," and no name line
+    if no name is saved, put exactly "[Your Name]" on the next line
   • Subject line must sound warm but clear
   • TONE must NEVER change how long the output is or how advanced the vocabulary is —
     "friendly" does not mean shorter or simpler words.""",
@@ -241,7 +247,7 @@ TONE — voice/personality only (independent of length and complexity):
   • Relaxed, conversational; contractions and informal phrasing okay.
   • Opening: "Hey …," when a recipient is known; otherwise "Hey," or "Hey there,"
   • Sign-off: "Thanks," then the writer's saved name on the next line when available;
-    if no name is saved, sign off with only "Thanks," and no name line
+    if no name is saved, put exactly "[Your Name]" on the next line
   • Subject line must sound informal
   • TONE must NEVER change how long the output is or how advanced the vocabulary is —
     "casual" does not mean shorter or simpler words.""",
@@ -1588,7 +1594,8 @@ def _build_length_retry_instruction(length: str, format_type: str) -> str:
         "Follow the LONG length examples in the system prompt (WITH REASON vs WITHOUT REASON). "
         "Do NOT invent a reason if the idea had none. Do NOT repeat the same ask in "
         "slightly different wording across paragraphs. Do NOT write meta commentary. "
-        "Sign off with only the closing word when no writer name is saved. "
+        "When no writer name is saved, put exactly \"[Your Name]\" on the final "
+        "line after the closing word. "
         "Do not change tone or vocabulary."
     )
 
@@ -2178,7 +2185,7 @@ def _enforce_tone_greeting_line(
 def _enforce_tone_signoff(
     footer: str, tone_preset: str, profile: dict[str, Any]
 ) -> str:
-    """Force sign-off word by tone; writer name on next line only when saved."""
+    """Force sign-off word and a real-name or final placeholder signature line."""
     signature_name = _email_signature_name(profile)
 
     preferred = str(
@@ -2190,9 +2197,7 @@ def _enforce_tone_signoff(
         signoff = {"formal": "Sincerely,", "friendly": "Best,", "casual": "Thanks,"}.get(
             tone_preset, "Best,"
         )
-    if signature_name:
-        return f"{signoff}\n{signature_name}"
-    return signoff
+    return f"{signoff}\n{signature_name}"
 
 
 _GREETING_WITH_NAME_RE = re.compile(
@@ -2211,11 +2216,11 @@ def _extract_profile_full_name(profile: dict[str, Any]) -> str:
 
 
 def _email_signature_name(profile: dict[str, Any]) -> str:
-    """Writer name for the email signature line — empty when none saved (no placeholders)."""
+    """Writer name or the sole allowed final signature placeholder."""
     saved_name = _extract_profile_full_name(profile)
     if saved_name and not _is_placeholder_name(saved_name):
         return saved_name
-    return ""
+    return EMAIL_SIGNATURE_PLACEHOLDER
 
 
 def _is_placeholder_name(value: str) -> bool:

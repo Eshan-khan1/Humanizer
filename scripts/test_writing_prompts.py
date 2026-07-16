@@ -218,6 +218,33 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("Eshan", out)
         self.assertRegex(out, r"(?m)^(Best|Thanks|Sincerely),?\s*$")
 
+    def test_missing_name_uses_only_final_signature_placeholder(self) -> None:
+        settings = {
+            "tonePreset": "friendly",
+            "length": "medium",
+            "complexity": "standard",
+            "profile": {},
+        }
+        system = build_generate_system_instruction("email", settings=settings)
+        self.assertIn(
+            '"[Your Name]" is the one and only bracketed placeholder allowed',
+            system,
+        )
+        self.assertIn("Brackets must NEVER appear in the subject, greeting, or body", system)
+
+        draft = (
+            "Subject: Update\n\nHi there,\n\n"
+            "I need an extension.\n\nBest,\n"
+        )
+        out = apply_generate_hard_filters(
+            draft, format_type="email", settings=settings, seed_baseline="extension"
+        )
+        out = finalize_generate_output(
+            out, format_type="email", settings=settings, seed_baseline="extension"
+        )
+        self.assertTrue(out.endswith("Best,\n[Your Name]"), out)
+        self.assertEqual(out.count("[Your Name]"), 1)
+
     def test_long_guidance_examples_and_no_pad_boilerplate(self) -> None:
         system = build_generate_system_instruction(
             "email",

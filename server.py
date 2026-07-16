@@ -339,8 +339,17 @@ def _clean_deep_fix_response(raw: str) -> str:
 
 
 def _strip_bracket_leakage(text: str) -> str:
-    """Remove any leftover [bracketed] placeholders the model may have emitted."""
-    return re.sub(r"\[[^\]]{0,80}\]", "", text or "").strip()
+    """Allow [Your Name] only as the final signature line; strip all other brackets."""
+    cleaned = (text or "").strip()
+    has_signature_placeholder = bool(
+        cleaned and cleaned.splitlines()[-1].strip() == "[Your Name]"
+    )
+    if has_signature_placeholder:
+        cleaned = "\n".join(cleaned.splitlines()[:-1]).rstrip()
+    cleaned = re.sub(r"\[[^\]]{0,80}\]", "", cleaned).strip()
+    if has_signature_placeholder:
+        return f"{cleaned}\n[Your Name]"
+    return cleaned
 
 
 def _tokenize_for_diff(text: str) -> list[str]:
