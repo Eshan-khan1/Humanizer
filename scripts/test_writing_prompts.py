@@ -35,6 +35,7 @@ from writing_agent import (  # noqa: E402
     _dedupe_generic_request_sentences,
     _dedupe_semantic_requests,
     _enforce_length_structure,
+    _ensure_seed_list_format,
     _fact_is_reflected,
     _format_inline_lists,
     _generate_candidate_score,
@@ -44,6 +45,7 @@ from writing_agent import (  # noqa: E402
     _meets_generate_length_requirement,
     _normalize_unseeded_timing_details,
     _parse_email_sections,
+    _seed_list_plan,
     _parse_signoff_permanent_note,
 )
 
@@ -490,6 +492,69 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertTrue(
             any(reason.startswith("length_or_structure") for reason in reasons)
         )
+
+    def test_complete_medium_draft_accepts_small_word_count_shortfall(self) -> None:
+        seed = "Ask my accountant for an update on my tax filing."
+        candidate = (
+            "Subject: Tax Filing Update\n\nHi there,\n\n"
+            "Could you please share the current status of my tax filing and confirm "
+            "whether anything remains outstanding?\n\n"
+            "Please also tell me if you need any additional tax documents from me.\n\n"
+            "Best,\nPriya"
+        )
+        self.assertEqual(_body_word_count(candidate, "email"), 30)
+        self.assertTrue(
+            _meets_generate_length_requirement(
+                candidate, "email", "medium", seed
+            )
+        )
+
+    def test_seed_lists_are_forced_onto_separate_lines(self) -> None:
+        vendor_seed = (
+            "Ask the vendor for a revised quote that separates hardware costs, "
+            "installation labor, and the annual maintenance contract, and ask them "
+            "to flag any items with long lead times so we can plan the rollout schedule."
+        )
+        intern_seed = (
+            "Ask the new intern to set up their laptop with the VPN, get added to the "
+            "team Slack channel, complete the security training module, and schedule "
+            "a 1:1 with their onboarding buddy, all before Friday."
+        )
+        self.assertEqual(len(_seed_list_plan(vendor_seed)[1]), 3)
+        self.assertEqual(len(_seed_list_plan(intern_seed)[1]), 4)
+
+        vendor = _ensure_seed_list_format(
+            "Subject: Quote\n\nDear Sir or Madam,\n\n"
+            "Please separate hardware costs, installation labor, and maintenance "
+            "in the revised quote. Please flag long lead times.\n\nSincerely,\n[Your Name]",
+            format_type="email",
+            seed_baseline=vendor_seed,
+        )
+        intern = _ensure_seed_list_format(
+            "Subject: Onboarding\n\nDear Sir or Madam,\n\n"
+            "Set up the VPN. Also join Slack. Complete security training, and "
+            "schedule the buddy meeting before Friday.\n\nSincerely,\n[Your Name]",
+            format_type="email",
+            seed_baseline=intern_seed,
+        )
+        self.assertEqual(len(re.findall(r"(?m)^- ", vendor)), 3)
+        self.assertEqual(len(re.findall(r"(?m)^- ", intern)), 4)
+
+        filtered_vendor = apply_generate_hard_filters(
+            "Subject: Quote\n\nDear Sir or Madam,\n\n"
+            "Please provide a revised quote separating hardware, installation, "
+            "and maintenance costs.\n\nPlease flag long lead times.\n\n"
+            "Sincerely,\n[Your Name]",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "medium",
+                "complexity": "standard",
+            },
+            seed_baseline=vendor_seed,
+        )
+        self.assertNotIn("current status of the contract", filtered_vendor.lower())
+        self.assertNotIn("contract items that still need", filtered_vendor.lower())
 
     def test_generate_errors_after_three_invalid_candidates(self) -> None:
         source = "Ask my accountant for an update on my tax filing."

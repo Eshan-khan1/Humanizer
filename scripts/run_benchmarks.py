@@ -182,9 +182,11 @@ def validate_generate(
             input_text,
         )
         minimum, maximum = (35, 80) if sparse_no_reason else (65, 160)
-        if not minimum <= body_words <= maximum:
+        substantial_floor = max(12, round(minimum * 0.5))
+        if not substantial_floor <= body_words <= maximum:
             issues.append(
-                f"medium length: expected {minimum}–{maximum} body words, got {body_words}"
+                f"medium length: target {minimum}–{maximum}, substantially too short "
+                f"below {substantial_floor}; got {body_words}"
             )
 
     if length == "long":

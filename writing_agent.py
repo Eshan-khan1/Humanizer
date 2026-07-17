@@ -148,9 +148,12 @@ OUTPUT RULES (non-negotiable):
     a reason, that this is a restatement for clarity, or that the reader should just
     reply yes/no because of the instructions).
   • Do not repeat a "let me know" or "process" sentence pattern within one draft.
-  • Lists with 3+ distinct items must use one line per item at every tone and complexity.
+  • BEFORE DRAFTING, inspect the IDEA itself. If it names 3+ distinct items, tasks,
+    requirements, costs, blockers, or questions, you MUST use one line per item at every
+    tone and complexity setting.
     Do not emit inline forms such as "1. First. 2. Second. 3. Third." or
-    "- First. - Second. - Third." inside one paragraph.
+    "- First. - Second. - Third." inside one paragraph. Do not merge listed items into
+    prose using transitions such as "additionally," "also," "firstly," or "secondly."
   • Two different ideas must produce substantively different bodies tied to their subjects,
     not the same generic template with only a noun changed."""
 
@@ -166,6 +169,8 @@ LENGTH — structure only (independent of tone and complexity):
 LENGTH — structure only (independent of tone and complexity):
   • Body: exactly 2–3 paragraphs (~65–160 words total when the idea supplies
     enough substance; ~35–80 words for a sparse idea with no reason/details).
+  • These word counts are targets, not hard quotas. Accept a complete, grounded draft
+    below the target instead of padding or rejecting it solely for a small shortfall.
   • Noticeably longer than short, but clearly shorter than long.
   • Email: greeting, 2–3 body paragraphs, closing/sign-off.
   • Essay: 2–3 paragraphs of content.
@@ -1684,15 +1689,59 @@ def _meets_generate_length_requirement(
         paragraph_count = len(paragraphs)
         sentence_count = _count_body_sentences(text, format_type)
     words = _body_word_count(text, format_type)
+    body = (
+        _parse_email_sections(text).get("body", "")
+        if format_type == "email"
+        else text or ""
+    )
+    seed_tokens = _seed_content_tokens(seed_baseline)
+    body_tokens = _seed_content_tokens(body)
+    coverage = (
+        len(seed_tokens & body_tokens) / len(seed_tokens)
+        if seed_tokens
+        else 1.0
+    )
+    complete = (
+        bool(body.strip())
+        and coverage >= 0.5
+        and not bool(
+            re.search(
+                r"\b(?:and|but|or|because|by|for|from|to|with)\s*$",
+                body.strip(),
+                re.I,
+            )
+        )
+    )
+    list_item_count = len(
+        re.findall(r"(?m)^\s*(?:\d{1,2}[.)]|[-•])\s+", body)
+    )
 
     minimum, maximum = _generate_length_bounds(length, seed_baseline)
     if length == "short":
         # 1 short paragraph, at most 2 body sentences — core message only
         return paragraph_count <= 1 and 1 <= sentence_count <= 2 and words <= maximum
     if length == "medium":
-        return 2 <= paragraph_count <= 3 and minimum <= words <= maximum
+        substantial_floor = max(12, round(minimum * 0.5))
+        structure_ok = (
+            1 <= paragraph_count <= 3
+            if list_item_count >= 3
+            else 2 <= paragraph_count <= 3
+        )
+        return (
+            structure_ok
+            and words <= maximum
+            and (
+                words >= minimum
+                or (words >= substantial_floor and complete)
+            )
+        )
     if length == "long":
-        return paragraph_count >= 5 and minimum <= words <= maximum
+        minimum_with_tolerance = max(1, minimum - max(8, round(minimum * 0.1)))
+        return (
+            paragraph_count >= 5
+            and words <= maximum
+            and (words >= minimum or (words >= minimum_with_tolerance and complete))
+        )
     return True
 
 
@@ -2519,6 +2568,89 @@ def _dedupe_semantic_requests(text: str, format_type: str) -> str:
     return _reassemble_email_sections(sections)
 
 
+def _seed_list_plan(seed_baseline: str) -> tuple[str, list[str]] | None:
+    seed = (seed_baseline or "").strip()
+    separated = re.search(
+        r"(?i)\bseparat(?:e|es|ing)\s+(.+?)(?=,\s+and\s+ask\b|[.;]|$)",
+        seed,
+    )
+    if separated:
+        items = [
+            re.sub(r"^(?:and\s+)", "", item.strip(), flags=re.I)
+            for item in re.split(r",\s*(?:and\s+)?", separated.group(1))
+            if item.strip()
+        ]
+        if len(items) >= 3:
+            return (
+                "Please provide the revised quote with separate line items for:",
+                items,
+            )
+
+    actions = re.search(
+        r"(?i)^ask\s+.+?\s+to\s+(.+?)(?=,\s*all\s+before\b|[.;]|$)",
+        seed,
+    )
+    if actions:
+        items = [
+            re.sub(
+                r"\btheir\b",
+                "your",
+                re.sub(r"^(?:and\s+)", "", item.strip(), flags=re.I),
+                flags=re.I,
+            )
+            for item in re.split(r",\s*(?:and\s+)?", actions.group(1))
+            if item.strip()
+        ]
+        if len(items) >= 3:
+            timing = re.search(r"(?i),\s*all\s+before\s+([^.,]+)", seed)
+            deadline = f" before {timing.group(1).strip()}" if timing else ""
+            return (
+                f"Please complete the following tasks{deadline}:",
+                items,
+            )
+    return None
+
+
+def _ensure_seed_list_format(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str,
+) -> str:
+    """Render explicit 3+ item seed lists as one line per grounded item."""
+    if format_type != "email":
+        return text
+    plan = _seed_list_plan(seed_baseline)
+    if not plan:
+        return text
+    intro, items = plan
+    sections = _parse_email_sections(text)
+    item_token_sets = [_seed_content_tokens(item) for item in items]
+    kept_paragraphs: list[str] = []
+    for paragraph in re.split(r"\n\s*\n", sections.get("body", "")):
+        kept_sentences: list[str] = []
+        for sentence in _split_sentences(paragraph):
+            sentence_tokens = _seed_content_tokens(sentence)
+            mentions_item = any(
+                tokens
+                and len(tokens & sentence_tokens) / len(tokens) >= 0.5
+                for tokens in item_token_sets
+            )
+            if not mentions_item:
+                kept_sentences.append(sentence)
+        if kept_sentences:
+            kept_paragraphs.append(_join_sentences(kept_sentences))
+
+    list_lines = [
+        f"- {item.rstrip(' .')[0].upper() + item.rstrip(' .')[1:]}"
+        for item in items
+        if item.rstrip(" .")
+    ]
+    list_block = f"{intro}\n" + "\n".join(list_lines)
+    sections["body"] = "\n\n".join([list_block, *kept_paragraphs[:2]])
+    return _reassemble_email_sections(sections)
+
+
 def _strip_invented_reasons_if_absent(
     text: str,
     *,
@@ -2653,7 +2785,11 @@ def _ensure_safe_no_reason_elaboration(
             "Please keep the repair visit within this week, as requested.",
             "Until then, please tell me if you need anything else regarding the sink.",
         )
-    elif "contract" in seed_lower:
+    elif "contract" in seed_lower and re.search(
+        r"(?:follow\s+up|status|update).{0,40}\bcontract\b|"
+        r"\bcontract\b.{0,40}(?:status|update)",
+        seed_lower,
+    ):
         candidates = (
             "Could you share the current status of the contract?",
             "Please identify any contract items that still need a response.",
@@ -3943,6 +4079,11 @@ def _process_generate_candidate(
         cleaned, format_type, length, seed_baseline=seed_baseline
     )
     cleaned = _dedupe_generic_request_sentences(cleaned, format_type)
+    cleaned = _ensure_seed_list_format(
+        cleaned,
+        format_type=format_type,
+        seed_baseline=seed_baseline,
+    )
     if format_type == "email":
         cleaned = _canonicalize_generated_email(
             cleaned,
