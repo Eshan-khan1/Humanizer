@@ -1,0 +1,127 @@
+{
+    "description": "Humanizer Generate/Rewrite test matrix. Each scenario uses a distinct idea so genericness, repetition, and settings-bleed bugs can't hide behind a repeated prompt.",
+    "cases": [
+  
+      {
+        "test_id": 1,
+        "test_name": "Tone Separation",
+        "note": "Same idea, only tone changes. Body length/content should stay roughly consistent across variants.",
+        "input": "Ask my coworker to cover my shift on Saturday because I have a family event.",
+        "variants": [
+          { "tone": "formal",   "length": "short", "complexity": "standard" },
+          { "tone": "friendly", "length": "short", "complexity": "standard" },
+          { "tone": "casual",   "length": "short", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 2,
+        "test_name": "Length Separation",
+        "note": "Same idea, only length changes. Long should be more developed, not just longer via padding.",
+        "input": "Tell my gym I want to freeze my membership for two months while I'm traveling.",
+        "variants": [
+          { "tone": "friendly", "length": "short",  "complexity": "standard" },
+          { "tone": "friendly", "length": "medium", "complexity": "standard" },
+          { "tone": "friendly", "length": "long",   "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 3,
+        "test_name": "Complexity Separation (substantial idea)",
+        "note": "Idea has enough real content that vocabulary differences should be clearly visible. Total length/paragraph count should stay similar across variants.",
+        "input": "Ask the vendor for a revised quote that separates hardware costs, installation labor, and the annual maintenance contract, and ask them to flag any items with long lead times so we can plan the rollout schedule.",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "simple" },
+          { "tone": "formal", "length": "medium", "complexity": "standard" },
+          { "tone": "formal", "length": "medium", "complexity": "advanced" }
+        ]
+      },
+  
+      {
+        "test_id": 4,
+        "test_name": "Note Information Only",
+        "note": "Permanent note supplies a real fact. It should appear in the draft, nothing extra invented.",
+        "input": "Email my landlord about renewing my lease.",
+        "permanent_note": "My current lease ends August 31st.",
+        "variants": [
+          { "tone": "friendly", "length": "short", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 5,
+        "test_name": "Note Tone Override",
+        "note": "Note explicitly overrides the tone setting; note should win.",
+        "input": "Ask my professor for an extension on the essay.",
+        "permanent_note": "Make it more formal than usual.",
+        "variants": [
+          { "tone": "casual", "length": "short", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 6,
+        "test_name": "Signature / Permanent Name Note",
+        "note": "Name should appear only in the closing signature, never in the greeting.",
+        "input": "Ask my accountant for an update on my tax filing.",
+        "permanent_note": "Always sign off with my name, Priya.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 7,
+        "test_name": "Meaning Preserved / No Hallucination",
+        "note": "No reason given for urgency beyond what's stated. Draft must not invent a reason, date, or backstory.",
+        "input": "Tell my downstairs neighbor their music is too loud after 11pm and ask them to keep it down on weeknights.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 8,
+        "test_name": "No Reason Given (hallucination stress test)",
+        "note": "Idea is a bare request with zero justification. Draft must not invent workload, health, or family excuses.",
+        "input": "Ask my manager to move our 1:1 from Tuesday to Wednesday.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" },
+          { "tone": "friendly", "length": "long",   "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 9,
+        "test_name": "List Formatting (multiple distinct items)",
+        "note": "Idea has 4+ distinct items. Should render as a real line-broken list, not one inline paragraph.",
+        "input": "Ask the new intern to set up their laptop with the VPN, get added to the team Slack channel, complete the security training module, and schedule a 1:1 with their onboarding buddy, all before Friday.",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 10,
+        "test_name": "Cross-Idea Genericness Check",
+        "note": "Different topic from every other case on purpose. Body must reflect this specific request, not reuse boilerplate from other cases.",
+        "input": "Ask a local bakery if they can make a custom cake for a birthday party next Saturday and ask about pricing for 20 people.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 11,
+        "test_name": "Rewrite - Tone Change, Length Preserved",
+        "note": "Rewrite should preserve meaning and roughly the same length, only tone/wording should shift.",
+        "input": "The client pushed back the deadline to next month.",
+        "variants": [
+          { "instruction": "make it formal" },
+          { "instruction": "make it casual" },
+          { "instruction": "make it friendly" }
+        ]
+      }
+    ]
+  }
