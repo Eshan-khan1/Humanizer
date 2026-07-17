@@ -7,9 +7,12 @@ Uses OLLAMA_WRITING_MODEL (default: humanizer-writing).
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from typing import Any, Literal
+
+logger = logging.getLogger("humanizer.writing_agent")
 
 OLLAMA_WRITING_MODEL = os.environ.get("OLLAMA_WRITING_MODEL", "humanizer-writing")
 OLLAMA_REWRITE_TEMPERATURE = float(os.environ.get("OLLAMA_REWRITE_TEMPERATURE", "0.45"))
@@ -1732,18 +1735,18 @@ def _enforce_length_structure(
                         _join_sentences(sentences[mid:]),
                     ]
                 elif paragraphs:
-                    # Visible medium structure: always at least 2 body paragraphs
-                    paragraphs = [
-                        paragraphs[0],
-                        "Please let me know how you would like to proceed.",
-                    ]
+                    logger.warning(
+                        "generate_fallback_suppressed case=%r "
+                        "reason=single_sentence_medium_candidate",
+                        seed_baseline[:160],
+                    )
             elif len(paragraphs) > 3:
                 paragraphs = paragraphs[:2] + [" ".join(paragraphs[2:])]
             elif len(paragraphs) == 0:
-                paragraphs = [
-                    "I wanted to follow up on this.",
-                    "Please let me know how you would like to proceed.",
-                ]
+                logger.warning(
+                    "generate_fallback_suppressed case=%r reason=empty_medium_candidate",
+                    seed_baseline[:160],
+                )
             while len(paragraphs) < 3:
                 best_i = -1
                 best_sentences: list[str] = []
@@ -2008,43 +2011,27 @@ def build_seed_content_baseline(text: str, notes: str = "") -> str:
     return " ".join(part for part in parts if part)
 
 
-def _body_from_seed(seed_baseline: str, tone_preset: str) -> str:
-    """Fallback body when filters leave the draft empty — still reflects the seed."""
-    seed = (seed_baseline or "").strip().rstrip(".")
-    if not seed:
-        return "Please let me know how you would like to proceed."
-
-    asking = re.match(
-        r"(?i)^asking\s+(?:my|the|a|an)?\s*\w+\s+for\s+(.+)$", seed
+def _fact_is_reflected(content: str, text: str) -> bool:
+    content_tokens = {
+        token for token in re.findall(r"[a-z0-9']+", content.lower()) if len(token) > 3
+    }
+    text_tokens = set(re.findall(r"[a-z0-9']+", text.lower()))
+    concrete_tokens = {
+        token
+        for token in content_tokens
+        if any(char.isdigit() for char in token)
+        or token
+        in {
+            "january", "february", "march", "april", "may", "june",
+            "july", "august", "september", "october", "november", "december",
+        }
+    }
+    if concrete_tokens and concrete_tokens <= text_tokens:
+        return True
+    return bool(
+        content_tokens
+        and len(content_tokens & text_tokens) / len(content_tokens) >= 0.4
     )
-    if asking:
-        return f"I am writing to request {asking.group(1).strip()}."
-
-    email_asking = re.match(
-        r"(?i)^email\s+.+?\s+asking\s+for\s+(.+)$", seed
-    )
-    if email_asking:
-        return f"I am writing to request {email_asking.group(1).strip()}."
-
-    follow_up = re.match(
-        r"(?i)^follow up with\s+.+?\s+about\s+(.+)$", seed
-    )
-    if follow_up:
-        return f"I am following up about {follow_up.group(1).strip()}."
-
-    ask_to = re.match(r"(?i)^ask\s+.+?\s+to\s+(.+)$", seed)
-    if ask_to:
-        action = re.sub(r"\btheir\b", "your", ask_to.group(1).strip(), flags=re.I)
-        return f"Please {action[0].lower() + action[1:]}."
-
-    telling = re.match(
-        r"(?i)^tell(?:ing)?\s+(?:my|the|a|an)?\s*\w+\s+(.+)$", seed
-    )
-    if telling:
-        seed = telling.group(1).strip()
-    seed = re.sub(r"(?i),\s*need\b", ", and I need", seed)
-    seed = seed[0].upper() + seed[1:] if seed else seed
-    return seed if seed.endswith((".", "!", "?")) else f"{seed}."
 
 
 def _inject_permanent_note(text: str, permanent_note: str, format_type: str) -> str:
@@ -2061,11 +2048,7 @@ def _inject_permanent_note(text: str, permanent_note: str, format_type: str) -> 
     note = remaining
 
     # If note already reflected (keyword overlap), leave as-is
-    note_tokens = {
-        w for w in re.findall(r"[a-z0-9']+", note.lower()) if len(w) > 3
-    }
-    text_tokens = set(re.findall(r"[a-z0-9']+", text.lower()))
-    if note_tokens and len(note_tokens & text_tokens) / len(note_tokens) >= 0.4:
+    if _fact_is_reflected(note, text):
         return text
 
     sentence = _permanent_note_sentence(note)
@@ -2127,7 +2110,11 @@ def _ensure_nonempty_body(
     if format_type != "email":
         if text.strip():
             return text
-        return _body_from_seed(seed_baseline, tone_preset)
+        logger.warning(
+            "generate_fallback_suppressed case=%r reason=empty_prose_candidate",
+            seed_baseline[:160],
+        )
+        return text
 
     sections = _parse_email_sections(text)
     body = sections.get("body", "").strip()
@@ -2138,7 +2125,12 @@ def _ensure_nonempty_body(
             for sentence in sentences
         ):
             return text
-    sections["body"] = _body_from_seed(seed_baseline, tone_preset)
+    logger.warning(
+        "generate_fallback_suppressed case=%r reason=%s",
+        seed_baseline[:160],
+        "ungrounded_email_body" if body else "empty_email_body",
+    )
+    sections["body"] = ""
     return _reassemble_email_sections(sections)
 
 
@@ -2627,14 +2619,17 @@ def _ensure_safe_no_reason_elaboration(
 
     sections = _parse_email_sections(text)
     sparse_seed = len(re.findall(r"[A-Za-z0-9']+", seed_baseline or "")) < 20
-    if sparse_seed:
-        paragraphs = [_body_from_seed(seed_baseline, "friendly")]
-    else:
-        paragraphs = [
-            p.strip()
-            for p in re.split(r"\n\s*\n", sections.get("body", ""))
-            if p.strip()
-        ]
+    paragraphs = [
+        p.strip()
+        for p in re.split(r"\n\s*\n", sections.get("body", ""))
+        if p.strip()
+    ]
+    if sparse_seed and not paragraphs:
+        logger.warning(
+            "generate_fallback_suppressed case=%r reason=empty_sparse_candidate",
+            seed_baseline[:160],
+        )
+        return text
     body_lower = " ".join(paragraphs).lower()
     seed_lower = (seed_baseline or "").lower()
     minimum, _maximum = _generate_length_bounds(length, seed_baseline)
@@ -2813,7 +2808,7 @@ def finalize_generate_output(
             sections = _parse_email_sections(filtered)
             body = sections.get("body", "").strip()
             note_sentence = _permanent_note_sentence(permanent_note)
-            if note_sentence and note_sentence.lower() not in body.lower():
+            if note_sentence and not _fact_is_reflected(note_sentence, body):
                 sents = _split_sentences(body) if body else []
                 if len(sents) < 2:
                     sents.append(note_sentence)
@@ -3503,7 +3498,6 @@ def resolve_effective_generate_settings(
     # Sign-off permanent notes → signature name only (never greeting / body).
     profile = dict(effective.get("profile") or {})
     raw_note = _extract_permanent_note(profile)
-    profile["_permanent_note_raw"] = raw_note
     signoff_name, remaining_note, is_signoff_only = _parse_signoff_permanent_note(raw_note)
     if signoff_name and not _extract_profile_full_name(profile):
         profile["fullName"] = signoff_name
@@ -3515,9 +3509,22 @@ def resolve_effective_generate_settings(
         profile["permanent_notes"] = ""
         profile["_signoff_note_only"] = True
         profile["_signoff_note_name"] = signoff_name or _extract_profile_full_name(profile)
-    elif remaining_note != raw_note:
+        profile["_permanent_note_raw"] = raw_note
+    else:
+        parsed_permanent = _parse_generation_note(remaining_note)
+        if parsed_permanent["tone_preset_override"]:
+            effective["tone_preset"] = parsed_permanent["tone_preset_override"]
+            effective["tone"] = (
+                parsed_permanent["tone_voice_override"]
+                or TONE_PRESET_TO_VOICE.get(
+                    parsed_permanent["tone_preset_override"],
+                    effective["tone"],
+                )
+            )
+        remaining_note = str(parsed_permanent["informational_content"] or "").strip()
         profile["permanentNote"] = remaining_note
         profile["permanent_note"] = remaining_note
+        profile["_permanent_note_raw"] = remaining_note
         if signoff_name:
             profile["_signoff_note_name"] = signoff_name
     effective["profile"] = profile
@@ -3968,6 +3975,77 @@ def _generate_candidate_score(
     return valid, complete, -abs(words - midpoint)
 
 
+def _normalized_comparison_text(text: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9']+", (text or "").lower()))
+
+
+def _raw_instruction_leaked(
+    candidate: str,
+    raw_input: str,
+    *,
+    format_type: str,
+) -> bool:
+    raw = (raw_input or "").strip()
+    if not raw or not re.match(
+        r"(?i)^(?:ask|asking|tell|telling|email|follow up|make|always|sign)\b",
+        raw,
+    ):
+        return False
+    body = (
+        _parse_email_sections(candidate).get("body", "")
+        if format_type == "email"
+        else candidate
+    )
+    normalized_raw = _normalized_comparison_text(raw)
+    return bool(
+        normalized_raw
+        and normalized_raw in _normalized_comparison_text(body)
+    )
+
+
+def _generate_candidate_rejection_reasons(
+    candidate: str,
+    *,
+    format_type: str,
+    length: str,
+    seed_baseline: str,
+    source_text: str,
+    notes: str = "",
+    permanent_note: str = "",
+) -> list[str]:
+    reasons: list[str] = []
+    body = (
+        _parse_email_sections(candidate).get("body", "")
+        if format_type == "email"
+        else candidate
+    ).strip()
+    if not body:
+        reasons.append("empty_body")
+    if not _meets_generate_length_requirement(
+        candidate, format_type, length, seed_baseline
+    ):
+        reasons.append(
+            f"length_or_structure(words={_body_word_count(candidate, format_type)},"
+            f"paragraphs={_count_email_body_paragraphs(candidate) if format_type == 'email' else len(_substantive_body_paragraphs(candidate))})"
+        )
+    for label, raw_input in (
+        ("source", source_text),
+        ("note", notes),
+        ("permanent_note", permanent_note),
+    ):
+        if _raw_instruction_leaked(
+            candidate, raw_input, format_type=format_type
+        ):
+            reasons.append(f"raw_{label}_leak")
+    if body and re.search(
+        r"\b(?:and|but|or|because|by|for|from|to|with)\s*$",
+        body,
+        re.I,
+    ):
+        reasons.append("incomplete_body")
+    return reasons
+
+
 class WritingAgent:
     """Dedicated agent for extension Rewrite and Generate features."""
 
@@ -4030,12 +4108,21 @@ class WritingAgent:
     ) -> str:
         if not text or not text.strip():
             return ""
+        normalized_input_settings = _normalize_generate_settings(settings)
+        raw_permanent_note = _extract_permanent_note(
+            normalized_input_settings.get("profile") or {}
+        )
         effective_settings = resolve_effective_generate_settings(settings, notes)
         effective_settings["_informational_content"] = str(
             _parse_generation_note(notes).get("informational_content") or ""
         ).strip()
         length = effective_settings["length"]
         seed_baseline = build_seed_content_baseline(text, notes)
+        permanent_fact = _extract_permanent_note(
+            effective_settings.get("profile") or {}
+        )
+        if permanent_fact:
+            seed_baseline = f"{seed_baseline} {permanent_fact}".strip()
         system_prompt = build_generate_system_instruction(
             format_type,
             notes=notes,
@@ -4045,8 +4132,9 @@ class WritingAgent:
         user_message = build_generate_user_message(text)
         num_predict = _generate_num_predict_for_length(length)
         candidates: list[str] = []
+        rejection_history: list[list[str]] = []
         attempt_system = system_prompt
-        for _attempt in range(3):
+        for attempt in range(3):
             raw = _call_llm(
                 user_message,
                 task="generate",
@@ -4061,10 +4149,30 @@ class WritingAgent:
                 seed_baseline=seed_baseline,
             )
             candidates.append(candidate)
-            if _meets_generate_length_requirement(
-                candidate, format_type, length, seed_baseline
-            ):
-                break
+            rejection_reasons = _generate_candidate_rejection_reasons(
+                candidate,
+                format_type=format_type,
+                length=length,
+                seed_baseline=seed_baseline,
+                source_text=text,
+                notes=notes,
+                permanent_note=raw_permanent_note,
+            )
+            rejection_history.append(rejection_reasons)
+            if not rejection_reasons:
+                return candidate
+            logger.warning(
+                "generate_candidate_rejected case=%r attempt=%d reasons=%s score=%s",
+                seed_baseline[:160],
+                attempt + 1,
+                rejection_reasons,
+                _generate_candidate_score(
+                    candidate,
+                    format_type=format_type,
+                    length=length,
+                    seed_baseline=seed_baseline,
+                ),
+            )
             retry_instruction = _build_length_retry_instruction(
                 length,
                 format_type,
@@ -4073,14 +4181,15 @@ class WritingAgent:
             )
             attempt_system = f"{system_prompt}\n\n{retry_instruction}"
 
-        return max(
-            candidates,
-            key=lambda candidate: _generate_candidate_score(
-                candidate,
-                format_type=format_type,
-                length=length,
-                seed_baseline=seed_baseline,
-            ),
+        logger.error(
+            "generate_failed_no_valid_candidate case=%r attempts=%d reasons=%s",
+            seed_baseline[:160],
+            len(candidates),
+            rejection_history,
+        )
+        raise RuntimeError(
+            "Generate could not produce a complete draft that satisfied the requested "
+            "length and fidelity constraints after 3 attempts."
         )
 
 

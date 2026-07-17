@@ -8,6 +8,7 @@ import re
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -16,6 +17,7 @@ from writing_agent import (  # noqa: E402
     GENERATE_COMPLEXITY_GUIDANCE,
     GENERATE_LENGTH_GUIDANCE,
     TONE_PRESET_GUIDANCE,
+    WritingAgent,
     apply_generate_hard_filters,
     build_generate_system_instruction,
     build_generate_user_message,
@@ -28,14 +30,15 @@ from writing_agent import (  # noqa: E402
     _body_word_count,
     _count_body_sentences,
     _count_email_body_paragraphs,
-    _body_from_seed,
     _canonicalize_generated_email,
     _clean_generate_typography,
     _dedupe_generic_request_sentences,
     _dedupe_semantic_requests,
     _enforce_length_structure,
+    _fact_is_reflected,
     _format_inline_lists,
     _generate_candidate_score,
+    _generate_candidate_rejection_reasons,
     _generate_length_bounds,
     _inject_informational_content,
     _meets_generate_length_requirement,
@@ -391,15 +394,22 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             "complexity": "standard",
             "profile": {},
         }
-        draft = "Subject: Request\n\nHi there,\n\nPlease consider my request.\n\nBest,"
+        extension_draft = (
+            "Subject: Request\n\nHi there,\n\n"
+            "I am writing to request a deadline extension.\n\nBest,"
+        )
+        sink_draft = (
+            "Subject: Request\n\nHi there,\n\n"
+            "The sink is leaking, and I need someone this week.\n\nBest,"
+        )
         extension = apply_generate_hard_filters(
-            draft,
+            extension_draft,
             format_type="email",
             settings=settings,
             seed_baseline="asking my professor for a deadline extension",
         )
         sink = apply_generate_hard_filters(
-            draft,
+            sink_draft,
             format_type="email",
             settings=settings,
             seed_baseline="tell my landlord the sink is leaking, need someone this week",
@@ -441,6 +451,66 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("where things currently stand with the contract", advanced)
         self.assertIn("anything further you require from me", advanced)
         self.assertGreater(len(advanced.split()), len(simple.split()))
+
+    def test_permanent_tone_note_is_applied_not_injected(self) -> None:
+        effective = resolve_effective_generate_settings(
+            {
+                "tonePreset": "casual",
+                "length": "short",
+                "complexity": "standard",
+                "profile": {"permanentNote": "Make it more formal than usual."},
+            }
+        )
+        self.assertEqual(effective["tone_preset"], "formal")
+        self.assertEqual(effective["profile"]["permanentNote"], "")
+        self.assertEqual(effective["profile"]["_permanent_note_raw"], "")
+
+    def test_permanent_date_fact_recognizes_paraphrase(self) -> None:
+        self.assertTrue(
+            _fact_is_reflected(
+                "My current lease ends August 31st.",
+                "The lease expires on August 31st.",
+            )
+        )
+
+    def test_invalid_raw_seed_candidate_is_rejected(self) -> None:
+        source = "Ask my accountant for an update on my tax filing."
+        candidate = (
+            "Subject: Tax Filing\n\nHi there,\n\n"
+            f"{source}\n\nBest,\n[Your Name]"
+        )
+        reasons = _generate_candidate_rejection_reasons(
+            candidate,
+            format_type="email",
+            length="medium",
+            seed_baseline=source,
+            source_text=source,
+        )
+        self.assertIn("raw_source_leak", reasons)
+        self.assertTrue(
+            any(reason.startswith("length_or_structure") for reason in reasons)
+        )
+
+    def test_generate_errors_after_three_invalid_candidates(self) -> None:
+        source = "Ask my accountant for an update on my tax filing."
+        raw = (
+            "Subject: Tax Filing\n\nHi there,\n\n"
+            f"{source}\n\nBest,\n[Your Name]"
+        )
+        with patch("writing_agent._call_llm", return_value=raw) as call:
+            with self.assertRaisesRegex(
+                RuntimeError, "could not produce a complete draft"
+            ):
+                WritingAgent().generate(
+                    source,
+                    "email",
+                    settings={
+                        "tonePreset": "friendly",
+                        "length": "medium",
+                        "complexity": "standard",
+                    },
+                )
+        self.assertEqual(call.call_count, 3)
 
     def test_semantic_duplicate_requests_collapse(self) -> None:
         draft = (
@@ -560,17 +630,7 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertTrue(once.endswith("Best,\nEshan"), once)
         self.assertEqual(len(re.findall(r"(?m)^(?:Best|Sincerely|Thanks),$", once)), 1)
 
-    def test_seed_fallback_does_not_claim_prior_contact(self) -> None:
-        out = _body_from_seed(
-            "tell my landlord the sink is leaking, need someone this week",
-            "friendly",
-        )
-        self.assertEqual(
-            out, "The sink is leaking, and I need someone this week."
-        )
-        self.assertNotIn("follow up", out.lower())
-
-    def test_filters_restore_seed_when_only_filler_survives(self) -> None:
+    def test_filters_suppress_raw_seed_fallback_when_only_filler_survives(self) -> None:
         settings = {
             "tonePreset": "friendly",
             "length": "medium",
@@ -588,8 +648,7 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             settings=settings,
             seed_baseline="tell my landlord the sink is leaking, need someone this week",
         )
-        self.assertIn("sink is leaking", out.lower())
-        self.assertIn("this week", out.lower())
+        self.assertEqual(_parse_email_sections(out)["body"], "")
         self.assertNotIn("apartment", out.lower())
         self.assertNotIn("plumber", out.lower())
 
