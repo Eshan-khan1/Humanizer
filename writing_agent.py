@@ -104,6 +104,10 @@ General rules:
   • If a user note includes a one-time tone instruction, follow that tone for this generation only.
   • If no reason is provided in the idea, include no reason whatsoever — do not invent one.
   • Never write meta commentary about instructions, rules, length, or the drafting process.
+  • When content naturally contains 3 or more distinct requirements, blockers, questions,
+    or other list items, put each item on its own line as a proper numbered or bulleted list.
+    Never cram multiple numbered items or dashes into one paragraph. Keep ordinary prose
+    as paragraphs when it is not a genuine list.
   • Use exactly ONE blank line between major sections (after subject, between paragraphs).
   • If the seed is already a near-complete draft, polish and complete missing parts only."""
 GENERATE_INDEPENDENCE_RULES = """\
@@ -141,6 +145,9 @@ OUTPUT RULES (non-negotiable):
     a reason, that this is a restatement for clarity, or that the reader should just
     reply yes/no because of the instructions).
   • Do not repeat a "let me know" or "process" sentence pattern within one draft.
+  • Lists with 3+ distinct items must use one line per item at every tone and complexity.
+    Do not emit inline forms such as "1. First. 2. Second. 3. Third." or
+    "- First. - Second. - Third." inside one paragraph.
   • Two different ideas must produce substantively different bodies tied to their subjects,
     not the same generic template with only a noun changed."""
 
@@ -762,9 +769,109 @@ def _normalize_email_spacing(text: str) -> str:
     return "\n".join(collapsed)
 
 
+def _format_inline_lists(text: str) -> str:
+    """Put inline lists with at least three explicit markers on separate lines."""
+    formatted: list[str] = []
+    marker_patterns = (
+        re.compile(r"(?<!\w)(\d{1,2})[.)]\s+"),
+        re.compile(r"(?<!\S)([-•])\s+"),
+    )
+    for line in (text or "").splitlines():
+        has_explicit_markers = any(
+            len(list(candidate.finditer(line))) >= 3
+            for candidate in marker_patterns
+        )
+        existing_item = re.match(r"^(\s*(?:\d{1,2}[.)]|[-•])\s+)(.+)$", line)
+        if existing_item and not has_explicit_markers:
+            item = re.sub(
+                r"\s+\d{1,2}[.)]\s*$", "", existing_item.group(2)
+            ).rstrip()
+            trailing_match = re.search(r"[.!?](?=\s+[A-Z])", item)
+            if trailing_match:
+                formatted.append(
+                    f"{existing_item.group(1)}{item[:trailing_match.end()].strip()}"
+                )
+                formatted.extend(("", item[trailing_match.end() :].strip()))
+            else:
+                formatted.append(f"{existing_item.group(1)}{item}")
+            continue
+
+        anchor_matches = [
+            re.search(pattern, line, re.I)
+            for pattern in (
+                r"\bcompleted milestones?\b",
+                r"\b(?:(?:and|as well as)\s+)?(?:any\s+|current\s+)*blockers?\b",
+                r"\b(?:(?:and|as well as)\s+)?decisions?\b",
+                r"\b(?:(?:and|as well as)\s+)?priorities\b",
+            )
+        ]
+        anchors = [match for match in anchor_matches if match]
+        if not has_explicit_markers and len(anchors) >= 3 and all(
+            anchors[index].start() < anchors[index + 1].start()
+            for index in range(len(anchors) - 1)
+        ):
+            prefix = line[: anchors[0].start()].rstrip(" ,;:")
+            last_tail = line[anchors[-1].start() :]
+            trailing_match = re.search(r"[.!?](?=\s+[A-Z])", last_tail)
+            list_end = (
+                anchors[-1].start() + trailing_match.end()
+                if trailing_match
+                else len(line)
+            )
+            if prefix:
+                formatted.extend((f"{prefix}:", ""))
+            for index, anchor in enumerate(anchors):
+                end = anchors[index + 1].start() if index + 1 < len(anchors) else list_end
+                item = line[anchor.start() : end].strip(" ,;")
+                item = re.sub(r"^(?:and|as well as)\s+", "", item, flags=re.I)
+                item = re.sub(r"\s+\d{1,2}[.)]\s*$", "", item).rstrip()
+                if item:
+                    formatted.append(f"- {item[0].upper() + item[1:]}")
+            trailing = line[list_end:].strip()
+            if trailing:
+                formatted.extend(("", trailing))
+            continue
+
+        markers: list[re.Match[str]] = []
+        pattern: re.Pattern[str] | None = None
+        for candidate in marker_patterns:
+            found = list(candidate.finditer(line))
+            if len(found) >= 3:
+                markers = found
+                pattern = candidate
+                break
+        if pattern is None:
+            formatted.append(line)
+            continue
+
+        prefix = line[: markers[0].start()].strip()
+        if prefix:
+            formatted.extend((prefix, ""))
+        trailing = ""
+        for index, marker in enumerate(markers):
+            end = markers[index + 1].start() if index + 1 < len(markers) else len(line)
+            item = line[marker.end() : end].strip()
+            if index + 1 == len(markers):
+                trailing_match = re.search(r"[.!?](?=\s+[A-Z])", item)
+                if trailing_match:
+                    trailing = item[trailing_match.end() :].strip()
+                    item = item[: trailing_match.end()].strip()
+            if item:
+                label = (
+                    f"{marker.group(1)}."
+                    if pattern is marker_patterns[0]
+                    else "-"
+                )
+                formatted.append(f"{label} {item}")
+        if trailing:
+            formatted.extend(("", trailing))
+    return "\n".join(formatted)
+
+
 def _clean_generate_typography(text: str) -> str:
     """Conservative final cleanup; never rewrites meaning."""
-    cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", text or "")
+    cleaned = _format_inline_lists(text or "")
+    cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
     cleaned = re.sub(
         r"\bask (?:a|an) ((?:deadline )?extension)\b",
         lambda match: (
@@ -1148,7 +1255,7 @@ _HOPE_DOING_WELL_RE = re.compile(
     re.IGNORECASE,
 )
 _HOPE_FINDS_WELL_RE = re.compile(
-    r"\b(?:i\s+)?hope\s+this(?:\s+email)?\s+finds\s+you\s+well\b",
+    r"\b(?:i\s+)?hope\s+this(?:\s+(?:email|message))?\s+finds\s+you\s+well\b",
     re.IGNORECASE,
 )
 _FRIENDLY_ALLOWED_OPENER_RE = re.compile(
@@ -2616,8 +2723,7 @@ def apply_generate_hard_filters(
             length=length,
         )
         filtered = _dedupe_semantic_requests(filtered, format_type)
-    if tone_preset in {"friendly", "casual"}:
-        filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
+    filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
 
     if format_type == "email":
         sections = _parse_email_sections(filtered)

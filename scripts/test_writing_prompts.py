@@ -34,6 +34,7 @@ from writing_agent import (  # noqa: E402
     _dedupe_generic_request_sentences,
     _dedupe_semantic_requests,
     _enforce_length_structure,
+    _format_inline_lists,
     _generate_candidate_score,
     _generate_length_bounds,
     _inject_informational_content,
@@ -460,6 +461,53 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("submit your project updates", out)
         self.assertNotIn("include every team update", out)
         self.assertEqual(out.count("not be ready before the meeting"), 1)
+
+    def test_inline_lists_are_split_without_changing_regular_prose(self) -> None:
+        numbered = _format_inline_lists(
+            "Each update should cover: 1. Completed milestones. "
+            "2. Current blockers and impact. 3. Leadership decisions. "
+            "4. Priorities for next week. These updates will shape the agenda."
+        )
+        self.assertRegex(numbered, r"(?m)^1\. Completed milestones\.$")
+        self.assertRegex(numbered, r"(?m)^4\. Priorities for next week\.$")
+        self.assertNotIn("1. Completed milestones. 2.", numbered)
+        self.assertIn("\n\nThese updates will shape the agenda.", numbered)
+
+        bulleted = _format_inline_lists(
+            "Please cover: - milestones - blockers - decisions - priorities"
+        )
+        self.assertEqual(
+            len(re.findall(r"(?m)^- ", bulleted)),
+            4,
+        )
+        leading_bullets = _format_inline_lists(
+            "- milestones - blockers - decisions - priorities"
+        )
+        self.assertEqual(len(re.findall(r"(?m)^- ", leading_bullets)), 4)
+
+        natural = _format_inline_lists(
+            "Each update should cover completed milestones, current blockers with "
+            "their owners and impact, decisions needing leadership review with options "
+            "and a recommendation, and priorities for next week. The updates are due Wednesday."
+        )
+        self.assertEqual(len(re.findall(r"(?m)^- ", natural)), 4)
+        self.assertRegex(natural, r"(?m)^- Current blockers with their owners and impact$")
+        self.assertIn("\n\nThe updates are due Wednesday.", natural)
+
+        existing = _format_inline_lists(
+            "- Priorities for next week. These updates will shape the agenda."
+        )
+        self.assertEqual(
+            existing,
+            "- Priorities for next week.\n\nThese updates will shape the agenda.",
+        )
+        self.assertEqual(
+            _format_inline_lists("1. Completed milestones. 2."),
+            "1. Completed milestones.",
+        )
+
+        prose = "The update covers milestones, blockers, and decisions in one sentence."
+        self.assertEqual(_format_inline_lists(prose), prose)
 
     def test_unseeded_timing_cleanup_handles_observed_variants(self) -> None:
         seed = "asking my professor for a deadline extension"

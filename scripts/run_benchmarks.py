@@ -112,6 +112,27 @@ def count_body_paragraphs(text: str) -> int:
     return len([p for p in re.split(r"\n\s*\n", body) if p.strip()])
 
 
+def count_body_content_blocks(text: str) -> int:
+    """Count prose paragraphs plus all adjacent list blocks as one list."""
+    body = extract_email_body(text)
+    if not body:
+        return 0
+    paragraphs = [p for p in re.split(r"\n\s*\n", body) if p.strip()]
+    prose = sum(
+        any(
+            not re.match(r"^\s*(?:\d{1,2}[.)]|[-•])\s+", line)
+            for line in paragraph.splitlines()
+            if line.strip()
+        )
+        for paragraph in paragraphs
+    )
+    has_list = any(
+        re.match(r"^\s*(?:\d{1,2}[.)]|[-•])\s+", line)
+        for line in body.splitlines()
+    )
+    return prose + int(has_list)
+
+
 def body_sentences(text: str) -> list[str]:
     body = extract_email_body(text)
     if not body:
@@ -147,9 +168,15 @@ def validate_generate(
             issues.append(f"short length: expected 1 body paragraph, got {paras}")
 
     if length == "medium":
-        paras = count_body_paragraphs(output)
-        if not 2 <= paras <= 3:
-            issues.append(f"medium length: expected 2–3 paragraphs, got {paras}")
+        paras = count_body_content_blocks(output)
+        has_list_block = len(
+            re.findall(r"(?m)^\s*(?:\d{1,2}[.)]|[-•])\s+", output)
+        ) >= 3
+        maximum_paragraphs = 4 if has_list_block else 3
+        if not 2 <= paras <= maximum_paragraphs:
+            issues.append(
+                f"medium length: expected 2–{maximum_paragraphs} content blocks, got {paras}"
+            )
         sparse_no_reason = len(input_text.split()) < 20 and not re.search(
             r"(?i)\b(because|due to|since|reason|sick|health|emergency|workload)\b",
             input_text,
@@ -200,6 +227,30 @@ def validate_generate(
         issues.append("repeated let-me-know sentence pattern")
     if sum(bool(re.search(r"\bprocess\b", sentence, re.I)) for sentence in sentences) > 1:
         issues.append("repeated process sentence pattern")
+    inline_list = any(
+        len(re.findall(r"(?<!\w)\d{1,2}[.)]\s+", line)) >= 3
+        or len(re.findall(r"(?<!\S)[-•]\s+", line)) >= 3
+        for line in output.splitlines()
+    )
+    if inline_list:
+        issues.append("three-or-more-item list is crammed into one line")
+    if test_name == "Complexity Separation":
+        item_lines = [
+            line
+            for line in output.splitlines()
+            if re.match(r"^\s*(?:\d{1,2}[.)]|[-•])\s+", line)
+        ]
+        list_lines = item_lines
+        if len(list_lines) < 3:
+            issues.append("project-update requirements are not a line-broken list")
+        if any(
+            re.search(
+                r"[.!?]\s+[A-Z]",
+                re.sub(r"^\s*(?:\d{1,2}[.)]|[-•])\s+", "", line),
+            )
+            for line in item_lines
+        ):
+            issues.append("regular prose is attached to a list item")
     closings = re.findall(
         r"(?im)^(?:best|thanks|thankfully|sincerely|regards),?\s*$", output
     )
@@ -383,7 +434,7 @@ def run_matrix(base: str, tests: list[dict]) -> list[dict]:
                         row["status"] = "fail"
             if test["name"] == "Complexity Separation":
                 paragraph_counts = [
-                    count_body_paragraphs(row["output"])
+                    count_body_content_blocks(row["output"])
                     for row in rows
                     if row.get("output")
                 ]
