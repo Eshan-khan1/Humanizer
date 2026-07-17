@@ -1,0 +1,198 @@
+{
+    "description": "Humanizer Generate/Rewrite diverse test matrix v3. Broader topic coverage than v2 (work, personal, service, health-adjacent-but-safe, scheduling, money, complaints, gratitude) plus edge cases: very short ideas, run-on ideas, ideas with numbers/dates, ideas with no clear ask, and multi-recipient framing. Each case uses a distinct idea so no fix can hide behind a repeated prompt.",
+    "cases": [
+  
+      {
+        "test_id": 1,
+        "test_name": "Tone Separation - workplace",
+        "input": "Tell my team the Friday standup is moving to 10am starting next week.",
+        "variants": [
+          { "tone": "formal",   "length": "short", "complexity": "standard" },
+          { "tone": "friendly", "length": "short", "complexity": "standard" },
+          { "tone": "casual",   "length": "short", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 2,
+        "test_name": "Length Separation - service request",
+        "input": "Ask the internet provider why my bill went up by $15 this month.",
+        "variants": [
+          { "tone": "formal", "length": "short",  "complexity": "standard" },
+          { "tone": "formal", "length": "medium", "complexity": "standard" },
+          { "tone": "formal", "length": "long",   "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 3,
+        "test_name": "Complexity Separation - technical handoff",
+        "input": "Explain to the new engineer that the staging database gets wiped every night at 2am, so any test data they need has to be re-seeded each morning using the seed script in the repo.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "simple" },
+          { "tone": "friendly", "length": "medium", "complexity": "standard" },
+          { "tone": "friendly", "length": "medium", "complexity": "advanced" }
+        ]
+      },
+  
+      {
+        "test_id": 4,
+        "test_name": "Very short idea (minimal input stress test)",
+        "input": "reschedule dentist",
+        "variants": [
+          { "tone": "friendly", "length": "short", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 5,
+        "test_name": "Run-on / unpunctuated idea",
+        "input": "need to ask my HOA if i can repaint my front door a different color and also whether i need to submit paint samples first before they approve anything",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 6,
+        "test_name": "Idea containing specific numbers/dates (must be preserved exactly)",
+        "input": "Ask my insurance company why claim #48213 filed on June 3rd hasn't been processed yet.",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 7,
+        "test_name": "No stated reason (hallucination stress test)",
+        "input": "Ask my roommate to switch grocery shopping weeks with me.",
+        "variants": [
+          { "tone": "casual", "length": "medium", "complexity": "standard" },
+          { "tone": "casual", "length": "long",   "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 8,
+        "test_name": "Gratitude / positive tone (non-request email)",
+        "input": "Thank my mentor for the advice they gave me about negotiating my job offer.",
+        "variants": [
+          { "tone": "friendly", "length": "short",  "complexity": "standard" },
+          { "tone": "formal",   "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 9,
+        "test_name": "Complaint tone without escalation/invented details",
+        "input": "Tell the restaurant the delivery order arrived an hour late and two items were missing.",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 10,
+        "test_name": "List formatting - 5 items, mixed types",
+        "input": "Ask the event venue to confirm the room setup: 8 round tables, a projector and screen, a microphone with stand, catering access by 4pm, and parking for 30 cars.",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 11,
+        "test_name": "Permanent note - factual detail must be grounded",
+        "input": "Ask my doctor's office to send my referral to the specialist.",
+        "permanent_note": "My referral number is REF-88291.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 12,
+        "test_name": "Permanent note - tone override vs explicit setting conflict",
+        "input": "Ask my landlord to fix the broken heater.",
+        "permanent_note": "Always keep emails to my landlord blunt and to the point.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 13,
+        "test_name": "Signature - permanent name, formal context",
+        "input": "Ask HR about the status of my expense reimbursement.",
+        "permanent_note": "Always sign off with my full name, Marcus Webb.",
+        "variants": [
+          { "tone": "formal", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 14,
+        "test_name": "Cross-idea genericness check A",
+        "input": "Ask a wedding photographer for their availability and package pricing for a Saturday in October.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 15,
+        "test_name": "Cross-idea genericness check B",
+        "input": "Ask my child's teacher for a quick update on how they're doing in math this semester.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 16,
+        "test_name": "Ambiguous ask (no clear single request)",
+        "input": "Following up with the contractor about the kitchen renovation.",
+        "variants": [
+          { "tone": "friendly", "length": "medium", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 17,
+        "test_name": "Multi-recipient framing",
+        "input": "Let both co-founders know the investor call got pushed to Thursday at 3pm.",
+        "variants": [
+          { "tone": "formal", "length": "short", "complexity": "standard" }
+        ]
+      },
+  
+      {
+        "test_id": 18,
+        "test_name": "Rewrite - subject/actor preservation stress test",
+        "input": "The supplier delayed the shipment by two weeks.",
+        "variants": [
+          { "instruction": "make it more formal" },
+          { "instruction": "make it more concise" },
+          { "instruction": "make it sound more urgent" }
+        ]
+      },
+  
+      {
+        "test_id": 19,
+        "test_name": "Rewrite - preserve specific numbers",
+        "input": "We need 40 units by March 12th, not 30.",
+        "variants": [
+          { "instruction": "make it more polite" }
+        ]
+      },
+  
+      {
+        "test_id": 20,
+        "test_name": "Long length with genuinely sparse idea (retry/threshold stress test)",
+        "input": "ask neighbor to trim the hedge",
+        "variants": [
+          { "tone": "friendly", "length": "long", "complexity": "standard" }
+        ]
+      }
+    ]
+  }
