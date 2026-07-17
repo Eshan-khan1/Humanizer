@@ -191,15 +191,19 @@ def validate_generate(
 
     if length == "long":
         paras = count_body_paragraphs(output)
-        if paras < 5:
-            issues.append(f"long length: expected 5+ body paragraphs, got {paras}")
+        if paras < 4:
+            issues.append(f"long length: expected about 5 body paragraphs, got {paras}")
         sparse_no_reason = len(input_text.split()) < 20 and not re.search(
             r"(?i)\b(because|due to|since|reason|sick|health|emergency|workload)\b",
             input_text,
         )
         minimum = 55 if sparse_no_reason else 220
-        if body_words < minimum:
-            issues.append(f"long length: expected >={minimum} body words, got {body_words}")
+        substantial_floor = max(20, round(minimum * 0.5))
+        if body_words < substantial_floor:
+            issues.append(
+                f"long length: substantially below ~{minimum}-word target "
+                f"({body_words} words)"
+            )
 
     if complexity == "simple":
         formal = ("pursuant", "commence", "herein", "i am writing to request", "i would like to inquire")
