@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from difflib import SequenceMatcher
 import re
 import sys
 import unittest
@@ -28,12 +29,14 @@ from writing_agent import (  # noqa: E402
     _body_from_seed,
     _canonicalize_generated_email,
     _clean_generate_typography,
+    _dedupe_generic_request_sentences,
     _enforce_length_structure,
     _generate_candidate_score,
     _generate_length_bounds,
     _inject_informational_content,
     _meets_generate_length_requirement,
     _normalize_unseeded_timing_details,
+    _parse_email_sections,
     _parse_signoff_permanent_note,
 )
 
@@ -337,14 +340,15 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertNotIn("my apartment", lower)
         self.assertNotIn("next friday", lower)
         self.assertIn("request a deadline extension", lower)
-        self.assertIn("whatever schedule is most practical", lower)
-        self.assertIn("information you need from me", lower)
+        self.assertIn("deadline extension", lower)
+        self.assertNotIn("standard process for this request", lower)
+        self.assertNotIn("information you need from me", lower)
         self.assertGreaterEqual(_count_email_body_paragraphs(out), 5)
 
     def test_length_bounds_and_candidate_scoring_use_filtered_output(self) -> None:
         seed = "asking my professor for a deadline extension"
-        self.assertEqual(_generate_length_bounds("medium", seed), (90, 160))
-        self.assertEqual(_generate_length_bounds("long", seed), (120, 190))
+        self.assertEqual(_generate_length_bounds("medium", seed), (35, 80))
+        self.assertEqual(_generate_length_bounds("long", seed), (55, 100))
 
         short = (
             "Subject: Extension\n\nHi there,\n\nI need an extension.\n\nBest,\n[Your Name]"
@@ -365,6 +369,49 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
                 short, format_type="email", length="medium", seed_baseline=seed
             ),
         )
+
+    def test_sparse_ideas_get_distinct_topic_specific_bodies(self) -> None:
+        settings = {
+            "tonePreset": "friendly",
+            "length": "long",
+            "complexity": "standard",
+            "profile": {},
+        }
+        draft = "Subject: Request\n\nHi there,\n\nPlease consider my request.\n\nBest,"
+        extension = apply_generate_hard_filters(
+            draft,
+            format_type="email",
+            settings=settings,
+            seed_baseline="asking my professor for a deadline extension",
+        )
+        sink = apply_generate_hard_filters(
+            draft,
+            format_type="email",
+            settings=settings,
+            seed_baseline="tell my landlord the sink is leaking, need someone this week",
+        )
+        extension_body = _parse_email_sections(extension)["body"].lower()
+        sink_body = _parse_email_sections(sink)["body"].lower()
+        self.assertIn("deadline extension", extension_body)
+        self.assertIn("leaking sink", sink_body)
+        self.assertLess(
+            SequenceMatcher(None, extension_body, sink_body).ratio(),
+            0.55,
+        )
+        for body in (extension_body, sink_body):
+            self.assertNotIn("standard process for this request", body)
+            self.assertNotIn("conditions or requirements attached to the request", body)
+
+    def test_repeated_let_me_know_and_process_sentences_are_deduplicated(self) -> None:
+        draft = (
+            "Subject: Request\n\nHi there,\n\n"
+            "Please let me know whether this works. Let me know what you decide.\n\n"
+            "I will follow the normal process. Tell me about the standard process.\n\n"
+            "Best,"
+        )
+        out = _dedupe_generic_request_sentences(draft, "email").lower()
+        self.assertEqual(out.count("let me know"), 1)
+        self.assertEqual(len(re.findall(r"\bprocess\b", out)), 1)
 
     def test_unseeded_timing_cleanup_handles_observed_variants(self) -> None:
         seed = "asking my professor for a deadline extension"

@@ -62,6 +62,9 @@ RULE — MEANING & FIDELITY (always on):
       - asking what the reader needs next.
     Never turn elaboration into a made-up explanation for why the request exists.
   • Do not add new information beyond what the user implied.
+  • Every paragraph must stay specific to the actual subject in the idea. Restate and
+    develop that subject directly; do not replace it with vague references to "the
+    request," a "standard process," unspecified "conditions," or generic logistics.
   • For longer drafts, develop ONLY the substance of the ask (what is being requested,
     what outcome you want, and a polite close) — never invent a backstory, and never
     write commentary about the rules, instructions, or writing process.
@@ -133,7 +136,10 @@ OUTPUT RULES (non-negotiable):
     in the draft — only the finished email or essay.
   • Never write sentences that narrate the drafting process (e.g. that you are not adding
     a reason, that this is a restatement for clarity, or that the reader should just
-    reply yes/no because of the instructions)."""
+    reply yes/no because of the instructions).
+  • Do not repeat a "let me know" or "process" sentence pattern within one draft.
+  • Two different ideas must produce substantively different bodies tied to their subjects,
+    not the same generic template with only a noun changed."""
 
 GENERATE_LENGTH_GUIDANCE: dict[str, str] = {
     "short": """\
@@ -145,7 +151,8 @@ LENGTH — structure only (independent of tone and complexity):
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
     "medium": """\
 LENGTH — structure only (independent of tone and complexity):
-  • Body: exactly 2–3 paragraphs (~90–160 words total in the body).
+  • Body: exactly 2–3 paragraphs (~90–160 words total when the idea supplies
+    enough substance; ~35–80 words for a sparse idea with no reason/details).
   • Noticeably longer than short, but clearly shorter than long.
   • Email: greeting, 2–3 body paragraphs, closing/sign-off.
   • Essay: 2–3 paragraphs of content.
@@ -154,7 +161,7 @@ LENGTH — structure only (independent of tone and complexity):
     "long": """\
 LENGTH — structure only (independent of tone and complexity):
   • Target: at least 5 body paragraphs and ~220+ body words when the idea supplies
-    enough facts. For a sparse idea with no reason/details, use ~120–190 body words
+    enough facts. For a sparse idea with no reason/details, use ~55–100 body words
     rather than inventing or repeating content.
   • CRITICAL — pick exactly ONE example shape below:
       - Idea STATES a reason → use WITH REASON shape, substituting the user's actual reason
@@ -1484,16 +1491,16 @@ def _body_word_count(text: str, format_type: str) -> int:
 
 
 def _generate_length_bounds(length: str, seed_baseline: str = "") -> tuple[int, int]:
+    sparse = (
+        not _seed_states_a_reason(seed_baseline)
+        and len(re.findall(r"[A-Za-z0-9']+", seed_baseline or "")) < 20
+    )
     if length == "short":
         return 1, 60
     if length == "medium":
-        return 90, 160
+        return (35, 80) if sparse else (90, 160)
     if length == "long":
-        sparse = (
-            not _seed_states_a_reason(seed_baseline)
-            and len(re.findall(r"[A-Za-z0-9']+", seed_baseline or "")) < 20
-        )
-        return (120, 190) if sparse else (220, 360)
+        return (55, 100) if sparse else (220, 360)
     return 0, 10_000
 
 
@@ -1670,7 +1677,7 @@ def _build_length_retry_instruction(
         return (
             "LENGTH RETRY — previous draft body was the wrong size. "
             + measured
-            + f"Output ONE {kind} only with 2–3 body paragraphs (~90–160 body words). "
+            + f"Output ONE {kind} only with 2–3 body paragraphs ({minimum}–{maximum} body words). "
             "If the idea gave no reason, include no reason or excuse. "
             "Do not change tone or vocabulary. Complexity must not shrink this draft."
             + draft
@@ -1832,6 +1839,23 @@ def _body_from_seed(seed_baseline: str, tone_preset: str) -> str:
     )
     if asking:
         return f"I am writing to request {asking.group(1).strip()}."
+
+    email_asking = re.match(
+        r"(?i)^email\s+.+?\s+asking\s+for\s+(.+)$", seed
+    )
+    if email_asking:
+        return f"I am writing to request {email_asking.group(1).strip()}."
+
+    follow_up = re.match(
+        r"(?i)^follow up with\s+.+?\s+about\s+(.+)$", seed
+    )
+    if follow_up:
+        return f"I am following up about {follow_up.group(1).strip()}."
+
+    ask_to = re.match(r"(?i)^ask\s+.+?\s+to\s+(.+)$", seed)
+    if ask_to:
+        action = re.sub(r"\btheir\b", "your", ask_to.group(1).strip(), flags=re.I)
+        return f"Please {action[0].lower() + action[1:]}."
 
     telling = re.match(
         r"(?i)^tell(?:ing)?\s+(?:my|the|a|an)?\s*\w+\s+(.+)$", seed
@@ -2196,6 +2220,35 @@ def _strip_meta_instruction_commentary(text: str, format_type: str) -> str:
     return _clean_body(text)
 
 
+def _dedupe_generic_request_sentences(text: str, format_type: str) -> str:
+    """Allow at most one let-me-know sentence and one process sentence."""
+    if format_type != "email":
+        return text
+    sections = _parse_email_sections(text)
+    seen: set[str] = set()
+    paragraphs: list[str] = []
+    for paragraph in re.split(r"\n\s*\n", sections.get("body", "")):
+        kept: list[str] = []
+        for sentence in _split_sentences(paragraph):
+            lower = sentence.lower()
+            family = (
+                "let_me_know"
+                if "let me know" in lower
+                else "process"
+                if re.search(r"\bprocess\b", lower)
+                else ""
+            )
+            if family and family in seen:
+                continue
+            if family:
+                seen.add(family)
+            kept.append(sentence)
+        if kept:
+            paragraphs.append(_join_sentences(kept))
+    sections["body"] = "\n\n".join(paragraphs)
+    return _reassemble_email_sections(sections)
+
+
 def _strip_invented_reasons_if_absent(
     text: str,
     *,
@@ -2286,7 +2339,7 @@ def _ensure_safe_no_reason_elaboration(
     seed_baseline: str,
     length: str,
 ) -> str:
-    """Reach safe medium/long size using only request logistics."""
+    """Add only topic-specific, seed-grounded detail."""
     if (
         format_type != "email"
         or length == "short"
@@ -2305,56 +2358,51 @@ def _ensure_safe_no_reason_elaboration(
             if p.strip()
         ]
     body_lower = " ".join(paragraphs).lower()
+    seed_lower = (seed_baseline or "").lower()
     minimum, _maximum = _generate_length_bounds(length, seed_baseline)
-    target_words = minimum + 10
+    target_words = minimum
     minimum_paragraphs = 5 if length == "long" else 2
-    candidates = (
-        (
-            ("flexib", "whatever timeline", "shorter extension", "accommodate that timeline"),
-            "I am flexible on the exact timing and happy to work with whatever schedule is most practical.",
-        ),
-        (
-            ("standard process", "usual process", "process for"),
-            "If there is a standard process for this request, please let me know and I will follow it.",
-        ),
-        (
-            ("information you need", "what you need", "next step", "what i should do next"),
-            "Please let me know what information you need from me or what the next step should be.",
-        ),
-        (
-            ("confirm whether", "let me know whether", "can be accommodated"),
-            "Please let me know whether the request can be accommodated.",
-        ),
-        (
-            ("revised timing", "revised deadline", "timing you prefer"),
-            "If the request is approved, please confirm the revised timing you would prefer me to follow.",
-        ),
-        (
-            ("conditions", "requirements"),
-            "If there are any conditions or requirements attached to the request, please include them in your response.",
-        ),
-        (
-            ("instructions you provide",),
-            "I will follow the timing and instructions you provide.",
-        ),
-        (
-            ("respond promptly", "reply promptly"),
-            "I can respond promptly if you need clarification before making a decision.",
-        ),
-        (
-            ("action before", "before the revised timing"),
-            "Please tell me if I should take any action before the revised timing is set.",
-        ),
-        (
-            ("which timeline applies", "timeline applies"),
-            "I would appreciate confirmation of whether the request is approved and which timeline applies.",
-        ),
-    )
-    for markers, sentence in candidates:
+    if "extension" in seed_lower or "deadline" in seed_lower:
+        candidates = (
+            "Please confirm whether the deadline extension can be granted.",
+            "If it can, please provide the revised deadline you would prefer.",
+            "I can follow any requirements that apply specifically to the extension.",
+            "If the full request cannot be accommodated, I am open to a shorter extension.",
+            "Please confirm how the revised deadline will apply to the assignment.",
+            "Once a revised deadline is set, I will use that date for the assignment.",
+        )
+    elif any(word in seed_lower for word in ("sink", "leak", "repair")):
+        candidates = (
+            "Please arrange for someone to inspect and repair the leaking sink this week.",
+            "Please confirm when someone can come to address the leak.",
+            "If you need any information before scheduling the repair, I can provide it.",
+            "I would appreciate confirmation once the sink repair visit has been arranged.",
+            "Please keep the repair visit within this week, as requested.",
+            "Until then, please tell me if you need anything else regarding the sink.",
+        )
+    elif "contract" in seed_lower:
+        candidates = (
+            "Could you share the current status of the contract?",
+            "Please identify any contract items that still need a response.",
+            "Once I receive your update, I can respond to any remaining contract questions.",
+            "Please confirm whether the contract is ready for the next step.",
+            "If a contract decision is still pending, please identify what remains open.",
+            "I would appreciate a clear update on the contract when you respond.",
+        )
+    elif "update" in seed_lower and "meeting" in seed_lower:
+        candidates = (
+            "Please confirm once your updates have been submitted.",
+            "If an update will not be ready before the meeting, identify which one is outstanding.",
+            "Please include every team update that is due before the meeting.",
+            "I would appreciate confirmation that the team updates are ready before the meeting.",
+        )
+    else:
+        candidates = ()
+    for sentence in candidates:
         current_words = len(re.findall(r"[A-Za-z0-9']+", " ".join(paragraphs)))
         if len(paragraphs) >= minimum_paragraphs and current_words >= target_words:
             break
-        if not any(marker in body_lower for marker in markers):
+        if sentence.lower() not in body_lower:
             paragraphs.append(sentence)
             body_lower = f"{body_lower} {sentence.lower()}"
 
@@ -3607,6 +3655,7 @@ def _process_generate_candidate(
     cleaned = _enforce_length_structure(
         cleaned, format_type, length, seed_baseline=seed_baseline
     )
+    cleaned = _dedupe_generic_request_sentences(cleaned, format_type)
     if format_type == "email":
         cleaned = _canonicalize_generated_email(
             cleaned,

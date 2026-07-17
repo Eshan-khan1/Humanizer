@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from difflib import SequenceMatcher
 import json
 import re
 import sys
@@ -149,8 +150,15 @@ def validate_generate(
         paras = count_body_paragraphs(output)
         if not 2 <= paras <= 3:
             issues.append(f"medium length: expected 2–3 paragraphs, got {paras}")
-        if not 90 <= body_words <= 160:
-            issues.append(f"medium length: expected 90–160 body words, got {body_words}")
+        sparse_no_reason = len(input_text.split()) < 20 and not re.search(
+            r"(?i)\b(because|due to|since|reason|sick|health|emergency|workload)\b",
+            input_text,
+        )
+        minimum, maximum = (35, 80) if sparse_no_reason else (90, 160)
+        if not minimum <= body_words <= maximum:
+            issues.append(
+                f"medium length: expected {minimum}–{maximum} body words, got {body_words}"
+            )
 
     if length == "long":
         paras = count_body_paragraphs(output)
@@ -160,7 +168,7 @@ def validate_generate(
             r"(?i)\b(because|due to|since|reason|sick|health|emergency|workload)\b",
             input_text,
         )
-        minimum = 120 if sparse_no_reason else 220
+        minimum = 55 if sparse_no_reason else 220
         if body_words < minimum:
             issues.append(f"long length: expected >={minimum} body words, got {body_words}")
 
@@ -187,6 +195,11 @@ def validate_generate(
         issues.append("space before punctuation")
     if re.search(r"\b(?:by|on|until|for)\s*[?.!,]", output, re.I):
         issues.append("dangling preposition")
+    sentences = body_sentences(output)
+    if sum("let me know" in sentence.lower() for sentence in sentences) > 1:
+        issues.append("repeated let-me-know sentence pattern")
+    if sum(bool(re.search(r"\bprocess\b", sentence, re.I)) for sentence in sentences) > 1:
+        issues.append("repeated process sentence pattern")
     closings = re.findall(
         r"(?im)^(?:best|thanks|thankfully|sincerely|regards),?\s*$", output
     )
@@ -368,6 +381,31 @@ def run_matrix(base: str, tests: list[dict]) -> list[dict]:
                     for row in rows:
                         row["issues"].append(issue)
                         row["status"] = "fail"
+    generate_rows = [
+        row for row in results if row.get("feature") == "generate" and row.get("output")
+    ]
+    for index, left in enumerate(generate_rows):
+        for right in generate_rows[index + 1:]:
+            if left["input"] == right["input"]:
+                continue
+            left_body = extract_email_body(left["output"]).lower()
+            right_body = extract_email_body(right["output"]).lower()
+            similarity = SequenceMatcher(None, left_body, right_body).ratio()
+            if similarity >= 0.72:
+                issue = (
+                    f"generic template: body is {similarity:.0%} similar to "
+                    f"'{right['test_name']}'"
+                )
+                if issue not in left["issues"]:
+                    left["issues"].append(issue)
+                    left["status"] = "fail"
+                reverse_issue = (
+                    f"generic template: body is {similarity:.0%} similar to "
+                    f"'{left['test_name']}'"
+                )
+                if reverse_issue not in right["issues"]:
+                    right["issues"].append(reverse_issue)
+                    right["status"] = "fail"
     return results
 
 
