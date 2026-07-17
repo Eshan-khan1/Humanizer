@@ -9,6 +9,8 @@ reject it only when the request itself is missing or substantially incomplete.
 Long → 5+ body paragraphs. Use 220+ words when the idea supplies enough facts.
 For a sparse idea with no reason/details, use a clearly longer 55–100 word draft
 instead of inventing facts, reasons, dates, or repetitive filler.
+Five paragraphs is an approximate target: accept a complete, grounded four-paragraph
+draft instead of padding or rejecting it solely for missing one paragraph.
 Length must never change vocabulary difficulty or tone — a "long, casual, simple" output should still use simple words, just more of them.
 
 Specificity → every body must restate and develop the actual subject of the idea.
@@ -51,8 +53,16 @@ Context fields
 
 Personal profile info (comma-separated key-value pairs) → auto-injected into the prompt so generated text can reference name, role, or other saved details without the user typing them.
 Permanent Note → additional standing instruction always included in every generation (e.g. "always sign off as Eshan").
+Writing-style notes are applied as instructions and never copied into the body.
+Concrete factual notes (such as a referral number or date) are retained as facts.
+Sign-off names belong only on the closing signature line, never in the greeting or body.
 Both are optional — if empty, generation proceeds with generic phrasing, no errors.
 Email signature → every generated email ends with the sign-off line, then the writer's full name on the next line when a name is saved. If no name is saved and no permanent note supplies one, use exactly "[Your Name]" on the final line. This is the only allowed bracketed placeholder; brackets never appear in the subject, greeting, or body.
+
+Date fidelity
+
+Never complete a partial date. Preserve only the month, day, year, time, and duration
+components explicitly supplied by the idea or a factual note.
 
 Persistence
 

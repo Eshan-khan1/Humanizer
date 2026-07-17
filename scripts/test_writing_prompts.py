@@ -45,6 +45,7 @@ from writing_agent import (  # noqa: E402
     _meets_generate_length_requirement,
     _normalize_unseeded_timing_details,
     _parse_email_sections,
+    _parse_generation_note,
     _seed_list_plan,
     _parse_signoff_permanent_note,
 )
@@ -467,6 +468,48 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertEqual(effective["profile"]["permanentNote"], "")
         self.assertEqual(effective["profile"]["_permanent_note_raw"], "")
 
+    def test_permanent_style_note_is_instruction_not_fact(self) -> None:
+        style = _parse_generation_note(
+            "Always keep emails to my landlord blunt and to the point."
+        )
+        self.assertTrue(style["has_tone_instruction"])
+        self.assertEqual(style["tone_preset_override"], "formal")
+        self.assertIsNone(style["informational_content"])
+
+        fact = _parse_generation_note("My referral number is REF-88291.")
+        self.assertFalse(fact["has_tone_instruction"])
+        self.assertEqual(
+            fact["informational_content"], "My referral number is REF-88291."
+        )
+
+    def test_full_name_signoff_note_stays_in_signature(self) -> None:
+        name, remaining, signoff_only = _parse_signoff_permanent_note(
+            "Sign off with my full name, Marcus Webb."
+        )
+        self.assertEqual(name, "Marcus Webb")
+        self.assertEqual(remaining, "")
+        self.assertTrue(signoff_only)
+
+        effective = resolve_effective_generate_settings(
+            {
+                "tonePreset": "friendly",
+                "profile": {
+                    "permanentNote": "Sign off with my full name, Marcus Webb."
+                },
+            }
+        )
+        output = _canonicalize_generated_email(
+            "Subject: Update\n\nHi Marcus Webb,\n\n"
+            "Full name, Marcus Webb. Here is the requested update.\n\n"
+            "Best,\n[Your Name]",
+            tone_preset="friendly",
+            profile=effective["profile"],
+            seed_baseline="Here is the requested update.",
+        )
+        self.assertEqual(output.count("Marcus Webb"), 1)
+        self.assertTrue(output.endswith("Best,\nMarcus Webb"))
+        self.assertNotIn("Hi Marcus Webb", output)
+
     def test_permanent_date_fact_recognizes_paraphrase(self) -> None:
         self.assertTrue(
             _fact_is_reflected(
@@ -474,6 +517,27 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
                 "The lease expires on August 31st.",
             )
         )
+
+    def test_unseeded_date_components_are_removed(self) -> None:
+        seed = "My claim #48213 was filed June 3rd."
+        output = _normalize_unseeded_timing_details(
+            "Claim #48213 was filed June 3, 2023.", seed
+        )
+        self.assertIn("#48213", output)
+        self.assertIn("June 3", output)
+        self.assertNotIn("2023", output)
+        elapsed = _normalize_unseeded_timing_details(
+            "As this has been over a month since filing, please provide an update.",
+            f"{seed} It has not been processed.",
+        )
+        self.assertNotIn("over a month", elapsed)
+        self.assertIn("claim has not yet been processed", elapsed)
+
+        month_only = _normalize_unseeded_timing_details(
+            "The review is scheduled for June 14th.", "The review is in June."
+        )
+        self.assertIn("June", month_only)
+        self.assertNotIn("14", month_only)
 
     def test_invalid_raw_seed_candidate_is_rejected(self) -> None:
         source = "Ask my accountant for an update on my tax filing."
@@ -506,6 +570,22 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertTrue(
             _meets_generate_length_requirement(
                 candidate, "email", "medium", seed
+            )
+        )
+
+    def test_complete_sparse_long_draft_accepts_four_paragraphs(self) -> None:
+        seed = "ask neighbor to trim the hedge"
+        candidate = (
+            "Subject: Hedge Trimming\n\nHi there,\n\n"
+            "Could you please trim the hedge along our shared boundary?\n\n"
+            "It has grown enough that trimming it would keep the hedge manageable.\n\n"
+            "Please choose a time that works for you and handle the trimming when convenient.\n\n"
+            "Let me know once the hedge has been trimmed.\n\nBest,\n[Your Name]"
+        )
+        self.assertEqual(_count_email_body_paragraphs(candidate), 4)
+        self.assertTrue(
+            _meets_generate_length_requirement(
+                candidate, "email", "long", seed
             )
         )
 

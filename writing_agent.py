@@ -55,6 +55,10 @@ RULE — MEANING & FIDELITY (always on):
   • Do not change the meaning of the user's input.
   • Do not invent facts, names, requests, excuses, dates, assignment titles, health issues,
     family emergencies, prior conversations, or any other detail the user did not imply.
+  • Never complete a partial date or number. If the idea says "June 3rd," do not add
+    a year; if it gives only a month, do not add a day. Preserve exactly the date
+    components and other specific details the user supplied, even when a completion
+    would seem reasonable.
   • NO REASON RULE (critical): If the user's idea does NOT state a reason, the output must
     NOT include any reason at all — not health, workload, personal circumstances,
     "unforeseen" events, or any other justification. The request must stand alone.
@@ -178,9 +182,11 @@ LENGTH — structure only (independent of tone and complexity):
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
     "long": """\
 LENGTH — structure only (independent of tone and complexity):
-  • Target: at least 5 body paragraphs and ~220+ body words when the idea supplies
+  • Target: about 5 body paragraphs and ~220+ body words when the idea supplies
     enough facts. For a sparse idea with no reason/details, use ~55–100 body words
     rather than inventing or repeating content.
+  • Paragraph and word counts are approximate targets. Accept a complete, grounded
+    4-paragraph draft rather than padding it or rejecting it solely for missing one paragraph.
   • CRITICAL — pick exactly ONE example shape below:
       - Idea STATES a reason → use WITH REASON shape, substituting the user's actual reason
         (never the sample's workload/course story unless the user said that).
@@ -907,6 +913,7 @@ def _clean_generate_typography(text: str) -> str:
     cleaned = re.sub(r"(?i)\bThis more time\b", "More time", cleaned)
     cleaned = re.sub(r",\s*\.", ".", cleaned)
     cleaned = re.sub(r",\s*([?!])", r"\1", cleaned)
+    cleaned = re.sub(r"(?i)\bas of\s*,\s*", "", cleaned)
     cleaned = re.sub(r"\b(by|on|until|for)\s*([?.!,])", r"\2", cleaned, flags=re.I)
     cleaned = re.sub(r"\?\s*\?", "?", cleaned)
     cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
@@ -1736,11 +1743,17 @@ def _meets_generate_length_requirement(
             )
         )
     if length == "long":
-        minimum_with_tolerance = max(1, minimum - max(8, round(minimum * 0.1)))
+        substantial_floor = max(20, round(minimum * 0.5))
+        structure_ok = paragraph_count >= 5 or (
+            paragraph_count >= 4 and complete
+        )
         return (
-            paragraph_count >= 5
+            structure_ok
             and words <= maximum
-            and (words >= minimum or (words >= minimum_with_tolerance and complete))
+            and (
+                words >= minimum
+                or (words >= substantial_floor and complete)
+            )
         )
     return True
 
@@ -2330,6 +2343,7 @@ def _seed_states_a_reason(seed_baseline: str) -> bool:
 def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
     """Replace output timing that is not grounded in the seed."""
     seed_lower = (seed_baseline or "").lower()
+    seed_years = set(re.findall(r"\b(?:19|20)\d{2}\b", seed_lower))
     when = (
         r"(?:today|tomorrow|tonight|soon|this week|next few days|"
         r"(?:next|following) "
@@ -2342,6 +2356,10 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
         r"a couple(?: of)? (?:more )?(?:days?|weeks?)|"
         r"(?:one|two|three|\d+) additional (?:days?|weeks?|months?)|"
         r"(?:one|two|three|\d+) (?:more )?(?:days?|weeks?|months?))"
+    )
+    elapsed_duration = (
+        r"(?:over|more than|nearly|almost|about|approximately)\s+"
+        r"(?:a|an|one|two|three|\d+)\s+(?:days?|weeks?|months?|years?)"
     )
 
     def _grounded_timing(match: re.Match[str], generic: str) -> str:
@@ -2364,10 +2382,51 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
         lambda match: _grounded_timing(match, "more time"),
         text,
     )
+    def _ground_month_day(match: re.Match[str]) -> str:
+        month = match.group("month")
+        day = match.group("day")
+        grounded_pair = re.search(
+            rf"\b{re.escape(month)}\s+0?{int(day)}(?:st|nd|rd|th)?\b",
+            seed_lower,
+            re.I,
+        )
+        if grounded_pair:
+            return match.group(0)
+        return (
+            f"{match.group('lead')}{month}"
+            if re.search(rf"\b{re.escape(month)}\b", seed_lower, re.I)
+            else ""
+        )
+
     text = re.sub(
-        r"(?i),?\s*\b(?:january|february|march|april|may|june|july|august|"
-        r"september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?\b",
-        lambda match: match.group(0) if match.group(0).strip(" ,").lower() in seed_lower else "",
+        r"(?i)(?P<lead>,?\s*)\b(?P<month>january|february|march|april|may|june|july|august|"
+        r"september|october|november|december)\s+"
+        r"(?P<day>\d{1,2})(?:st|nd|rd|th)?\b",
+        _ground_month_day,
+        text,
+    )
+    text = re.sub(
+        r"(?i)(?:,\s*|\b(?:in|during|since|from)\s+)?(?P<year>(?:19|20)\d{2})\b",
+        lambda match: (
+            match.group(0)
+            if match.group("year") in seed_years
+            else ""
+        ),
+        text,
+    )
+    text = re.sub(
+        rf"(?i)(?P<lead>\bAs\s+)?(?:this|it|the claim)\s+has\s+been\s+"
+        rf"{elapsed_duration}\s+since (?:it was )?fil(?:ed|ing)\b(?P<comma>,\s*)?",
+        lambda match: (
+            ("As " if match.group("lead") else "")
+            + "the claim has not yet been processed"
+            + (", " if match.group("comma") else "")
+            if re.search(
+                r"(?i)(?:has(?:n't| not)|not yet)\s+been processed",
+                seed_baseline,
+            )
+            else ""
+        ),
         text,
     )
     text = re.sub(
@@ -3114,11 +3173,20 @@ def _canonicalize_generated_email(
     signature = _email_signature_name(profile)
     saved_name = _extract_profile_full_name(profile)
     body_paragraphs = _substantive_body_paragraphs(sections.get("body", ""))
-    body_paragraphs = [
-        paragraph
-        for paragraph in body_paragraphs
-        if paragraph.strip() not in {signature, saved_name, EMAIL_SIGNATURE_PLACEHOLDER}
-    ]
+    cleaned_body_paragraphs: list[str] = []
+    for paragraph in body_paragraphs:
+        if paragraph.strip() in {signature, saved_name, EMAIL_SIGNATURE_PLACEHOLDER}:
+            continue
+        sentences = _split_sentences(paragraph)
+        if saved_name:
+            sentences = [
+                sentence
+                for sentence in sentences
+                if saved_name.lower() not in sentence.lower()
+            ]
+        if sentences:
+            cleaned_body_paragraphs.append(_join_sentences(sentences))
+    body_paragraphs = cleaned_body_paragraphs
     sections["body"] = "\n\n".join(body_paragraphs)
     sections["greeting"] = _enforce_tone_greeting_line(
         sections.get("greeting", ""), tone_preset, profile=profile
@@ -3516,6 +3584,7 @@ _TONE_STYLE_KEYWORDS = frozenset(
         "playful",
         "serious",
         "direct",
+        "blunt",
         "tone",
         "style",
     }
@@ -3551,6 +3620,21 @@ def _cleanup_note_remainder(text: str) -> str:
 
 def _looks_like_tone_style_instruction(phrase: str) -> bool:
     lower = phrase.lower()
+    style_directive = bool(
+        re.search(
+            r"^(?:always\s+)?(?:keep|make|write|format|use|avoid|do not|don't|never)\b",
+            lower,
+        )
+    )
+    style_phrase = bool(
+        re.search(
+            r"\b(?:blunt|direct|concise|brief|to the point|tone|style|"
+            r"formal|professional|casual|friendly|conversational)\b",
+            lower,
+        )
+    )
+    if style_directive and style_phrase:
+        return True
     if any(word in lower for word in _NON_TONE_STYLE_WORDS):
         if not any(word in lower for word in _TONE_STYLE_KEYWORDS):
             return False
@@ -3559,6 +3643,8 @@ def _looks_like_tone_style_instruction(phrase: str) -> bool:
 
 def _infer_tone_from_instruction(phrase: str) -> tuple[str, str | None]:
     lower = phrase.lower()
+    if any(term in lower for term in ("blunt", "direct", "to the point", "concise")):
+        return "formal", "direct, concise, and matter-of-fact"
     if any(word in lower for word in ("formal", "professional", "business", "academic")):
         voice = "professional and respectful" if "professional" in lower else None
         return "formal", voice
@@ -3605,6 +3691,14 @@ def _parse_generation_note(notes: str) -> dict[str, Any]:
             tone_instruction = match.group(0).strip()
             tone_preset_override, tone_voice_override = _infer_tone_from_instruction(tone_instruction)
             remaining = _cleanup_note_remainder(remaining[: match.start()] + remaining[match.end() :])
+
+    if tone_instruction is None and _looks_like_tone_style_instruction(remaining):
+        # A permanent writing directive is an instruction, never body content.
+        tone_instruction = remaining.strip()
+        tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+            tone_instruction
+        )
+        remaining = ""
 
     informational_content = remaining.strip() or None
     return {
@@ -3678,10 +3772,11 @@ def _extract_permanent_note(profile: dict[str, Any]) -> str:
 
 
 _SIGNOFF_PERMANENT_NOTE_RE = re.compile(
-    r"(?is)^\s*(?:always\s+)?sign\s*off\s+"
-    r"(?:with\s+(?:my\s+)?name\s*[,:\-]?\s*|"
-    r"as\s+|using\s+(?:my\s+)?name\s*[,:\-]?\s*)?"
-    r"(?P<name>[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)?\s*\.?\s*$"
+    r"(?is)(?:always\s+)?sign\s*off\s+"
+    r"(?:(?:with|using)\s+(?:(?:my|the)\s+)?(?:full\s+)?name"
+    r"(?:\s+as)?\s*[,:\-]?\s*|as\s+)?"
+    r"(?P<name>[A-Z][A-Za-z'’\-]*(?:\s+[A-Z][A-Za-z'’\-]*){0,3})?"
+    r"\s*(?:[.;]|$)"
 )
 
 
@@ -3694,26 +3789,13 @@ def _parse_signoff_permanent_note(note: str) -> tuple[str | None, str, bool]:
     raw = (note or "").strip()
     if not raw:
         return None, "", False
-    match = _SIGNOFF_PERMANENT_NOTE_RE.match(raw)
+    match = _SIGNOFF_PERMANENT_NOTE_RE.search(raw)
     if match:
         name = (match.group("name") or "").strip() or None
-        return name, "", True
-    # Partial: strip a sign-off clause and keep other instructions
-    partial = re.sub(
-        r"(?is)(?:always\s+)?sign\s*off\s+"
-        r"(?:with\s+(?:my\s+)?name\s*[,:\-]?\s*|as\s+|using\s+(?:my\s+)?name\s*[,:\-]?\s*)?"
-        r"([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)?",
-        "",
-        raw,
-    ).strip(" ,.;")
-    name_match = re.search(
-        r"(?is)sign\s*off\s+(?:with\s+(?:my\s+)?name\s*[,:\-]?\s*|as\s+)"
-        r"([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)",
-        raw,
-    )
-    name = name_match.group(1).strip() if name_match else None
-    if name or partial != raw:
-        return name, partial, not bool(partial)
+        remaining = _cleanup_note_remainder(
+            raw[: match.start()] + raw[match.end() :]
+        )
+        return name, remaining, not bool(remaining)
     return None, raw, False
 
 
