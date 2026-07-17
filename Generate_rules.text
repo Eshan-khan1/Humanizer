@@ -2,7 +2,7 @@ Rules — Generate
 Length (structure only)
 
 Short → 1 short paragraph or 2–3 sentences. Just the core message, no padding.
-Medium → 2–3 body paragraphs. Use 90–160 body words when the idea supplies enough
+Medium → 2–3 body paragraphs. Use 65–160 body words when the idea supplies enough
 substance, or 35–80 for a sparse idea with no reason/details.
 Long → 5+ body paragraphs. Use 220+ words when the idea supplies enough facts.
 For a sparse idea with no reason/details, use a clearly longer 55–100 word draft
@@ -20,12 +20,17 @@ Friendly → warm, approachable, contractions okay, personable phrasing.
 Casual → relaxed, conversational, contractions and informal phrasing okay.
 Tone must never change how long the output is or how advanced the vocabulary is — "formal" doesn't mean longer, "casual" doesn't mean simpler words.
 
-Complexity (vocabulary only)
+Complexity (wording and sentence development)
 
-Simple → short, common words and minimal jargon.
-Standard → everyday professional vocabulary.
-Advanced → sophisticated vocabulary without changing sentence count or structure.
-Complexity must never change tone or length — "advanced" doesn't mean more formal, "simple" doesn't mean shorter output.
+Simple → short, plain, everyday words and short sentences.
+Example: "Can you send me an update on the contract?"
+Standard → normal, clear wording.
+Example: "Could you share the current status of the contract?"
+Advanced → more precise/formal words and more developed sentence structure, without
+becoming stiff or bloated.
+Example: "Could you provide an update on where things currently stand with the contract?"
+Content and meaning stay identical. Individual sentence length may vary, but paragraph
+count and total body word count must remain inside the selected Length range.
 
 Independence rule (core constraint)
 

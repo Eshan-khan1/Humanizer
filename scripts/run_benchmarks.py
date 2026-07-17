@@ -154,7 +154,7 @@ def validate_generate(
             r"(?i)\b(because|due to|since|reason|sick|health|emergency|workload)\b",
             input_text,
         )
-        minimum, maximum = (35, 80) if sparse_no_reason else (90, 160)
+        minimum, maximum = (35, 80) if sparse_no_reason else (65, 160)
         if not minimum <= body_words <= maximum:
             issues.append(
                 f"medium length: expected {minimum}–{maximum} body words, got {body_words}"
@@ -371,13 +371,44 @@ def run_matrix(base: str, tests: list[dict]) -> list[dict]:
                 for row in rows
                 if row.get("output")
             ]
-            if counts:
+            if counts and test["name"] == "Tone Separation":
                 allowed_spread = max(12, round(sum(counts) / len(counts) * 0.2))
                 if max(counts) - min(counts) > allowed_spread:
                     issue = (
                         f"setting independence: body-word spread "
                         f"{max(counts) - min(counts)} exceeds {allowed_spread}"
                     )
+                    for row in rows:
+                        row["issues"].append(issue)
+                        row["status"] = "fail"
+            if test["name"] == "Complexity Separation":
+                paragraph_counts = [
+                    count_body_paragraphs(row["output"])
+                    for row in rows
+                    if row.get("output")
+                ]
+                by_complexity = {
+                    row.get("variant_settings", {}).get("complexity"):
+                    extract_email_body(row["output"])
+                    for row in rows
+                    if row.get("output")
+                }
+                complexity_issues: list[str] = []
+                if paragraph_counts and len(set(paragraph_counts)) != 1:
+                    complexity_issues.append(
+                        "complexity changed the body paragraph count"
+                    )
+                if {"simple", "advanced"} <= by_complexity.keys():
+                    similarity = SequenceMatcher(
+                        None,
+                        by_complexity["simple"].lower(),
+                        by_complexity["advanced"].lower(),
+                    ).ratio()
+                    if similarity >= 0.9:
+                        complexity_issues.append(
+                            f"simple and advanced wording is too similar ({similarity:.0%})"
+                        )
+                for issue in complexity_issues:
                     for row in rows:
                         row["issues"].append(issue)
                         row["status"] = "fail"

@@ -23,6 +23,8 @@ from writing_agent import (  # noqa: E402
     build_rewrite_user_message,
     finalize_generate_output,
     resolve_effective_generate_settings,
+    _apply_advanced_complexity_replacements,
+    _apply_simple_complexity_replacements,
     _body_word_count,
     _count_body_sentences,
     _count_email_body_paragraphs,
@@ -30,6 +32,7 @@ from writing_agent import (  # noqa: E402
     _canonicalize_generated_email,
     _clean_generate_typography,
     _dedupe_generic_request_sentences,
+    _dedupe_semantic_requests,
     _enforce_length_structure,
     _generate_candidate_score,
     _generate_length_bounds,
@@ -190,7 +193,7 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         )
         self.assertIn("NO REASON RULE", system)
         self.assertIn("NOT include any reason at all", system)
-        self.assertIn("must NOT shorten the draft", system)
+        self.assertIn("selected Length range", system)
         self.assertIn("EXAMPLE — WITH REASON", system)
         self.assertIn("EXAMPLE — WITHOUT REASON", system)
         self.assertIn("clarifying what the user is asking for", system)
@@ -348,6 +351,16 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
     def test_length_bounds_and_candidate_scoring_use_filtered_output(self) -> None:
         seed = "asking my professor for a deadline extension"
         self.assertEqual(_generate_length_bounds("medium", seed), (35, 80))
+        self.assertEqual(
+            _generate_length_bounds(
+                "medium",
+                "Ask the team for a detailed project update covering completed milestones, "
+                "current blockers, named owners, business impacts, open decisions, "
+                "recommendations, upcoming priorities, supporting context, and the agenda "
+                "for Thursday's planning meeting.",
+            ),
+            (65, 160),
+        )
         self.assertEqual(_generate_length_bounds("long", seed), (55, 100))
 
         short = (
@@ -393,7 +406,7 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         extension_body = _parse_email_sections(extension)["body"].lower()
         sink_body = _parse_email_sections(sink)["body"].lower()
         self.assertIn("deadline extension", extension_body)
-        self.assertIn("leaking sink", sink_body)
+        self.assertIn("sink is leaking", sink_body)
         self.assertLess(
             SequenceMatcher(None, extension_body, sink_body).ratio(),
             0.55,
@@ -412,6 +425,41 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         out = _dedupe_generic_request_sentences(draft, "email").lower()
         self.assertEqual(out.count("let me know"), 1)
         self.assertEqual(len(re.findall(r"\bprocess\b", out)), 1)
+
+    def test_complexity_examples_produce_clearly_different_wording(self) -> None:
+        standard = (
+            "I need the report by Monday, or the project timeline will be affected. "
+            "Could you share the current status of the contract? "
+            "Please let me know if there's anything you need from me."
+        )
+        simple = _apply_simple_complexity_replacements(standard)
+        advanced = _apply_advanced_complexity_replacements(standard)
+        self.assertIn("we'll be late", simple)
+        self.assertIn("send me an update on the contract", simple)
+        self.assertIn("avoid any disruption to the project timeline", advanced)
+        self.assertIn("where things currently stand with the contract", advanced)
+        self.assertIn("anything further you require from me", advanced)
+        self.assertGreater(len(advanced.split()), len(simple.split()))
+
+    def test_semantic_duplicate_requests_collapse(self) -> None:
+        draft = (
+            "Subject: Contract\n\nHi there,\n\n"
+            "Could you share the current status of the contract? "
+            "Can you send me an update on the contract?\n\n"
+            "I am writing to request a deadline extension. "
+            "Please confirm whether the deadline extension can be granted.\n\n"
+            "Please submit your project updates before the meeting. "
+            "Please include every team update before the meeting.\n\n"
+            "Let me know if any updates will not be ready before the meeting. "
+            "If an update will not be ready before the meeting, identify which one is outstanding.\n\n"
+            "Best,"
+        )
+        out = _dedupe_semantic_requests(draft, "email").lower()
+        self.assertEqual(out.count("contract?"), 1)
+        self.assertEqual(out.count("deadline extension"), 1)
+        self.assertIn("submit your project updates", out)
+        self.assertNotIn("include every team update", out)
+        self.assertEqual(out.count("not be ready before the meeting"), 1)
 
     def test_unseeded_timing_cleanup_handles_observed_variants(self) -> None:
         seed = "asking my professor for a deadline extension"

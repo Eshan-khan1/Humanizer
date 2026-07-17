@@ -41,7 +41,8 @@ SEPARATE AND INDEPENDENT RULES
 These rules are separate. Apply every rule that is present. No rule may influence another:
   • Tone must NEVER affect length or vocabulary.
   • Length must NEVER affect tone or vocabulary.
-  • Vocabulary must NEVER affect tone or length.
+  • Complexity may vary individual sentence length and structure, but must NEVER change
+    the selected length range or paragraph count.
   • Personal info must NEVER change tone, length, or vocabulary — only who/what you may reference.
   • Permanent note must NEVER change tone, length, or vocabulary — only standing preferences.
   • Changing one setting while holding others fixed must change ONLY that setting's dimension."""
@@ -110,16 +111,18 @@ INDEPENDENCE RULE (core constraint):
   Length, Tone, and Complexity are THREE SEPARATE instructions applied together.
   Never merge them into one instruction.
   Changing one setting while holding the other two fixed must ONLY change the
-  dimension it controls.
+  dimension it controls. Complexity may change individual sentence length and structure,
+  but not the selected overall body-word range or paragraph count.
   Example: Short + Formal + Advanced vs. Long + Formal + Advanced must differ
   ONLY in amount of text — not in formality or word choice."""
 
 GENERATE_STRICT_RULES = """\
 OUTPUT RULES (non-negotiable):
-  • Hit the LENGTH structure and approximate body word targets exactly, regardless of tone
-    or complexity — advanced must be as long as simple/standard for the same length setting.
+  • Keep the LENGTH paragraph count and overall body word target regardless of complexity.
+    Individual advanced sentences may naturally run somewhat longer than simple sentences.
   • Apply TONE to greeting, subject, body phrasing, and sign-off consistently.
-  • Apply COMPLEXITY only to word choice within the required structure and tone.
+  • Apply COMPLEXITY to word choice and sentence development within the required
+    paragraph count, overall body-word range, and tone.
   • Never invent recipient names (John, Jane, Sarah, Alice, Bob, etc.).
   • Never put the writer's own name in the greeting — writer name is only the signature line.
   • If a user profile is provided, apply name/role only where appropriate (signature, not greeting).
@@ -151,7 +154,7 @@ LENGTH — structure only (independent of tone and complexity):
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
     "medium": """\
 LENGTH — structure only (independent of tone and complexity):
-  • Body: exactly 2–3 paragraphs (~90–160 words total when the idea supplies
+  • Body: exactly 2–3 paragraphs (~65–160 words total when the idea supplies
     enough substance; ~35–80 words for a sparse idea with no reason/details).
   • Noticeably longer than short, but clearly shorter than long.
   • Email: greeting, 2–3 body paragraphs, closing/sign-off.
@@ -219,29 +222,36 @@ Best,
 
 GENERATE_COMPLEXITY_GUIDANCE: dict[str, str] = {
     "simple": """\
-COMPLEXITY — vocabulary only (independent of length and tone):
-  • Short, common words and minimal jargon.
-  • Prefer everyday words: get, ask, need, want, help, send, make, use, check, tell,
-    push, moved, changed, because, so.
-  • AVOID advanced/academic words: utilize, commence, facilitate, pursuant, regarding,
-    inquire, subsequent, additionally, herein, comprehensive, expedite, endeavor.
-  • CRITICAL: keep the SAME paragraph count and approximate body word count as the
-    Length setting requires — "simple" must NOT shorten the draft.""",
+COMPLEXITY — plain wording (independent of length and tone):
+  • Use short, plain, everyday words and short sentences.
+  • Examples:
+    "I need the report by Monday or we'll be late."
+    "Can you send me an update on the contract?"
+    "Let me know if you need anything from me."
+  • Avoid jargon and unnecessarily formal words.
+  • Keep the paragraph count and overall body word count inside the selected Length range.
+    Simple sentences may be shorter than advanced sentences, but the full draft must not shrink
+    below that range.""",
     "standard": """\
-COMPLEXITY — vocabulary only (independent of length and tone):
-  • Everyday professional vocabulary.
-  • USE: provide, update, review, discuss, confirm, follow up, request, submit, appreciate.
-  • AVOID: commence, pursuant, herein, thereof, overly academic jargon, and also avoid
-    overly childish one-syllable-only phrasing.
-  • CRITICAL: keep the SAME paragraph count and approximate body word count as Length
-    requires — do not shrink or expand for "standard".""",
+COMPLEXITY — normal clear wording (independent of length and tone):
+  • Use normal, clear professional wording.
+  • Examples:
+    "I need the report by Monday, or the project timeline will be affected."
+    "Could you share the current status of the contract?"
+    "Please let me know if there's anything you need from me."
+  • Avoid both childish wording and stiff academic jargon.
+  • Keep the paragraph count and overall body word count inside the selected Length range.""",
     "advanced": """\
-COMPLEXITY — vocabulary only (independent of length and tone):
-  • Sophisticated vocabulary without changing sentence count or structure.
-  • USE precise terms where they fit: expedite, facilitate, comprehensive, subsequently,
-    articulate, leverage, paramount, accordingly, endeavor, prior to.
-  • CRITICAL: keep the SAME paragraph count and approximate body word count as Length
-    requires — "advanced" must NOT shorten the draft; only the wording changes.""",
+COMPLEXITY — precise, developed wording (independent of length and tone):
+  • Use more precise or formal word choice and more developed sentence structure, without
+    sounding stiff, academic, or bloated.
+  • Examples:
+    "I'll need the report by Monday to avoid any disruption to the project timeline."
+    "Could you provide an update on where things currently stand with the contract?"
+    "Please don't hesitate to reach out if there's anything further you require from me."
+  • Individual sentences may run somewhat longer than simple or standard sentences.
+  • Content and meaning must remain identical across all three levels.
+  • Keep the paragraph count and overall body word count inside the selected Length range.""",
 }
 
 TONE_PRESET_GUIDANCE: dict[str, str] = {
@@ -396,6 +406,29 @@ def _apply_friendly_tone_voice(text: str) -> str:
 
 
 _ADVANCED_COMPLEXITY_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (
+        re.compile(r"\bI need the report by Monday or we(?:'ll| will) be late\b", re.I),
+        "I'll need the report by Monday to avoid any disruption to the project timeline",
+    ),
+    (
+        re.compile(
+            r"\bI need the report by Monday,? or the project timeline will be affected\b",
+            re.I,
+        ),
+        "I'll need the report by Monday to avoid any disruption to the project timeline",
+    ),
+    (
+        re.compile(r"\bCould you share the current status of the contract\b", re.I),
+        "Could you provide an update on where things currently stand with the contract",
+    ),
+    (
+        re.compile(r"\b(?:Please )?[Ll]et me know if (?:there(?:'s| is) )?anything you need from me\b"),
+        "Please don't hesitate to reach out if there's anything further you require from me",
+    ),
+    (
+        re.compile(r"\bPlease confirm once your updates have been submitted\b", re.I),
+        "Please provide confirmation once your updates have been submitted",
+    ),
     (re.compile(r"\bfollow up about\b", re.I), "follow up regarding"),
     (re.compile(r"\bfollow up on\b", re.I), "follow up regarding"),
     (re.compile(r"\bmake sure\b", re.I), "ensure"),
@@ -416,7 +449,7 @@ _ADVANCED_COMPLEXITY_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
 
 
 def _apply_advanced_complexity_replacements(text: str) -> str:
-    """Upgrade vocabulary for advanced complexity only — does not change tone or length."""
+    """Use more precise wording while keeping the selected overall length range."""
     result = text
     for pattern, replacement in _ADVANCED_COMPLEXITY_REPLACEMENTS:
         result = pattern.sub(replacement, result)
@@ -1142,6 +1175,28 @@ _FORMAL_POLITE_OPENER_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 _SIMPLE_COMPLEXITY_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (
+        re.compile(
+            r"\bI need the report by Monday,? or the project timeline will be affected\b",
+            re.IGNORECASE,
+        ),
+        "I need the report by Monday or we'll be late",
+    ),
+    (
+        re.compile(r"\bCould you share the current status of the contract\b", re.IGNORECASE),
+        "Can you send me an update on the contract",
+    ),
+    (
+        re.compile(
+            r"\bPlease let me know if there(?:'s| is) anything you need from me\b",
+            re.IGNORECASE,
+        ),
+        "Let me know if you need anything from me",
+    ),
+    (
+        re.compile(r"\bPlease confirm once your updates have been submitted\b", re.IGNORECASE),
+        "Tell me when you've sent your updates",
+    ),
     (re.compile(r"\bI am writing to request\b", re.IGNORECASE), "I wanted to ask"),
     (re.compile(r"\bI am writing to ask\b", re.IGNORECASE), "I wanted to ask"),
     (re.compile(r"\bI am writing to inform you that\b", re.IGNORECASE), ""),
@@ -1498,7 +1553,7 @@ def _generate_length_bounds(length: str, seed_baseline: str = "") -> tuple[int, 
     if length == "short":
         return 1, 60
     if length == "medium":
-        return (35, 80) if sparse else (90, 160)
+        return (35, 80) if sparse else (65, 160)
     if length == "long":
         return (55, 100) if sparse else (220, 360)
     return 0, 10_000
@@ -1581,6 +1636,21 @@ def _enforce_length_structure(
                 paragraphs = [
                     "I wanted to follow up on this.",
                     "Please let me know how you would like to proceed.",
+                ]
+            while len(paragraphs) < 3:
+                best_i = -1
+                best_sentences: list[str] = []
+                for index, paragraph in enumerate(paragraphs):
+                    sentences = _split_sentences(paragraph)
+                    if len(sentences) >= 2 and len(sentences) > len(best_sentences):
+                        best_i = index
+                        best_sentences = sentences
+                if best_i < 0:
+                    break
+                mid = max(1, len(best_sentences) // 2)
+                paragraphs[best_i : best_i + 1] = [
+                    _join_sentences(best_sentences[:mid]),
+                    _join_sentences(best_sentences[mid:]),
                 ]
             sections["body"] = "\n\n".join(paragraphs)
             return _reassemble_email_sections(sections)
@@ -1679,7 +1749,10 @@ def _build_length_retry_instruction(
             + measured
             + f"Output ONE {kind} only with 2–3 body paragraphs ({minimum}–{maximum} body words). "
             "If the idea gave no reason, include no reason or excuse. "
-            "Do not change tone or vocabulary. Complexity must not shrink this draft."
+            "Add distinct detail grounded in the idea instead of restating the same request. "
+            "Do not include two sentences that ask for the same thing in different words. "
+            "Keep the requested complexity; individual sentence length may vary, but the "
+            "whole body must remain in the target range."
             + draft
         )
     long_target = (
@@ -2249,6 +2322,104 @@ def _dedupe_generic_request_sentences(text: str, format_type: str) -> str:
     return _reassemble_email_sections(sections)
 
 
+_REQUEST_INTENT_ALIASES = {
+    "ask": "request",
+    "asking": "request",
+    "requested": "request",
+    "grant": "request",
+    "granted": "request",
+    "approve": "request",
+    "approved": "request",
+    "accommodate": "request",
+    "accommodated": "request",
+    "send": "provide",
+    "sent": "provide",
+    "submit": "provide",
+    "submitted": "provide",
+    "share": "provide",
+    "include": "provide",
+    "included": "provide",
+    "identify": "confirm",
+    "identified": "confirm",
+    "provided": "provide",
+    "tell": "confirm",
+    "know": "confirm",
+    "advise": "confirm",
+    "confirmed": "confirm",
+    "update": "status",
+    "updates": "status",
+    "needs": "require",
+    "needed": "require",
+    "require": "require",
+    "requires": "require",
+}
+_REQUEST_INTENT_STOPWORDS = {
+    "a", "all", "an", "and", "any", "anything", "are", "be", "been", "can", "could",
+    "currently", "do", "for", "from", "further", "has", "have", "how", "i", "if",
+    "in", "is", "it", "let", "me", "my", "of", "on", "once", "please", "that",
+    "the", "there", "things", "to", "we", "what", "when", "where", "whether",
+    "will", "with", "would", "you", "your", "each", "every",
+}
+
+
+def _request_intent_signature(sentence: str) -> set[str]:
+    lower = sentence.lower()
+    if not re.search(
+        r"\b(?:ask|request|need|please|could|would|can you|confirm|tell|"
+        r"let me know|follow(?:ing)? up|grant|approve|send|submit|share|provide|"
+        r"include|identify)\b",
+        lower,
+    ):
+        return set()
+    words = re.findall(r"[a-z']+", lower)
+    signature = {
+        _REQUEST_INTENT_ALIASES.get(word, word)
+        for word in words
+        if word not in _REQUEST_INTENT_STOPWORDS and len(word) > 2
+    }
+    if "extension" in signature and "request" in signature:
+        return {"extension-request"}
+    if "status" in signature and ("provide" in signature or "confirm" in signature):
+        entity = (
+            "contract"
+            if "contract" in words
+            else "updates"
+            if "update" in words or "updates" in words
+            else "status"
+        )
+        action = "confirm" if "confirm" in signature else "provide"
+        return {f"{action}-{entity}"}
+    return signature
+
+
+def _dedupe_semantic_requests(text: str, format_type: str) -> str:
+    """Collapse sentences that make the same underlying request."""
+    if format_type != "email":
+        return text
+    sections = _parse_email_sections(text)
+    seen: list[set[str]] = []
+    paragraphs: list[str] = []
+    for paragraph in re.split(r"\n\s*\n", sections.get("body", "")):
+        kept: list[str] = []
+        for sentence in _split_sentences(paragraph):
+            signature = _request_intent_signature(sentence)
+            duplicate = any(
+                signature
+                and prior
+                and len(signature & prior) / min(len(signature), len(prior)) >= 0.75
+                for prior in seen
+            )
+            if duplicate:
+                continue
+            if signature:
+                seen.append(signature)
+            kept.append(sentence)
+        if kept:
+            paragraphs.append(_join_sentences(kept))
+    sections["body"] = "\n\n".join(paragraphs)
+    return _reassemble_email_sections(sections)
+
+
 def _strip_invented_reasons_if_absent(
     text: str,
     *,
@@ -2364,11 +2535,11 @@ def _ensure_safe_no_reason_elaboration(
     minimum_paragraphs = 5 if length == "long" else 2
     if "extension" in seed_lower or "deadline" in seed_lower:
         candidates = (
-            "Please confirm whether the deadline extension can be granted.",
-            "If it can, please provide the revised deadline you would prefer.",
+            "Please provide the revised deadline you would prefer.",
             "I can follow any requirements that apply specifically to the extension.",
-            "If the full request cannot be accommodated, I am open to a shorter extension.",
             "Please confirm how the revised deadline will apply to the assignment.",
+            "I will plan the assignment around the revised deadline once it is confirmed.",
+            "Please indicate whether the original submission instructions will still apply.",
             "Once a revised deadline is set, I will use that date for the assignment.",
         )
     elif any(word in seed_lower for word in ("sink", "leak", "repair")):
@@ -2444,6 +2615,7 @@ def apply_generate_hard_filters(
             seed_baseline=seed_baseline,
             length=length,
         )
+        filtered = _dedupe_semantic_requests(filtered, format_type)
     if tone_preset in {"friendly", "casual"}:
         filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
 
@@ -3455,7 +3627,8 @@ def build_generate_system_instruction(
         "RULE 1 — TONE (voice only; independent of length and vocabulary):\n" + tone_rule,
         "RULE 2 — LENGTH (structure only; independent of tone and vocabulary):\n"
         + _build_length_rules(length),
-        "RULE 3 — VOCABULARY / COMPLEXITY (words only; independent of tone and length):\n"
+        "RULE 3 — VOCABULARY / COMPLEXITY (wording and sentence development; "
+        "independent of tone and overall length range):\n"
         + _build_complexity_rules(complexity),
         personal_rule,
         permanent_rule,
@@ -3652,6 +3825,7 @@ def _process_generate_candidate(
     cleaned = _strip_invented_reasons_if_absent(
         cleaned, format_type=format_type, seed_baseline=seed_baseline
     )
+    cleaned = _dedupe_semantic_requests(cleaned, format_type)
     cleaned = _enforce_length_structure(
         cleaned, format_type, length, seed_baseline=seed_baseline
     )

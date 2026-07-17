@@ -26,7 +26,7 @@
         "id": 3,
         "name": "Complexity Separation",
         "feature": "generate",
-        "input": "Ask the team to submit their updates before the meeting.",
+        "input": "Ask the team to submit project updates by the end of Wednesday for Thursday's planning meeting. Each update must cover completed milestones, blockers with their owner and impact, decisions needing leadership review with options and a recommendation, and priorities for next week. I need the updates early so I can compile the agenda and focus the meeting on unresolved issues.",
         "variants": [
           { "tone": "formal", "length": "medium", "complexity": "simple" },
           { "tone": "formal", "length": "medium", "complexity": "standard" },
