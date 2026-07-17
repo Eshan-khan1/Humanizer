@@ -23,9 +23,17 @@ from writing_agent import (  # noqa: E402
     finalize_generate_output,
     resolve_effective_generate_settings,
     _body_word_count,
+    _count_body_sentences,
     _count_email_body_paragraphs,
+    _body_from_seed,
+    _canonicalize_generated_email,
+    _clean_generate_typography,
     _enforce_length_structure,
+    _generate_candidate_score,
+    _generate_length_bounds,
+    _inject_informational_content,
     _meets_generate_length_requirement,
+    _normalize_unseeded_timing_details,
     _parse_signoff_permanent_note,
 )
 
@@ -257,7 +265,7 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         length_rule = _rule_section(system, "RULE 2 — LENGTH")
         self.assertIn("EXAMPLE — WITH REASON", length_rule)
         self.assertIn("EXAMPLE — WITHOUT REASON", length_rule)
-        self.assertIn("Would it be possible to have a few extra days", length_rule)
+        self.assertIn("Would it be possible to grant an extension", length_rule)
         self.assertNotIn("next Friday", length_rule)
         self.assertNotIn("following Monday", length_rule)
         # Only the two long examples — no old canned pad sentences in the length rule
@@ -301,6 +309,8 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             "meets the same high standards as usual.\n\n"
             "I'm glad to discuss any additional support or resources that would "
             "help me complete the assignment.\n\n"
+            "Unexpected family commitments have made it difficult for me to complete the work.\n\n"
+            "The sink in my apartment is dripping steadily and causing water damage.\n\n"
             "Would it be possible to have until next Friday?\n\n"
             "I'm happy to work with whatever timeline is feasible. "
             "Please let me know what information you need next.\n\n"
@@ -323,11 +333,154 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertNotIn("juggling multiple projects", lower)
         self.assertNotIn("deadlines are important", lower)
         self.assertNotIn("additional support or resources", lower)
+        self.assertNotIn("family commitments", lower)
+        self.assertNotIn("my apartment", lower)
         self.assertNotIn("next friday", lower)
-        self.assertIn("would it be possible to have a little more time", lower)
-        self.assertIn("whatever timeline is feasible", lower)
-        self.assertIn("information you need next", lower)
+        self.assertIn("request a deadline extension", lower)
+        self.assertIn("whatever schedule is most practical", lower)
+        self.assertIn("information you need from me", lower)
         self.assertGreaterEqual(_count_email_body_paragraphs(out), 5)
+
+    def test_length_bounds_and_candidate_scoring_use_filtered_output(self) -> None:
+        seed = "asking my professor for a deadline extension"
+        self.assertEqual(_generate_length_bounds("medium", seed), (90, 160))
+        self.assertEqual(_generate_length_bounds("long", seed), (120, 190))
+
+        short = (
+            "Subject: Extension\n\nHi there,\n\nI need an extension.\n\nBest,\n[Your Name]"
+        )
+        body = " ".join(["Please consider my request."] * 24)
+        valid = (
+            f"Subject: Extension\n\nHi there,\n\n{body[:len(body)//2]}\n\n"
+            f"{body[len(body)//2:]}\n\nBest,\n[Your Name]"
+        )
+        self.assertFalse(
+            _meets_generate_length_requirement(short, "email", "medium", seed)
+        )
+        self.assertGreater(
+            _generate_candidate_score(
+                valid, format_type="email", length="medium", seed_baseline=seed
+            ),
+            _generate_candidate_score(
+                short, format_type="email", length="medium", seed_baseline=seed
+            ),
+        )
+
+    def test_unseeded_timing_cleanup_handles_observed_variants(self) -> None:
+        seed = "asking my professor for a deadline extension"
+        text = (
+            "The assignment is due tomorrow. Could you extend the due date by a week or two? "
+            "Could I have a few extra days? The assignment is due soon, October 14th. "
+            "Could you grant me an additional week or two? "
+            "Could you extend the deadline by one additional day?"
+        )
+        cleaned = _normalize_unseeded_timing_details(text, seed).lower()
+        self.assertNotIn("tomorrow", cleaned)
+        self.assertNotIn("week or two", cleaned)
+        self.assertNotIn("few extra days", cleaned)
+        self.assertNotIn("october 14th", cleaned)
+        self.assertNotIn("due soon", cleaned)
+        self.assertNotIn("additional week or two", cleaned)
+        self.assertNotIn("one additional day", cleaned)
+        self.assertNotRegex(cleaned, r"\b(?:by|on|until|for)\s+[?.!,]")
+
+        grounded = _normalize_unseeded_timing_details(
+            "Please send someone today or tomorrow.",
+            "the sink is leaking, need someone this week",
+        ).lower()
+        self.assertNotIn("today", grounded)
+        self.assertNotIn("tomorrow", grounded)
+        self.assertIn("this week", grounded)
+
+    def test_email_canonicalizer_is_idempotent(self) -> None:
+        raw = (
+            "Subject: Update\n\nHi Eshan,\n\nI wanted to ask an extension .\n\n"
+            "Thankfully,\n\nBest,\nSomeone\n\nSincerely,\n[Your Name]"
+        )
+        profile = {"fullName": "Eshan"}
+        once = _canonicalize_generated_email(
+            raw,
+            tone_preset="friendly",
+            profile=profile,
+            seed_baseline="asking my professor for a deadline extension",
+        )
+        twice = _canonicalize_generated_email(
+            once,
+            tone_preset="friendly",
+            profile=profile,
+            seed_baseline="asking my professor for a deadline extension",
+        )
+        self.assertEqual(once, twice)
+        self.assertNotIn("Thankfully", once)
+        self.assertNotIn("assignment .", once)
+        self.assertIn("ask for an extension", once)
+        self.assertTrue(once.endswith("Best,\nEshan"), once)
+        self.assertEqual(len(re.findall(r"(?m)^(?:Best|Sincerely|Thanks),$", once)), 1)
+
+    def test_seed_fallback_does_not_claim_prior_contact(self) -> None:
+        out = _body_from_seed(
+            "tell my landlord the sink is leaking, need someone this week",
+            "friendly",
+        )
+        self.assertEqual(
+            out, "The sink is leaking, and I need someone this week."
+        )
+        self.assertNotIn("follow up", out.lower())
+
+    def test_filters_restore_seed_when_only_filler_survives(self) -> None:
+        settings = {
+            "tonePreset": "friendly",
+            "length": "medium",
+            "complexity": "standard",
+            "profile": {},
+        }
+        draft = (
+            "Subject: Sink\n\nHi there,\n\nI hope you're well.\n\n"
+            "The sink in my apartment needs a plumber immediately.\n\n"
+            "Best,\n[Your Name]"
+        )
+        out = apply_generate_hard_filters(
+            draft,
+            format_type="email",
+            settings=settings,
+            seed_baseline="tell my landlord the sink is leaking, need someone this week",
+        )
+        self.assertIn("sink is leaking", out.lower())
+        self.assertIn("this week", out.lower())
+        self.assertNotIn("apartment", out.lower())
+        self.assertNotIn("plumber", out.lower())
+
+    def test_short_informational_note_is_included(self) -> None:
+        draft = (
+            "Subject: Extension\n\nHi there,\n\n"
+            "I'm writing to request an extension.\n\nBest,\n[Your Name]"
+        )
+        out = _inject_informational_content(
+            draft,
+            "I have a family emergency this week.",
+            format_type="email",
+            length="short",
+        )
+        self.assertIn("family emergency this week", out.lower())
+        self.assertLessEqual(_count_body_sentences(out, "email"), 2)
+
+    def test_typography_removes_placeholder_residue(self) -> None:
+        self.assertEqual(
+            _clean_generate_typography("Submit the assignment by ?"),
+            "Submit the assignment?",
+        )
+        self.assertEqual(
+            _clean_generate_typography(
+                "Would it be possible to have more time' extension?"
+            ),
+            "Would it be possible to have more time?",
+        )
+        self.assertEqual(
+            _clean_generate_typography(
+                "Would you be willing to have more time? Could you grant an additional deadline?"
+            ),
+            "Would you be willing to grant an extension? Could you grant an extension?",
+        )
 
 
 class RewritePromptIndependenceTests(unittest.TestCase):

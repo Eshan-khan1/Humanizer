@@ -3,7 +3,9 @@ Length (structure only)
 
 Short → 1 short paragraph or 2–3 sentences. Just the core message, no padding.
 Medium → 2–3 paragraphs. Includes greeting, body, and closing if it's an email.
-Long → 4+ paragraphs. Full detail, context, and elaboration.
+Long → 5+ body paragraphs. Use 220+ words when the idea supplies enough facts.
+For a sparse idea with no reason/details, use a clearly longer 120–190 word draft
+instead of inventing facts, reasons, dates, or repetitive filler.
 Length must never change vocabulary difficulty or tone — a "long, casual, simple" output should still use simple words, just more of them.
 
 Tone (voice only)
@@ -15,9 +17,9 @@ Tone must never change how long the output is or how advanced the vocabulary is 
 
 Complexity (vocabulary only)
 
-Simple → short, common words, short sentences, minimal jargon.
-Standard → everyday professional vocabulary, moderate sentence length.
-Advanced → sophisticated vocabulary, longer/more complex sentence structures.
+Simple → short, common words and minimal jargon.
+Standard → everyday professional vocabulary.
+Advanced → sophisticated vocabulary without changing sentence count or structure.
 Complexity must never change tone or length — "advanced" doesn't mean more formal, "simple" doesn't mean shorter output.
 
 Independence rule (core constraint)

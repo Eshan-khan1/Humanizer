@@ -70,7 +70,7 @@ RULE — MEANING & FIDELITY (always on):
 GENERATE_EXAMPLES = """\
 EXAMPLE — idea has no reason stated:
 Idea: "asking my professor for a deadline extension"
-Correct output body: "I'm writing to request an extension on the upcoming assignment. Would it be possible to have a few extra days?"
+Correct output body: "I'm writing to request an extension on the upcoming assignment. Would it be possible to grant an extension?"
 Wrong: adding any reason, excuse, or missing-detail placeholder.
 
 EXAMPLE — idea has a reason stated:
@@ -153,8 +153,9 @@ LENGTH — structure only (independent of tone and complexity):
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
     "long": """\
 LENGTH — structure only (independent of tone and complexity):
-  • Target: at least 5 body paragraphs and ~220+ body words — clearly more developed
-    than medium.
+  • Target: at least 5 body paragraphs and ~220+ body words when the idea supplies
+    enough facts. For a sparse idea with no reason/details, use ~120–190 body words
+    rather than inventing or repeating content.
   • CRITICAL — pick exactly ONE example shape below:
       - Idea STATES a reason → use WITH REASON shape, substituting the user's actual reason
         (never the sample's workload/course story unless the user said that).
@@ -180,7 +181,7 @@ I'm writing to request an extension on the upcoming assignment.
 
 Over the past week, my workload across a couple of courses has stacked up more than I anticipated.
 
-Would it be possible to have a few extra days? If a shorter extension works better on your end, I'm happy to work with whatever timeline you're able to offer. I'm also glad to provide any information you need when considering the request.
+Would it be possible to grant an extension? If a different timeline works better on your end, I'm happy to work with whatever you are able to offer. I'm also glad to provide any information you need when considering the request.
 
 Thank you for taking the time to consider this — I know deadlines matter for grading and course pacing, and I don't take the flexibility for granted.
 
@@ -194,7 +195,7 @@ Hi Professor,
 
 I'm writing to request an extension on the upcoming assignment.
 
-Would it be possible to have a few extra days, or whatever timeline works best on your end?
+Would it be possible to grant an extension, or whatever timeline works best on your end?
 
 I'm flexible on the exact timing and happy to work with a shorter extension if that is easier to accommodate.
 
@@ -212,7 +213,7 @@ Best,
 GENERATE_COMPLEXITY_GUIDANCE: dict[str, str] = {
     "simple": """\
 COMPLEXITY — vocabulary only (independent of length and tone):
-  • Short, common words; short sentences; minimal jargon.
+  • Short, common words and minimal jargon.
   • Prefer everyday words: get, ask, need, want, help, send, make, use, check, tell,
     push, moved, changed, because, so.
   • AVOID advanced/academic words: utilize, commence, facilitate, pursuant, regarding,
@@ -221,7 +222,7 @@ COMPLEXITY — vocabulary only (independent of length and tone):
     Length setting requires — "simple" must NOT shorten the draft.""",
     "standard": """\
 COMPLEXITY — vocabulary only (independent of length and tone):
-  • Everyday professional vocabulary; moderate sentence length.
+  • Everyday professional vocabulary.
   • USE: provide, update, review, discuss, confirm, follow up, request, submit, appreciate.
   • AVOID: commence, pursuant, herein, thereof, overly academic jargon, and also avoid
     overly childish one-syllable-only phrasing.
@@ -229,10 +230,9 @@ COMPLEXITY — vocabulary only (independent of length and tone):
     requires — do not shrink or expand for "standard".""",
     "advanced": """\
 COMPLEXITY — vocabulary only (independent of length and tone):
-  • Sophisticated vocabulary and longer/more complex sentence structures.
+  • Sophisticated vocabulary without changing sentence count or structure.
   • USE precise terms where they fit: expedite, facilitate, comprehensive, subsequently,
     articulate, leverage, paramount, accordingly, endeavor, prior to.
-  • Prefer varied sentence structure (clauses, transitions) over choppy simple sentences.
   • CRITICAL: keep the SAME paragraph count and approximate body word count as Length
     requires — "advanced" must NOT shorten the draft; only the wording changes.""",
 }
@@ -722,6 +722,42 @@ def _normalize_email_spacing(text: str) -> str:
     return "\n".join(collapsed)
 
 
+def _clean_generate_typography(text: str) -> str:
+    """Conservative final cleanup; never rewrites meaning."""
+    cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", text or "")
+    cleaned = re.sub(
+        r"\bask (?:a|an) ((?:deadline )?extension)\b",
+        lambda match: (
+            "ask for a deadline extension"
+            if match.group(1).lower().startswith("deadline")
+            else "ask for an extension"
+        ),
+        cleaned,
+        flags=re.I,
+    )
+    cleaned = re.sub(r",\s+Let me know\b", ", let me know", cleaned)
+    cleaned = re.sub(r",\s+Please advise\b", ", please advise", cleaned)
+    cleaned = re.sub(r"(?i),\s*due date\b", "", cleaned)
+    cleaned = re.sub(r"(?i)\bThanking you in advance\b", "Thank you in advance", cleaned)
+    cleaned = re.sub(r"(?i)\bmore time['’]\s+extension\b", "more time", cleaned)
+    cleaned = re.sub(
+        r"(?i)would you be willing to have more time",
+        "Would you be willing to grant an extension",
+        cleaned,
+    )
+    cleaned = re.sub(
+        r"(?i)\bgrant an additional deadline\b", "grant an extension", cleaned
+    )
+    cleaned = re.sub(r"(?i)\bthis week(?:\s+this week)+\b", "this week", cleaned)
+    cleaned = re.sub(r"(?i)\bThis more time\b", "More time", cleaned)
+    cleaned = re.sub(r",\s*\.", ".", cleaned)
+    cleaned = re.sub(r",\s*([?!])", r"\1", cleaned)
+    cleaned = re.sub(r"\b(by|on|until|for)\s*([?.!,])", r"\2", cleaned, flags=re.I)
+    cleaned = re.sub(r"\?\s*\?", "?", cleaned)
+    cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
+    return _normalize_email_spacing(cleaned).strip()
+
+
 _REWRITE_FILLER_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bjust a friendly reminder\b", re.IGNORECASE),
     re.compile(r"\bjust a quick update\b", re.IGNORECASE),
@@ -1063,7 +1099,7 @@ def apply_rewrite_hard_filters(
 
 _GREETING_LINE_RE = re.compile(r"^(Dear|Hi|Hey|Hello)\b", re.IGNORECASE)
 _SIGNOFF_LINE_RE = re.compile(
-    r"^(Sincerely|Best|Thanks|Thank you|Regards|Kind regards|Warm regards|Cheers|Take care)\b",
+    r"^(Sincerely|Best|Thanks|Thankfully|Thank you|Regards|Kind regards|Warm regards|Cheers|Take care)\b",
     re.IGNORECASE,
 )
 
@@ -1283,7 +1319,7 @@ def _is_signoff_line(line: str) -> bool:
 
 
 _STANDALONE_SIGNOFF_PARAGRAPH_RE = re.compile(
-    r"^(?:best|thanks|thank you|sincerely|regards|kind regards|warm regards|cheers|take care)"
+    r"^(?:best|thanks|thankfully|thank you|sincerely|regards|kind regards|warm regards|cheers|take care)"
     r"[,.!]?\s*(?:\[.+\]|[A-Z][a-z].*)?$",
     re.IGNORECASE,
 )
@@ -1447,7 +1483,26 @@ def _body_word_count(text: str, format_type: str) -> int:
     return len(re.findall(r"[A-Za-z0-9']+", body))
 
 
-def _meets_generate_length_requirement(text: str, format_type: str, length: str) -> bool:
+def _generate_length_bounds(length: str, seed_baseline: str = "") -> tuple[int, int]:
+    if length == "short":
+        return 1, 60
+    if length == "medium":
+        return 90, 160
+    if length == "long":
+        sparse = (
+            not _seed_states_a_reason(seed_baseline)
+            and len(re.findall(r"[A-Za-z0-9']+", seed_baseline or "")) < 20
+        )
+        return (120, 190) if sparse else (220, 360)
+    return 0, 10_000
+
+
+def _meets_generate_length_requirement(
+    text: str,
+    format_type: str,
+    length: str,
+    seed_baseline: str = "",
+) -> bool:
     """Check body structure/size only — never inspect tone or vocabulary."""
     if format_type == "email":
         paragraph_count = _count_email_body_paragraphs(text)
@@ -1458,14 +1513,14 @@ def _meets_generate_length_requirement(text: str, format_type: str, length: str)
         sentence_count = _count_body_sentences(text, format_type)
     words = _body_word_count(text, format_type)
 
+    minimum, maximum = _generate_length_bounds(length, seed_baseline)
     if length == "short":
         # 1 short paragraph, at most 2 body sentences — core message only
-        return paragraph_count <= 1 and 1 <= sentence_count <= 2 and words <= 60
+        return paragraph_count <= 1 and 1 <= sentence_count <= 2 and words <= maximum
     if length == "medium":
-        return 2 <= paragraph_count <= 3 and 80 <= words <= 200
+        return 2 <= paragraph_count <= 3 and minimum <= words <= maximum
     if length == "long":
-        # Clearly more developed than medium
-        return paragraph_count >= 5 and words >= 220
+        return paragraph_count >= 5 and minimum <= words <= maximum
     return True
 
 
@@ -1586,25 +1641,49 @@ def _enforce_length_structure(
     return text
 
 
-def _build_length_retry_instruction(length: str, format_type: str) -> str:
+def _build_length_retry_instruction(
+    length: str,
+    format_type: str,
+    *,
+    current_draft: str = "",
+    seed_baseline: str = "",
+) -> str:
     kind = "email" if format_type == "email" else "essay"
+    words = _body_word_count(current_draft, format_type)
+    minimum, maximum = _generate_length_bounds(length, seed_baseline)
+    measured = (
+        f"The filtered body is currently {words} words; revise it to {minimum}–{maximum} body words. "
+        if current_draft
+        else ""
+    )
+    draft = f"\n\nCURRENT FILTERED DRAFT:\n{current_draft}" if current_draft else ""
     if length == "short":
         return (
             "LENGTH RETRY — previous draft was too long. "
-            f"Output ONE {kind} only with 1 short body paragraph and at most 2 body sentences. "
+            + measured
+            + f"Output ONE {kind} only with 1 short body paragraph and at most 2 body sentences. "
             "Core message only. If the idea gave no reason, include no reason. "
             "Do not change tone or vocabulary."
+            + draft
         )
     if length == "medium":
         return (
             "LENGTH RETRY — previous draft body was the wrong size. "
-            f"Output ONE {kind} only with 2–3 body paragraphs (~90–160 body words). "
+            + measured
+            + f"Output ONE {kind} only with 2–3 body paragraphs (~90–160 body words). "
             "If the idea gave no reason, include no reason or excuse. "
             "Do not change tone or vocabulary. Complexity must not shrink this draft."
+            + draft
         )
+    long_target = (
+        f"{minimum}–{maximum} body words"
+        if maximum < 300
+        else "at least 220 body words"
+    )
     return (
         "LENGTH RETRY — previous draft was too short for LONG. "
-        f"Output ONE {kind} only with at least 5 body paragraphs and ~220+ body words. "
+        + measured
+        + f"Output ONE {kind} only with at least 5 body paragraphs and {long_target}. "
         "Follow the LONG length examples in the system prompt (WITH REASON vs WITHOUT REASON). "
         "If the idea had no reason, elaborate ONLY by clarifying the ask, offering "
         "timing flexibility without inventing dates, asking what the reader needs next, "
@@ -1614,6 +1693,7 @@ def _build_length_retry_instruction(length: str, format_type: str) -> str:
         "When no writer name is saved, put exactly \"[Your Name]\" on the final "
         "line after the closing word. "
         "Do not change tone or vocabulary."
+        + draft
     )
 
 
@@ -1745,13 +1825,22 @@ def _body_from_seed(seed_baseline: str, tone_preset: str) -> str:
     """Fallback body when filters leave the draft empty — still reflects the seed."""
     seed = (seed_baseline or "").strip().rstrip(".")
     if not seed:
-        return "I wanted to follow up on this."
-    seed_l = seed[0].lower() + seed[1:] if seed else seed
-    if tone_preset == "formal":
-        return f"I am writing to follow up regarding {seed_l}."
-    if tone_preset == "casual":
-        return f"Just checking in about {seed_l}."
-    return f"I wanted to follow up about {seed_l}."
+        return "Please let me know how you would like to proceed."
+
+    asking = re.match(
+        r"(?i)^asking\s+(?:my|the|a|an)?\s*\w+\s+for\s+(.+)$", seed
+    )
+    if asking:
+        return f"I am writing to request {asking.group(1).strip()}."
+
+    telling = re.match(
+        r"(?i)^tell(?:ing)?\s+(?:my|the|a|an)?\s*\w+\s+(.+)$", seed
+    )
+    if telling:
+        seed = telling.group(1).strip()
+    seed = re.sub(r"(?i),\s*need\b", ", and I need", seed)
+    seed = seed[0].upper() + seed[1:] if seed else seed
+    return seed if seed.endswith((".", "!", "?")) else f"{seed}."
 
 
 def _inject_permanent_note(text: str, permanent_note: str, format_type: str) -> str:
@@ -1791,6 +1880,39 @@ def _inject_permanent_note(text: str, permanent_note: str, format_type: str) -> 
     return f"{text.rstrip()}\n\n{sentence}"
 
 
+def _inject_informational_content(
+    text: str,
+    content: str,
+    *,
+    format_type: str,
+    length: str,
+) -> str:
+    """Ensure one-time factual notes survive model generation."""
+    sentence = (content or "").strip()
+    if not sentence or not text.strip():
+        return text
+    if not sentence.endswith((".", "!", "?")):
+        sentence += "."
+    note_tokens = {
+        token
+        for token in re.findall(r"[a-z0-9']+", sentence.lower())
+        if len(token) > 3
+    }
+    if note_tokens and len(note_tokens & set(re.findall(r"[a-z0-9']+", text.lower()))) / len(note_tokens) >= 0.6:
+        return text
+    if format_type != "email":
+        return f"{text.rstrip()}\n\n{sentence}"
+
+    sections = _parse_email_sections(text)
+    body = sections.get("body", "").strip()
+    if length == "short":
+        sentences = _split_sentences(body)
+        sections["body"] = _join_sentences((sentences[:1] + [sentence])[:2])
+    else:
+        sections["body"] = f"{body}\n\n{sentence}" if body else sentence
+    return _reassemble_email_sections(sections)
+
+
 def _ensure_nonempty_body(
     text: str,
     *,
@@ -1804,8 +1926,14 @@ def _ensure_nonempty_body(
         return _body_from_seed(seed_baseline, tone_preset)
 
     sections = _parse_email_sections(text)
-    if sections.get("body", "").strip():
-        return text
+    body = sections.get("body", "").strip()
+    if body:
+        sentences = _split_sentences(body)
+        if not seed_baseline.strip() or any(
+            _sentence_grounded_in_seed(sentence, seed_baseline)
+            for sentence in sentences
+        ):
+            return text
     sections["body"] = _body_from_seed(seed_baseline, tone_preset)
     return _reassemble_email_sections(sections)
 
@@ -1814,7 +1942,7 @@ _SEED_REASON_HINT_RE = re.compile(
     r"(?i)\b("
     r"because|due to|since|reason|excuse|health|sick|illness|ill|medical|"
     r"family|emergency|workload|circumstances|personal (matter|issue|challenge)|"
-    r"busy with|conflict|travel|unexpected|unforeseen"
+    r"busy with|busier|commitments?|conflict|travel|unexpected|unforeseen"
     r")\b"
 )
 
@@ -1859,6 +1987,8 @@ _INVENTED_REASON_CLAUSE_RE = re.compile(
     r"|prevented me from\b[^.]{0,160}"
     r"|additional time would (allow|help|give)\b[^.]{0,180}"
     r"|higher-quality submission\b[^.]{0,160}"
+    r"|high-quality submission\b[^.]{0,160}"
+    r"|allowing me to submit\b[^.]{0,180}"
     r"|gathering (some )?preliminary (data|information|materials)\b[^.]{0,160}"
     r"|refin(e|ing) (these|the) (components|analysis|work)\b[^.]{0,160}"
     r"|extra (few )?days would\b[^.]{0,160}"
@@ -1875,6 +2005,27 @@ _INVENTED_REASON_CLAUSE_RE = re.compile(
     r"|meet(s|ing)? (the same )?(high )?standards\b[^.]{0,180}"
     r"|additional support or resources\b[^.]{0,180}"
     r"|help me complete\b[^.]{0,180}"
+    r"|unexpected delays?\b[^.]{0,180}"
+    r"|my current schedule\b[^.]{0,180}"
+    r"|importance of meeting deadlines?\b[^.]{0,180}"
+    r"|as this will allow me\b[^.]{0,180}"
+    r"|thorough and accurate\b[^.]{0,180}"
+    r"|finaliz(e|ing) my submission\b[^.]{0,180}"
+    r"|to finaliz(e|ing) my work\b[^.]{0,180}"
+    r"|pressing commitments?\b[^.]{0,180}"
+    r"|family commitments?\b[^.]{0,180}"
+    r"|difficult for me to complete\b[^.]{0,180}"
+    r"|additional time to ensure\b[^.]{0,180}"
+    r"|high-quality work\b[^.]{0,180}"
+    r"|quality of my submission\b[^.]{0,180}"
+    r"|will not be compromised\b[^.]{0,180}"
+    r"|(?:sink|leak)\b[^.]{0,60}\b(?:my|our|the) apartment\b[^.]{0,180}"
+    r"|plumber|maintenance (team|crew)|dripping steadily|water damage|"
+    r"getting worse|immediate attention|urgent response|"
+    r"complete (?:my|the) work more thoroughly|"
+    r"committed to meeting (?:all )?deadlines?|further damage|inconvenience"
+    r"|commitments?\b[^.]{0,180}|busier than\b[^.]{0,180}"
+    r"|deliver quality work\b[^.]{0,180}|review and refine\b[^.]{0,180}"
     r"|i('ve| have) (already )?(started|begun|completed)\b[^.]{0,160}"
     r")\.?"
 )
@@ -1888,13 +2039,26 @@ _INVENTED_REASON_PARAGRAPH_RE = re.compile(
     r"outlin(ed|ing)|begin(ning|ning the|ning my)? research|"
     r"share (my progress|what i have)|"
     r"my situation (has|had)|prevented me from|additional time would|"
-    r"higher-quality submission|preliminary (data|information|materials)|"
+    r"higher-quality submission|high-quality submission|allowing me to submit|"
+    r"preliminary (data|information|materials)|"
     r"refin(e|ing) (these|the) (components|analysis|work)|"
     r"over the past|recently|lately|found myself|juggling|"
     r"fall(en|ing) behind|behind schedule|been dealing with|"
     r"deadlines? (are|is) important|ensure (that )?my work|"
     r"(high|quality) standards|rather than rushed|"
     r"additional support or resources|help me complete|"
+    r"unexpected delays?|my current schedule|importance of meeting deadlines?|"
+    r"as this will allow me|thorough and accurate|finaliz(e|ing) my submission|"
+    r"to finaliz(e|ing) my work|"
+    r"pressing commitments?|family commitments?|difficult for me to complete|"
+    r"additional time to ensure|high-quality work|quality of my submission|"
+    r"will not be compromised|(?:sink|leak).{0,60}(?:my|our|the) apartment|plumber|"
+    r"maintenance (team|crew)|dripping steadily|water damage|getting worse|"
+    r"immediate attention|urgent response|"
+    r"complete (?:my|the) work more thoroughly|"
+    r"committed to meeting (?:all )?deadlines?|"
+    r"further damage|inconvenience|"
+    r"commitments?|busier than|deliver quality work|review and refine|kitchen sink|"
     r"personal (circumstances|matters|commitments)|unforeseen|family emergency|"
     r"health issues?"
     r")\b).+$"
@@ -1919,29 +2083,73 @@ def _seed_states_a_reason(seed_baseline: str) -> bool:
 
 
 def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
-    """Replace model-invented dates/durations when the idea supplied no timing."""
-    if _SEED_TIMING_HINT_RE.search(seed_baseline or ""):
-        return text
+    """Replace output timing that is not grounded in the seed."""
+    seed_lower = (seed_baseline or "").lower()
+    when = (
+        r"(?:today|tomorrow|tonight|soon|this week|next few days|"
+        r"(?:next|following) "
+        r"(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month))"
+    )
+    duration = (
+        r"(?:a week or two|an? additional week or two|one or two weeks|"
+        r"a few (?:extra )?days|"
+        r"an? additional (?:few )?(?:days?|weeks?|months?)|"
+        r"a couple(?: of)? (?:more )?(?:days?|weeks?)|"
+        r"(?:one|two|three|\d+) additional (?:days?|weeks?|months?)|"
+        r"(?:one|two|three|\d+) (?:more )?(?:days?|weeks?|months?))"
+    )
+
+    def _grounded_timing(match: re.Match[str], generic: str) -> str:
+        phrase = match.group(0)
+        if phrase.lower() in seed_lower:
+            return phrase
+        return "this week" if "this week" in seed_lower else generic
+
     text = re.sub(
-        r"(?i)\buntil next (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month)\b",
-        "a little more time",
+        rf"(?i)\b(?:currently )?due\s+({when})\b",
+        lambda match: (
+            match.group(0)
+            if match.group(1).lower() in seed_lower
+            else ("due this week" if "this week" in seed_lower else "")
+        ),
         text,
     )
     text = re.sub(
-        r"(?i)\b(?:currently )?due next (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month)\b",
-        "",
+        rf"(?i)\buntil\s+({when})\b",
+        lambda match: _grounded_timing(match, "more time"),
         text,
     )
     text = re.sub(
-        r"(?i)\bextend the deadline by (?:one|two|three|\d+)(?: or (?:one|two|three|\d+))? "
-        r"(?:days?|weeks?|months?)\b",
-        "extend the deadline",
+        r"(?i),?\s*\b(?:january|february|march|april|may|june|july|august|"
+        r"september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?\b",
+        lambda match: match.group(0) if match.group(0).strip(" ,").lower() in seed_lower else "",
         text,
     )
     text = re.sub(
-        r"(?i)\b(?:for|by) (?:one|two|three|\d+)(?: or (?:one|two|three|\d+))? "
-        r"(?:more )?(?:days?|weeks?|months?)\b",
-        "for a little more time",
+        rf"(?i)\b(extend (?:the )?(?:deadline|due date)) by {duration}\b",
+        r"\1",
+        text,
+    )
+    text = re.sub(
+        rf"(?i)\b(?:have|receive|request|need|grant(?: me)?) {duration}\b",
+        "have more time",
+        text,
+    )
+    text = re.sub(rf"(?i)\b(?:for|by) {duration}\b", "", text)
+    text = re.sub(
+        rf"(?i)\b{duration}\b",
+        lambda match: (
+            match.group(0)
+            if match.group(0).lower() in seed_lower
+            else ("this week" if "this week" in seed_lower else "more time")
+        ),
+        text,
+    )
+    text = re.sub(r"(?i)\ban more time\b", "more time", text)
+    text = re.sub(r"(?i)\ban? additional more time\b", "more time", text)
+    text = re.sub(
+        r"(?i)\b(today|tomorrow|tonight|next few days|as soon as possible|immediately)\b",
+        lambda match: _grounded_timing(match, ""),
         text,
     )
     text = re.sub(
@@ -1995,11 +2203,13 @@ def _strip_invented_reasons_if_absent(
     seed_baseline: str,
 ) -> str:
     """If the idea gave no reason, delete invented justification clauses/sentences."""
-    if not text or not text.strip() or _seed_states_a_reason(seed_baseline):
+    if not text or not text.strip():
+        return text
+    text = _normalize_unseeded_timing_details(text, seed_baseline)
+    if _seed_states_a_reason(seed_baseline):
         return text
 
     def _clean_body(body: str) -> str:
-        body = _normalize_unseeded_timing_details(body, seed_baseline)
         paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
         cleaned_paras: list[str] = []
         for paragraph in paragraphs:
@@ -2069,23 +2279,35 @@ def _strip_invented_reasons_if_absent(
     return _clean_body(text)
 
 
-def _ensure_safe_no_reason_long_elaboration(
+def _ensure_safe_no_reason_elaboration(
     text: str,
     *,
     format_type: str,
     seed_baseline: str,
+    length: str,
 ) -> str:
-    """Keep long no-reason emails developed using only safe request details."""
-    if format_type != "email" or _seed_states_a_reason(seed_baseline):
+    """Reach safe medium/long size using only request logistics."""
+    if (
+        format_type != "email"
+        or length == "short"
+        or _seed_states_a_reason(seed_baseline)
+    ):
         return text
 
     sections = _parse_email_sections(text)
-    paragraphs = [
-        p.strip()
-        for p in re.split(r"\n\s*\n", sections.get("body", ""))
-        if p.strip()
-    ]
+    sparse_seed = len(re.findall(r"[A-Za-z0-9']+", seed_baseline or "")) < 20
+    if sparse_seed:
+        paragraphs = [_body_from_seed(seed_baseline, "friendly")]
+    else:
+        paragraphs = [
+            p.strip()
+            for p in re.split(r"\n\s*\n", sections.get("body", ""))
+            if p.strip()
+        ]
     body_lower = " ".join(paragraphs).lower()
+    minimum, _maximum = _generate_length_bounds(length, seed_baseline)
+    target_words = minimum + 10
+    minimum_paragraphs = 5 if length == "long" else 2
     candidates = (
         (
             ("flexib", "whatever timeline", "shorter extension", "accommodate that timeline"),
@@ -2103,9 +2325,34 @@ def _ensure_safe_no_reason_long_elaboration(
             ("confirm whether", "let me know whether", "can be accommodated"),
             "Please let me know whether the request can be accommodated.",
         ),
+        (
+            ("revised timing", "revised deadline", "timing you prefer"),
+            "If the request is approved, please confirm the revised timing you would prefer me to follow.",
+        ),
+        (
+            ("conditions", "requirements"),
+            "If there are any conditions or requirements attached to the request, please include them in your response.",
+        ),
+        (
+            ("instructions you provide",),
+            "I will follow the timing and instructions you provide.",
+        ),
+        (
+            ("respond promptly", "reply promptly"),
+            "I can respond promptly if you need clarification before making a decision.",
+        ),
+        (
+            ("action before", "before the revised timing"),
+            "Please tell me if I should take any action before the revised timing is set.",
+        ),
+        (
+            ("which timeline applies", "timeline applies"),
+            "I would appreciate confirmation of whether the request is approved and which timeline applies.",
+        ),
     )
     for markers, sentence in candidates:
-        if len(paragraphs) >= 5:
+        current_words = len(re.findall(r"[A-Za-z0-9']+", " ".join(paragraphs)))
+        if len(paragraphs) >= minimum_paragraphs and current_words >= target_words:
             break
         if not any(marker in body_lower for marker in markers):
             paragraphs.append(sentence)
@@ -2136,11 +2383,18 @@ def apply_generate_hard_filters(
     filtered = _strip_invented_reasons_if_absent(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
-    if length == "long":
-        filtered = _ensure_safe_no_reason_long_elaboration(
+    filtered = _ensure_nonempty_body(
+        filtered,
+        format_type=format_type,
+        seed_baseline=seed_baseline,
+        tone_preset=tone_preset,
+    )
+    if length in {"medium", "long"}:
+        filtered = _ensure_safe_no_reason_elaboration(
             filtered,
             format_type=format_type,
             seed_baseline=seed_baseline,
+            length=length,
         )
     if tone_preset in {"friendly", "casual"}:
         filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
@@ -2378,6 +2632,46 @@ def _email_signature_name(profile: dict[str, Any]) -> str:
     return EMAIL_SIGNATURE_PLACEHOLDER
 
 
+def _canonicalize_generated_email(
+    text: str,
+    *,
+    tone_preset: str,
+    profile: dict[str, Any],
+    seed_baseline: str = "",
+) -> str:
+    """Return one clean greeting/body/footer structure."""
+    sections = _parse_email_sections(_clean_generate_typography(text))
+    if not re.search(r"(?i)\b(urgent|emergency|asap|immediately)\b", seed_baseline):
+        sections["prefix"] = re.sub(
+            r"(?i)\s*[—:-]\s*urgent(?: attention)?(?: needed|required)?",
+            "",
+            sections.get("prefix", ""),
+        )
+        sections["prefix"] = re.sub(
+            r"(?i)^(Subject:\s*)Urgent:\s*", r"\1", sections["prefix"]
+        )
+        sections["prefix"] = re.sub(
+            r"(?i)\b(?:urgent|immediate)\b:?\s*", "", sections["prefix"]
+        )
+
+    signature = _email_signature_name(profile)
+    saved_name = _extract_profile_full_name(profile)
+    body_paragraphs = _substantive_body_paragraphs(sections.get("body", ""))
+    body_paragraphs = [
+        paragraph
+        for paragraph in body_paragraphs
+        if paragraph.strip() not in {signature, saved_name, EMAIL_SIGNATURE_PLACEHOLDER}
+    ]
+    sections["body"] = "\n\n".join(body_paragraphs)
+    sections["greeting"] = _enforce_tone_greeting_line(
+        sections.get("greeting", ""), tone_preset, profile=profile
+    )
+    sections["footer"] = _enforce_tone_signoff(
+        sections.get("footer", ""), tone_preset, profile
+    )
+    return _clean_generate_typography(_reassemble_email_sections(sections))
+
+
 def _is_placeholder_name(value: str) -> bool:
     text = (value or "").strip()
     if not text:
@@ -2399,12 +2693,14 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
         or sections.get("greeting")
         or sections.get("footer")
     )
-    footer_start = 0
-    if has_email_structure and sections.get("footer"):
-        footer_text = sections["footer"]
-        footer_start = text.rfind(footer_text.split("\n")[0])
-
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    footer_start = -1
+    if has_email_structure and sections.get("footer"):
+        footer_first = sections["footer"].split("\n")[0].strip().lower()
+        for index in range(len(lines) - 1, -1, -1):
+            if lines[index].strip().lower() == footer_first:
+                footer_start = index
+                break
     normalized_lines: list[str] = []
     in_footer = False
 
@@ -2414,7 +2710,7 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
             normalized_lines.append(line)
             continue
 
-        if has_email_structure and footer_start and line_index >= footer_start:
+        if has_email_structure and footer_start >= 0 and line_index >= footer_start:
             in_footer = True
 
         greeting_match = _GREETING_WITH_NAME_RE.match(stripped)
@@ -3272,6 +3568,77 @@ def _call_ollama(
     )
 
 
+def _process_generate_candidate(
+    raw: str,
+    *,
+    format_type: str,
+    settings: dict[str, Any],
+    seed_baseline: str,
+) -> str:
+    """Apply the complete output pipeline before validation or scoring."""
+    length = settings["length"]
+    cleaned = _take_first_complete_draft(_clean_output(raw))
+    cleaned = apply_generate_hard_filters(
+        cleaned,
+        format_type=format_type,
+        settings=settings,
+        seed_baseline=seed_baseline,
+    )
+    cleaned = _inject_informational_content(
+        cleaned,
+        str(settings.get("_informational_content") or ""),
+        format_type=format_type,
+        length=length,
+    )
+    cleaned = _enforce_length_structure(
+        cleaned, format_type, length, seed_baseline=seed_baseline
+    )
+    cleaned = finalize_generate_output(
+        cleaned,
+        format_type=format_type,
+        settings=settings,
+        seed_baseline=seed_baseline,
+    )
+    cleaned = _strip_generate_instruction_leakage(cleaned)
+    cleaned = _strip_meta_instruction_commentary(cleaned, format_type)
+    cleaned = _strip_invented_reasons_if_absent(
+        cleaned, format_type=format_type, seed_baseline=seed_baseline
+    )
+    cleaned = _enforce_length_structure(
+        cleaned, format_type, length, seed_baseline=seed_baseline
+    )
+    if format_type == "email":
+        cleaned = _canonicalize_generated_email(
+            cleaned,
+            tone_preset=settings["tone_preset"],
+            profile=settings.get("profile") or {},
+            seed_baseline=seed_baseline,
+        )
+    return _clean_generate_typography(cleaned)
+
+
+def _generate_candidate_score(
+    text: str,
+    *,
+    format_type: str,
+    length: str,
+    seed_baseline: str,
+) -> tuple[int, int, int]:
+    minimum, maximum = _generate_length_bounds(length, seed_baseline)
+    words = _body_word_count(text, format_type)
+    midpoint = (minimum + maximum) // 2
+    valid = int(
+        _meets_generate_length_requirement(
+            text, format_type, length, seed_baseline
+        )
+    )
+    complete = int(
+        bool(text.strip())
+        and not bool(re.search(r"\b(?:by|on|until|for)\s*[?.!,]\s*$", text, re.I))
+    )
+    return valid, complete, -abs(words - midpoint)
+
+
 class WritingAgent:
     """Dedicated agent for extension Rewrite and Generate features."""
 
@@ -3335,6 +3702,9 @@ class WritingAgent:
         if not text or not text.strip():
             return ""
         effective_settings = resolve_effective_generate_settings(settings, notes)
+        effective_settings["_informational_content"] = str(
+            _parse_generation_note(notes).get("informational_content") or ""
+        ).strip()
         length = effective_settings["length"]
         seed_baseline = build_seed_content_baseline(text, notes)
         system_prompt = build_generate_system_instruction(
@@ -3345,60 +3715,44 @@ class WritingAgent:
         )
         user_message = build_generate_user_message(text)
         num_predict = _generate_num_predict_for_length(length)
-        raw = _call_llm(
-            user_message,
-            task="generate",
-            system=system_prompt,
-            num_predict=num_predict,
-            ai_config=ai_config,
-        )
-        cleaned = _clean_output(raw)
-        cleaned = _take_first_complete_draft(cleaned)
-        retry_instruction = _build_length_retry_instruction(length, format_type)
-        for _attempt in range(2):
-            if not retry_instruction or _meets_generate_length_requirement(
-                cleaned, format_type, length
-            ):
-                break
-            retry_system = f"{system_prompt}\n\n{retry_instruction}"
+        candidates: list[str] = []
+        attempt_system = system_prompt
+        for _attempt in range(3):
             raw = _call_llm(
                 user_message,
                 task="generate",
-                system=retry_system,
+                system=attempt_system,
                 num_predict=num_predict,
                 ai_config=ai_config,
             )
-            cleaned = _take_first_complete_draft(_clean_output(raw))
-        cleaned = apply_generate_hard_filters(
-            cleaned,
-            format_type=format_type,
-            settings=effective_settings,
-            seed_baseline=seed_baseline,
-        )
-        cleaned = _enforce_length_structure(
-            cleaned, format_type, length, seed_baseline=seed_baseline
-        )
-        cleaned = finalize_generate_output(
-            cleaned,
-            format_type=format_type,
-            settings=effective_settings,
-            seed_baseline=seed_baseline,
-        )
-        cleaned = _strip_generate_instruction_leakage(cleaned)
-        cleaned = _strip_meta_instruction_commentary(cleaned, format_type)
-        cleaned = _strip_invented_reasons_if_absent(
-            cleaned, format_type=format_type, seed_baseline=seed_baseline
-        )
-        # Re-assert long structure after strips removed filler.
-        if length == "long":
-            cleaned = _enforce_length_structure(
-                cleaned, format_type, length, seed_baseline=seed_baseline
+            candidate = _process_generate_candidate(
+                raw,
+                format_type=format_type,
+                settings=effective_settings,
+                seed_baseline=seed_baseline,
             )
-            cleaned = _strip_meta_instruction_commentary(cleaned, format_type)
-            cleaned = _strip_invented_reasons_if_absent(
-                cleaned, format_type=format_type, seed_baseline=seed_baseline
+            candidates.append(candidate)
+            if _meets_generate_length_requirement(
+                candidate, format_type, length, seed_baseline
+            ):
+                break
+            retry_instruction = _build_length_retry_instruction(
+                length,
+                format_type,
+                current_draft=candidate,
+                seed_baseline=seed_baseline,
             )
-        return _normalize_email_spacing(cleaned)
+            attempt_system = f"{system_prompt}\n\n{retry_instruction}"
+
+        return max(
+            candidates,
+            key=lambda candidate: _generate_candidate_score(
+                candidate,
+                format_type=format_type,
+                length=length,
+                seed_baseline=seed_baseline,
+            ),
+        )
 
 
 _agent = WritingAgent()

@@ -339,14 +339,23 @@ def _clean_deep_fix_response(raw: str) -> str:
 
 
 def _strip_bracket_leakage(text: str) -> str:
-    """Allow [Your Name] only as the final signature line; strip all other brackets."""
+    """Allow only the final signature placeholder; drop malformed clauses."""
     cleaned = (text or "").strip()
     has_signature_placeholder = bool(
         cleaned and cleaned.splitlines()[-1].strip() == "[Your Name]"
     )
     if has_signature_placeholder:
         cleaned = "\n".join(cleaned.splitlines()[:-1]).rstrip()
-    cleaned = re.sub(r"\[[^\]]{0,80}\]", "", cleaned).strip()
+    cleaned = re.sub(
+        r"(?m)^[^\n.!?]*\[[^\]]{0,80}\][^\n.!?]*[.!?]?\s*$",
+        "",
+        cleaned,
+    )
+    cleaned = re.sub(r"\[[^\]]{0,80}\]", "", cleaned)
+    cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
+    cleaned = re.sub(r"\b(?:by|on|until|for|at)\s*([?.!,])", r"\1", cleaned, flags=re.I)
+    cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
     if has_signature_placeholder:
         return f"{cleaned}\n[Your Name]"
     return cleaned

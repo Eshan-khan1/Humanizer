@@ -118,12 +118,19 @@ def body_sentences(text: str) -> list[str]:
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+", body) if s.strip()]
 
 
-def validate_generate(output: str, variant: dict, note: str | None, test_name: str) -> list[str]:
+def validate_generate(
+    output: str,
+    variant: dict,
+    note: str | None,
+    test_name: str,
+    input_text: str = "",
+) -> list[str]:
     issues: list[str] = []
     tone = variant.get("tone", "")
     length = variant.get("length", "")
     complexity = variant.get("complexity", "")
     low = output.lower()
+    body_words = len(re.findall(r"[A-Za-z0-9']+", extract_email_body(output)))
 
     if tone in ("friendly", "casual") and "hope you're doing well" in low:
         issues.append("banned filler: hope you're doing well")
@@ -140,18 +147,22 @@ def validate_generate(output: str, variant: dict, note: str | None, test_name: s
 
     if length == "medium":
         paras = count_body_paragraphs(output)
-        if paras < 2:
-            issues.append(f"medium length: expected multiple paragraphs, got {paras}")
+        if not 2 <= paras <= 3:
+            issues.append(f"medium length: expected 2–3 paragraphs, got {paras}")
+        if not 90 <= body_words <= 160:
+            issues.append(f"medium length: expected 90–160 body words, got {body_words}")
 
     if length == "long":
         paras = count_body_paragraphs(output)
-        sents = len(body_sentences(output))
-        if paras < 2:
-            issues.append(f"long length: expected 2+ body paragraphs, got {paras}")
-        elif paras < 3 and sents < 5:
-            issues.append(
-                f"long length: expected richer content (3+ paragraphs or 5+ sentences), got {paras} paragraphs / {sents} sentences"
-            )
+        if paras < 5:
+            issues.append(f"long length: expected 5+ body paragraphs, got {paras}")
+        sparse_no_reason = len(input_text.split()) < 20 and not re.search(
+            r"(?i)\b(because|due to|since|reason|sick|health|emergency|workload)\b",
+            input_text,
+        )
+        minimum = 120 if sparse_no_reason else 220
+        if body_words < minimum:
+            issues.append(f"long length: expected >={minimum} body words, got {body_words}")
 
     if complexity == "simple":
         formal = ("pursuant", "commence", "herein", "i am writing to request", "i would like to inquire")
@@ -172,6 +183,18 @@ def validate_generate(output: str, variant: dict, note: str | None, test_name: s
     invented = re.findall(r"\b(?:John|Jane|Sarah|Alice|Bob)\b", output)
     if invented:
         issues.append(f"invented names: {', '.join(invented)}")
+    if re.search(r"\s+[,.!?;:]", output):
+        issues.append("space before punctuation")
+    if re.search(r"\b(?:by|on|until|for)\s*[?.!,]", output, re.I):
+        issues.append("dangling preposition")
+    closings = re.findall(
+        r"(?im)^(?:best|thanks|thankfully|sincerely|regards),?\s*$", output
+    )
+    if len(closings) != 1:
+        issues.append(f"expected exactly one closing, got {len(closings)}")
+    if not re.search(r"(?i)\b(today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d+\s+(?:days?|weeks?|months?))\b", input_text):
+        if re.search(r"(?i)\b(today|tomorrow|tonight|next\s+(?:week|month|monday|tuesday|wednesday|thursday|friday)|\d+\s+(?:days?|weeks?|months?))\b", output):
+            issues.append("invented timing")
 
     return issues
 
@@ -262,6 +285,7 @@ def run_humanize(base: str) -> dict:
 def run_matrix(base: str, tests: list[dict]) -> list[dict]:
     results = []
     for test in tests:
+        test_start = len(results)
         for i, variant in enumerate(test.get("variants", []), 1):
             feature = test["feature"]
             note = test.get("note")
@@ -292,7 +316,9 @@ def run_matrix(base: str, tests: list[dict]) -> list[dict]:
                 if status != 200:
                     issues.append(f"http {status}: {body}")
                 else:
-                    issues = validate_generate(output, variant, note, test["name"])
+                    issues = validate_generate(
+                        output, variant, note, test["name"], test["input"]
+                    )
                 row.update(
                     {
                         "variant_settings": variant,
@@ -322,6 +348,26 @@ def run_matrix(base: str, tests: list[dict]) -> list[dict]:
                     }
                 )
             results.append(row)
+        if test["feature"] == "generate" and test["name"] in {
+            "Tone Separation",
+            "Complexity Separation",
+        }:
+            rows = results[test_start:]
+            counts = [
+                len(re.findall(r"[A-Za-z0-9']+", extract_email_body(row["output"])))
+                for row in rows
+                if row.get("output")
+            ]
+            if counts:
+                allowed_spread = max(12, round(sum(counts) / len(counts) * 0.2))
+                if max(counts) - min(counts) > allowed_spread:
+                    issue = (
+                        f"setting independence: body-word spread "
+                        f"{max(counts) - min(counts)} exceeds {allowed_spread}"
+                    )
+                    for row in rows:
+                        row["issues"].append(issue)
+                        row["status"] = "fail"
     return results
 
 
