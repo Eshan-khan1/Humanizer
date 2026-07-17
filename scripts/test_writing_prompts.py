@@ -182,6 +182,10 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("must NOT shorten the draft", system)
         self.assertIn("EXAMPLE — WITH REASON", system)
         self.assertIn("EXAMPLE — WITHOUT REASON", system)
+        self.assertIn("clarifying what the user is asking for", system)
+        self.assertIn("mentioning progress already made ONLY if the idea implies", system)
+        self.assertIn("offering flexibility on timing", system)
+        self.assertIn("asking what the reader needs next", system)
         self.assertNotIn("I am not adding a separate reason", system)
         self.assertNotIn("I am requesting an extension on the current deadline and would appreciate", system)
 
@@ -253,7 +257,9 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         length_rule = _rule_section(system, "RULE 2 — LENGTH")
         self.assertIn("EXAMPLE — WITH REASON", length_rule)
         self.assertIn("EXAMPLE — WITHOUT REASON", length_rule)
-        self.assertIn("I'd like a bit more time to make sure the final submission is thorough", length_rule)
+        self.assertIn("Would it be possible to have a few extra days", length_rule)
+        self.assertNotIn("next Friday", length_rule)
+        self.assertNotIn("following Monday", length_rule)
         # Only the two long examples — no old canned pad sentences in the length rule
         self.assertNotIn(
             "I am requesting an extension on the current deadline and would appreciate your approval",
@@ -273,6 +279,55 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertNotIn("i am requesting an extension on the current deadline", lower)
         self.assertNotIn("a bit more time would let me finish the work carefully", lower)
         self.assertNotIn("i am not adding a separate reason", lower)
+
+    def test_no_reason_filter_removes_unsupported_backstory_and_progress(self) -> None:
+        settings = {
+            "tonePreset": "friendly",
+            "length": "long",
+            "complexity": "standard",
+            "profile": {},
+        }
+        draft = (
+            "Subject: Extension Request\n\nHi Professor,\n\n"
+            "I'm writing to request a deadline extension.\n\n"
+            "I've been under additional responsibilities lately.\n\n"
+            "My current progress includes outlining my approach and beginning research.\n\n"
+            "I'm happy to share what I have so far.\n\n"
+            "My situation has prevented me from reviewing my work thoroughly.\n\n"
+            "Additional time would allow me to produce a higher-quality submission.\n\n"
+            "Over the past few weeks, I've found myself juggling multiple projects "
+            "and have fallen behind schedule.\n\n"
+            "I know deadlines are important, but I want to ensure that my work "
+            "meets the same high standards as usual.\n\n"
+            "I'm glad to discuss any additional support or resources that would "
+            "help me complete the assignment.\n\n"
+            "Would it be possible to have until next Friday?\n\n"
+            "I'm happy to work with whatever timeline is feasible. "
+            "Please let me know what information you need next.\n\n"
+            "Best,\n[Your Name]"
+        )
+        out = apply_generate_hard_filters(
+            draft,
+            format_type="email",
+            settings=settings,
+            seed_baseline="asking my professor for a deadline extension",
+        )
+        lower = out.lower()
+        self.assertNotIn("additional responsibilities", lower)
+        self.assertNotIn("current progress", lower)
+        self.assertNotIn("outlining my approach", lower)
+        self.assertNotIn("beginning research", lower)
+        self.assertNotIn("what i have so far", lower)
+        self.assertNotIn("my situation", lower)
+        self.assertNotIn("higher-quality submission", lower)
+        self.assertNotIn("juggling multiple projects", lower)
+        self.assertNotIn("deadlines are important", lower)
+        self.assertNotIn("additional support or resources", lower)
+        self.assertNotIn("next friday", lower)
+        self.assertIn("would it be possible to have a little more time", lower)
+        self.assertIn("whatever timeline is feasible", lower)
+        self.assertIn("information you need next", lower)
+        self.assertGreaterEqual(_count_email_body_paragraphs(out), 5)
 
 
 class RewritePromptIndependenceTests(unittest.TestCase):

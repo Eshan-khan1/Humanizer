@@ -55,6 +55,12 @@ RULE — MEANING & FIDELITY (always on):
     NOT include any reason at all — not health, workload, personal circumstances,
     "unforeseen" events, or any other justification. The request must stand alone.
     This applies for short, medium, AND long length equally; never invent a reason to fill space.
+  • When elaborating a request with no stated reason, add detail ONLY by:
+      - clarifying what the user is asking for,
+      - mentioning progress already made ONLY if the idea implies that progress,
+      - offering flexibility on timing without inventing a date or deadline, or
+      - asking what the reader needs next.
+    Never turn elaboration into a made-up explanation for why the request exists.
   • Do not add new information beyond what the user implied.
   • For longer drafts, develop ONLY the substance of the ask (what is being requested,
     what outcome you want, and a polite close) — never invent a backstory, and never
@@ -152,8 +158,12 @@ LENGTH — structure only (independent of tone and complexity):
   • CRITICAL — pick exactly ONE example shape below:
       - Idea STATES a reason → use WITH REASON shape, substituting the user's actual reason
         (never the sample's workload/course story unless the user said that).
-      - Idea states NO reason → use WITHOUT REASON shape ONLY. Do not borrow workload,
-        stacked courses, research-progress, or any other justification from WITH REASON.
+      - Idea states NO reason → use WITHOUT REASON shape ONLY. Elaborate only by
+        clarifying the ask, offering timing flexibility without inventing dates,
+        asking what the reader needs
+        next, or mentioning progress ONLY when the idea implies progress. Do not borrow
+        workload, stacked courses, research-progress, unexpected circumstances, or any
+        other justification from WITH REASON.
   • Never invent excuses, dates, assignment titles, or backstory. Never copy these
     examples verbatim — match their shape and depth for the user's actual idea.
   • Do not repeat the same ask in slightly different wording across paragraphs.
@@ -166,11 +176,11 @@ Subject: Request for Deadline Extension
 
 Hi Professor,
 
-I'm writing to request an extension on the upcoming assignment, currently due next Friday.
+I'm writing to request an extension on the upcoming assignment.
 
-Over the past week, my workload across a couple of courses has stacked up more than I anticipated, and I'd rather take a bit more time than submit something rushed. I've already outlined my approach and started the research, so the extra time would go toward refining the analysis and making sure the final draft is well-supported.
+Over the past week, my workload across a couple of courses has stacked up more than I anticipated.
 
-Would it be possible to get until the following Monday? If a shorter extension works better on your end, I'm happy to work with whatever timeline you're able to offer. I'm also glad to share what I have so far if that's helpful in considering the request.
+Would it be possible to have a few extra days? If a shorter extension works better on your end, I'm happy to work with whatever timeline you're able to offer. I'm also glad to provide any information you need when considering the request.
 
 Thank you for taking the time to consider this — I know deadlines matter for grading and course pacing, and I don't take the flexibility for granted.
 
@@ -182,11 +192,15 @@ Subject: Request for Deadline Extension
 
 Hi Professor,
 
-I'm writing to request an extension on the upcoming assignment, currently due next Friday.
+I'm writing to request an extension on the upcoming assignment.
 
-I'd like a bit more time to make sure the final submission is thorough and well put together rather than rushed. Would it be possible to get until the following Monday, or whatever timeline works best on your end?
+Would it be possible to have a few extra days, or whatever timeline works best on your end?
 
-I'm glad to share my progress so far if that's useful, and happy to work within whatever process you typically use for extension requests.
+I'm flexible on the exact timing and happy to work with a shorter extension if that is easier to accommodate.
+
+I'm also happy to follow whatever process you typically use for extension requests.
+
+Please let me know if you need any information from me to consider the request or what I should do next.
 
 Thank you for considering this — I appreciate any flexibility you're able to offer.
 
@@ -1592,7 +1606,10 @@ def _build_length_retry_instruction(length: str, format_type: str) -> str:
         "LENGTH RETRY — previous draft was too short for LONG. "
         f"Output ONE {kind} only with at least 5 body paragraphs and ~220+ body words. "
         "Follow the LONG length examples in the system prompt (WITH REASON vs WITHOUT REASON). "
-        "Do NOT invent a reason if the idea had none. Do NOT repeat the same ask in "
+        "If the idea had no reason, elaborate ONLY by clarifying the ask, offering "
+        "timing flexibility without inventing dates, asking what the reader needs next, "
+        "or mentioning progress "
+        "only when the idea implies it. Do NOT invent a reason. Do NOT repeat the same ask in "
         "slightly different wording across paragraphs. Do NOT write meta commentary. "
         "When no writer name is saved, put exactly \"[Your Name]\" on the final "
         "line after the closing word. "
@@ -1801,6 +1818,15 @@ _SEED_REASON_HINT_RE = re.compile(
     r")\b"
 )
 
+_SEED_TIMING_HINT_RE = re.compile(
+    r"(?i)\b("
+    r"monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
+    r"today|tomorrow|tonight|next week|next month|"
+    r"\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)?|"
+    r"\d+\s+(?:day|days|week|weeks|month|months)"
+    r")\b"
+)
+
 _INVENTED_REASON_CLAUSE_RE = re.compile(
     r"(?i)\b("
     r"due to (unforeseen|unexpected|personal|some)\b[^.]{0,120}"
@@ -1820,6 +1846,36 @@ _INVENTED_REASON_CLAUSE_RE = re.compile(
     r"|across several of my courses\b[^.]{0,80}"
     r"|i('ve| have) already outlined my approach\b[^.]{0,160}"
     r"|given that i('ve| have) had\b[^.]{0,160}"
+    r"|additional responsibilities\b[^.]{0,120}"
+    r"|meet my obligations\b[^.]{0,120}"
+    r"|my current submission\b[^.]{0,160}"
+    r"|progress (i('ve| have) made|so far)\b[^.]{0,120}"
+    r"|current progress\b[^.]{0,160}"
+    r"|what i have so far\b[^.]{0,120}"
+    r"|outlin(ed|ing)\b[^.]{0,160}"
+    r"|begin(ning|ning the|ning my)? research\b[^.]{0,160}"
+    r"|share (my progress|what i have)\b[^.]{0,160}"
+    r"|my situation (has|had)\b[^.]{0,160}"
+    r"|prevented me from\b[^.]{0,160}"
+    r"|additional time would (allow|help|give)\b[^.]{0,180}"
+    r"|higher-quality submission\b[^.]{0,160}"
+    r"|gathering (some )?preliminary (data|information|materials)\b[^.]{0,160}"
+    r"|refin(e|ing) (these|the) (components|analysis|work)\b[^.]{0,160}"
+    r"|extra (few )?days would\b[^.]{0,160}"
+    r"|over the past (few |several )?(days|weeks|months)\b[^.]{0,180}"
+    r"|recently\b[^.]{0,180}"
+    r"|lately\b[^.]{0,180}"
+    r"|i('ve| have) found myself\b[^.]{0,180}"
+    r"|juggling\b[^.]{0,180}"
+    r"|fall(en|ing) behind\b[^.]{0,180}"
+    r"|behind schedule\b[^.]{0,180}"
+    r"|been dealing with\b[^.]{0,180}"
+    r"|deadlines? (are|is) important\b[^.]{0,180}"
+    r"|ensure (that )?my work\b[^.]{0,180}"
+    r"|meet(s|ing)? (the same )?(high )?standards\b[^.]{0,180}"
+    r"|additional support or resources\b[^.]{0,180}"
+    r"|help me complete\b[^.]{0,180}"
+    r"|i('ve| have) (already )?(started|begun|completed)\b[^.]{0,160}"
     r")\.?"
 )
 
@@ -1827,6 +1883,18 @@ _INVENTED_REASON_PARAGRAPH_RE = re.compile(
     r"(?is)^(?=.*\b("
     r"workload|stacked up|particularly busy|across (multiple |a couple of )?courses|"
     r"outlined my approach|started the research|begun the research|"
+    r"additional responsibilities|meet my obligations|my current submission|"
+    r"progress (i('ve| have) made|so far)|current progress|what i have so far|"
+    r"outlin(ed|ing)|begin(ning|ning the|ning my)? research|"
+    r"share (my progress|what i have)|"
+    r"my situation (has|had)|prevented me from|additional time would|"
+    r"higher-quality submission|preliminary (data|information|materials)|"
+    r"refin(e|ing) (these|the) (components|analysis|work)|"
+    r"over the past|recently|lately|found myself|juggling|"
+    r"fall(en|ing) behind|behind schedule|been dealing with|"
+    r"deadlines? (are|is) important|ensure (that )?my work|"
+    r"(high|quality) standards|rather than rushed|"
+    r"additional support or resources|help me complete|"
     r"personal (circumstances|matters|commitments)|unforeseen|family emergency|"
     r"health issues?"
     r")\b).+$"
@@ -1848,6 +1916,40 @@ _META_INSTRUCTION_COMMENTARY_RE = re.compile(
 
 def _seed_states_a_reason(seed_baseline: str) -> bool:
     return bool(_SEED_REASON_HINT_RE.search(seed_baseline or ""))
+
+
+def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
+    """Replace model-invented dates/durations when the idea supplied no timing."""
+    if _SEED_TIMING_HINT_RE.search(seed_baseline or ""):
+        return text
+    text = re.sub(
+        r"(?i)\buntil next (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month)\b",
+        "a little more time",
+        text,
+    )
+    text = re.sub(
+        r"(?i)\b(?:currently )?due next (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month)\b",
+        "",
+        text,
+    )
+    text = re.sub(
+        r"(?i)\bextend the deadline by (?:one|two|three|\d+)(?: or (?:one|two|three|\d+))? "
+        r"(?:days?|weeks?|months?)\b",
+        "extend the deadline",
+        text,
+    )
+    text = re.sub(
+        r"(?i)\b(?:for|by) (?:one|two|three|\d+)(?: or (?:one|two|three|\d+))? "
+        r"(?:more )?(?:days?|weeks?|months?)\b",
+        "for a little more time",
+        text,
+    )
+    text = re.sub(
+        r"(?i)if an extension beyond then works better on your end",
+        "if a different timeline works better on your end",
+        text,
+    )
+    return re.sub(r"[ \t]{2,}", " ", text)
 
 
 def _strip_meta_instruction_commentary(text: str, format_type: str) -> str:
@@ -1897,6 +1999,7 @@ def _strip_invented_reasons_if_absent(
         return text
 
     def _clean_body(body: str) -> str:
+        body = _normalize_unseeded_timing_details(body, seed_baseline)
         paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
         cleaned_paras: list[str] = []
         for paragraph in paragraphs:
@@ -1905,8 +2008,8 @@ def _strip_invented_reasons_if_absent(
                 # Keep if it also contains the core ask and can be cleaned sentence-wise;
                 # drop if it is mostly backstory.
                 ask_cues = (
-                    "request", "extension", "deadline", "would it be possible",
-                    "could you", "please let me know",
+                    "i'm writing to request", "i am writing to request",
+                    "would it be possible", "could you", "may i",
                 )
                 lower_p = paragraph.lower()
                 if not any(cue in lower_p for cue in ask_cues):
@@ -1966,6 +2069,52 @@ def _strip_invented_reasons_if_absent(
     return _clean_body(text)
 
 
+def _ensure_safe_no_reason_long_elaboration(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str,
+) -> str:
+    """Keep long no-reason emails developed using only safe request details."""
+    if format_type != "email" or _seed_states_a_reason(seed_baseline):
+        return text
+
+    sections = _parse_email_sections(text)
+    paragraphs = [
+        p.strip()
+        for p in re.split(r"\n\s*\n", sections.get("body", ""))
+        if p.strip()
+    ]
+    body_lower = " ".join(paragraphs).lower()
+    candidates = (
+        (
+            ("flexib", "whatever timeline", "shorter extension", "accommodate that timeline"),
+            "I am flexible on the exact timing and happy to work with whatever schedule is most practical.",
+        ),
+        (
+            ("standard process", "usual process", "process for"),
+            "If there is a standard process for this request, please let me know and I will follow it.",
+        ),
+        (
+            ("information you need", "what you need", "next step", "what i should do next"),
+            "Please let me know what information you need from me or what the next step should be.",
+        ),
+        (
+            ("confirm whether", "let me know whether", "can be accommodated"),
+            "Please let me know whether the request can be accommodated.",
+        ),
+    )
+    for markers, sentence in candidates:
+        if len(paragraphs) >= 5:
+            break
+        if not any(marker in body_lower for marker in markers):
+            paragraphs.append(sentence)
+            body_lower = f"{body_lower} {sentence.lower()}"
+
+    sections["body"] = "\n\n".join(paragraphs)
+    return _reassemble_email_sections(sections)
+
+
 def apply_generate_hard_filters(
     text: str,
     *,
@@ -1987,6 +2136,12 @@ def apply_generate_hard_filters(
     filtered = _strip_invented_reasons_if_absent(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
+    if length == "long":
+        filtered = _ensure_safe_no_reason_long_elaboration(
+            filtered,
+            format_type=format_type,
+            seed_baseline=seed_baseline,
+        )
     if tone_preset in {"friendly", "casual"}:
         filtered = _strip_friendly_casual_hope_phrases(filtered, allow_good_one=False)
 
