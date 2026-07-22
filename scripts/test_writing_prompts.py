@@ -26,6 +26,7 @@ from writing_agent import (  # noqa: E402
     finalize_generate_output,
     resolve_effective_generate_settings,
     _apply_advanced_complexity_replacements,
+    _apply_blunt_tone_voice,
     _apply_simple_complexity_replacements,
     _body_word_count,
     _count_body_sentences,
@@ -473,7 +474,7 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             "Always keep emails to my landlord blunt and to the point."
         )
         self.assertTrue(style["has_tone_instruction"])
-        self.assertEqual(style["tone_preset_override"], "formal")
+        self.assertEqual(style["tone_preset_override"], "blunt")
         self.assertIsNone(style["informational_content"])
 
         fact = _parse_generation_note("My referral number is REF-88291.")
@@ -481,6 +482,29 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertEqual(
             fact["informational_content"], "My referral number is REF-88291."
         )
+
+        effective = resolve_effective_generate_settings(
+            {
+                "tonePreset": "friendly",
+                "profile": {
+                    "permanentNote": (
+                        "Always keep emails to my landlord blunt and to the point."
+                    )
+                },
+            }
+        )
+        self.assertEqual(effective["tone_preset"], "blunt")
+        self.assertIn("blunt", effective["profile"].get("_style_instruction", "").lower())
+
+        blunted = _apply_blunt_tone_voice(
+            "Subject: Heater\n\nDear Sir or Madam,\n\n"
+            "I am writing to request that the broken heater be repaired at your earliest convenience.\n\n"
+            "I would greatly appreciate a prompt resolution of this issue.\n\n"
+            "Sincerely,\n[Your Name]"
+        )
+        self.assertNotRegex(blunted.lower(), r"greatly appreciate|would it be possible|i hope")
+        self.assertIn("heater", blunted.lower())
+        self.assertRegex(blunted.lower(), r"\b(?:fix|repair|repaired)\b")
 
     def test_full_name_signoff_note_stays_in_signature(self) -> None:
         name, remaining, signoff_only = _parse_signoff_permanent_note(
@@ -793,7 +817,9 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             settings=settings,
             seed_baseline="tell my landlord the sink is leaking, need someone this week",
         )
-        self.assertEqual(_parse_email_sections(out)["body"], "")
+        body = _parse_email_sections(out)["body"].lower()
+        self.assertTrue(body.strip())
+        self.assertIn("sink", body)
         self.assertNotIn("apartment", out.lower())
         self.assertNotIn("plumber", out.lower())
 

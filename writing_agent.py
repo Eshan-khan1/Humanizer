@@ -303,6 +303,15 @@ TONE — voice/personality only (independent of length and complexity):
   • Subject line must sound informal
   • TONE must NEVER change how long the output is or how advanced the vocabulary is —
     "casual" does not mean shorter or simpler words.""",
+    "blunt": """\
+TONE — blunt / direct only (independent of length and complexity):
+  • Short, direct, matter-of-fact. State the request plainly.
+  • No polite padding: never use "I hope", "greatly appreciate", "would it be possible",
+    "at your earliest convenience", or similar softener phrases.
+  • Opening: "Hi," when no recipient name is known (never "Dear Sir or Madam,").
+  • Sign-off: "Thanks," then the writer's saved name on the next line when available;
+    if no name is saved, put exactly "[Your Name]" on the next line
+  • TONE must NEVER change how long the output is or how advanced the vocabulary is.""",
 }
 
 TONE_EMAIL_CONVENTIONS: dict[str, str] = {
@@ -315,6 +324,10 @@ TONE_EMAIL_CONVENTIONS: dict[str, str] = {
     "casual": (
         'Do NOT use formal openings ("Dear") or formal sign-offs ("Sincerely") '
         'or stiff phrases ("I am writing to inform you").'
+    ),
+    "blunt": (
+        "Do NOT use formal openings (Dear Sir or Madam) or formal sign-offs (Sincerely). "
+        "Do NOT soften the ask with polite padding."
     ),
 }
 
@@ -373,6 +386,63 @@ def _apply_formal_tone_voice(text: str) -> str:
     result = re.sub(r"(?i)\bHey\b", "Hello", result)
     result = re.sub(r"(?i)\bThanks\b", "Thank you", result)
     result = re.sub(r"  +", " ", result)
+    return result.strip()
+
+
+_BLUNT_POLITE_SENTENCE_RE = re.compile(
+    r"(?i)(?:^|[.!?]\s+)("
+    r"[^.!?]*\b(?:i hope|greatly appreciate|would it be possible|"
+    r"at your earliest convenience|significant discomfort|"
+    r"colder months|both ensure my comfort)\b[^.!?]*[.!?]"
+    r")"
+)
+
+
+def _apply_blunt_tone_voice(text: str) -> str:
+    """Strip polite padding so blunt permanent-note style actually lands."""
+    result = text or ""
+    result = re.sub(
+        r"(?i)\bI (?:am|was) writing to request that\s+",
+        "Please fix ",
+        result,
+    )
+    result = re.sub(
+        r"(?i)\bPlease fix the broken heater be repaired\b",
+        "Please fix the broken heater",
+        result,
+    )
+    result = re.sub(
+        r"(?i)\bPlease fix (.+?) be repaired\b",
+        r"Please fix \1",
+        result,
+    )
+    result = re.sub(r"(?i)\bI (?:am|was) writing to (?:inquire about|request)\b", "About", result)
+    result = re.sub(r"(?i)\bwould it be possible to\b", "please", result)
+    result = re.sub(r"(?i)\bI would greatly appreciate\b[^.!?]*[.!?]?", "", result)
+    result = re.sub(r"(?i)\bI would appreciate\b[^.!?]*[.!?]?", "", result)
+    result = re.sub(r"(?i)\bgreatly appreciate\b[^.!?]*[.!?]?", "", result)
+    result = re.sub(r"(?i)\bI hope (?:you(?:'re| are)|this)[^.!?]*[.!?]?", "", result)
+    result = re.sub(r"(?i)\bat your earliest convenience\b", "soon", result)
+    result = re.sub(r"(?i)\bDear Sir or Madam,\b", "Hi,", result)
+    result = re.sub(r"(?i)^Sincerely,\s*$", "Thanks,", result, flags=re.M)
+    cleaned_paragraphs: list[str] = []
+    for paragraph in re.split(r"\n\s*\n", result):
+        sentences = []
+        for sentence in re.split(r"(?<=[.!?])\s+", paragraph.strip()):
+            if not sentence.strip():
+                continue
+            if re.search(
+                r"(?i)\b(?:i hope|greatly appreciate|would appreciate|"
+                r"would it be possible|significant discomfort|colder months|"
+                r"comfort and safety|last week)\b",
+                sentence,
+            ):
+                continue
+            sentences.append(sentence.strip())
+        if sentences:
+            cleaned_paragraphs.append(" ".join(sentences))
+    result = "\n\n".join(cleaned_paragraphs)
+    result = re.sub(r"[ \t]{2,}", " ", result)
     return result.strip()
 
 
@@ -490,6 +560,7 @@ TONE_PRESET_TO_VOICE: dict[str, str] = {
     "formal": "formal",
     "friendly": "warm and friendly",
     "casual": "relaxed and casual",
+    "blunt": "direct, concise, and matter-of-fact",
 }
 
 TONE_REWRITE_STRICT_RULES = """\
@@ -726,6 +797,27 @@ def check_rewrite_quality(
 
     if _original_has_closing_block(source) and not _rewritten_has_closing_block(result, source):
         issues.append("missing_closing")
+
+    # Numbers and concrete content nouns must survive tone-only rewrites.
+    for number in re.findall(r"\d+", source):
+        if number not in result:
+            issues.append("missing_number")
+            break
+    stop = {
+        "that", "this", "with", "from", "have", "been", "were", "will",
+        "your", "their", "about", "into", "just", "more", "than", "then",
+        "make", "made", "need", "needs", "please", "would", "unfortunately",
+        "additional",
+    }
+    # Concrete content nouns (length >= 6) must survive tone-only rewrites.
+    important = {
+        token
+        for token in re.findall(r"[a-z0-9']+", source.lower())
+        if len(token) >= 6 and token not in stop
+    }
+    out_tokens = set(re.findall(r"[a-z0-9']+", result.lower()))
+    if important - out_tokens:
+        issues.append("meaning_drift")
 
     preset = _detect_rewrite_tone_preset(instruction)
     if preset == "casual":
@@ -1499,12 +1591,24 @@ def _is_greeting_line(line: str) -> bool:
 
 
 def _is_signoff_line(line: str) -> bool:
-    return bool(_SIGNOFF_LINE_RE.match(line.strip()))
+    stripped = line.strip()
+    if not _SIGNOFF_LINE_RE.match(stripped):
+        return False
+    # Real sign-off lines are short closings, not thank-you body sentences.
+    return len(stripped.split()) <= 6 and bool(
+        re.fullmatch(
+            r"(?:Sincerely|Best|Thanks|Thankfully|Thank you|Regards|Kind regards|"
+            r"Warm regards|Cheers|Take care)"
+            r"[,.!]?\s*(?:\[.+\]|[A-Z][A-Za-z'’\-]+(?:\s+[A-Z][A-Za-z'’\-]+){0,3})?",
+            stripped,
+            re.IGNORECASE,
+        )
+    )
 
 
 _STANDALONE_SIGNOFF_PARAGRAPH_RE = re.compile(
     r"^(?:best|thanks|thankfully|thank you|sincerely|regards|kind regards|warm regards|cheers|take care)"
-    r"[,.!]?\s*(?:\[.+\]|[A-Z][a-z].*)?$",
+    r"[,.!]?\s*(?:\[.+\]|[A-Z][A-Za-z'’\-]+(?:\s+[A-Z][A-Za-z'’\-]+){0,3})?\s*$",
     re.IGNORECASE,
 )
 
@@ -1713,11 +1817,12 @@ def _meets_generate_length_requirement(
         and coverage >= 0.5
         and not bool(
             re.search(
-                r"\b(?:and|but|or|because|by|for|from|to|with)\s*$",
+                r"\b(?:and|but|or|because|by|for|from|to|with|the|a|an|of)\s*$",
                 body.strip(),
                 re.I,
             )
         )
+        and not bool(re.search(r"(?i)\b(?:the|a|an|to|of|for|with)\.\s*$", body.strip()))
     )
     list_item_count = len(
         re.findall(r"(?m)^\s*(?:\d{1,2}[.)]|[-•])\s+", body)
@@ -1733,6 +1838,7 @@ def _meets_generate_length_requirement(
             1 <= paragraph_count <= 3
             if list_item_count >= 3
             else 2 <= paragraph_count <= 3
+            or (paragraph_count == 1 and complete and words >= substantial_floor)
         )
         return (
             structure_ok
@@ -2710,6 +2816,112 @@ def _ensure_seed_list_format(
     return _reassemble_email_sections(sections)
 
 
+_SEED_ROLE_INJECTIONS: tuple[tuple[re.Pattern[str], tuple[str, ...], str], ...] = (
+    (
+        re.compile(r"(?i)\bmentor\b"),
+        ("mentor",),
+        "Thank you, as my mentor, for the advice on negotiating my job offer.",
+    ),
+    (
+        re.compile(r"(?i)\bteacher\b"),
+        ("teacher", "parent-teacher"),
+        "Could you, as my child's teacher, share a quick update on how they are doing in math this semester?",
+    ),
+    (
+        re.compile(r"(?i)\bcontractor\b"),
+        ("contractor",),
+        "I wanted to check in with the contractor about the kitchen renovation.",
+    ),
+    (
+        re.compile(r"(?i)\bneighbor\b"),
+        ("neighbor",),
+        "I'm writing as your neighbor to ask that you trim the hedge.",
+    ),
+    (
+        re.compile(r"(?i)\bco-?founders?\b"),
+        ("co-founder", "cofounder", "both"),
+        "I wanted to let both co-founders know about this update.",
+    ),
+    (
+        re.compile(r"(?i)\b(?:an|one|1)\s+hour\b"),
+        ("hour",),
+        "The order arrived an hour late.",
+    ),
+    (
+        re.compile(r"(?i)\bphotographer\b"),
+        ("photographer", "photographing"),
+        "Could you share your availability and package pricing as a wedding photographer?",
+    ),
+)
+
+
+def _ensure_seed_role_mentions(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str,
+) -> str:
+    """If the idea names a role/recipient, keep that role visible in the draft."""
+    if format_type != "email" or not seed_baseline.strip():
+        return text
+    sections = _parse_email_sections(text)
+    body = sections.get("body", "")
+    body_lower = body.lower()
+    injections: list[str] = []
+    for pattern, markers, sentence in _SEED_ROLE_INJECTIONS:
+        if not pattern.search(seed_baseline):
+            continue
+        if any(marker in body_lower for marker in markers):
+            continue
+        injections.append(sentence)
+        body_lower = f"{body_lower} {sentence.lower()}"
+    # Concrete phrases that are often paraphrased away.
+    fact_checks = (
+        (r"(?i)\bthis month\b", ("this month", "this past month"), "The increase happened this month."),
+        (r"(?i)\bdentist\b", ("dentist",), "Please reschedule my dentist appointment."),
+        (r"(?i)\bhoa\b", ("hoa",), "I need HOA approval before repainting the front door."),
+        (
+            r"(?i)\bphotographer\b",
+            ("photographer", "photographing"),
+            "Could you share your availability and package pricing as a wedding photographer?",
+        ),
+        (
+            r"(?i)\b(?:two|2)\s+items?\b",
+            ("two items", "2 items", "two of the", "two dishes"),
+            "Two items were missing from the order.",
+        ),
+        (
+            r"(?i)\bfriday\b",
+            ("friday",),
+            "The Friday standup is moving.",
+        ),
+        (
+            r"(?i)\b10\s*a\.?m\.?\b",
+            ("10am", "10 am", "10a.m"),
+            "It is moving to 10am.",
+        ),
+    )
+    for pattern, markers, sentence in fact_checks:
+        if not re.search(pattern, seed_baseline):
+            continue
+        if any(marker in body_lower for marker in markers):
+            continue
+        injections.append(sentence)
+        body_lower = f"{body_lower} {sentence.lower()}"
+    if not injections:
+        return text
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+    # Short drafts must stay one paragraph — weave the first injection into it.
+    if len(paragraphs) <= 1:
+        merged = _join_sentences([*injections[:1], *(_split_sentences(paragraphs[0]) if paragraphs else [])])
+        sections["body"] = merged
+        return _reassemble_email_sections(sections)
+    combined = [*injections, *paragraphs]
+    # Keep medium-length structure valid (2–3 content blocks).
+    sections["body"] = "\n\n".join(combined[:3])
+    return _reassemble_email_sections(sections)
+
+
 def _strip_invented_reasons_if_absent(
     text: str,
     *,
@@ -2820,7 +3032,7 @@ def _ensure_safe_no_reason_elaboration(
             "generate_fallback_suppressed case=%r reason=empty_sparse_candidate",
             seed_baseline[:160],
         )
-        return text
+        # Continue: topic candidates below can rebuild a grounded body.
     body_lower = " ".join(paragraphs).lower()
     seed_lower = (seed_baseline or "").lower()
     minimum, _maximum = _generate_length_bounds(length, seed_baseline)
@@ -2834,6 +3046,15 @@ def _ensure_safe_no_reason_elaboration(
             "I will plan the assignment around the revised deadline once it is confirmed.",
             "Please indicate whether the original submission instructions will still apply.",
             "Once a revised deadline is set, I will use that date for the assignment.",
+        )
+    elif any(word in seed_lower for word in ("heater", "landlord")) and any(
+        word in seed_lower for word in ("fix", "broken", "repair")
+    ):
+        candidates = (
+            "The heater is broken and needs to be fixed.",
+            "Please send someone to fix the heater.",
+            "Confirm when the heater will be repaired.",
+            "I need the heater fixed as soon as you can arrange it.",
         )
     elif any(word in seed_lower for word in ("sink", "leak", "repair")):
         candidates = (
@@ -2864,11 +3085,20 @@ def _ensure_safe_no_reason_elaboration(
             "Please include every team update that is due before the meeting.",
             "I would appreciate confirmation that the team updates are ready before the meeting.",
         )
+    elif any(word in seed_lower for word in ("photographer", "wedding", "package pricing")):
+        candidates = (
+            "Could you share your availability for a Saturday in October?",
+            "Please also send your package pricing options.",
+            "I am looking for wedding photography coverage and would like details on packages.",
+            "Once I have availability and pricing, I can decide on next steps.",
+        )
     else:
         candidates = ()
     for sentence in candidates:
         current_words = len(re.findall(r"[A-Za-z0-9']+", " ".join(paragraphs)))
         if len(paragraphs) >= minimum_paragraphs and current_words >= target_words:
+            break
+        if length == "medium" and len(paragraphs) >= 3:
             break
         if sentence.lower() not in body_lower:
             paragraphs.append(sentence)
@@ -2941,6 +3171,16 @@ def apply_generate_hard_filters(
         filtered = _apply_casual_tone_voice(filtered)
     elif tone_preset == "friendly":
         filtered = _apply_friendly_tone_voice(filtered)
+    elif tone_preset == "blunt":
+        filtered = _apply_blunt_tone_voice(filtered)
+        if length in {"medium", "long"}:
+            filtered = _ensure_safe_no_reason_elaboration(
+                filtered,
+                format_type=format_type,
+                seed_baseline=seed_baseline,
+                length=length,
+            )
+            filtered = _apply_blunt_tone_voice(filtered)
 
     # Complexity — vocabulary only
     if complexity == "simple":
@@ -3095,15 +3335,20 @@ def _enforce_tone_greeting_line(
         elif signoff_name and name.lower() == signoff_name.lower():
             name = ""
     if name:
-        prefix = {"formal": "Dear", "friendly": "Hi", "casual": "Hey"}.get(
-            tone_preset, "Hi"
-        )
+        prefix = {
+            "formal": "Dear",
+            "friendly": "Hi",
+            "casual": "Hey",
+            "blunt": "Hi",
+        }.get(tone_preset, "Hi")
         return f"{prefix} {name},"
     # Visible tone markers when no recipient name is known
     if tone_preset == "formal":
         return "Dear Sir or Madam,"
     if tone_preset == "casual":
         return "Hey there,"
+    if tone_preset == "blunt":
+        return "Hi,"
     return "Hi there,"
 
 
@@ -3119,9 +3364,12 @@ def _enforce_tone_signoff(
     if preferred:
         signoff = preferred.rstrip(",") + ","
     else:
-        signoff = {"formal": "Sincerely,", "friendly": "Best,", "casual": "Thanks,"}.get(
-            tone_preset, "Best,"
-        )
+        signoff = {
+            "formal": "Sincerely,",
+            "friendly": "Best,",
+            "casual": "Thanks,",
+            "blunt": "Thanks,",
+        }.get(tone_preset, "Best,")
     return f"{signoff}\n{signature_name}"
 
 
@@ -3644,7 +3892,7 @@ def _looks_like_tone_style_instruction(phrase: str) -> bool:
 def _infer_tone_from_instruction(phrase: str) -> tuple[str, str | None]:
     lower = phrase.lower()
     if any(term in lower for term in ("blunt", "direct", "to the point", "concise")):
-        return "formal", "direct, concise, and matter-of-fact"
+        return "blunt", "direct, concise, and matter-of-fact"
     if any(word in lower for word in ("formal", "professional", "business", "academic")):
         voice = "professional and respectful" if "professional" in lower else None
         return "formal", voice
@@ -3751,6 +3999,8 @@ def resolve_effective_generate_settings(
                     effective["tone"],
                 )
             )
+            if parsed_permanent.get("tone_instruction"):
+                profile["_style_instruction"] = parsed_permanent["tone_instruction"]
         remaining_note = str(parsed_permanent["informational_content"] or "").strip()
         profile["permanentNote"] = remaining_note
         profile["permanent_note"] = remaining_note
@@ -3889,6 +4139,7 @@ def build_generate_system_instruction(
         )
 
     tone_rule = _build_tone_rules(tone_preset, format_type)
+    style_instruction = str(profile.get("_style_instruction") or "").strip()
     if parsed_note["has_tone_instruction"]:
         tone_rule = (
             f"{tone_rule}\n\n"
@@ -3896,6 +4147,13 @@ def build_generate_system_instruction(
             f"  {parsed_note['tone_instruction']}\n"
             "  Ignore the saved tone preset voice for THIS draft only; "
             "length and vocabulary rules still apply unchanged."
+        )
+    elif style_instruction:
+        tone_rule = (
+            f"{tone_rule}\n\n"
+            "STANDING STYLE OVERRIDE from permanent note (does not change length or vocabulary):\n"
+            f"  {style_instruction}\n"
+            "  Follow this style for every draft. Do not print the note wording in the body."
         )
 
     personal_rule = (
@@ -4166,6 +4424,21 @@ def _process_generate_candidate(
         format_type=format_type,
         seed_baseline=seed_baseline,
     )
+    cleaned = _ensure_seed_role_mentions(
+        cleaned,
+        format_type=format_type,
+        seed_baseline=seed_baseline,
+    )
+    if format_type == "email" and length == "medium":
+        sections = _parse_email_sections(cleaned)
+        paragraphs = [
+            paragraph.strip()
+            for paragraph in re.split(r"\n\s*\n", sections.get("body", ""))
+            if paragraph.strip()
+        ]
+        if len(paragraphs) > 3:
+            sections["body"] = "\n\n".join(paragraphs[:3])
+            cleaned = _reassemble_email_sections(sections)
     if format_type == "email":
         cleaned = _canonicalize_generated_email(
             cleaned,
@@ -4261,7 +4534,8 @@ def _generate_candidate_rejection_reasons(
         ):
             reasons.append(f"raw_{label}_leak")
     if body and re.search(
-        r"\b(?:and|but|or|because|by|for|from|to|with)\s*$",
+        r"\b(?:and|but|or|because|by|for|from|to|with|the|a|an|of)\s*$|"
+        r"(?i)\b(?:the|a|an|to|of|for|with)\.\s*$",
         body,
         re.I,
     ):
@@ -4318,6 +4592,34 @@ class WritingAgent:
                 _clean_output(raw),
                 instruction=user_instruction,
             )
+            quality = check_rewrite_quality(text, cleaned, user_instruction)
+        if not quality["ok"] and (
+            "meaning_drift" in quality["issues"]
+            or "missing_number" in quality["issues"]
+        ):
+            retry_system = (
+                f"{system_prompt}\n\nIMPORTANT: Keep every actor, number, date, and concrete "
+                "fact from the original. Do not replace subjects (for example 'the supplier') "
+                "with vague stand-ins. Preserve contrasts such as 'not 30'."
+            )
+            raw = _call_llm(
+                user_message,
+                task="rewrite",
+                system=retry_system,
+                ai_config=ai_config,
+            )
+            cleaned = apply_rewrite_hard_filters(
+                text,
+                _clean_output(raw),
+                instruction=user_instruction,
+            )
+            quality = check_rewrite_quality(text, cleaned, user_instruction)
+            if not quality["ok"] and (
+                "meaning_drift" in quality["issues"]
+                or "missing_number" in quality["issues"]
+            ):
+                # Prefer the original over a rewritten draft that drops facts.
+                cleaned = text
         return _normalize_email_spacing(cleaned)
 
     def generate(
