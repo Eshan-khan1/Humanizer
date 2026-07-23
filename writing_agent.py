@@ -1006,6 +1006,8 @@ def _clean_generate_typography(text: str) -> str:
     cleaned = re.sub(r",\s*\.", ".", cleaned)
     cleaned = re.sub(r",\s*([?!])", r"\1", cleaned)
     cleaned = re.sub(r"(?i)\bas of\s*,\s*", "", cleaned)
+    cleaned = re.sub(r"(?i),\s*which is\.?\s*$", ".", cleaned)
+    cleaned = re.sub(r"(?i)\bwhich is\.?\s*(?=\n|$)", "", cleaned)
     cleaned = re.sub(r"\b(by|on|until|for)\s*([?.!,])", r"\2", cleaned, flags=re.I)
     cleaned = re.sub(r"\?\s*\?", "?", cleaned)
     cleaned = re.sub(r"[ \t]+([,.;:!?])", r"\1", cleaned)
@@ -1920,11 +1922,21 @@ def _enforce_length_structure(
                         _join_sentences(sentences[mid:]),
                     ]
                 elif paragraphs:
-                    logger.warning(
-                        "generate_fallback_suppressed case=%r "
-                        "reason=single_sentence_medium_candidate",
-                        seed_baseline[:160],
-                    )
+                    seed_l = (seed_baseline or "").lower()
+                    if "extension" in seed_l or "deadline" in seed_l:
+                        paragraphs.append(
+                            "Please confirm the revised deadline when you can."
+                        )
+                    elif _seed_content_tokens(seed_baseline):
+                        paragraphs.append(
+                            "Please let me know how you would like to proceed."
+                        )
+                    else:
+                        logger.warning(
+                            "generate_fallback_suppressed case=%r "
+                            "reason=single_sentence_medium_candidate",
+                            seed_baseline[:160],
+                        )
             elif len(paragraphs) > 3:
                 paragraphs = paragraphs[:2] + [" ".join(paragraphs[2:])]
             elif len(paragraphs) == 0:
@@ -2126,6 +2138,116 @@ _FOREIGN_SCENARIO_MARKERS: tuple[str, ...] = (
     "special day goes off",
 )
 
+_RECIPIENT_ROLE_WORDS = (
+    "client", "neighbor", "landlord", "manager", "professor", "instructor",
+    "teacher", "coach", "coworker", "teammate", "colleague", "roommate",
+    "cousin", "mentor", "recruiter", "vendor", "adjuster", "photographer",
+    "librarian", "barista", "dentist", "doctor", "nurse", "vet", "mechanic",
+    "contractor", "board", "chair", "contact", "lead", "founder", "co-founder",
+)
+
+_WEEKDAY_ALIASES: dict[str, tuple[str, ...]] = {
+    "monday": ("monday", "mon"),
+    "tuesday": ("tuesday", "tue", "tues"),
+    "wednesday": ("wednesday", "wed"),
+    "thursday": ("thursday", "thu", "thur", "thurs"),
+    "friday": ("friday", "fri"),
+    "saturday": ("saturday", "sat"),
+    "sunday": ("sunday", "sun"),
+}
+
+
+def _extract_seed_recipient_name(
+    seed_baseline: str,
+    *,
+    writer_name: str = "",
+) -> str:
+    """Pull the primary recipient name from the idea, if one is stated."""
+    seed = (seed_baseline or "").strip()
+    if not seed:
+        return ""
+    writer_l = (writer_name or "").strip().lower()
+    # Names stay case-sensitive so role words like "client" are not captured.
+    patterns = (
+        # ask/tell/email … [role words…] [Title] Name
+        r"\b(?:tell|ask|email|remind|notify|thank|invite|contact|message|"
+        r"apologize to|follow up with|complain to|write(?:\s+\w+)?\s+to|"
+        r"decline|resign(?:ing)?(?:\s+to)?)\s+"
+        r"(?:(?:my|our|the)\s+)?(?:(?:son(?:'s)?|daughter(?:'s)?|former)\s+)?"
+        r"(?:[\w&'/-]+\s+){0,4}?"
+        r"(?:Mr\.|Ms\.|Mrs\.|Dr\.)?\s*"
+        r"(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
+        # role Name (client Nora / neighbor Paulo / teammate Vic)
+        r"\b(?:client|neighbor|landlord|manager|professor|instructor|teacher|"
+        r"coach|coworker|teammate|colleague|roommate|cousin|mentor|recruiter|"
+        r"vendor|adjuster|photographer|librarian|barista|dentist|doctor|"
+        r"contractor|founder|co-founder|lead|contact)\s+"
+        r"(?:Mr\.|Ms\.|Mrs\.|Dr\.)?\s*"
+        r"(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
+        # Title Name
+        r"\b(?:Mr\.|Ms\.|Mrs\.|Dr\.)\s+(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
+    )
+    skip = {
+        "the", "our", "my", "your", "this", "that", "about", "from", "with",
+        "for", "and", "or", "unit", "order", "invoice", "claim", "school",
+        "office", "team", "board", "hoa", "it", "hr", "lead", "contact",
+        "manager", "professor", "teacher", "coach", "client", "neighbor",
+        "landlord", "vendor", "doctor", "dentist", "nurse", "chair",
+        "finance", "building", "facilities", "former", "new",
+        "brief", "quick", "standing", "remote", "full", "daily",
+    }
+    skip.update(_RECIPIENT_ROLE_WORDS)
+    for pattern in patterns:
+        for match in re.finditer(pattern, seed):
+            name = (match.group("name") or "").strip()
+            if not name or name.lower() in skip:
+                continue
+            if writer_l and name.lower() == writer_l:
+                continue
+            # Avoid capturing org-like Capitals that aren't people when followed by Inc etc.
+            if re.search(
+                rf"\b{re.escape(name)}\b\s+(?:Inc|LLC|Ltd|Logistics|Design|Analytics|Cloud|Fitness|Print|Cafe|Park|Court|Lane)\b",
+                seed,
+                re.I,
+            ):
+                continue
+            return name
+    return ""
+
+
+def _name_is_seed_recipient(name: str, seed_baseline: str, writer_name: str = "") -> bool:
+    cleaned = (name or "").strip().rstrip(",")
+    if not cleaned or _is_placeholder_name(cleaned):
+        return False
+    if re.fullmatch(r"Sir or Madam", cleaned, re.I):
+        return False
+    if cleaned.lower() in {"there", "team", "all", "everyone", "folks"}:
+        return False
+    writer_l = (writer_name or "").strip().lower()
+    if writer_l and cleaned.lower() == writer_l:
+        return False
+    seed_name = _extract_seed_recipient_name(seed_baseline, writer_name=writer_name)
+    if not seed_name:
+        return False
+    cleaned_l = cleaned.lower()
+    seed_l = seed_name.lower()
+    if cleaned_l == seed_l:
+        return True
+    # "Professor Lang" / "Ms. Quill" still count when the seed name is present.
+    parts = cleaned_l.replace(".", " ").split()
+    if seed_l in parts:
+        return True
+    if any(part == seed_l for part in seed_l.split()):
+        return seed_l in cleaned_l
+    return False
+
+
+def _seed_mentions_weekday(seed_lower: str, weekday: str) -> bool:
+    aliases = _WEEKDAY_ALIASES.get(weekday, (weekday,))
+    return any(
+        re.search(rf"\b{re.escape(alias)}\b", seed_lower)
+        for alias in aliases
+    )
 
 
 def _seed_content_tokens(text: str) -> set[str]:
@@ -2145,6 +2267,27 @@ def _sentence_has_foreign_scenario(sentence: str, seed_baseline: str) -> bool:
     return False
 
 
+def _seed_token_overlap_ratio(sentence: str, seed_baseline: str) -> float:
+    sentence_tokens = _seed_content_tokens(sentence)
+    if not sentence_tokens:
+        return 1.0
+    seed_tokens = _seed_content_tokens(seed_baseline)
+    if not seed_tokens:
+        return 1.0
+    return len(sentence_tokens & seed_tokens) / len(sentence_tokens)
+
+
+def _sentence_carries_seed_content(sentence: str, seed_baseline: str) -> bool:
+    """True when the sentence is a paraphrase of seed facts (not exact-string only)."""
+    if not sentence.strip() or not (seed_baseline or "").strip():
+        return False
+    ratio = _seed_token_overlap_ratio(sentence, seed_baseline)
+    tokens = _seed_content_tokens(sentence)
+    if len(tokens) >= 5:
+        return ratio >= 0.28
+    return ratio >= 0.12 or bool(tokens & _seed_content_tokens(seed_baseline))
+
+
 def _strip_foreign_scenario_sentences(body: str, seed_baseline: str) -> str:
     """Drop only sentences that paste known foreign scenarios."""
     if not body.strip() or not seed_baseline.strip():
@@ -2152,11 +2295,19 @@ def _strip_foreign_scenario_sentences(body: str, seed_baseline: str) -> str:
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
     kept_paragraphs: list[str] = []
     for paragraph in paragraphs:
-        kept = [
-            sentence
-            for sentence in _split_sentences(paragraph)
-            if not _sentence_has_foreign_scenario(sentence, seed_baseline)
-        ]
+        kept: list[str] = []
+        for sentence in _split_sentences(paragraph):
+            if _sentence_has_foreign_scenario(sentence, seed_baseline):
+                # Multi-word canned pastes always go; otherwise keep seed paraphrases.
+                lower = sentence.lower()
+                seed_lower = seed_baseline.lower()
+                canned = any(
+                    marker in lower and marker not in seed_lower and (" " in marker or len(marker) > 10)
+                    for marker in _FOREIGN_SCENARIO_MARKERS
+                )
+                if canned or not _sentence_carries_seed_content(sentence, seed_baseline):
+                    continue
+            kept.append(sentence)
         if kept:
             kept_paragraphs.append(_join_sentences(kept))
     return "\n\n".join(kept_paragraphs)
@@ -2535,6 +2686,7 @@ def _seed_states_a_reason(seed_baseline: str) -> bool:
 def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
     """Replace output timing that is not grounded in the seed."""
     seed_lower = (seed_baseline or "").lower()
+    seed_lower_flex = seed_lower.replace("-", " ")
     seed_years = set(re.findall(r"\b(?:19|20)\d{2}\b", seed_lower))
     when = (
         r"(?:today|tomorrow|tonight|soon|this week|next few days|"
@@ -2558,18 +2710,26 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
         phrase = match.group(0)
         # Prefer the captured timing token when present (e.g. "next week").
         timing = match.group(1) if match.lastindex else phrase
-        timing_l = timing.lower()
-        phrase_l = phrase.lower()
-        if timing_l in seed_lower or phrase_l in seed_lower:
+        timing_l = timing.lower().replace("-", " ")
+        phrase_l = phrase.lower().replace("-", " ")
+        if timing_l in seed_lower_flex or phrase_l in seed_lower_flex:
             return phrase
-        return "this week" if "this week" in seed_lower else generic
+        return "this week" if "this week" in seed_lower_flex else generic
+
+    def _duration_in_seed(phrase: str) -> bool:
+        flexed = phrase.lower().replace("-", " ")
+        if flexed in seed_lower_flex or phrase.lower() in seed_lower:
+            return True
+        # one week ≈ one-week; two extra days ≈ two days
+        tokens = re.findall(r"[a-z0-9]+", flexed)
+        return bool(tokens) and all(tok in seed_lower_flex for tok in tokens if tok not in {"a", "an", "extra", "additional", "more"})
 
     text = re.sub(
         rf"(?i)\b(?:currently )?due\s+({when})\b",
         lambda match: (
             match.group(0)
-            if match.group(1).lower() in seed_lower
-            else ("due this week" if "this week" in seed_lower else "")
+            if match.group(1).lower().replace("-", " ") in seed_lower_flex
+            else ("due this week" if "this week" in seed_lower_flex else "")
         ),
         text,
     )
@@ -2627,21 +2787,31 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
     )
     text = re.sub(
         rf"(?i)\b(extend (?:the )?(?:deadline|due date)) by {duration}\b",
-        r"\1",
+        lambda match: (
+            match.group(0)
+            if _duration_in_seed(match.group(0))
+            else match.group(1)
+        ),
         text,
     )
     text = re.sub(
         rf"(?i)\b(?:have|receive|request|need|grant(?: me)?) {duration}\b",
-        "have more time",
+        lambda match: (
+            match.group(0) if _duration_in_seed(match.group(0)) else "have more time"
+        ),
         text,
     )
-    text = re.sub(rf"(?i)\b(?:for|by) {duration}\b", "", text)
+    text = re.sub(
+        rf"(?i)\b(?:for|by) {duration}\b",
+        lambda match: match.group(0) if _duration_in_seed(match.group(0)) else "",
+        text,
+    )
     text = re.sub(
         rf"(?i)\b{duration}\b",
         lambda match: (
             match.group(0)
-            if match.group(0).lower() in seed_lower
-            else ("this week" if "this week" in seed_lower else "more time")
+            if _duration_in_seed(match.group(0))
+            else ("this week" if "this week" in seed_lower_flex else "more time")
         ),
         text,
     )
@@ -2661,7 +2831,7 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
     for weekday in (
         "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
     ):
-        if weekday not in seed_lower:
+        if not _seed_mentions_weekday(seed_lower, weekday):
             text = re.sub(rf"(?i)\b{weekday}\b", "", text)
     for phrase in (
         "next week",
@@ -2674,7 +2844,16 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
         "end of last year",
         "since last year",
         "of next week",
+        "this weekend",
+        "weekend",
     ):
+        # Keep "weekend" when seed says weekend / Saturday+Sunday / this weekend.
+        if phrase in {"weekend", "this weekend"}:
+            if (
+                "weekend" in seed_lower
+                or ("saturday" in seed_lower and "sunday" in seed_lower)
+            ):
+                continue
         if phrase not in seed_lower:
             text = re.sub(rf"(?i)\b{re.escape(phrase)}\b", "", text)
     # Weather / comfort padding is never implied by a bare request.
@@ -2955,12 +3134,85 @@ def _ensure_seed_role_mentions(
     format_type: str,
     seed_baseline: str,
 ) -> str:
-    """Do not invent role/fact sentences. Foreign canned templates were removed.
-
-    Entity retention belongs to the model + seed-grounded filters, never to
-    pasting scenarios from other test ideas (hedge, HOA paint, Friday standup).
-    """
+    """Do not invent role/fact sentences. Foreign canned templates were removed."""
     return text
+
+
+def _ensure_seed_key_details(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str,
+) -> str:
+    """Re-attach concrete seed details the model omitted (never invent new ones)."""
+    if not text.strip() or not (seed_baseline or "").strip() or format_type != "email":
+        return text
+    sections = _parse_email_sections(text)
+    body = sections.get("body", "")
+    body_lower = body.lower()
+    full_lower = text.lower()
+    seed_lower = seed_baseline.lower()
+    additions: list[str] = []
+    phrase_stop = {
+        "that", "which", "who", "whom", "when", "where", "because", "since",
+        "about", "with", "from", "into", "onto", "over", "under", "after",
+        "before", "while", "during", "through", "across", "between", "among",
+        "hoa", "board", "team", "office", "school", "company", "update",
+        "meeting", "email", "request", "extension", "issue", "problem",
+        "situation", "following", "above", "same", "possibility",
+    }
+
+    # Determiner + 1–2 content words only (avoid clause fragments).
+    for match in re.finditer(
+        r"\b((?:the|a|an|my|our|his|her)\s+[a-z0-9']+(?:\s+[a-z0-9']+)?)\b",
+        seed_lower,
+    ):
+        phrase = match.group(1)
+        words = phrase.split()
+        if any(word in phrase_stop for word in words[1:]):
+            continue
+        content = _seed_content_tokens(phrase)
+        if not content:
+            continue
+        if phrase in body_lower or all(tok in body_lower for tok in content):
+            continue
+        if not any(tok in body_lower for tok in content):
+            additions.append(f"This concerns {phrase}.")
+
+    # Seeded weekdays must remain visible somewhere in the draft.
+    for weekday in _WEEKDAY_ALIASES:
+        if _seed_mentions_weekday(seed_lower, weekday) and weekday not in full_lower:
+            additions.append(f"This relates to {weekday.title()}.")
+
+    # Money amounts and ticket/invoice-style IDs from the seed.
+    for match in re.finditer(r"\$[\d,]+(?:\.\d{2})?", seed_baseline):
+        amount = match.group(0)
+        if amount not in text and amount.replace(",", "") not in text.replace(",", ""):
+            additions.append(f"The amount is {amount}.")
+    for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b", seed_baseline):
+        token = match.group(0)
+        if token.lower() not in full_lower:
+            additions.append(f"This concerns {token}.")
+
+    # Explicit duration asks from the seed (one-week / two extra days).
+    for match in re.finditer(
+        r"\b((?:one|two|three|\d+)(?:-\s*|\s+)(?:extra\s+)?(?:days?|weeks?|months?))\b",
+        seed_lower,
+    ):
+        duration = match.group(1)
+        flex = duration.replace("-", " ")
+        body_flex = body_lower.replace("-", " ")
+        if flex not in body_flex and duration not in body_lower:
+            additions.append(f"I am asking for {flex}.")
+
+    if not additions:
+        return text
+    for sentence in additions[:2]:
+        if sentence.lower() not in body_lower:
+            body = f"{body.rstrip()}\n\n{sentence}" if body.strip() else sentence
+            body_lower = body.lower()
+    sections["body"] = body
+    return _reassemble_email_sections(sections)
 
 
 def _strip_invented_reasons_if_absent(
@@ -2973,7 +3225,7 @@ def _strip_invented_reasons_if_absent(
 
     Even when the seed states a real reason, still remove generic filler excuses
     (unforeseen circumstances, health issues, etc.) unless those words appear
-    in the seed.
+    in the seed. Seed-grounded paraphrases of real details are kept.
     """
     if not text or not text.strip():
         return text
@@ -3011,8 +3263,10 @@ def _strip_invented_reasons_if_absent(
                 )
                 lower_p = paragraph.lower()
                 if not any(cue in lower_p for cue in ask_cues):
-                    # Drop pure backstory paragraphs unless seeded reason tokens dominate.
-                    if not seed_has_reason or not _sentence_grounded_in_seed(
+                    # Keep paraphrases of real seed content.
+                    if _sentence_carries_seed_content(paragraph, seed_baseline):
+                        pass
+                    elif not seed_has_reason or not _sentence_grounded_in_seed(
                         paragraph, seed_baseline
                     ):
                         continue
@@ -3020,7 +3274,17 @@ def _strip_invented_reasons_if_absent(
             kept_sents: list[str] = []
             for sentence in sentences:
                 if _sentence_has_foreign_scenario(sentence, seed_baseline):
-                    continue
+                    lower = sentence.lower()
+                    canned = any(
+                        marker in lower
+                        and marker not in seed_lower
+                        and (" " in marker or len(marker) > 10)
+                        for marker in _FOREIGN_SCENARIO_MARKERS
+                    )
+                    if canned or not _sentence_carries_seed_content(
+                        sentence, seed_baseline
+                    ):
+                        continue
                 clause_hit = _INVENTED_REASON_CLAUSE_RE.search(sentence)
                 if clause_hit and not _clause_allowed(clause_hit.group(0)):
                     stripped = _INVENTED_REASON_CLAUSE_RE.sub("", sentence)
@@ -3028,40 +3292,61 @@ def _strip_invented_reasons_if_absent(
                     stripped = re.sub(r"\bas\b\s*$", "", stripped, flags=re.I).strip(" ,;")
                     stripped = re.sub(r"\bdue to\s*$", "", stripped, flags=re.I).strip(" ,;")
                     lower = stripped.lower()
-                    if not stripped or len(stripped.split()) < 4:
-                        continue
-                    if any(
-                        cue in lower
-                        for cue in (
-                            "request",
-                            "extension",
-                            "deadline",
-                            "asking",
-                            "ask",
-                            "please",
-                            "would it be",
-                            "could you",
-                            "let me know",
-                            "apologize",
-                            "apology",
-                            "delay",
-                            "shipment",
-                            "warehouse",
-                            "flood",
-                            "arrive",
-                            "leaking",
-                            "repair",
+                    # Prefer cleaned sentence when it still carries seed facts.
+                    if stripped and (
+                        _sentence_carries_seed_content(stripped, seed_baseline)
+                        or (
+                            len(stripped.split()) >= 4
+                            and any(
+                                cue in lower
+                                for cue in (
+                                    "request",
+                                    "extension",
+                                    "deadline",
+                                    "asking",
+                                    "ask",
+                                    "please",
+                                    "would it be",
+                                    "could you",
+                                    "let me know",
+                                    "apologize",
+                                    "apology",
+                                    "delay",
+                                    "shipment",
+                                    "warehouse",
+                                    "flood",
+                                    "arrive",
+                                    "leaking",
+                                    "repair",
+                                    "dock",
+                                    "pallet",
+                                )
+                            )
                         )
                     ):
-                        if stripped and not stripped.endswith((".", "!", "?")):
+                        if not stripped.endswith((".", "!", "?")):
                             stripped += "."
-                        if stripped:
-                            stripped = stripped[0].upper() + stripped[1:]
+                        stripped = stripped[0].upper() + stripped[1:]
                         kept_sents.append(stripped)
+                        continue
+                    # If cleaning destroyed a seed paraphrase, keep the original
+                    # only when it clearly carries seed content without filler-only body.
+                    if _sentence_carries_seed_content(sentence, seed_baseline):
+                        # Still drop pure filler when the whole sentence IS the filler.
+                        if clause_hit.group(0).strip() == sentence.strip().rstrip(".!?"):
+                            continue
+                        # Remove just the filler span, keep remainder even if short.
+                        if stripped and len(stripped.split()) >= 2:
+                            if not stripped.endswith((".", "!", "?")):
+                                stripped += "."
+                            stripped = stripped[0].upper() + stripped[1:]
+                            kept_sents.append(stripped)
+                            continue
                     continue
                 if (
                     not seed_has_reason
                     and _INVENTED_REASON_PARAGRAPH_RE.match(sentence)
+                    and not _sentence_carries_seed_content(sentence, seed_baseline)
                     and not any(
                         cue in sentence.lower()
                         for cue in (
@@ -3261,7 +3546,10 @@ def apply_generate_hard_filters(
             )
         )
         sections["greeting"] = _enforce_tone_greeting_line(
-            sections.get("greeting", ""), tone_preset, profile=profile
+            sections.get("greeting", ""),
+            tone_preset,
+            profile=profile,
+            seed_baseline=seed_baseline,
         )
         sections["footer"] = _enforce_tone_signoff(
             sections.get("footer", ""), tone_preset, profile
@@ -3312,7 +3600,10 @@ def apply_generate_hard_filters(
         else:
             filtered = _strip_foreign_scenario_sentences(filtered, seed_baseline)
 
-    filtered = _normalize_generate_names(filtered, profile)
+    filtered = _normalize_generate_names(filtered, profile, seed_baseline=seed_baseline)
+    filtered = _ensure_seed_key_details(
+        filtered, format_type=format_type, seed_baseline=seed_baseline
+    )
     filtered = _take_first_complete_draft(filtered)
     filtered = _ensure_nonempty_body(
         filtered,
@@ -3326,7 +3617,10 @@ def apply_generate_hard_filters(
         sections = _parse_email_sections(filtered)
         sections["body"] = _strip_standalone_signoffs_from_body(sections.get("body", ""))
         sections["greeting"] = _enforce_tone_greeting_line(
-            sections.get("greeting", ""), tone_preset, profile=profile
+            sections.get("greeting", ""),
+            tone_preset,
+            profile=profile,
+            seed_baseline=seed_baseline,
         )
         sections["footer"] = _enforce_tone_signoff(
             sections.get("footer", ""), tone_preset, profile
@@ -3377,7 +3671,10 @@ def finalize_generate_output(
     if format_type == "email":
         sections = _parse_email_sections(filtered)
         sections["greeting"] = _enforce_tone_greeting_line(
-            sections.get("greeting", ""), tone_preset, profile=profile
+            sections.get("greeting", ""),
+            tone_preset,
+            profile=profile,
+            seed_baseline=seed_baseline,
         )
         sections["footer"] = _enforce_tone_signoff(
             sections.get("footer", ""), tone_preset, profile
@@ -3395,6 +3692,21 @@ def finalize_generate_output(
     filtered = _strip_invented_reasons_if_absent(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
+    filtered = _ensure_seed_key_details(
+        filtered, format_type=format_type, seed_baseline=seed_baseline
+    )
+    if format_type == "email":
+        sections = _parse_email_sections(filtered)
+        sections["greeting"] = _enforce_tone_greeting_line(
+            sections.get("greeting", ""),
+            tone_preset,
+            profile=profile,
+            seed_baseline=seed_baseline,
+        )
+        sections["footer"] = _enforce_tone_signoff(
+            sections.get("footer", ""), tone_preset, profile
+        )
+        filtered = _reassemble_email_sections(sections)
     return filtered
 
 
@@ -3435,11 +3747,15 @@ def _enforce_tone_greeting_line(
     greeting: str,
     tone_preset: str,
     profile: dict[str, Any] | None = None,
+    seed_baseline: str = "",
 ) -> str:
-    """Force greeting prefix by tone only — never use the writer's signature name."""
+    """Force greeting prefix by tone; keep/inject seed recipient names."""
     stripped = (greeting or "").strip()
     writer_name = _extract_profile_full_name(profile or {})
     signoff_name = str((profile or {}).get("_signoff_note_name") or "").strip()
+    seed_recipient = _extract_seed_recipient_name(
+        seed_baseline, writer_name=writer_name or signoff_name
+    )
     name = ""
     match = _GREETING_WITH_NAME_RE.match(stripped) if stripped else None
     if match:
@@ -3455,12 +3771,30 @@ def _enforce_tone_greeting_line(
             name = ""
         elif signoff_name and name.lower() == signoff_name.lower():
             name = ""
+        elif name and not _name_is_seed_recipient(
+            name, seed_baseline, writer_name=writer_name or signoff_name
+        ):
+            # Invented recipient — discard unless seed provides the real one below.
+            name = ""
     elif stripped and not re.match(r"^(Dear|Hi|Hey|Hello)\b", stripped, re.I):
         name = stripped.rstrip(",")
         if writer_name and name.lower() == writer_name.lower():
             name = ""
         elif signoff_name and name.lower() == signoff_name.lower():
             name = ""
+        elif name and not _name_is_seed_recipient(
+            name, seed_baseline, writer_name=writer_name or signoff_name
+        ):
+            name = ""
+    if not name and seed_recipient:
+        name = seed_recipient
+    elif name and seed_recipient and seed_recipient.lower() not in name.lower():
+        # Model used a wrong/role word; force the real seed recipient.
+        name = seed_recipient
+    elif name and seed_recipient and name.lower() != seed_recipient.lower():
+        # Prefer the bare seed name over "Professor Lang" / "Instructor Vega".
+        if seed_recipient.lower() in name.lower().split() or seed_recipient.lower() in name.lower():
+            name = seed_recipient
     if name:
         prefix = {
             "formal": "Dear",
@@ -3564,7 +3898,10 @@ def _canonicalize_generated_email(
     body_paragraphs = cleaned_body_paragraphs
     sections["body"] = "\n\n".join(body_paragraphs)
     sections["greeting"] = _enforce_tone_greeting_line(
-        sections.get("greeting", ""), tone_preset, profile=profile
+        sections.get("greeting", ""),
+        tone_preset,
+        profile=profile,
+        seed_baseline=seed_baseline,
     )
     sections["footer"] = _enforce_tone_signoff(
         sections.get("footer", ""), tone_preset, profile
@@ -3581,12 +3918,20 @@ def _is_placeholder_name(value: str) -> bool:
     return bool(re.fullmatch(r"\[[^\]]+\]", text))
 
 
-def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
+def _normalize_generate_names(
+    text: str,
+    profile: dict[str, Any],
+    seed_baseline: str = "",
+) -> str:
     if not text or not text.strip():
         return text
 
     saved_name = _extract_profile_full_name(profile)
     signature_name = _email_signature_name(profile)
+    signoff_name = str(profile.get("_signoff_note_name") or "").strip()
+    seed_recipient = _extract_seed_recipient_name(
+        seed_baseline, writer_name=saved_name or signoff_name
+    )
     sections = _parse_email_sections(text)
     has_email_structure = bool(
         sections.get("prefix")
@@ -3604,6 +3949,17 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
     normalized_lines: list[str] = []
     in_footer = False
 
+    def _generic_greeting(prefix: str) -> str:
+        return {
+            "Dear": "Dear Sir or Madam,",
+            "Hi": "Hi there,",
+            "Hey": "Hey there,",
+            "Hello": "Hello,",
+        }.get(
+            prefix if prefix in {"Dear", "Hi", "Hey", "Hello"} else prefix.capitalize(),
+            "Hi there,",
+        )
+
     for line_index, line in enumerate(lines):
         stripped = line.strip()
         if not stripped:
@@ -3617,35 +3973,37 @@ def _normalize_generate_names(text: str, profile: dict[str, Any]) -> str:
         if greeting_match and not in_footer:
             prefix = greeting_match.group(1)
             name_part = greeting_match.group(2).strip().rstrip(",")
-            if _is_placeholder_name(name_part):
-                # Generic greeting — never leave a bare "Hi"
-                normalized_lines.append(
-                    {"Dear": "Dear Sir or Madam,", "Hi": "Hi there,", "Hey": "Hey there,", "Hello": "Hello,"}.get(
-                        prefix if prefix in {"Dear", "Hi", "Hey", "Hello"} else prefix.capitalize(),
-                        f"{prefix} there,",
-                    )
-                )
+            if _is_placeholder_name(name_part) or re.fullmatch(
+                r"Sir or Madam|there", name_part, re.I
+            ):
+                if seed_recipient:
+                    normalized_lines.append(f"{prefix} {seed_recipient},")
+                else:
+                    normalized_lines.append(_generic_greeting(prefix))
                 continue
             # Writer / sign-off name must never appear in the salutation
             if saved_name and name_part.lower() == saved_name.lower():
-                normalized_lines.append(
-                    {"Dear": "Dear Sir or Madam,", "Hi": "Hi there,", "Hey": "Hey there,", "Hello": "Hello,"}.get(
-                        prefix if prefix in {"Dear", "Hi", "Hey", "Hello"} else "Hi",
-                        "Hi there,",
-                    )
-                )
+                if seed_recipient:
+                    normalized_lines.append(f"{prefix} {seed_recipient},")
+                else:
+                    normalized_lines.append(_generic_greeting(prefix))
                 continue
-            # Drop invented recipient names — keep generic greeting only
-            generic = {
-                "Dear": "Dear Sir or Madam,",
-                "Hi": "Hi there,",
-                "Hey": "Hey there,",
-                "Hello": "Hello,",
-            }.get(
-                prefix if prefix in {"Dear", "Hi", "Hey", "Hello"} else prefix.capitalize(),
-                "Hi there,",
-            )
-            normalized_lines.append(generic)
+            if signoff_name and name_part.lower() == signoff_name.lower():
+                if seed_recipient:
+                    normalized_lines.append(f"{prefix} {seed_recipient},")
+                else:
+                    normalized_lines.append(_generic_greeting(prefix))
+                continue
+            # Keep seed recipients; drop invented ones.
+            if _name_is_seed_recipient(
+                name_part, seed_baseline, writer_name=saved_name or signoff_name
+            ):
+                normalized_lines.append(f"{prefix} {name_part},")
+                continue
+            if seed_recipient:
+                normalized_lines.append(f"{prefix} {seed_recipient},")
+            else:
+                normalized_lines.append(_generic_greeting(prefix))
             continue
 
         signoff_match = _SIGNOFF_INLINE_NAME_RE.match(stripped)

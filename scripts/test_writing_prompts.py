@@ -45,6 +45,7 @@ from writing_agent import (  # noqa: E402
     _inject_informational_content,
     _meets_generate_length_requirement,
     _ensure_seed_role_mentions,
+    _extract_seed_recipient_name,
     _normalize_unseeded_timing_details,
     _parse_email_sections,
     _parse_generation_note,
@@ -857,6 +858,120 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             ),
             "Would you be willing to grant an extension? Could you grant an extension?",
         )
+
+
+class RecipientAndSeedRetentionTests(unittest.TestCase):
+    def test_extract_seed_recipient_names(self) -> None:
+        self.assertEqual(
+            _extract_seed_recipient_name(
+                "tell client Nora the pallet is delayed"
+            ),
+            "Nora",
+        )
+        self.assertEqual(
+            _extract_seed_recipient_name(
+                "ask neighbor Paulo if I can borrow a ladder"
+            ),
+            "Paulo",
+        )
+        self.assertEqual(
+            _extract_seed_recipient_name(
+                "ask librarian Ms. Quill to hold the book"
+            ),
+            "Quill",
+        )
+        self.assertEqual(
+            _extract_seed_recipient_name(
+                "complain to the HOA board about noise"
+            ),
+            "",
+        )
+
+    def test_greeting_keeps_and_injects_seed_recipient(self) -> None:
+        seed = "tell client Nora the loading dock flooded, ETA Thursday"
+        kept = apply_generate_hard_filters(
+            "Subject: Delay\n\nDear Nora,\n\n"
+            "The loading dock flooded overnight. ETA is Thursday.\n\n"
+            "Sincerely,\nDevon",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "medium",
+                "complexity": "standard",
+                "profile": {"fullName": "Devon Hale"},
+            },
+            seed_baseline=seed,
+        )
+        self.assertIn("Dear Nora,", kept)
+
+        injected = apply_generate_hard_filters(
+            "Subject: Delay\n\nDear Sir or Madam,\n\n"
+            "The loading dock flooded overnight. ETA is Thursday.\n\n"
+            "Sincerely,\nDevon",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "medium",
+                "complexity": "standard",
+                "profile": {"fullName": "Devon Hale"},
+            },
+            seed_baseline=seed,
+        )
+        self.assertIn("Dear Nora,", injected)
+        self.assertNotIn("Dear Sir or Madam,", injected)
+
+    def test_invented_greeting_name_replaced_with_seed_recipient(self) -> None:
+        seed = "ask neighbor Paulo for his ladder on Saturday"
+        out = apply_generate_hard_filters(
+            "Subject: Ladder\n\nHi FakePerson,\n\n"
+            "Can I borrow your ladder on Saturday?\n\nThanks,\nKit",
+            format_type="email",
+            settings={
+                "tonePreset": "casual",
+                "length": "short",
+                "complexity": "simple",
+                "profile": {"fullName": "Kit Avery"},
+            },
+            seed_baseline=seed,
+        )
+        self.assertIn("Hey Paulo,", out)
+        self.assertNotIn("FakePerson", out)
+
+    def test_seeded_duration_and_reason_survive_stripper(self) -> None:
+        seed = (
+            "ask professor Lang for a one-week extension on the lab report"
+        )
+        text = (
+            "Please grant a one week extension on the lab report."
+        )
+        cleaned = _normalize_unseeded_timing_details(text, seed)
+        self.assertIn("one week", cleaned.lower())
+        self.assertNotIn("more time", cleaned.lower())
+
+        flood_seed = (
+            "apologize to client Bea because our warehouse flooded, "
+            "shipment arrives Friday"
+        )
+        flood_out = apply_generate_hard_filters(
+            "Subject: Delay\n\nDear Bea,\n\n"
+            "I apologize for the delay due to unforeseen circumstances. "
+            "Our warehouse flooded. Shipment arrives Friday.\n\n"
+            "Sincerely,\nChris",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "medium",
+                "complexity": "standard",
+                "profile": {"fullName": "Chris Alvarez"},
+            },
+            seed_baseline=flood_seed,
+        )
+        lower = flood_out.lower()
+        self.assertIn("Dear Bea,", flood_out)
+        self.assertIn("warehouse", lower)
+        self.assertIn("flood", lower)
+        self.assertIn("friday", lower)
+        self.assertNotIn("unforeseen circumstances", lower)
 
 
 class FabricationHardeningTests(unittest.TestCase):

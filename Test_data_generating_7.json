@@ -1,0 +1,244 @@
+{
+  "description": "Recipient-name + seed-detail retention matrix. Unique ideas (not copies of 1–6). Requires named greetings from the idea, and invent-stripper must keep real seeded reasons/objects/days (including paraphrases).",
+  "version": "7",
+  "cases": [
+    {
+      "id": "7.1",
+      "feature": "generate",
+      "scenario": "Named client greeting + real flood reason",
+      "idea": "tell client Nora the pallet is delayed because the loading dock flooded overnight, new ETA is Thursday",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Devon Hale",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Nora", "loading dock", "flood", "Thursday", "pallet"],
+        "must_greeting_name": "Nora",
+        "forbid_phrases": ["Dear Sir or Madam", "unforeseen circumstances", "personal circumstances"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.2",
+      "feature": "generate",
+      "scenario": "Neighbor name in casual greeting + object/day",
+      "idea": "ask neighbor Paulo if I can use his ladder Saturday to change a porch light",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Kit Avery",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Paulo", "ladder", "Saturday", "porch light"],
+        "must_greeting_name": "Paulo",
+        "forbid_phrases": ["Hey there", "trim the hedge", "front door"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.3",
+      "feature": "generate",
+      "scenario": "Invoice contact name kept; Friday kept; no standup invent",
+      "idea": "remind finance contact Helena that invoice ZX-441 for $2,100 was due last Friday",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "simple",
+        "profile": "name: Arlo Finch",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Helena", "ZX-441", "$2,100", "Friday"],
+        "must_greeting_name": "Helena",
+        "forbid_phrases": ["Dear Sir or Madam", "standup"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.4",
+      "feature": "generate",
+      "scenario": "Professor name + one-week duration kept",
+      "idea": "ask professor Lang for a one-week extension on the lab report",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Noor Ali",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Lang", "lab report"],
+        "must_include_any": [["one-week", "one week"]],
+        "must_greeting_name": "Lang",
+        "forbid_phrases": ["Dear Sir or Madam", "health issues", "unforeseen circumstances", "family emergency"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.5",
+      "feature": "generate",
+      "scenario": "Title name Quill in greeting; next week kept",
+      "idea": "ask librarian Ms. Quill to hold the reserved book until next week",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Harper Diaz",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Quill", "book", "next week"],
+        "must_greeting_name": "Quill",
+        "forbid_phrases": ["Hi there", "more time"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.6",
+      "feature": "generate",
+      "scenario": "Teammate Vic greeting; mute detail kept; no hedge",
+      "idea": "ask teammate Vic to stop joining the daily standup on mute without unmuting when spoken to",
+      "settings": {
+        "length": "medium",
+        "tone": "blunt",
+        "complexity": "standard",
+        "profile": "name: Reese Park",
+        "permanent_note": "Style: blunt, get to the point"
+      },
+      "checks": {
+        "must_include_entities": ["Vic", "standup", "mute"],
+        "must_greeting_name": "Vic",
+        "forbid_phrases": ["trim the hedge", "front door", "Style:"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.7",
+      "feature": "generate",
+      "scenario": "No person name stays generic; dumpster Monday kept",
+      "idea": "notify the HOA that the dumpster at Maple Court has been overflowing since Monday",
+      "settings": {
+        "length": "medium",
+        "tone": "blunt",
+        "complexity": "standard",
+        "profile": "name: Jo Park",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["dumpster", "Maple Court", "Monday"],
+        "forbid_phrases": ["Dear Fake", "front door", "trim the hedge"],
+        "forbid_greeting_names": true,
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.8",
+      "feature": "generate",
+      "scenario": "Photographer Jonah; Sunday kept; no October invent",
+      "idea": "ask photographer Jonah for family portrait rates and Sunday openings",
+      "settings": {
+        "length": "medium",
+        "tone": "friendly",
+        "complexity": "standard",
+        "profile": "name: Eden Ruiz",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Jonah", "portrait", "Sunday"],
+        "must_greeting_name": "Jonah",
+        "forbid_phrases": ["Hi there", "Saturday in October", "October", "wedding"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.9",
+      "feature": "generate",
+      "scenario": "Warehouse flood paraphrase must survive stripper",
+      "idea": "apologize to client Bea for the late delivery because our warehouse flooded, shipment arrives Friday",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Chris Alvarez",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Bea", "warehouse", "flood", "Friday"],
+        "must_greeting_name": "Bea",
+        "forbid_phrases": ["Dear Sir or Madam", "unforeseen circumstances", "health issues"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.10",
+      "feature": "generate",
+      "scenario": "Two extra days duration retained",
+      "idea": "ask instructor Vega for two extra days on the problem set",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Samir Haddad",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Vega", "problem set"],
+        "must_include_any": [["two extra days", "two days", "2 days"]],
+        "must_greeting_name": "Vega",
+        "forbid_phrases": ["Dear Sir or Madam", "unforeseen circumstances", "personal circumstances"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "7.11",
+      "feature": "rewrite",
+      "scenario": "Rewrite keeps Nora and dock flood",
+      "idea": "Nora — the pallet is delayed because the loading dock flooded overnight. New ETA is Thursday.",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Devon Hale",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Nora", "loading dock", "flood", "Thursday"],
+        "forbid_phrases": ["unforeseen circumstances"],
+        "min_paragraphs": 1
+      }
+    },
+    {
+      "id": "7.12",
+      "feature": "rewrite",
+      "scenario": "Rewrite keeps Paulo ladder Saturday",
+      "idea": "Paulo, can I borrow your ladder Saturday to change the porch light?",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Kit Avery",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Paulo", "ladder", "Saturday", "porch light"],
+        "forbid_phrases": ["hedge"],
+        "min_paragraphs": 1
+      }
+    }
+  ]
+}
