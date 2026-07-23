@@ -44,10 +44,13 @@ from writing_agent import (  # noqa: E402
     _generate_length_bounds,
     _inject_informational_content,
     _meets_generate_length_requirement,
+    _ensure_seed_role_mentions,
     _normalize_unseeded_timing_details,
     _parse_email_sections,
     _parse_generation_note,
+    _permanent_note_sentence,
     _seed_list_plan,
+    _seed_states_a_reason,
     _parse_signoff_permanent_note,
 )
 
@@ -854,6 +857,129 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
             ),
             "Would you be willing to grant an extension? Could you grant an extension?",
         )
+
+
+class FabricationHardeningTests(unittest.TestCase):
+    def test_role_mention_injector_is_noop(self) -> None:
+        seed = "complain to the HOA board about neighbor construction noise"
+        polluted = (
+            "Subject: Noise\n\nHi,\n\n"
+            "I'm writing as your neighbor to ask that you trim the hedge.\n\n"
+            "I need HOA approval before repainting the front door.\n\n"
+            "Construction at 214 Willow is too loud before 8am.\n\n"
+            "Thanks,\nFrank"
+        )
+        cleaned = apply_generate_hard_filters(
+            polluted,
+            format_type="email",
+            settings={"tonePreset": "blunt", "length": "medium", "complexity": "standard"},
+            seed_baseline=seed,
+        )
+        lower = cleaned.lower()
+        self.assertNotIn("trim the hedge", lower)
+        self.assertNotIn("front door", lower)
+        self.assertEqual(
+            _ensure_seed_role_mentions(
+                polluted, format_type="email", seed_baseline=seed
+            ),
+            polluted,
+        )
+
+    def test_calendar_since_is_not_a_reason_hint(self) -> None:
+        self.assertFalse(
+            _seed_states_a_reason(
+                "ask landlord to fix the heater, out since Tuesday"
+            )
+        )
+        self.assertTrue(
+            _seed_states_a_reason(
+                "need an extension since I have a family emergency"
+            )
+        )
+
+    def test_seeded_next_week_survives_until_normalization(self) -> None:
+        seed = "hold the reserved book until next week"
+        text = "Please hold the reserved book until next week."
+        cleaned = _normalize_unseeded_timing_details(text, seed)
+        self.assertIn("next week", cleaned.lower())
+        self.assertNotIn("more time", cleaned.lower())
+
+        seed = "ask landlord to fix the broken heater, out since Tuesday"
+        text = (
+            "The heater has been out since Tuesday and is causing considerable "
+            "discomfort, especially during these cold nights. Please fix it by Friday."
+        )
+        cleaned = _normalize_unseeded_timing_details(text, seed)
+        lower = cleaned.lower()
+        self.assertIn("tuesday", lower)
+        self.assertNotIn("cold nights", lower)
+        self.assertNotIn("considerable discomfort", lower)
+        self.assertNotIn("friday", lower)
+
+    def test_style_note_is_not_informational_content(self) -> None:
+        parsed = _parse_generation_note(
+            "Style: be direct, no corporate softening, do not say "
+            "'I understand this may be frustrating'"
+        )
+        self.assertTrue(parsed["has_tone_instruction"])
+        self.assertIsNone(parsed["informational_content"])
+        factual = _parse_generation_note(
+            "Factual: I have been on-site full time since March 2024"
+        )
+        self.assertEqual(
+            factual["informational_content"],
+            "I have been on-site full time since March 2024",
+        )
+
+        self.assertEqual(
+            _permanent_note_sentence("Factual: started at Bright Path in 2021"),
+            "Started at Bright Path in 2021.",
+        )
+        self.assertEqual(
+            _permanent_note_sentence(
+                "Style: be direct, no corporate softening"
+            ),
+            "",
+        )
+
+    def test_seeded_reason_still_strips_unforeseen_filler(self) -> None:
+        seed = (
+            "apologize to client Bea for the late delivery because our "
+            "warehouse flooded, shipment arrives Friday"
+        )
+        polluted = (
+            "Subject: Delay\n\nDear Sir or Madam,\n\n"
+            "I apologize for the delay due to unforeseen circumstances at our end.\n\n"
+            "We had a flood in our warehouse. Shipment arrives Friday.\n\n"
+            "Sincerely,\nChris"
+        )
+        cleaned = apply_generate_hard_filters(
+            polluted,
+            format_type="email",
+            settings={"tonePreset": "formal", "length": "medium", "complexity": "standard"},
+            seed_baseline=seed,
+        )
+        lower = cleaned.lower()
+        self.assertNotIn("unforeseen circumstances", lower)
+        self.assertIn("warehouse", lower)
+        self.assertIn("friday", lower)
+
+        seed = (
+            "remind client Dana at Northfield Design that invoice #2291 "
+            "for $1,450 was due last Friday"
+        )
+        polluted = (
+            "Subject: Invoice\n\nDear Sir or Madam,\n\n"
+            "The Friday standup is moving. Invoice #2291 for $1,450 is due.\n\n"
+            "Sincerely,\nMiguel"
+        )
+        cleaned = apply_generate_hard_filters(
+            polluted,
+            format_type="email",
+            settings={"tonePreset": "formal", "length": "short", "complexity": "simple"},
+            seed_baseline=seed,
+        )
+        self.assertNotIn("standup", cleaned.lower())
 
 
 class RewritePromptIndependenceTests(unittest.TestCase):

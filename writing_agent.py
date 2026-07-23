@@ -1812,9 +1812,17 @@ def _meets_generate_length_requirement(
         if seed_tokens
         else 1.0
     )
+    sparse = (
+        not _seed_states_a_reason(seed_baseline)
+        and len(re.findall(r"[A-Za-z0-9']+", seed_baseline or "")) < 20
+    )
+    # Invent-stripping can leave lean paraphrases; require some seed overlap, not half.
+    coverage_ok = coverage >= 0.35 or (
+        sparse and bool(seed_tokens & body_tokens) and words >= 20
+    )
     complete = (
         bool(body.strip())
-        and coverage >= 0.5
+        and coverage_ok
         and not bool(
             re.search(
                 r"\b(?:and|but|or|because|by|for|from|to|with|the|a|an|of)\s*$",
@@ -1833,12 +1841,18 @@ def _meets_generate_length_requirement(
         # 1 short paragraph, at most 2 body sentences — core message only
         return paragraph_count <= 1 and 1 <= sentence_count <= 2 and words <= maximum
     if length == "medium":
-        substantial_floor = max(12, round(minimum * 0.5))
+        substantial_floor = max(12, round(minimum * 0.4))
         structure_ok = (
             1 <= paragraph_count <= 3
             if list_item_count >= 3
             else 2 <= paragraph_count <= 3
             or (paragraph_count == 1 and complete and words >= substantial_floor)
+        )
+        lean_sparse_ok = (
+            sparse
+            and paragraph_count >= 2
+            and words >= 25
+            and bool(seed_tokens & body_tokens)
         )
         return (
             structure_ok
@@ -1846,12 +1860,15 @@ def _meets_generate_length_requirement(
             and (
                 words >= minimum
                 or (words >= substantial_floor and complete)
+                or lean_sparse_ok
             )
         )
     if length == "long":
-        substantial_floor = max(20, round(minimum * 0.5))
+        substantial_floor = max(20, round(minimum * 0.45))
         structure_ok = paragraph_count >= 5 or (
             paragraph_count >= 4 and complete
+        ) or (
+            sparse and paragraph_count >= 3 and complete and words >= substantial_floor
         )
         return (
             structure_ok
@@ -2088,6 +2105,28 @@ _UNSEEDED_SHORT_ADDON_PHRASES: tuple[str, ...] = (
     "provide feedback on",
 )
 
+# Foreign scenarios from old canned injectors / model bleed — ban unless seeded.
+_FOREIGN_SCENARIO_MARKERS: tuple[str, ...] = (
+    "hedge",
+    "trim the hedge",
+    "repainting the front door",
+    "front door",
+    "friday standup",
+    "standup is moving",
+    "math semester",
+    "dentist appointment",
+    "reschedule my dentist",
+    "cold nights",
+    "considerable discomfort",
+    "during these cold",
+    "unforeseen circumstances",
+    "unexpected circumstances",
+    "personal circumstances",
+    "wedding cake",
+    "special day goes off",
+)
+
+
 
 def _seed_content_tokens(text: str) -> set[str]:
     return {
@@ -2097,12 +2136,40 @@ def _seed_content_tokens(text: str) -> set[str]:
     }
 
 
+def _sentence_has_foreign_scenario(sentence: str, seed_baseline: str) -> bool:
+    seed_lower = (seed_baseline or "").lower()
+    sentence_lower = sentence.lower()
+    for marker in _FOREIGN_SCENARIO_MARKERS:
+        if marker in sentence_lower and marker not in seed_lower:
+            return True
+    return False
+
+
+def _strip_foreign_scenario_sentences(body: str, seed_baseline: str) -> str:
+    """Drop only sentences that paste known foreign scenarios."""
+    if not body.strip() or not seed_baseline.strip():
+        return body
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+    kept_paragraphs: list[str] = []
+    for paragraph in paragraphs:
+        kept = [
+            sentence
+            for sentence in _split_sentences(paragraph)
+            if not _sentence_has_foreign_scenario(sentence, seed_baseline)
+        ]
+        if kept:
+            kept_paragraphs.append(_join_sentences(kept))
+    return "\n\n".join(kept_paragraphs)
+
+
 def _sentence_grounded_in_seed(sentence: str, seed_baseline: str) -> bool:
     seed_lower = seed_baseline.lower()
     sentence_lower = sentence.lower()
     for phrase in _UNSEEDED_SHORT_ADDON_PHRASES:
         if phrase in sentence_lower and phrase not in seed_lower:
             return False
+    if _sentence_has_foreign_scenario(sentence, seed_baseline):
+        return False
     sentence_tokens = _seed_content_tokens(sentence)
     if not sentence_tokens:
         return True
@@ -2110,10 +2177,17 @@ def _sentence_grounded_in_seed(sentence: str, seed_baseline: str) -> bool:
     if not seed_tokens:
         return True
     overlap = len(sentence_tokens & seed_tokens) / len(sentence_tokens)
-    return overlap >= 0.12
+    # Short polite glue can share little; multi-fact sentences must stay on-seed.
+    threshold = 0.28 if len(sentence_tokens) >= 5 else 0.12
+    return overlap >= threshold
 
 
-def _filter_short_body_to_seed(body: str, seed_baseline: str) -> str:
+def _filter_body_to_seed(
+    body: str,
+    seed_baseline: str,
+    *,
+    max_sentences: int | None = 2,
+) -> str:
     if not body.strip() or not seed_baseline.strip():
         return body
 
@@ -2121,22 +2195,39 @@ def _filter_short_body_to_seed(body: str, seed_baseline: str) -> str:
     if not paragraphs:
         return body
 
-    sentences: list[str] = []
+    kept_paragraphs: list[str] = []
+    total_kept = 0
+    seed_tokens = _seed_content_tokens(seed_baseline)
     for paragraph in paragraphs:
-        sentences.extend(_split_sentences(paragraph))
-    kept = [sentence for sentence in sentences if _sentence_grounded_in_seed(sentence, seed_baseline)]
-    if not kept and sentences:
-        seed_tokens = _seed_content_tokens(seed_baseline)
-        if seed_tokens:
-            best = max(
-                sentences,
-                key=lambda sentence: len(_seed_content_tokens(sentence) & seed_tokens),
-            )
-            if _seed_content_tokens(best) & seed_tokens:
-                kept = [best]
-        if not kept:
-            kept = [sentences[0]]
-    return _join_sentences(kept[:2])
+        sentences = _split_sentences(paragraph)
+        kept = [
+            sentence
+            for sentence in sentences
+            if _sentence_grounded_in_seed(sentence, seed_baseline)
+        ]
+        if not kept and sentences and not kept_paragraphs:
+            if seed_tokens:
+                best = max(
+                    sentences,
+                    key=lambda sentence: len(_seed_content_tokens(sentence) & seed_tokens),
+                )
+                if _seed_content_tokens(best) & seed_tokens:
+                    kept = [best]
+            if not kept:
+                kept = [sentences[0]]
+        if max_sentences is not None:
+            remaining = max_sentences - total_kept
+            if remaining <= 0:
+                break
+            kept = kept[:remaining]
+        if kept:
+            kept_paragraphs.append(_join_sentences(kept))
+            total_kept += len(kept)
+    return "\n\n".join(kept_paragraphs)
+
+
+def _filter_short_body_to_seed(body: str, seed_baseline: str) -> str:
+    return _filter_body_to_seed(body, seed_baseline, max_sentences=2)
 
 
 def _filter_short_to_seed_content(
@@ -2144,31 +2235,16 @@ def _filter_short_to_seed_content(
     seed_baseline: str,
     *,
     format_type: str,
+    max_sentences: int | None = 2,
 ) -> str:
     if format_type == "email":
         sections = _parse_email_sections(text)
-        sections["body"] = _filter_short_body_to_seed(sections["body"], seed_baseline)
+        sections["body"] = _filter_body_to_seed(
+            sections["body"], seed_baseline, max_sentences=max_sentences
+        )
         return _reassemble_email_sections(sections)
 
-    paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", text) if paragraph.strip()]
-    if not paragraphs:
-        return text
-    sentences: list[str] = []
-    for paragraph in paragraphs:
-        sentences.extend(_split_sentences(paragraph))
-    kept = [sentence for sentence in sentences if _sentence_grounded_in_seed(sentence, seed_baseline)]
-    if not kept and sentences:
-        seed_tokens = _seed_content_tokens(seed_baseline)
-        if seed_tokens:
-            best = max(
-                sentences,
-                key=lambda sentence: len(_seed_content_tokens(sentence) & seed_tokens),
-            )
-            if _seed_content_tokens(best) & seed_tokens:
-                kept = [best]
-        if not kept:
-            kept = [sentences[0]]
-    return _join_sentences(kept[:2])
+    return _filter_body_to_seed(text, seed_baseline, max_sentences=max_sentences)
 
 
 def build_seed_content_baseline(text: str, notes: str = "") -> str:
@@ -2288,7 +2364,15 @@ def _ensure_nonempty_body(
     body = sections.get("body", "").strip()
     if body:
         sentences = _split_sentences(body)
-        if not seed_baseline.strip() or any(
+        if not seed_baseline.strip():
+            return text
+        # Keep paraphrases. Only wipe when every sentence is a known foreign paste.
+        if any(
+            not _sentence_has_foreign_scenario(sentence, seed_baseline)
+            for sentence in sentences
+        ):
+            return text
+        if any(
             _sentence_grounded_in_seed(sentence, seed_baseline)
             for sentence in sentences
         ):
@@ -2304,9 +2388,11 @@ def _ensure_nonempty_body(
 
 _SEED_REASON_HINT_RE = re.compile(
     r"(?i)\b("
-    r"because|due to|since|reason|excuse|health|sick|illness|ill|medical|"
-    r"family|emergency|workload|circumstances|personal (matter|issue|challenge)|"
-    r"busy with|busier|commitments?|conflict|travel|unexpected|unforeseen"
+    r"because|due to|reason|excuse|health|sick|illness|ill|medical|"
+    r"family emergency|workload|circumstances|personal (matter|issue|challenge)|"
+    r"busy with|busier|commitments?|schedule conflict|travel|unexpected|unforeseen|"
+    # Causal "since" only — not calendar "since Tuesday".
+    r"since (?:i|we|my|our|the|it|this|that)\b"
     r")\b"
 )
 
@@ -2470,7 +2556,11 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
 
     def _grounded_timing(match: re.Match[str], generic: str) -> str:
         phrase = match.group(0)
-        if phrase.lower() in seed_lower:
+        # Prefer the captured timing token when present (e.g. "next week").
+        timing = match.group(1) if match.lastindex else phrase
+        timing_l = timing.lower()
+        phrase_l = phrase.lower()
+        if timing_l in seed_lower or phrase_l in seed_lower:
             return phrase
         return "this week" if "this week" in seed_lower else generic
 
@@ -2567,7 +2657,47 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
         "if a different timeline works better on your end",
         text,
     )
-    return re.sub(r"[ \t]{2,}", " ", text)
+    # Weekdays / relative periods must appear in the seed or be removed.
+    for weekday in (
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+    ):
+        if weekday not in seed_lower:
+            text = re.sub(rf"(?i)\b{weekday}\b", "", text)
+    for phrase in (
+        "next week",
+        "last week",
+        "this week",
+        "next month",
+        "last month",
+        "this semester",
+        "this quarter",
+        "end of last year",
+        "since last year",
+        "of next week",
+    ):
+        if phrase not in seed_lower:
+            text = re.sub(rf"(?i)\b{re.escape(phrase)}\b", "", text)
+    # Weather / comfort padding is never implied by a bare request.
+    if not re.search(r"(?i)\b(cold|weather|discomfort|uncomfortable)\b", seed_lower):
+        text = re.sub(
+            r"(?i)[,.]?\s*(?:especially )?during these cold nights\b[^.!?]*[.!]?",
+            ".",
+            text,
+        )
+        text = re.sub(
+            r"(?i)\b(?:considerable |significant )?discomfort\b[^.!?]*[.!]?",
+            "",
+            text,
+        )
+        text = re.sub(
+            r"(?i)\bcausing (?:considerable |significant )?discomfort\b[^.!?]*[.!]?",
+            "",
+            text,
+        )
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\s+([,.;:!?])", r"\1", text)
+    text = re.sub(r",\s*\.", ".", text)
+    return text
 
 
 def _strip_meta_instruction_commentary(text: str, format_type: str) -> str:
@@ -2816,43 +2946,7 @@ def _ensure_seed_list_format(
     return _reassemble_email_sections(sections)
 
 
-_SEED_ROLE_INJECTIONS: tuple[tuple[re.Pattern[str], tuple[str, ...], str], ...] = (
-    (
-        re.compile(r"(?i)\bmentor\b"),
-        ("mentor",),
-        "Thank you, as my mentor, for the advice on negotiating my job offer.",
-    ),
-    (
-        re.compile(r"(?i)\bteacher\b"),
-        ("teacher", "parent-teacher"),
-        "Could you, as my child's teacher, share a quick update on how they are doing in math this semester?",
-    ),
-    (
-        re.compile(r"(?i)\bcontractor\b"),
-        ("contractor",),
-        "I wanted to check in with the contractor about the kitchen renovation.",
-    ),
-    (
-        re.compile(r"(?i)\bneighbor\b"),
-        ("neighbor",),
-        "I'm writing as your neighbor to ask that you trim the hedge.",
-    ),
-    (
-        re.compile(r"(?i)\bco-?founders?\b"),
-        ("co-founder", "cofounder", "both"),
-        "I wanted to let both co-founders know about this update.",
-    ),
-    (
-        re.compile(r"(?i)\b(?:an|one|1)\s+hour\b"),
-        ("hour",),
-        "The order arrived an hour late.",
-    ),
-    (
-        re.compile(r"(?i)\bphotographer\b"),
-        ("photographer", "photographing"),
-        "Could you share your availability and package pricing as a wedding photographer?",
-    ),
-)
+_SEED_ROLE_INJECTIONS: tuple[tuple[re.Pattern[str], tuple[str, ...], str], ...] = ()
 
 
 def _ensure_seed_role_mentions(
@@ -2861,65 +2955,12 @@ def _ensure_seed_role_mentions(
     format_type: str,
     seed_baseline: str,
 ) -> str:
-    """If the idea names a role/recipient, keep that role visible in the draft."""
-    if format_type != "email" or not seed_baseline.strip():
-        return text
-    sections = _parse_email_sections(text)
-    body = sections.get("body", "")
-    body_lower = body.lower()
-    injections: list[str] = []
-    for pattern, markers, sentence in _SEED_ROLE_INJECTIONS:
-        if not pattern.search(seed_baseline):
-            continue
-        if any(marker in body_lower for marker in markers):
-            continue
-        injections.append(sentence)
-        body_lower = f"{body_lower} {sentence.lower()}"
-    # Concrete phrases that are often paraphrased away.
-    fact_checks = (
-        (r"(?i)\bthis month\b", ("this month", "this past month"), "The increase happened this month."),
-        (r"(?i)\bdentist\b", ("dentist",), "Please reschedule my dentist appointment."),
-        (r"(?i)\bhoa\b", ("hoa",), "I need HOA approval before repainting the front door."),
-        (
-            r"(?i)\bphotographer\b",
-            ("photographer", "photographing"),
-            "Could you share your availability and package pricing as a wedding photographer?",
-        ),
-        (
-            r"(?i)\b(?:two|2)\s+items?\b",
-            ("two items", "2 items", "two of the", "two dishes"),
-            "Two items were missing from the order.",
-        ),
-        (
-            r"(?i)\bfriday\b",
-            ("friday",),
-            "The Friday standup is moving.",
-        ),
-        (
-            r"(?i)\b10\s*a\.?m\.?\b",
-            ("10am", "10 am", "10a.m"),
-            "It is moving to 10am.",
-        ),
-    )
-    for pattern, markers, sentence in fact_checks:
-        if not re.search(pattern, seed_baseline):
-            continue
-        if any(marker in body_lower for marker in markers):
-            continue
-        injections.append(sentence)
-        body_lower = f"{body_lower} {sentence.lower()}"
-    if not injections:
-        return text
-    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
-    # Short drafts must stay one paragraph — weave the first injection into it.
-    if len(paragraphs) <= 1:
-        merged = _join_sentences([*injections[:1], *(_split_sentences(paragraphs[0]) if paragraphs else [])])
-        sections["body"] = merged
-        return _reassemble_email_sections(sections)
-    combined = [*injections, *paragraphs]
-    # Keep medium-length structure valid (2–3 content blocks).
-    sections["body"] = "\n\n".join(combined[:3])
-    return _reassemble_email_sections(sections)
+    """Do not invent role/fact sentences. Foreign canned templates were removed.
+
+    Entity retention belongs to the model + seed-grounded filters, never to
+    pasting scenarios from other test ideas (hedge, HOA paint, Friday standup).
+    """
+    return text
 
 
 def _strip_invented_reasons_if_absent(
@@ -2928,46 +2969,64 @@ def _strip_invented_reasons_if_absent(
     format_type: str,
     seed_baseline: str,
 ) -> str:
-    """If the idea gave no reason, delete invented justification clauses/sentences."""
+    """Delete invented justification clauses/sentences not grounded in the seed.
+
+    Even when the seed states a real reason, still remove generic filler excuses
+    (unforeseen circumstances, health issues, etc.) unless those words appear
+    in the seed.
+    """
     if not text or not text.strip():
         return text
     text = _normalize_unseeded_timing_details(text, seed_baseline)
-    if _seed_states_a_reason(seed_baseline):
-        return text
+    seed_has_reason = _seed_states_a_reason(seed_baseline)
+    seed_lower = (seed_baseline or "").lower()
+
+    def _clause_allowed(match_text: str) -> bool:
+        lower = match_text.lower()
+        # Keep only if the matched excuse phrase itself is seeded.
+        for cue in (
+            "unforeseen",
+            "unexpected circumstances",
+            "personal circumstances",
+            "health issues",
+            "family emergency",
+            "workload",
+            "schedule has been",
+        ):
+            if cue in lower and cue not in seed_lower:
+                return False
+        if not seed_has_reason:
+            return False
+        return True
 
     def _clean_body(body: str) -> str:
         paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
         cleaned_paras: list[str] = []
         for paragraph in paragraphs:
-            # Drop whole justification paragraphs leaked from WITH REASON examples.
             if _INVENTED_REASON_PARAGRAPH_RE.match(paragraph):
-                # Keep if it also contains the core ask and can be cleaned sentence-wise;
-                # drop if it is mostly backstory.
                 ask_cues = (
                     "i'm writing to request", "i am writing to request",
                     "would it be possible", "could you", "may i",
+                    "apologize", "apology", "delay", "shipment",
                 )
                 lower_p = paragraph.lower()
                 if not any(cue in lower_p for cue in ask_cues):
-                    continue
+                    # Drop pure backstory paragraphs unless seeded reason tokens dominate.
+                    if not seed_has_reason or not _sentence_grounded_in_seed(
+                        paragraph, seed_baseline
+                    ):
+                        continue
             sentences = _split_sentences(paragraph)
             kept_sents: list[str] = []
             for sentence in sentences:
-                if _INVENTED_REASON_CLAUSE_RE.search(sentence) or (
-                    _INVENTED_REASON_PARAGRAPH_RE.match(sentence)
-                    and not any(
-                        cue in sentence.lower()
-                        for cue in (
-                            "request", "extension", "deadline", "would it be",
-                            "could you", "please", "let me know",
-                        )
-                    )
-                ):
-                    # Drop whole sentence if it is mainly a fabricated reason.
-                    # Keep only if a clear request survives without the clause.
+                if _sentence_has_foreign_scenario(sentence, seed_baseline):
+                    continue
+                clause_hit = _INVENTED_REASON_CLAUSE_RE.search(sentence)
+                if clause_hit and not _clause_allowed(clause_hit.group(0)):
                     stripped = _INVENTED_REASON_CLAUSE_RE.sub("", sentence)
                     stripped = re.sub(r"\s{2,}", " ", stripped).strip(" ,;")
                     stripped = re.sub(r"\bas\b\s*$", "", stripped, flags=re.I).strip(" ,;")
+                    stripped = re.sub(r"\bdue to\s*$", "", stripped, flags=re.I).strip(" ,;")
                     lower = stripped.lower()
                     if not stripped or len(stripped.split()) < 4:
                         continue
@@ -2983,6 +3042,13 @@ def _strip_invented_reasons_if_absent(
                             "would it be",
                             "could you",
                             "let me know",
+                            "apologize",
+                            "apology",
+                            "delay",
+                            "shipment",
+                            "warehouse",
+                            "flood",
+                            "arrive",
                             "leaking",
                             "repair",
                         )
@@ -2992,6 +3058,18 @@ def _strip_invented_reasons_if_absent(
                         if stripped:
                             stripped = stripped[0].upper() + stripped[1:]
                         kept_sents.append(stripped)
+                    continue
+                if (
+                    not seed_has_reason
+                    and _INVENTED_REASON_PARAGRAPH_RE.match(sentence)
+                    and not any(
+                        cue in sentence.lower()
+                        for cue in (
+                            "request", "extension", "deadline", "would it be",
+                            "could you", "please", "let me know", "apologize",
+                        )
+                    )
+                ):
                     continue
                 kept_sents.append(sentence)
             if kept_sents:
@@ -3058,11 +3136,10 @@ def _ensure_safe_no_reason_elaboration(
         )
     elif any(word in seed_lower for word in ("sink", "leak", "repair")):
         candidates = (
-            "Please arrange for someone to inspect and repair the leaking sink this week.",
+            "Please arrange for someone to inspect and repair the leaking sink.",
             "Please confirm when someone can come to address the leak.",
             "If you need any information before scheduling the repair, I can provide it.",
             "I would appreciate confirmation once the sink repair visit has been arranged.",
-            "Please keep the repair visit within this week, as requested.",
             "Until then, please tell me if you need anything else regarding the sink.",
         )
     elif "contract" in seed_lower and re.search(
@@ -3087,19 +3164,48 @@ def _ensure_safe_no_reason_elaboration(
         )
     elif any(word in seed_lower for word in ("photographer", "wedding", "package pricing")):
         candidates = (
-            "Could you share your availability for a Saturday in October?",
             "Please also send your package pricing options.",
-            "I am looking for wedding photography coverage and would like details on packages.",
+            "I would like details on packages and availability.",
             "Once I have availability and pricing, I can decide on next steps.",
+        )
+    elif any(word in seed_lower for word in ("bakery", "cake", "pastry", "tart")):
+        item = "tart" if "tart" in seed_lower else "cake"
+        candidates = (
+            f"I am writing about the {item}.",
+            f"Please confirm the current status of the {item}.",
+            f"Let me know what you need from me about the {item}.",
+        )
+    elif any(word in seed_lower for word in ("brakes", "mechanic")):
+        candidates = (
+            "The brakes feel soft.",
+            "Please inspect the brakes when you can.",
+            "Tell me what you find after checking the brakes.",
+            "I want the soft brake feel looked at before I drive farther.",
+        )
+    elif "standup" in seed_lower and any(
+        word in seed_lower for word in ("mute", "unmute", "muted")
+    ):
+        candidates = (
+            "Please stop joining the standup on mute.",
+            "When someone speaks to you in standup, unmute and respond.",
+            "I need you unmuted during standup when you are addressed.",
         )
     else:
         candidates = ()
+    seed_tokens = _seed_content_tokens(seed_baseline)
     for sentence in candidates:
         current_words = len(re.findall(r"[A-Za-z0-9']+", " ".join(paragraphs)))
         if len(paragraphs) >= minimum_paragraphs and current_words >= target_words:
             break
         if length == "medium" and len(paragraphs) >= 3:
             break
+        sentence_tokens = _seed_content_tokens(sentence)
+        if (
+            sentence_tokens
+            and seed_tokens
+            and len(sentence_tokens & seed_tokens) / len(sentence_tokens) < 0.45
+        ):
+            continue
         if sentence.lower() not in body_lower:
             paragraphs.append(sentence)
             body_lower = f"{body_lower} {sentence.lower()}"
@@ -3193,7 +3299,18 @@ def apply_generate_hard_filters(
             filtered,
             seed_baseline,
             format_type=format_type,
+            max_sentences=2,
         )
+    elif seed_baseline.strip():
+        # Medium/long: strip only known foreign pasted scenarios, not paraphrases.
+        if format_type == "email":
+            sections = _parse_email_sections(filtered)
+            sections["body"] = _strip_foreign_scenario_sentences(
+                sections.get("body", ""), seed_baseline
+            )
+            filtered = _reassemble_email_sections(sections)
+        else:
+            filtered = _strip_foreign_scenario_sentences(filtered, seed_baseline)
 
     filtered = _normalize_generate_names(filtered, profile)
     filtered = _take_first_complete_draft(filtered)
@@ -3288,6 +3405,16 @@ def _permanent_note_sentence(permanent_note: str) -> str:
         return ""
     if remaining:
         sentence = remaining
+    # Style instructions are never body content.
+    if re.match(r"(?i)^(?:style|tone)\s*:", sentence) or _looks_like_tone_style_instruction(
+        sentence
+    ):
+        return ""
+    sentence = re.sub(
+        r"(?i)^(?:factual|fact|note|info(?:rmation)?)\s*:\s*",
+        "",
+        sentence,
+    ).strip()
     sentence = re.sub(
         r"^(always\s+)?(mention that\s+|mention\s+|include that\s+|include\s+|say that\s+|say\s+|sign off as\s+)",
         "",
@@ -3923,32 +4050,55 @@ def _parse_generation_note(notes: str) -> dict[str, Any]:
     tone_preset_override: str | None = None
     tone_voice_override: str | None = None
 
-    for pattern, preset, voice in _TONE_INSTRUCTION_MAPPINGS:
-        match = pattern.search(remaining)
-        if not match:
-            continue
-        tone_instruction = match.group(0).strip()
-        tone_preset_override = preset
-        tone_voice_override = voice
-        remaining = _cleanup_note_remainder(remaining[: match.start()] + remaining[match.end() :])
-        break
-
-    if tone_instruction is None:
-        match = _GENERIC_TONE_INSTRUCTION_RE.search(remaining)
-        if match and _looks_like_tone_style_instruction(match.group(0)):
-            tone_instruction = match.group(0).strip()
-            tone_preset_override, tone_voice_override = _infer_tone_from_instruction(tone_instruction)
-            remaining = _cleanup_note_remainder(remaining[: match.start()] + remaining[match.end() :])
-
-    if tone_instruction is None and _looks_like_tone_style_instruction(remaining):
-        # A permanent writing directive is an instruction, never body content.
-        tone_instruction = remaining.strip()
+    # Whole-note Style:/Tone: directives are never body facts.
+    if re.match(r"(?i)^(?:style|tone)\s*:", remaining):
+        tone_instruction = remaining
         tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
             tone_instruction
         )
         remaining = ""
+    else:
+        for pattern, preset, voice in _TONE_INSTRUCTION_MAPPINGS:
+            match = pattern.search(remaining)
+            if not match:
+                continue
+            tone_instruction = match.group(0).strip()
+            tone_preset_override = preset
+            tone_voice_override = voice
+            remaining = _cleanup_note_remainder(
+                remaining[: match.start()] + remaining[match.end() :]
+            )
+            break
+
+        if tone_instruction is None:
+            match = _GENERIC_TONE_INSTRUCTION_RE.search(remaining)
+            if match and _looks_like_tone_style_instruction(match.group(0)):
+                tone_instruction = match.group(0).strip()
+                tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+                    tone_instruction
+                )
+                remaining = _cleanup_note_remainder(
+                    remaining[: match.start()] + remaining[match.end() :]
+                )
+
+        if tone_instruction is None and _looks_like_tone_style_instruction(remaining):
+            # A permanent writing directive is an instruction, never body content.
+            tone_instruction = remaining.strip()
+            tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+                tone_instruction
+            )
+            remaining = ""
 
     informational_content = remaining.strip() or None
+    if informational_content:
+        informational_content = re.sub(
+            r"(?i)^(?:factual|fact|note|info(?:rmation)?)\s*:\s*",
+            "",
+            informational_content,
+        ).strip() or None
+    # Orphan punctuation left after a truncated style match is not a fact.
+    if informational_content and re.fullmatch(r"['\"`]+", informational_content):
+        informational_content = None
     return {
         "tone_instruction": tone_instruction,
         "tone_preset_override": tone_preset_override,

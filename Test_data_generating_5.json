@@ -1,0 +1,484 @@
+{
+  "description": "Fabrication-focused Generate/Rewrite matrix. Unique ideas (not copies of sets 1–4). Targets: canned foreign scenarios, calendar-vs-reason 'since', weather/comfort invent, Factual:/Style: note labeling, unseeded weekdays/dates, sparse medium invent.",
+  "version": "5",
+  "cases": [
+    {
+      "id": "5.1",
+      "feature": "generate",
+      "scenario": "Neighbor keyword must not invent hedge trim",
+      "idea": "ask my neighbor Marisol if I can borrow her pressure washer this Sunday for the driveway",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Theo Brandt",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Marisol", "pressure washer", "Sunday", "driveway"],
+        "forbid_phrases": ["trim the hedge", "front door", "HOA approval"],
+        "must_not_invent": ["brand of washer", "dollar amount"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.2",
+      "feature": "generate",
+      "scenario": "HOA keyword must not invent paint/door scenario",
+      "idea": "email the HOA about a missing recycling bin pickup on Cedar Lane last Wednesday",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Lila Chen, address: 88 Cedar Lane",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["recycling", "Cedar Lane", "Wednesday"],
+        "forbid_phrases": ["trim the hedge", "repainting the front door", "front door"],
+        "must_not_invent": ["bin serial number", "specific pickup contractor name"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.3",
+      "feature": "generate",
+      "scenario": "Friday in invoice must not invent standup",
+      "idea": "tell client Omar at Lark & Co that invoice LC-884 for $920 was due last Friday and is still unpaid",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "simple",
+        "profile": "name: Nina Voss, business: Voss Studio",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Omar", "Lark & Co", "LC-884", "$920", "Friday"],
+        "forbid_phrases": ["standup", "standup is moving", "team meeting"],
+        "must_not_invent": ["late fee", "payment portal URL"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.4",
+      "feature": "generate",
+      "scenario": "Teacher keyword must not invent math semester",
+      "idea": "ask coach Rivera for a brief meeting about my daughter Amira joining the swim team tryouts next month",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Pat Okonkwo",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Rivera", "Amira", "swim team", "next month"],
+        "forbid_phrases": ["math semester", "reading scores", "IEP"],
+        "must_not_invent": ["tryout time", "fee amount"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.5",
+      "feature": "generate",
+      "scenario": "Calendar since Tuesday is not a reason to invent weather",
+      "idea": "tell building manager Holt the lobby AC has been dead since Tuesday in building C",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Rina Patel, unit: C-12",
+        "permanent_note": ""
+      },
+      "checks": {
+          "must_include_entities": ["Holt", "lobby", "Tuesday", "building C"],
+          "must_include_any": [["AC", "air conditioning", "a/c"]],
+        "forbid_phrases": ["cold nights", "considerable discomfort", "during these cold"],
+        "must_not_invent": ["technician name", "repair cost", "Friday"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.6",
+      "feature": "generate",
+      "scenario": "Factual note content without label dump",
+      "idea": "ask HR lead Sonia for remote work Mondays starting in August",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Evan Brooks, title: Product Analyst",
+        "permanent_note": "Factual: I have been on-site full time since March 2024"
+      },
+      "checks": {
+        "must_include_entities": ["Sonia", "remote", "Mondays", "August", "March 2024"],
+        "forbid_phrases": ["Factual:", "Style:", "Note:"],
+        "must_not_invent": ["medical reason", "childcare details"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.7",
+      "feature": "generate",
+      "scenario": "Style note must not appear as body prose",
+      "idea": "tell vendor Apex Print the business cards arrived with the wrong logo color",
+      "settings": {
+        "length": "medium",
+        "tone": "blunt",
+        "complexity": "standard",
+        "profile": "name: Casey Ng",
+        "permanent_note": "Style: be direct, no corporate softening, do not say 'I understand this may be frustrating'"
+      },
+      "checks": {
+        "must_include_entities": ["Apex Print", "business cards", "logo"],
+        "forbid_phrases": ["Style:", "I understand this may be frustrating", "corporate softening"],
+        "must_not_invent": ["pantone number", "reprint deadline date"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.8",
+      "feature": "generate",
+      "scenario": "Sparse medium must not invent names or dates",
+      "idea": "email the bakery about the cake",
+      "settings": {
+        "length": "medium",
+        "tone": "friendly",
+        "complexity": "standard",
+        "profile": "name: Jules Romero",
+        "permanent_note": ""
+      },
+      "checks": {
+          "must_include_entities": ["cake"],
+          "must_not_invent": ["bakery name", "flavor", "pickup Saturday", "October", "dollar amount"],
+          "forbid_phrases": ["Saturday in October", "package pricing", "wedding cake", "wedding", "special day"],
+          "min_paragraphs": 2,
+          "reject_http_500": true,
+          "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.9",
+      "feature": "generate",
+      "scenario": "No unseeded month-day invention",
+      "idea": "ask librarian Ms. Quill to hold the reserved book until I can pick it up next week",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Harper Diaz",
+        "permanent_note": ""
+      },
+      "checks": {
+          "must_include_entities": ["book", "next week"],
+          "must_include_any": [["Quill", "librarian"]],
+          "must_not_invent": ["book title", "specific calendar date like March 12"],
+          "forbid_phrases": ["March 12", "October 15"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.10",
+      "feature": "generate",
+      "scenario": "Dentist keyword without inventing school excuse template",
+      "idea": "reschedule my cleaning with Dr. Pell for a morning slot next Thursday",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Morgan Lee",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Pell", "cleaning", "Thursday"],
+        "forbid_phrases": ["excuse my daughter", "school office", "Nora"],
+        "must_not_invent": ["tooth number", "insurance claim id"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.11",
+      "feature": "generate",
+      "scenario": "Real reason present — keep it, invent nothing else",
+      "idea": "apologize to client Bea for the late delivery because our warehouse flooded, shipment arrives Friday",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Chris Alvarez",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Bea", "warehouse flooded", "Friday"],
+        "must_not_invent": ["flood insurance payout", "exact water depth", "Monday"],
+        "forbid_phrases": ["personal circumstances", "health issues", "unexpected circumstances"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.12",
+      "feature": "generate",
+      "scenario": "No reason — strip invented excuses",
+      "idea": "ask professor Lang for a one-week extension on the lab report",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Samir Haddad",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Lang", "lab report", "one-week"],
+        "forbid_phrases": ["health issues", "family emergency", "unforeseen circumstances", "personal circumstances", "workload has been"],
+        "must_not_invent": ["assignment number", "due date March"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.13",
+      "feature": "generate",
+      "scenario": "Long length without inventing timeline padding",
+      "idea": "request IT to reset VPN access for laptop asset TAG-2207 after the password lockout",
+      "settings": {
+        "length": "long",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Avery Kim, dept: Finance",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["VPN", "TAG-2207", "password lockout"],
+        "must_not_invent": ["ticket severity", "manager approval name", "next Tuesday"],
+        "forbid_phrases": ["cold nights", "trim the hedge", "standup is moving"],
+        "min_paragraphs": 4,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.14",
+      "feature": "generate",
+      "scenario": "Weekend mention must not invent construction noise HOA bleed",
+      "idea": "invite coworkers to a picnic at Riverside Park this weekend, bring a side dish",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Dana Cho",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Riverside Park", "weekend", "side dish"],
+        "forbid_phrases": ["construction", "8am", "HOA", "214 Willow"],
+        "must_not_invent": ["exact start time", "RSVP deadline date"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.15",
+      "feature": "generate",
+      "scenario": "Photographer inquiry without inventing Saturday in October",
+      "idea": "ask photographer Elise for portrait session pricing and weekend availability",
+      "settings": {
+        "length": "medium",
+        "tone": "friendly",
+        "complexity": "standard",
+        "profile": "name: Quinn Asher",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Elise", "portrait", "pricing", "weekend"],
+        "forbid_phrases": ["Saturday in October", "wedding photography", "October"],
+        "must_not_invent": ["hourly rate", "studio address"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.16",
+      "feature": "generate",
+      "scenario": "Permanent fact year must stay; no extra years",
+      "idea": "thank board chair Miriam for supporting the community garden expansion",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Omar Farouk",
+        "permanent_note": "Factual: I joined the garden committee in 2022"
+      },
+      "checks": {
+        "must_include_entities": ["Miriam", "community garden", "2022"],
+        "forbid_phrases": ["Factual:", "2021", "2023", "2024", "2025"],
+        "must_not_invent": ["grant amount", "plot numbers"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.17",
+      "feature": "generate",
+      "scenario": "Standup keyword is on-seed; still no hedge/HOA bleed",
+      "idea": "ask teammate Vic to stop joining the daily standup on mute without unmuting when spoken to",
+      "settings": {
+        "length": "medium",
+        "tone": "blunt",
+        "complexity": "standard",
+        "profile": "name: Reese Park",
+        "permanent_note": "Style: blunt, get to the point"
+      },
+      "checks": {
+        "must_include_entities": ["Vic", "standup", "mute"],
+        "forbid_phrases": ["trim the hedge", "front door", "Style:", "I hope this finds you well"],
+        "must_not_invent": ["HR escalation", "PIP"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.18",
+      "feature": "generate",
+      "scenario": "Lease renewal with real end date only",
+      "idea": "email landlord about renewing the lease on unit 9A",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Ira Bloom",
+        "permanent_note": "My current lease ends September 30."
+      },
+      "checks": {
+        "must_include_entities": ["9A", "September 30"],
+        "must_not_invent": ["new rent amount", "security deposit", "October 1"],
+        "forbid_phrases": ["Factual:"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.19",
+      "feature": "generate",
+      "scenario": "Sparse long must not invent foreign templates",
+      "idea": "tell the mechanic the brakes feel soft",
+      "settings": {
+        "length": "long",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Sky Nguyen",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["brakes", "soft"],
+        "forbid_phrases": ["trim the hedge", "cold nights", "standup is moving", "Saturday in October"],
+        "must_not_invent": ["mechanic shop name", "VIN", "appointment Tuesday"],
+        "min_paragraphs": 4,
+        "reject_http_500": true,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.20",
+      "feature": "generate",
+      "scenario": "Seeded weekday kept; unseeded weekday removed",
+      "idea": "confirm with barista lead Jen that I can switch my shift from Monday to Wednesday next week",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Blair Moss",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Jen", "Monday", "Wednesday", "next week"],
+        "must_not_invent": ["Friday", "Saturday", "manager name"],
+        "forbid_phrases": ["Friday standup"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "5.21",
+      "feature": "rewrite",
+      "scenario": "Rewrite must not invent weather on heater complaint",
+      "idea": "The heater in 3B has been out since Tuesday. Please send someone to fix it.",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Priya Nair",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["heater", "3B", "Tuesday"],
+        "forbid_phrases": ["cold nights", "considerable discomfort", "Friday"],
+        "must_not_invent": ["repair cost"],
+        "min_paragraphs": 1
+      }
+    },
+    {
+      "id": "5.22",
+      "feature": "rewrite",
+      "scenario": "Rewrite keeps invoice facts; no standup invent",
+      "idea": "Omar at Lark & Co still has not paid invoice LC-884 for $920 that was due last Friday.",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "simple",
+        "profile": "name: Nina Voss",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Omar", "LC-884", "$920", "Friday"],
+        "forbid_phrases": ["standup", "hedge"],
+        "min_paragraphs": 1
+      }
+    },
+    {
+      "id": "5.23",
+      "feature": "rewrite",
+      "scenario": "Rewrite preserves reason; no extra excuse stack",
+      "idea": "Sorry Bea — the warehouse flooded, so your order ships Friday instead.",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Chris Alvarez",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Bea", "warehouse flooded", "Friday"],
+        "forbid_phrases": ["health issues", "family emergency", "personal circumstances"],
+        "min_paragraphs": 1
+      }
+    },
+    {
+      "id": "5.24",
+      "feature": "rewrite",
+      "scenario": "Rewrite sparse text without inventing bakery details",
+      "idea": "Hi — following up about the cake.",
+      "settings": {
+        "length": "medium",
+        "tone": "friendly",
+        "complexity": "standard",
+        "profile": "name: Jules Romero",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["cake"],
+        "must_not_invent": ["flavor", "Saturday", "October", "price"],
+        "forbid_phrases": ["Saturday in October"],
+        "min_paragraphs": 1
+      }
+    }
+  ]
+}
