@@ -1,0 +1,529 @@
+{
+    "description": "Real-life scenario test set for Humanizer Generate/Rewrite. Covers seed-entity retention, blunt tone, sparse-idea medium length, incomplete-stub rejection, and rewrite meaning-fidelity. No overlap with prior 'deadline extension' style prompts used in earlier test sets.",
+    "version": "4",
+    "cases": [
+      {
+        "id": "4.1",
+        "feature": "generate",
+        "scenario": "Landlord maintenance request",
+        "idea": "ask landlord Mr. Delgado to fix the broken heater in unit 3B, it's been out since Tuesday",
+        "settings": {
+          "length": "short",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Priya Nair, unit: 3B",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Delgado", "heater", "3B", "Tuesday"],
+          "must_not_invent": ["specific repair cost", "specific technician name"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.2",
+        "feature": "generate",
+        "scenario": "Resignation letter",
+        "idea": "resigning from my job as ops manager at Bright Path Logistics, last day in three weeks, thank my manager Elena for the mentorship",
+        "settings": {
+          "length": "medium",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Carlos Mendez, title: Operations Manager",
+          "permanent_note": "Factual: started at Bright Path in 2021"
+        },
+        "checks": {
+          "must_include_entities": ["Bright Path Logistics", "Elena", "three weeks"],
+          "must_not_invent": ["reason for leaving", "new employer name"],
+          "min_paragraphs": 2,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.3",
+        "feature": "generate",
+        "scenario": "HOA noise complaint",
+        "idea": "complain to the HOA board about neighbor at 214 Willow running loud construction before 8am on weekends",
+        "settings": {
+          "length": "medium",
+          "tone": "blunt",
+          "complexity": "standard",
+          "profile": "name: Frank Ostrowski, address: 212 Willow",
+          "permanent_note": "Style: be direct, no corporate softening, do not say 'I understand this may be frustrating'"
+        },
+        "checks": {
+          "must_include_entities": ["214 Willow", "8am", "weekends"],
+          "forbid_phrases": ["I hope this finds you well", "I understand your frustration", "kindly"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.4",
+        "feature": "generate",
+        "scenario": "Freelance invoice reminder",
+        "idea": "remind client Dana at Northfield Design that invoice #2291 for $1,450 was due last Friday",
+        "settings": {
+          "length": "short",
+          "tone": "formal",
+          "complexity": "simple",
+          "profile": "name: Miguel Torres, business: Torres Web Studio",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Dana", "Northfield Design", "#2291", "$1,450", "Friday"],
+          "must_not_invent": ["late fee amount", "payment method"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.5",
+        "feature": "generate",
+        "scenario": "Parent-teacher conference request",
+        "idea": "ask my son's teacher Ms. Whitfield for a meeting about his reading scores dropping this quarter",
+        "settings": {
+          "length": "short",
+          "tone": "friendly",
+          "complexity": "simple",
+          "profile": "name: Rachel Kim, child: Owen, grade: 3rd",
+          "permanent_note": "Factual: Owen has an IEP for dyslexia"
+        },
+        "checks": {
+          "must_include_entities": ["Whitfield", "reading scores", "this quarter"],
+          "must_not_invent": ["specific test scores", "specific meeting time"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.6",
+        "feature": "generate",
+        "scenario": "Apology for missed meeting",
+        "idea": "apologize to my co-founder Jess for missing the investor call yesterday because of a family emergency",
+        "settings": {
+          "length": "short",
+          "tone": "friendly",
+          "complexity": "simple",
+          "profile": "name: Tobin Reyes",
+          "permanent_note": "Factual: co-founded the company with Jess in 2023"
+        },
+        "checks": {
+          "must_include_entities": ["Jess", "investor call", "yesterday", "family emergency"],
+          "must_not_invent": ["details of the emergency", "investor name"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.7",
+        "feature": "generate",
+        "scenario": "Sparse idea, medium length (regression: RC-D)",
+        "idea": "tell the contractor the tile job looks bad",
+        "settings": {
+          "length": "medium",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Deb Alcaraz",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_not_invent": ["contractor's name", "specific dollar amount", "specific date of installation"],
+          "min_paragraphs": 2,
+          "reject_http_500": true,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.8",
+        "feature": "generate",
+        "scenario": "Insurance claim follow-up",
+        "idea": "follow up with adjuster Mr. Kowalski about claim #77410 for the flooded basement, filed two weeks ago, no response yet",
+        "settings": {
+          "length": "medium",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Anita Beaumont, policy: HO-88213",
+          "permanent_note": "Factual: basement flooded during storm on June 4"
+        },
+        "checks": {
+          "must_include_entities": ["Kowalski", "#77410", "two weeks", "flooded basement"],
+          "must_not_invent": ["claim payout amount", "specific damage estimate"],
+          "min_paragraphs": 2,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.9",
+        "feature": "generate",
+        "scenario": "Babysitter cancellation",
+        "idea": "cancel Saturday babysitting with Maya, kids are sick, ask to reschedule for next week",
+        "settings": {
+          "length": "short",
+          "tone": "casual",
+          "complexity": "simple",
+          "profile": "name: Jordan Ellis",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Maya", "Saturday", "sick", "next week"],
+          "must_not_invent": ["which kid is sick", "specific illness"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.10",
+        "feature": "generate",
+        "scenario": "Letter of recommendation request",
+        "idea": "ask former professor Dr. Ahmadi for a recommendation letter for a grad school application, deadline is October 15",
+        "settings": {
+          "length": "medium",
+          "tone": "formal",
+          "complexity": "advanced",
+          "profile": "name: Lin Zhao, program: Environmental Engineering MS",
+          "permanent_note": "Factual: took two courses with Dr. Ahmadi, research assistant in her lab for a semester"
+        },
+        "checks": {
+          "must_include_entities": ["Ahmadi", "October 15", "grad school"],
+          "must_not_invent": ["specific university name", "GPA"],
+          "min_paragraphs": 2,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.11",
+        "feature": "generate",
+        "scenario": "Roommate rent dispute",
+        "idea": "tell roommate Kevin he owes $340 for utilities from last month and it's been three reminders now",
+        "settings": {
+          "length": "short",
+          "tone": "blunt",
+          "complexity": "simple",
+          "profile": "name: Priya Shah",
+          "permanent_note": "Style: blunt, no softening language, get to the point immediately"
+        },
+        "checks": {
+          "must_include_entities": ["Kevin", "$340", "three reminders"],
+          "forbid_phrases": ["I hate to bring this up", "no worries", "whenever you get a chance"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.12",
+        "feature": "generate",
+        "scenario": "Wedding RSVP decline",
+        "idea": "decline my cousin Ana's wedding invitation for September 20, can't travel because of work, send a gift instead",
+        "settings": {
+          "length": "short",
+          "tone": "friendly",
+          "complexity": "simple",
+          "profile": "name: Marcus Webb",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Ana", "September 20", "gift"],
+          "must_not_invent": ["specific work commitment", "gift item"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.13",
+        "feature": "generate",
+        "scenario": "Condolence note",
+        "idea": "write a condolence note to my coworker Sam whose father passed away last week, offer to cover his shifts",
+        "settings": {
+          "length": "short",
+          "tone": "friendly",
+          "complexity": "simple",
+          "profile": "name: Deja Coleman",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Sam", "father", "last week", "shifts"],
+          "must_not_invent": ["cause of death", "funeral details"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.14",
+        "feature": "generate",
+        "scenario": "Product return complaint",
+        "idea": "complain to customer service at Hearth & Home about a broken blender, order #55192, arrived cracked, want a refund not a replacement",
+        "settings": {
+          "length": "medium",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Wendell Park",
+          "permanent_note": "Factual: ordered on June 28, arrived July 3"
+        },
+        "checks": {
+          "must_include_entities": ["Hearth & Home", "#55192", "cracked", "refund"],
+          "must_not_invent": ["refund amount", "specific customer service rep name"],
+          "min_paragraphs": 2,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.15",
+        "feature": "generate",
+        "scenario": "Coworker conflict email",
+        "idea": "email teammate Priyanka about her interrupting me in the last two standups, want it to stop but keep things professional",
+        "settings": {
+          "length": "medium",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Ben Ostroff, team: Platform Eng",
+          "permanent_note": "Style: firm but not confrontational, no accusatory language"
+        },
+        "checks": {
+          "must_include_entities": ["Priyanka", "standups"],
+          "must_not_invent": ["specific dates of standups", "manager name"],
+          "min_paragraphs": 2,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.16",
+        "feature": "generate",
+        "scenario": "Gym membership cancellation",
+        "idea": "cancel my membership at Ironclad Fitness, moving to a new city end of the month",
+        "settings": {
+          "length": "short",
+          "tone": "formal",
+          "complexity": "simple",
+          "profile": "name: Halle Jorgensen, member ID: IC-4471",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Ironclad Fitness", "IC-4471", "end of the month"],
+          "must_not_invent": ["new city name", "reason details beyond moving"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.17",
+        "feature": "generate",
+        "scenario": "School absence excuse",
+        "idea": "excuse my daughter Nora from school Monday and Tuesday for a dentist procedure, addressed to the school office",
+        "settings": {
+          "length": "short",
+          "tone": "formal",
+          "complexity": "simple",
+          "profile": "name: Ingrid Fahey, child: Nora, grade: 5th",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Nora", "Monday", "Tuesday", "dentist"],
+          "must_not_invent": ["dentist name", "procedure details"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.18",
+        "feature": "generate",
+        "scenario": "Subscription cancellation, blunt note",
+        "idea": "cancel my subscription to Vantage Analytics Pro, been overcharged twice already",
+        "settings": {
+          "length": "short",
+          "tone": "blunt",
+          "complexity": "simple",
+          "profile": "name: Otis Calloway, account: VA-90213",
+          "permanent_note": "Style: blunt, do not thank them for their service, do not apologize for canceling"
+        },
+        "checks": {
+          "must_include_entities": ["Vantage Analytics Pro", "VA-90213", "overcharged twice"],
+          "forbid_phrases": ["Thank you for your service", "I'm sorry to say", "I really appreciate"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.19",
+        "feature": "generate",
+        "scenario": "Networking follow-up after conference",
+        "idea": "follow up with Renata, met at the DevSummit conference, she works in developer relations at Cascade Cloud, wants to grab coffee sometime",
+        "settings": {
+          "length": "medium",
+          "tone": "friendly",
+          "complexity": "standard",
+          "profile": "name: Ashwin Deol, role: backend engineer",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Renata", "DevSummit", "Cascade Cloud", "coffee"],
+          "must_not_invent": ["specific date/time for coffee", "topic of conversation at conference"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.20",
+        "feature": "generate",
+        "scenario": "Salary raise request",
+        "idea": "ask my manager Terrence for a raise, took on the QA lead responsibilities six months ago without a title change",
+        "settings": {
+          "length": "long",
+          "tone": "formal",
+          "complexity": "advanced",
+          "profile": "name: Simone Vance, title: QA Engineer",
+          "permanent_note": "Factual: two years at the company, led the migration to the new test framework"
+        },
+        "checks": {
+          "must_include_entities": ["Terrence", "QA lead", "six months"],
+          "must_not_invent": ["specific raise percentage", "current salary"],
+          "min_paragraphs": 3,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.21",
+        "feature": "generate",
+        "scenario": "Decline a job offer",
+        "idea": "decline the job offer from Bridgeway Analytics, accepted another offer, thank the recruiter Dana for her time",
+        "settings": {
+          "length": "short",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Tariq Osei",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_include_entities": ["Bridgeway Analytics", "Dana"],
+          "must_not_invent": ["name of the other company", "salary comparison"],
+          "min_paragraphs": 1,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.22",
+        "feature": "generate",
+        "scenario": "Feedback to a contractor",
+        "idea": "give feedback to contractor Big Sky Renovations about the deck they built, the railing is wobbly, want it fixed before final payment",
+        "settings": {
+          "length": "medium",
+          "tone": "formal",
+          "complexity": "standard",
+          "profile": "name: Cheryl Nakamura",
+          "permanent_note": "Factual: project total was $12,000, final payment of $2,000 still owed"
+        },
+        "checks": {
+          "must_include_entities": ["Big Sky Renovations", "railing", "wobbly", "$2,000"],
+          "must_not_invent": ["specific date for fix", "safety code citation"],
+          "min_paragraphs": 2,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.23",
+        "feature": "generate",
+        "scenario": "Sparse idea, medium length, second variant (regression: RC-D)",
+        "idea": "email the vet about the cat",
+        "settings": {
+          "length": "medium",
+          "tone": "friendly",
+          "complexity": "simple",
+          "profile": "name: Noah Fitzgerald, pet: Biscuit",
+          "permanent_note": ""
+        },
+        "checks": {
+          "must_not_invent": ["specific symptoms", "vet's name", "appointment date"],
+          "min_paragraphs": 2,
+          "reject_http_500": true,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.24",
+        "feature": "generate",
+        "scenario": "Thank-you note to a mentor (regression: thank-you misclassified as sign-off)",
+        "idea": "thank my mentor Dr. Okafor for guidance during my first year as a nurse practitioner, mention the advice about setting boundaries with patients",
+        "settings": {
+          "length": "medium",
+          "tone": "friendly",
+          "complexity": "standard",
+          "profile": "name: Bea Lindqvist",
+          "permanent_note": "Factual: Dr. Okafor supervised her clinical rotation"
+        },
+        "checks": {
+          "must_include_entities": ["Okafor", "boundaries", "first year"],
+          "must_not_invent": ["specific patient story", "hospital name"],
+          "min_paragraphs": 2,
+          "body_not_truncated_by_signoff_detection": true,
+          "signature_placeholder_only": true
+        }
+      },
+      {
+        "id": "4.25",
+        "feature": "rewrite",
+        "scenario": "Preserve supplier actor and contrast clause",
+        "original_text": "The supplier missed the delivery window again, but the warehouse team still managed to get the order out on time by pulling from backup stock.",
+        "instruction": "make this more concise",
+        "checks": {
+          "must_preserve_actors": ["supplier", "warehouse team"],
+          "must_preserve_contrast": true,
+          "must_preserve_facts": ["backup stock", "on time"]
+        }
+      },
+      {
+        "id": "4.26",
+        "feature": "rewrite",
+        "scenario": "Preserve dollar amount and percentage",
+        "original_text": "We're proposing a $1,200 monthly retainer, which is about 15% lower than our standard rate, in exchange for a six-month commitment.",
+        "instruction": "make this sound more formal",
+        "checks": {
+          "must_preserve_facts": ["$1,200", "15%", "six-month"]
+        }
+      },
+      {
+        "id": "4.27",
+        "feature": "rewrite",
+        "scenario": "Preserve actor doing the action (subject should not flip)",
+        "original_text": "Our neighbor reported the fence issue to the city, not us, so we shouldn't be the ones dealing with the inspector.",
+        "instruction": "tighten this up",
+        "checks": {
+          "must_preserve_actors": ["neighbor", "city", "inspector"],
+          "must_preserve_contrast": true
+        }
+      },
+      {
+        "id": "4.28",
+        "feature": "rewrite",
+        "scenario": "Preserve date and named event",
+        "original_text": "The board meeting got pushed from March 3rd to March 10th because two members couldn't attend.",
+        "instruction": "make this friendlier in tone",
+        "checks": {
+          "must_preserve_facts": ["March 3rd", "March 10th", "two members"]
+        }
+      },
+      {
+        "id": "4.29",
+        "feature": "rewrite",
+        "scenario": "Preserve negation (do not flip meaning)",
+        "original_text": "The landlord did not approve the sublease request, and he asked us to remove the listing by Friday.",
+        "instruction": "make this shorter",
+        "checks": {
+          "must_preserve_negation": true,
+          "must_preserve_facts": ["Friday"],
+          "must_preserve_actors": ["landlord"]
+        }
+      },
+      {
+        "id": "4.30",
+        "feature": "rewrite",
+        "scenario": "Preserve incomplete-looking but intentional sentence structure",
+        "original_text": "We reviewed the proposal, discussed pricing, and agreed on the timeline. Next step: legal review.",
+        "instruction": "make this sound more professional",
+        "checks": {
+          "must_preserve_facts": ["pricing", "timeline", "legal review"],
+          "must_not_flag_as_incomplete_stub": true
+        }
+      }
+    ]
+  }
