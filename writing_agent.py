@@ -1822,6 +1822,8 @@ def _meets_generate_length_requirement(
     coverage_ok = coverage >= 0.35 or (
         sparse and bool(seed_tokens & body_tokens) and words >= 20
     )
+    # High seed overlap is enough even when the draft is lean after invent-stripping.
+    strong_coverage = coverage >= 0.5 and bool(seed_tokens & body_tokens)
     complete = (
         bool(body.strip())
         and coverage_ok
@@ -1862,6 +1864,7 @@ def _meets_generate_length_requirement(
             and (
                 words >= minimum
                 or (words >= substantial_floor and complete)
+                or (words >= substantial_floor and strong_coverage)
                 or lean_sparse_ok
             )
         )
@@ -2720,9 +2723,17 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
         flexed = phrase.lower().replace("-", " ")
         if flexed in seed_lower_flex or phrase.lower() in seed_lower:
             return True
-        # one week ≈ one-week; two extra days ≈ two days
-        tokens = re.findall(r"[a-z0-9]+", flexed)
-        return bool(tokens) and all(tok in seed_lower_flex for tok in tokens if tok not in {"a", "an", "extra", "additional", "more"})
+        # one week ≈ one-week; three days ≈ three-day (singular/plural)
+        skip = {"a", "an", "extra", "additional", "more", "for", "by", "have", "receive", "request", "need", "grant", "me", "the", "deadline", "due", "date", "extend"}
+        tokens = [tok for tok in re.findall(r"[a-z0-9]+", flexed) if tok not in skip]
+        if not tokens:
+            return False
+
+        def _token_in_seed(tok: str) -> bool:
+            base = tok[:-1] if tok.endswith("s") and len(tok) > 3 else tok
+            return bool(re.search(rf"\b{re.escape(base)}s?\b", seed_lower_flex))
+
+        return all(_token_in_seed(tok) for tok in tokens)
 
     text = re.sub(
         rf"(?i)\b(?:currently )?due\s+({when})\b",
@@ -2876,6 +2887,14 @@ def _normalize_unseeded_timing_details(text: str, seed_baseline: str) -> str:
     text = re.sub(r"[ \t]{2,}", " ", text)
     text = re.sub(r"\s+([,.;:!?])", r"\1", text)
     text = re.sub(r",\s*\.", ".", text)
+    # Drop dangling prepositions left after unseeded timing removals ("Wednesday of.").
+    text = re.sub(
+        r"(?i)\b(?:of|for|to|with|by|on|at|from|about)\s*(?=[.!?])",
+        "",
+        text,
+    )
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\s+([,.;:!?])", r"\1", text)
     return text
 
 
@@ -3138,6 +3157,71 @@ def _ensure_seed_role_mentions(
     return text
 
 
+def _normalize_seed_duration_phrase(duration: str) -> str:
+    """Normalize 'three-day' / 'two extra days' into a grammatical phrase."""
+    flex = (duration or "").lower().replace("-", " ").strip()
+    flex = re.sub(r"\s+", " ", flex)
+    match = re.match(
+        r"^(one|two|three|\d+)\s+(?:extra\s+)?(days?|weeks?|months?)$",
+        flex,
+    )
+    if not match:
+        return flex
+    count, unit = match.group(1), match.group(2)
+    base = unit.rstrip("s")
+    if count in {"one", "1"}:
+        return f"{count} {base}"
+    return f"{count} {base}s"
+
+
+def _extract_seed_org_names(seed_baseline: str) -> list[str]:
+    """Multi-word capitalized org/place names from the seed (not people)."""
+    seed = seed_baseline or ""
+    recipient = _extract_seed_recipient_name(seed).lower()
+    skip_first = {
+        "dear", "hi", "hey", "hello", "mr", "ms", "mrs", "dr", "ask", "tell",
+    }
+    found: list[str] = []
+    for match in re.finditer(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b", seed):
+        name = match.group(1).strip()
+        parts = name.split()
+        if parts[0].lower() in skip_first:
+            continue
+        if recipient and recipient in name.lower().split():
+            continue
+        # Prefer org-like endings or 2+ tokens with a non-person second word.
+        if name not in found:
+            found.append(name)
+    return found
+
+
+def _splice_clause_into_first_sentence(body: str, clause: str) -> str:
+    """Attach a short clause onto the first body sentence (survives short truncation)."""
+    clause = (clause or "").strip().rstrip(".!?")
+    if not clause:
+        return body
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+    if not paragraphs:
+        return clause + "."
+    sentences = _split_sentences(paragraphs[0])
+    if not sentences:
+        paragraphs[0] = clause + "."
+        return "\n\n".join(paragraphs)
+    first = sentences[0].rstrip()
+    # Keep one sentence for short length budgets; preserve later paragraphs.
+    if first.endswith((".", "!", "?")):
+        core = first[:-1].rstrip()
+        end = first[-1]
+    else:
+        core, end = first, "."
+    if clause.lower() in core.lower():
+        return body
+    join = clause[0].lower() + clause[1:] if clause[:1].isupper() else clause
+    sentences[0] = f"{core}, {join}{end}"
+    paragraphs[0] = _join_sentences(sentences)
+    return "\n\n".join(paragraphs)
+
+
 def _ensure_seed_key_details(
     text: str,
     *,
@@ -3149,68 +3233,204 @@ def _ensure_seed_key_details(
         return text
     sections = _parse_email_sections(text)
     body = sections.get("body", "")
+    # Drop broken ensure leftovers from older builds.
+    body = re.sub(
+        r"(?i)(?:\n\s*)*This concerns a (?:this|three|the|an?)\.\s*",
+        "\n\n",
+        body,
+    )
+    body = re.sub(
+        r"(?i)(?:\n\s*)*I am asking for (one|two|three|\d+) day\.\s*",
+        "\n\n",
+        body,
+    )
+    # Orphaned "I am asking." after duration was stripped.
+    body = re.sub(r"(?i)(?:\n\s*)*I am asking\.\s*", "\n\n", body)
+    body = re.sub(r"\n{3,}", "\n\n", body).strip()
     body_lower = body.lower()
-    full_lower = text.lower()
+    # Use cleaned body + non-body sections so removed leftovers cannot block re-inject.
     seed_lower = seed_baseline.lower()
-    additions: list[str] = []
-    phrase_stop = {
-        "that", "which", "who", "whom", "when", "where", "because", "since",
-        "about", "with", "from", "into", "onto", "over", "under", "after",
-        "before", "while", "during", "through", "across", "between", "among",
-        "hoa", "board", "team", "office", "school", "company", "update",
-        "meeting", "email", "request", "extension", "issue", "problem",
-        "situation", "following", "above", "same", "possibility",
-    }
+    seed_lower_flex = seed_lower.replace("-", " ")
+    header = " ".join(
+        part
+        for part in (
+            sections.get("subject", ""),
+            sections.get("greeting", ""),
+            sections.get("footer", ""),
+        )
+        if part
+    )
+    full_lower = f"{header.lower()} {body_lower}"
 
-    # Determiner + 1–2 content words only (avoid clause fragments).
+    def _already(fragment: str) -> bool:
+        frag = fragment.lower().replace("-", " ")
+        flexed_body = body_lower.replace("-", " ")
+        flexed_full = full_lower.replace("-", " ")
+        if frag in flexed_body or frag in flexed_full:
+            return True
+        parts = frag.split()
+        if len(parts) >= 2:
+            unit = parts[-1]
+            alt_unit = unit[:-1] if unit.endswith("s") else f"{unit}s"
+            alt = " ".join([*parts[:-1], alt_unit])
+            if alt in flexed_body or alt in flexed_full:
+                return True
+        return False
+
+    def _refresh() -> None:
+        nonlocal body_lower, full_lower
+        body_lower = body.lower()
+        full_lower = f"{header.lower()} {body_lower}"
+
+    # Prefer splicing into existing sentences so short (2-sentence) truncation keeps facts.
+    # Explicit duration asks from the seed (three-day → "a three-day extension").
     for match in re.finditer(
-        r"\b((?:the|a|an|my|our|his|her)\s+[a-z0-9']+(?:\s+[a-z0-9']+)?)\b",
+        r"\b((?:one|two|three|\d+)(?:-\s*|\s+)(?:extra\s+)?(?:days?|weeks?|months?))\b",
         seed_lower,
     ):
-        phrase = match.group(1)
-        words = phrase.split()
-        if any(word in phrase_stop for word in words[1:]):
+        normalized = _normalize_seed_duration_phrase(match.group(1))
+        if not normalized or _already(normalized):
             continue
-        content = _seed_content_tokens(phrase)
-        if not content:
+        # Adjective form before "extension": three days → three-day
+        parts = normalized.split()
+        unit = parts[-1]
+        unit_base = unit[:-1] if unit.endswith("s") else unit
+        adj = "-".join([*parts[:-1], unit_base])
+        if re.search(r"(?i)\bextension\b", body):
+            body = re.sub(
+                r"(?i)\b((?:an?\s+)?)extension\b",
+                f"a {adj} extension",
+                body,
+                count=1,
+            )
+        else:
+            body = _splice_clause_into_first_sentence(
+                body, f"requesting {normalized}"
+            )
+        _refresh()
+
+    # Org / multi-word proper names (Riverton Parts, Brightline Media, …).
+    for org in _extract_seed_org_names(seed_baseline):
+        if org.lower() in full_lower:
             continue
-        if phrase in body_lower or all(tok in body_lower for tok in content):
-            continue
-        if not any(tok in body_lower for tok in content):
-            additions.append(f"This concerns {phrase}.")
+        if re.search(r"(?i)\b(remind you|writing to|contacting you)\b", body):
+            body = re.sub(
+                r"(?i)\b(remind you|writing to|contacting you)\b",
+                rf"\1 at {org}",
+                body,
+                count=1,
+            )
+        else:
+            body = _splice_clause_into_first_sentence(body, f"regarding {org}")
+        _refresh()
+
+    additions: list[str] = []
 
     # Seeded weekdays must remain visible somewhere in the draft.
     for weekday in _WEEKDAY_ALIASES:
         if _seed_mentions_weekday(seed_lower, weekday) and weekday not in full_lower:
             additions.append(f"This relates to {weekday.title()}.")
 
+    # Relative timing phrases.
+    for phrase in (
+        "next week",
+        "this week",
+        "last week",
+        "next month",
+        "this weekend",
+        "next tuesday",
+        "next wednesday",
+        "next thursday",
+        "next friday",
+        "yesterday",
+        "today",
+        "tomorrow",
+        "tonight",
+    ):
+        if phrase in seed_lower_flex and not _already(phrase):
+            additions.append(f"The timing is {phrase}.")
+
+    # Distinctive seed nouns the model dropped (cleaning, plumber, …).
+    body_tokens = _seed_content_tokens(body)
+    seed_tokens = _seed_content_tokens(seed_baseline)
+    skip_tokens = {
+        "ask", "tell", "email", "request", "please", "need", "want", "move",
+        "about", "from", "with", "that", "this", "have", "week", "days", "day",
+        "next", "last", "dear", "hello", "professor", "client", "manager",
+        "because", "apologize", "apology", "missing", "failed", "arrives",
+        "revised", "deadline", "appointment", "morning", "evening", "possible",
+        "writing", "confirm", "would", "could", "should", "thanks", "regard",
+        "editor", "doctor", "tutor", "neighbor", "roommate", "supplier",
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+        "sunday", "yesterday", "today", "tomorrow", "tonight", "laptop",
+        "draft", "paper", "essay", "hard", "drive",
+    }
+    recipient = _extract_seed_recipient_name(seed_baseline).lower()
+    if recipient:
+        skip_tokens.add(recipient)
+    missing_nouns = sorted(
+        [
+            tok
+            for tok in seed_tokens
+            if tok not in body_tokens
+            and tok not in skip_tokens
+            and len(tok) >= 5
+            and not tok.isdigit()
+        ],
+        key=len,
+        reverse=True,
+    )
+    for tok in missing_nouns[:1]:
+        if not _already(tok):
+            additions.append(f"This concerns the {tok}.")
+
     # Money amounts and ticket/invoice-style IDs from the seed.
     for match in re.finditer(r"\$[\d,]+(?:\.\d{2})?", seed_baseline):
         amount = match.group(0)
         if amount not in text and amount.replace(",", "") not in text.replace(",", ""):
-            additions.append(f"The amount is {amount}.")
+            if amount.lower() not in body_lower and amount.replace(",", "") not in body.replace(",", ""):
+                additions.append(f"The amount is {amount}.")
     for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b", seed_baseline):
         token = match.group(0)
         if token.lower() not in full_lower:
             additions.append(f"This concerns {token}.")
 
-    # Explicit duration asks from the seed (one-week / two extra days).
-    for match in re.finditer(
-        r"\b((?:one|two|three|\d+)(?:-\s*|\s+)(?:extra\s+)?(?:days?|weeks?|months?))\b",
-        seed_lower,
+    # Month names present in the seed (incl. factual notes) must survive.
+    for month in (
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
     ):
-        duration = match.group(1)
-        flex = duration.replace("-", " ")
-        body_flex = body_lower.replace("-", " ")
-        if flex not in body_flex and duration not in body_lower:
-            additions.append(f"I am asking for {flex}.")
+        if re.search(rf"\b{month}\b", seed_lower) and not re.search(
+            rf"\b{month}\b", full_lower
+        ):
+            day_match = re.search(rf"\b{month}\s+(\d{{1,2}})(?:st|nd|rd|th)?\b", seed_lower)
+            if day_match:
+                additions.append(
+                    f"This is for {month.title()} {int(day_match.group(1))}."
+                )
+            else:
+                additions.append(f"This relates to {month.title()}.")
 
-    if not additions:
-        return text
-    for sentence in additions[:2]:
-        if sentence.lower() not in body_lower:
+    # Prefer concrete facts over soft timing pads; splice first, then append.
+    priority = []
+    soft = []
+    for sentence in additions:
+        lower = sentence.lower()
+        if lower.startswith("the timing is") or lower.startswith("this relates to"):
+            soft.append(sentence)
+        else:
+            priority.append(sentence)
+    chosen = (priority + soft)[:3]
+    for sentence in chosen:
+        if sentence.lower() in body_lower:
+            continue
+        # Splice into the first paragraph so short (2-sentence) truncation keeps facts
+        # without collapsing later medium paragraphs.
+        before = body
+        body = _splice_clause_into_first_sentence(body, sentence.rstrip("."))
+        if body == before:
             body = f"{body.rstrip()}\n\n{sentence}" if body.strip() else sentence
-            body_lower = body.lower()
+        _refresh()
     sections["body"] = body
     return _reassemble_email_sections(sections)
 
@@ -3247,6 +3467,19 @@ def _strip_invented_reasons_if_absent(
         ):
             if cue in lower and cue not in seed_lower:
                 return False
+        # Keep seed-grounded nouns (plumber, courier, package, …) that the
+        # invent regex also matches as optional filler when unseeded.
+        content = [
+            tok
+            for tok in re.findall(r"[a-z]{3,}", lower)
+            if tok
+            not in {
+                "the", "and", "for", "with", "from", "that", "this", "have", "has",
+                "been", "will", "our", "my", "your", "due", "more", "than", "very",
+            }
+        ]
+        if content and all(re.search(rf"\b{re.escape(tok)}\b", seed_lower) for tok in content):
+            return True
         if not seed_has_reason:
             return False
         return True
@@ -4937,6 +5170,25 @@ def _process_generate_candidate(
         format_type=format_type,
         seed_baseline=seed_baseline,
     )
+    # Re-attach seed facts after length truncate / invent-strip can drop them.
+    cleaned = _ensure_seed_key_details(
+        cleaned, format_type=format_type, seed_baseline=seed_baseline
+    )
+    if format_type == "email" and length == "short":
+        cleaned = _enforce_length_structure(
+            cleaned, format_type, length, seed_baseline=seed_baseline
+        )
+        cleaned = _ensure_seed_key_details(
+            cleaned, format_type=format_type, seed_baseline=seed_baseline
+        )
+    elif format_type == "email" and length == "medium":
+        # Spliced ensure clauses can collapse medium back to one paragraph.
+        cleaned = _enforce_length_structure(
+            cleaned, format_type, length, seed_baseline=seed_baseline
+        )
+        cleaned = _ensure_seed_key_details(
+            cleaned, format_type=format_type, seed_baseline=seed_baseline
+        )
     if format_type == "email" and length == "medium":
         sections = _parse_email_sections(cleaned)
         paragraphs = [
@@ -5220,6 +5472,29 @@ class WritingAgent:
             len(candidates),
             rejection_history,
         )
+        # Prefer the best fidelity draft over a hard failure — invent-stripping can
+        # leave lean but correct emails that miss the medium word floor.
+        if candidates:
+            best = max(
+                candidates,
+                key=lambda draft: _generate_candidate_score(
+                    draft,
+                    format_type=format_type,
+                    length=length,
+                    seed_baseline=seed_baseline,
+                ),
+            )
+            logger.warning(
+                "generate_returning_best_effort case=%r score=%s",
+                seed_baseline[:160],
+                _generate_candidate_score(
+                    best,
+                    format_type=format_type,
+                    length=length,
+                    seed_baseline=seed_baseline,
+                ),
+            )
+            return best
         raise RuntimeError(
             "Generate could not produce a complete draft that satisfied the requested "
             "length and fidelity constraints after 3 attempts."

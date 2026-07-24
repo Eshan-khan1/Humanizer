@@ -45,7 +45,9 @@ from writing_agent import (  # noqa: E402
     _inject_informational_content,
     _meets_generate_length_requirement,
     _ensure_seed_role_mentions,
+    _extract_seed_org_names,
     _extract_seed_recipient_name,
+    _normalize_seed_duration_phrase,
     _normalize_unseeded_timing_details,
     _parse_email_sections,
     _parse_generation_note,
@@ -972,6 +974,117 @@ class RecipientAndSeedRetentionTests(unittest.TestCase):
         self.assertIn("flood", lower)
         self.assertIn("friday", lower)
         self.assertNotIn("unforeseen circumstances", lower)
+
+
+    def test_seed_org_duration_month_and_next_week_are_ensured(self) -> None:
+        self.assertEqual(_normalize_seed_duration_phrase("three-day"), "three days")
+        self.assertEqual(
+            _extract_seed_org_names(
+                "tell supplier Marta at Riverton Parts about order RP-3088"
+            ),
+            ["Riverton Parts"],
+        )
+        out = apply_generate_hard_filters(
+            "Subject: Ext\n\nDear Okonkwo,\n\n"
+            "Please grant an extension on the midterm paper.\n\n"
+            "This concerns a three.\n\nI am asking for three day.\n\n"
+            "Sincerely,\nIris",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "medium",
+                "complexity": "standard",
+                "profile": {"fullName": "Iris Chen"},
+            },
+            seed_baseline=(
+                "ask professor Okonkwo for a three-day extension on the midterm paper"
+            ),
+        )
+        lower = out.lower()
+        self.assertTrue(
+            "three days" in lower or "three-day" in lower or "3 days" in lower,
+            out,
+        )
+        self.assertNotIn("this concerns a three", lower)
+        self.assertNotIn("asking for three day.", lower)
+
+        # Hyphenated seed duration must survive timing normalize as plural or adj.
+        kept = _normalize_unseeded_timing_details(
+            "I am asking for three days.",
+            "ask professor Okonkwo for a three-day extension on the midterm paper",
+        )
+        self.assertIn("three days", kept.lower())
+
+        org_out = apply_generate_hard_filters(
+            "Subject: Delay\n\nDear Marta,\n\n"
+            "Order RP-3088 is delayed due to customs. Delivery is next Tuesday.\n\n"
+            "Sincerely,\nGlen",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "medium",
+                "complexity": "standard",
+                "profile": {"fullName": "Glen Park"},
+            },
+            seed_baseline=(
+                "tell supplier Marta at Riverton Parts that order RP-3088 is delayed "
+                "because customs held the shipment, new delivery window is next Tuesday"
+            ),
+        )
+        self.assertIn("Riverton Parts", org_out)
+
+        week_out = apply_generate_hard_filters(
+            "Subject: Trade\n\nHey Owen,\n\n"
+            "Can I trade Sunday for Wednesday?\n\nThanks,\nCasey",
+            format_type="email",
+            settings={
+                "tonePreset": "casual",
+                "length": "short",
+                "complexity": "simple",
+                "profile": {"fullName": "Casey Ng"},
+            },
+            seed_baseline=(
+                "confirm with shift lead Owen that I can trade my Sunday opening "
+                "for his Wednesday close next week"
+            ),
+        )
+        self.assertIn("next week", week_out.lower())
+
+        plumber = apply_generate_hard_filters(
+            "Subject: Faucet\n\nHi Kai,\n\n"
+            "The bathroom faucet is dripping, and we should get a plumber "
+            "to fix it this week.\n\nThanks,\nMorgan",
+            format_type="email",
+            settings={
+                "tonePreset": "blunt",
+                "length": "medium",
+                "complexity": "simple",
+                "profile": {"fullName": "Morgan Lee"},
+            },
+            seed_baseline=(
+                "tell roommate Kai the bathroom faucet drips and we need a plumber this week"
+            ),
+        )
+        self.assertIn("plumber", plumber.lower())
+        self.assertNotIn("get a to fix", plumber.lower())
+
+        short_org = apply_generate_hard_filters(
+            "Subject: Invoice\n\nDear Priya,\n\n"
+            "I need to remind you about invoice NL-904 for $880 due last Friday.\n\n"
+            "Sincerely,\nOmar",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "short",
+                "complexity": "simple",
+                "profile": {"fullName": "Omar Farouk"},
+            },
+            seed_baseline=(
+                "remind client Priya at Northwind Labs that invoice NL-904 "
+                "for $880 was due last Friday"
+            ),
+        )
+        self.assertIn("Northwind Labs", short_org)
 
 
 class FabricationHardeningTests(unittest.TestCase):

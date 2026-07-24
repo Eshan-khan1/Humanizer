@@ -1,0 +1,205 @@
+{
+  "description": "Generate regression set 9 — unique ideas (not copies of 1–8). Targets v8 gaps: org-name retention, hyphenated durations (three-day → three days), factual-note months, next-week timing, and no broken ensure leftovers.",
+  "version": "9",
+  "cases": [
+    {
+      "id": "9.1",
+      "feature": "generate",
+      "scenario": "Org name Riverton-style must appear with recipient",
+      "idea": "tell buyer Lena at Cobalt Tools that quote CT-552 needs revision because steel costs rose, reply by Friday",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Hank Morris",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Lena", "Cobalt Tools", "CT-552", "steel", "Friday"],
+        "must_greeting_name": "Lena",
+        "forbid_phrases": ["Dear Sir or Madam", "This concerns a three", "unforeseen circumstances"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.2",
+      "feature": "generate",
+      "scenario": "Hyphenated three-day duration becomes three days",
+      "idea": "ask professor Imran for a three-day extension on the ethics essay",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Sofi Tran",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Imran", "ethics essay"],
+        "must_include_any": [["three days", "three-day", "3 days"]],
+        "must_greeting_name": "Imran",
+        "forbid_phrases": ["This concerns a three", "asking for three day.", "health issues", "unforeseen circumstances"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.3",
+      "feature": "generate",
+      "scenario": "Factual note month July must appear without Factual label",
+      "idea": "ask director Pauline for remote Fridays starting in October",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Craig Nunez",
+        "permanent_note": "Factual: My team already piloted remote Fridays in July"
+      },
+      "checks": {
+        "must_include_entities": ["Pauline", "Fridays", "October", "July"],
+        "must_greeting_name": "Pauline",
+        "forbid_phrases": ["Factual:", "Style:", "Dear Sir or Madam"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.4",
+      "feature": "generate",
+      "scenario": "next week must survive shift-trade ask",
+      "idea": "ask supervisor Ines if I can swap my Monday close for her Thursday open next week",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Drew Patel",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Ines", "Monday", "Thursday", "next week"],
+        "must_greeting_name": "Ines",
+        "forbid_phrases": ["Hey there", "This concerns a this"],
+        "must_not_invent": ["Friday", "Saturday"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.5",
+      "feature": "generate",
+      "scenario": "No broken ensure leftovers on plumber request",
+      "idea": "tell roommate Kai the bathroom faucet drips and we need a plumber this week",
+      "settings": {
+        "length": "medium",
+        "tone": "blunt",
+        "complexity": "simple",
+        "profile": "name: Morgan Lee",
+        "permanent_note": "Style: blunt, get to the point"
+      },
+      "checks": {
+        "must_include_entities": ["Kai", "faucet", "plumber", "this week"],
+        "must_greeting_name": "Kai",
+        "forbid_phrases": ["Style:", "This concerns a this", "This concerns a three", "trim the hedge"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.6",
+      "feature": "generate",
+      "scenario": "Named greeting + real reason; no unforeseen filler",
+      "idea": "apologize to client Rubin for the late samples because the courier lost the package, replacements ship Wednesday",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Nina Brooks",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Rubin", "courier", "package", "Wednesday"],
+        "must_greeting_name": "Rubin",
+        "forbid_phrases": ["Dear Sir or Madam", "unforeseen circumstances", "personal circumstances"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.7",
+      "feature": "generate",
+      "scenario": "Sparse medium without wedding invent",
+      "idea": "email the caterer about the lunch boxes",
+      "settings": {
+        "length": "medium",
+        "tone": "friendly",
+        "complexity": "standard",
+        "profile": "name: Alex Rivera",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["lunch boxes"],
+        "forbid_phrases": ["wedding", "Saturday in October", "bride", "This concerns a this"],
+        "min_paragraphs": 2,
+        "reject_http_500": true,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.8",
+      "feature": "generate",
+      "scenario": "Invoice org + amount + Friday retained",
+      "idea": "remind client Priya at Northwind Labs that invoice NL-904 for $880 was due last Friday",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "simple",
+        "profile": "name: Omar Farouk",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Priya", "Northwind Labs", "NL-904", "$880", "Friday"],
+        "must_greeting_name": "Priya",
+        "forbid_phrases": ["Dear Sir or Madam", "standup"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "9.9",
+      "feature": "rewrite",
+      "scenario": "Rewrite keeps Cobalt Tools and Friday",
+      "idea": "Lena at Cobalt Tools — quote CT-552 needs revision because steel costs rose. Please reply by Friday.",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Hank Morris",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Lena", "Cobalt Tools", "CT-552", "steel", "Friday"],
+        "forbid_phrases": ["unforeseen circumstances"],
+        "min_paragraphs": 1
+      }
+    },
+    {
+      "id": "9.10",
+      "feature": "rewrite",
+      "scenario": "Rewrite keeps three-day meaning",
+      "idea": "Professor Imran, I need a three-day extension on the ethics essay.",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Sofi Tran",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Imran", "ethics essay"],
+        "must_include_any": [["three-day", "three days", "3 days"]],
+        "forbid_phrases": ["health issues"],
+        "min_paragraphs": 1
+      }
+    }
+  ]
+}
