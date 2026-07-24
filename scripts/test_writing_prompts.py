@@ -1005,7 +1005,9 @@ class RecipientAndSeedRetentionTests(unittest.TestCase):
             "three days" in lower or "three-day" in lower or "3 days" in lower,
             out,
         )
-        self.assertNotIn("this concerns a three", lower)
+        self.assertNotIn("this concerns", lower)
+        self.assertNotIn("the timing is", lower)
+        self.assertNotIn("this relates to", lower)
         self.assertNotIn("asking for three day.", lower)
 
         # Hyphenated seed duration must survive timing normalize as plural or adj.
@@ -1085,6 +1087,29 @@ class RecipientAndSeedRetentionTests(unittest.TestCase):
             ),
         )
         self.assertIn("Northwind Labs", short_org)
+        polluted = apply_generate_hard_filters(
+            "Subject: Quote\n\nDear Lena,\n\n"
+            "Please revise quote CT-552, this concerns the buyer, "
+            "this concerns the reply, the timing is Friday.\n\n"
+            "Sincerely,\nHank",
+            format_type="email",
+            settings={
+                "tonePreset": "formal",
+                "length": "medium",
+                "complexity": "standard",
+                "profile": {"fullName": "Hank Morris"},
+            },
+            seed_baseline=(
+                "tell buyer Lena at Cobalt Tools that quote CT-552 needs revision "
+                "because steel costs rose, reply by Friday"
+            ),
+        )
+        polluted_l = polluted.lower()
+        self.assertNotIn("this concerns", polluted_l)
+        self.assertNotIn("the timing is", polluted_l)
+        self.assertNotIn("regarding", polluted_l)
+        self.assertIn("Cobalt Tools", polluted)
+        self.assertIn("friday", polluted_l)
 
 
 class FabricationHardeningTests(unittest.TestCase):

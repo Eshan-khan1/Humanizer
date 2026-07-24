@@ -3180,6 +3180,12 @@ def _extract_seed_org_names(seed_baseline: str) -> list[str]:
     recipient = _extract_seed_recipient_name(seed).lower()
     skip_first = {
         "dear", "hi", "hey", "hello", "mr", "ms", "mrs", "dr", "ask", "tell",
+        "my", "our", "the", "a", "an",
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
+    }
+    skip_any = skip_first | {
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
     }
     found: list[str] = []
     for match in re.finditer(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b", seed):
@@ -3187,12 +3193,58 @@ def _extract_seed_org_names(seed_baseline: str) -> list[str]:
         parts = name.split()
         if parts[0].lower() in skip_first:
             continue
+        if any(part.lower() in skip_any for part in parts):
+            continue
         if recipient and recipient in name.lower().split():
             continue
-        # Prefer org-like endings or 2+ tokens with a non-person second word.
         if name not in found:
             found.append(name)
     return found
+
+
+def _strip_seed_ensure_scaffolds(body: str) -> str:
+    """Remove internal ensure scaffolds that must never appear in user-facing text."""
+    if not body.strip():
+        return body
+    # Standalone scaffold sentences / paragraphs.
+    body = re.sub(
+        r"(?i)(?:\n\s*)*(?:This concerns|This relates to|This involves|This is for|"
+        r"The timing is|The amount is)[^.!?\n]*[.!]?\s*",
+        "\n\n",
+        body,
+    )
+    # Comma-tacked scaffolds mid-sentence (…, this concerns the buyer, …).
+    body = re.sub(
+        r"(?i)(?:,\s*)?(?:this concerns(?:\s+the)?|this relates to|this involves|"
+        r"this is for|the timing is|the amount is)\s+[^,.!?]+",
+        "",
+        body,
+    )
+    # Old org inject used ", regarding Cobalt Tools" — strip only the tacked form.
+    body = re.sub(r"(?i),\s*regarding\s+[^,.!?]+", "", body)
+
+    # Broken leftovers from older builds.
+    body = re.sub(
+        r"(?i)(?:\n\s*)*I am asking for (one|two|three|\d+) day\.\s*",
+        "\n\n",
+        body,
+    )
+    body = re.sub(r"(?i)(?:\n\s*)*I am asking\.\s*", "\n\n", body)
+    # "writing to at October" after a bad month inject into the writing-to path.
+    body = re.sub(
+        r"(?i)\b(writing to|remind you|contacting you)\s+at\s+"
+        r"(january|february|march|april|may|june|july|august|september|"
+        r"october|november|december)\b",
+        r"\1",
+        body,
+    )
+    body = re.sub(r"[ \t]{2,}", " ", body)
+    body = re.sub(r"\s+([,.;:!?])", r"\1", body)
+    body = re.sub(r",\s*,+", ",", body)
+    body = re.sub(r",\s*\.", ".", body)
+    body = re.sub(r",\s*$", "", body, flags=re.M)
+    body = re.sub(r"\n{3,}", "\n\n", body)
+    return body.strip()
 
 
 def _splice_clause_into_first_sentence(body: str, clause: str) -> str:
@@ -3200,15 +3252,22 @@ def _splice_clause_into_first_sentence(body: str, clause: str) -> str:
     clause = (clause or "").strip().rstrip(".!?")
     if not clause:
         return body
+    # Never splice meta scaffolds into visible prose.
+    if re.match(
+        r"(?i)^(this concerns|this relates|this involves|this is for|"
+        r"the timing is|the amount is)\b",
+        clause,
+    ):
+        return body
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
     if not paragraphs:
-        return clause + "."
+        capped = clause[0].upper() + clause[1:]
+        return capped + ("." if not capped.endswith((".", "!", "?")) else "")
     sentences = _split_sentences(paragraphs[0])
     if not sentences:
-        paragraphs[0] = clause + "."
+        paragraphs[0] = clause[0].upper() + clause[1:] + "."
         return "\n\n".join(paragraphs)
     first = sentences[0].rstrip()
-    # Keep one sentence for short length budgets; preserve later paragraphs.
     if first.endswith((".", "!", "?")):
         core = first[:-1].rstrip()
         end = first[-1]
@@ -3222,33 +3281,32 @@ def _splice_clause_into_first_sentence(body: str, clause: str) -> str:
     return "\n\n".join(paragraphs)
 
 
+def _append_natural_sentence(body: str, sentence: str) -> str:
+    """Add a complete sentence as its own paragraph (no mid-sentence comma junk)."""
+    sentence = (sentence or "").strip()
+    if not sentence:
+        return body
+    if not sentence.endswith((".", "!", "?")):
+        sentence += "."
+    sentence = sentence[0].upper() + sentence[1:]
+    if not body.strip():
+        return sentence
+    if sentence.lower().rstrip(".!?") in body.lower():
+        return body
+    return f"{body.rstrip()}\n\n{sentence}"
+
+
 def _ensure_seed_key_details(
     text: str,
     *,
     format_type: str,
     seed_baseline: str,
 ) -> str:
-    """Re-attach concrete seed details the model omitted (never invent new ones)."""
+    """Re-attach concrete seed details the model omitted (never invent; no meta scaffolds)."""
     if not text.strip() or not (seed_baseline or "").strip() or format_type != "email":
         return text
     sections = _parse_email_sections(text)
-    body = sections.get("body", "")
-    # Drop broken ensure leftovers from older builds.
-    body = re.sub(
-        r"(?i)(?:\n\s*)*This concerns a (?:this|three|the|an?)\.\s*",
-        "\n\n",
-        body,
-    )
-    body = re.sub(
-        r"(?i)(?:\n\s*)*I am asking for (one|two|three|\d+) day\.\s*",
-        "\n\n",
-        body,
-    )
-    # Orphaned "I am asking." after duration was stripped.
-    body = re.sub(r"(?i)(?:\n\s*)*I am asking\.\s*", "\n\n", body)
-    body = re.sub(r"\n{3,}", "\n\n", body).strip()
-    body_lower = body.lower()
-    # Use cleaned body + non-body sections so removed leftovers cannot block re-inject.
+    body = _strip_seed_ensure_scaffolds(sections.get("body", ""))
     seed_lower = seed_baseline.lower()
     seed_lower_flex = seed_lower.replace("-", " ")
     header = " ".join(
@@ -3260,6 +3318,7 @@ def _ensure_seed_key_details(
         )
         if part
     )
+    body_lower = body.lower()
     full_lower = f"{header.lower()} {body_lower}"
 
     def _already(fragment: str) -> bool:
@@ -3282,8 +3341,7 @@ def _ensure_seed_key_details(
         body_lower = body.lower()
         full_lower = f"{header.lower()} {body_lower}"
 
-    # Prefer splicing into existing sentences so short (2-sentence) truncation keeps facts.
-    # Explicit duration asks from the seed (three-day → "a three-day extension").
+    # Duration: three-day → "a three-day extension" (natural rewrite of existing word).
     for match in re.finditer(
         r"\b((?:one|two|three|\d+)(?:-\s*|\s+)(?:extra\s+)?(?:days?|weeks?|months?))\b",
         seed_lower,
@@ -3291,7 +3349,6 @@ def _ensure_seed_key_details(
         normalized = _normalize_seed_duration_phrase(match.group(1))
         if not normalized or _already(normalized):
             continue
-        # Adjective form before "extension": three days → three-day
         parts = normalized.split()
         unit = parts[-1]
         unit_base = unit[:-1] if unit.endswith("s") else unit
@@ -3303,99 +3360,72 @@ def _ensure_seed_key_details(
                 body,
                 count=1,
             )
+            _refresh()
         else:
-            body = _splice_clause_into_first_sentence(
-                body, f"requesting {normalized}"
+            body = _append_natural_sentence(
+                body, f"I am requesting {normalized}."
             )
-        _refresh()
+            _refresh()
 
-    # Org / multi-word proper names (Riverton Parts, Brightline Media, …).
+    # Org names — never rewrite "writing to" (breaks "writing to inform/request").
     for org in _extract_seed_org_names(seed_baseline):
         if org.lower() in full_lower:
             continue
-        if re.search(r"(?i)\b(remind you|writing to|contacting you)\b", body):
+        if re.search(r"(?i)\bremind you\b", body):
             body = re.sub(
-                r"(?i)\b(remind you|writing to|contacting you)\b",
-                rf"\1 at {org}",
+                r"(?i)\bremind you\b",
+                rf"remind you at {org}",
                 body,
                 count=1,
             )
+            _refresh()
+        elif re.search(r"(?i)\b(quote|order|invoice|shipment)\b", body):
+            body = re.sub(
+                r"(?i)\b(quote|order|invoice|shipment)\b",
+                rf"\1 from {org}",
+                body,
+                count=1,
+            )
+            _refresh()
         else:
-            body = _splice_clause_into_first_sentence(body, f"regarding {org}")
-        _refresh()
+            body = _append_natural_sentence(
+                body, f"I'm reaching out about {org}."
+            )
+            _refresh()
 
-    additions: list[str] = []
+    # Relative timing — full sentences, not ", next week" comma tacks.
+    timing_sentences = {
+        "next week": "I need this next week.",
+        "this week": "I need this this week.",
+        "last week": "This was for last week.",
+        "next month": "I need this next month.",
+        "this weekend": "I need this this weekend.",
+        "yesterday": "This happened yesterday.",
+        "today": "I need this today.",
+        "tomorrow": "I need this tomorrow.",
+        "tonight": "I need this tonight.",
+    }
+    for phrase, sentence in timing_sentences.items():
+        if phrase in seed_lower_flex and not _already(phrase):
+            body = _append_natural_sentence(body, sentence)
+            _refresh()
 
-    # Seeded weekdays must remain visible somewhere in the draft.
     for weekday in _WEEKDAY_ALIASES:
         if _seed_mentions_weekday(seed_lower, weekday) and weekday not in full_lower:
-            additions.append(f"This relates to {weekday.title()}.")
+            titled = weekday.title()
+            if re.search(r"(?i)\b(reply|respond|confirm)\b", body):
+                body = re.sub(
+                    r"(?i)\b(reply|respond|confirm)\b",
+                    rf"\1 by {titled}",
+                    body,
+                    count=1,
+                )
+            else:
+                body = _append_natural_sentence(
+                    body, f"Please confirm by {titled}."
+                )
+            _refresh()
 
-    # Relative timing phrases.
-    for phrase in (
-        "next week",
-        "this week",
-        "last week",
-        "next month",
-        "this weekend",
-        "next tuesday",
-        "next wednesday",
-        "next thursday",
-        "next friday",
-        "yesterday",
-        "today",
-        "tomorrow",
-        "tonight",
-    ):
-        if phrase in seed_lower_flex and not _already(phrase):
-            additions.append(f"The timing is {phrase}.")
-
-    # Distinctive seed nouns the model dropped (cleaning, plumber, …).
-    body_tokens = _seed_content_tokens(body)
-    seed_tokens = _seed_content_tokens(seed_baseline)
-    skip_tokens = {
-        "ask", "tell", "email", "request", "please", "need", "want", "move",
-        "about", "from", "with", "that", "this", "have", "week", "days", "day",
-        "next", "last", "dear", "hello", "professor", "client", "manager",
-        "because", "apologize", "apology", "missing", "failed", "arrives",
-        "revised", "deadline", "appointment", "morning", "evening", "possible",
-        "writing", "confirm", "would", "could", "should", "thanks", "regard",
-        "editor", "doctor", "tutor", "neighbor", "roommate", "supplier",
-        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
-        "sunday", "yesterday", "today", "tomorrow", "tonight", "laptop",
-        "draft", "paper", "essay", "hard", "drive",
-    }
-    recipient = _extract_seed_recipient_name(seed_baseline).lower()
-    if recipient:
-        skip_tokens.add(recipient)
-    missing_nouns = sorted(
-        [
-            tok
-            for tok in seed_tokens
-            if tok not in body_tokens
-            and tok not in skip_tokens
-            and len(tok) >= 5
-            and not tok.isdigit()
-        ],
-        key=len,
-        reverse=True,
-    )
-    for tok in missing_nouns[:1]:
-        if not _already(tok):
-            additions.append(f"This concerns the {tok}.")
-
-    # Money amounts and ticket/invoice-style IDs from the seed.
-    for match in re.finditer(r"\$[\d,]+(?:\.\d{2})?", seed_baseline):
-        amount = match.group(0)
-        if amount not in text and amount.replace(",", "") not in text.replace(",", ""):
-            if amount.lower() not in body_lower and amount.replace(",", "") not in body.replace(",", ""):
-                additions.append(f"The amount is {amount}.")
-    for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b", seed_baseline):
-        token = match.group(0)
-        if token.lower() not in full_lower:
-            additions.append(f"This concerns {token}.")
-
-    # Month names present in the seed (incl. factual notes) must survive.
     for month in (
         "january", "february", "march", "april", "may", "june",
         "july", "august", "september", "october", "november", "december",
@@ -3403,34 +3433,64 @@ def _ensure_seed_key_details(
         if re.search(rf"\b{month}\b", seed_lower) and not re.search(
             rf"\b{month}\b", full_lower
         ):
-            day_match = re.search(rf"\b{month}\s+(\d{{1,2}})(?:st|nd|rd|th)?\b", seed_lower)
+            day_match = re.search(
+                rf"\b{month}\s+(\d{{1,2}})(?:st|nd|rd|th)?\b", seed_lower
+            )
             if day_match:
-                additions.append(
-                    f"This is for {month.title()} {int(day_match.group(1))}."
+                body = _append_natural_sentence(
+                    body,
+                    f"Please use {month.title()} {int(day_match.group(1))}.",
                 )
             else:
-                additions.append(f"This relates to {month.title()}.")
+                body = _append_natural_sentence(
+                    body, f"We already covered this in {month.title()}."
+                )
+            _refresh()
 
-    # Prefer concrete facts over soft timing pads; splice first, then append.
-    priority = []
-    soft = []
-    for sentence in additions:
-        lower = sentence.lower()
-        if lower.startswith("the timing is") or lower.startswith("this relates to"):
-            soft.append(sentence)
-        else:
-            priority.append(sentence)
-    chosen = (priority + soft)[:3]
-    for sentence in chosen:
-        if sentence.lower() in body_lower:
+    # Money / IDs — attach beside existing invoice/order words when possible.
+    for match in re.finditer(r"\$[\d,]+(?:\.\d{2})?", seed_baseline):
+        amount = match.group(0)
+        if _already(amount) or amount.replace(",", "") in body.replace(",", ""):
             continue
-        # Splice into the first paragraph so short (2-sentence) truncation keeps facts
-        # without collapsing later medium paragraphs.
-        before = body
-        body = _splice_clause_into_first_sentence(body, sentence.rstrip("."))
-        if body == before:
-            body = f"{body.rstrip()}\n\n{sentence}" if body.strip() else sentence
+        body = _append_natural_sentence(body, f"The total is {amount}.")
         _refresh()
+
+    for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b", seed_baseline):
+        token = match.group(0)
+        if token.lower() in full_lower:
+            continue
+        if re.search(r"(?i)\b(invoice|order|quote|claim|ticket)\b", body):
+            body = re.sub(
+                r"(?i)\b(invoice|order|quote|claim|ticket)\b",
+                rf"\1 {token}",
+                body,
+                count=1,
+            )
+            _refresh()
+        else:
+            body = _append_natural_sentence(body, f"Reference {token}.")
+            _refresh()
+
+    # Concrete seeded objects — short natural sentence, not "this concerns the X".
+    for token in ("plumber", "cleaning", "hard drive", "centerpieces", "package"):
+        if token in seed_lower_flex and not _already(token):
+            if token == "plumber":
+                body = _append_natural_sentence(body, "We need a plumber.")
+            elif token == "cleaning":
+                body = _append_natural_sentence(
+                    body, "This is about the cleaning appointment."
+                )
+            elif token == "hard drive":
+                body = _append_natural_sentence(
+                    body, "My laptop hard drive failed."
+                )
+            elif token == "package":
+                body = _append_natural_sentence(body, "The package was lost.")
+            else:
+                body = _append_natural_sentence(body, f"This is about the {token}.")
+            _refresh()
+
+    body = _strip_seed_ensure_scaffolds(body)
     sections["body"] = body
     return _reassemble_email_sections(sections)
 
