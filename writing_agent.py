@@ -35,7 +35,9 @@ WRITING_AGENT_SYSTEM_PROMPT = (
     "You are the Humanizer Writing Agent. You only do two jobs:\n"
     "1. REWRITE — change tone/style of selected text by editing word choice and sentence "
     "structure only. Keep the same information, structure, and roughly the same length.\n"
-    "2. GENERATE — expand short notes, bullets, or prompts into complete emails or essays.\n"
+    "2. GENERATE — expand short notes, bullets, or prompts into complete emails or essays. "
+    "When the idea is thin, expand with general, non-committal language — never invent "
+    "names, numbers, dates, reasons, or events the user did not supply.\n"
     "Return only the final plain text — no markdown or meta explanations."
 )
 
@@ -54,39 +56,53 @@ MEANING_FIDELITY_RULE = """\
 RULE — MEANING & FIDELITY (always on):
   • Do not change the meaning of the user's input.
   • Do not invent facts, names, requests, excuses, dates, assignment titles, health issues,
-    family emergencies, prior conversations, or any other detail the user did not imply.
+    family emergencies, prior conversations, dollar amounts, IDs, places, events, or any
+    other detail the user did not state.
   • Never complete a partial date or number. If the idea says "June 3rd," do not add
     a year; if it gives only a month, do not add a day. Preserve exactly the date
     components and other specific details the user supplied, even when a completion
     would seem reasonable.
+  • SPARSE IDEA RULE (critical): If the idea is short or thin, expand it into a complete
+    email/essay using general, non-committal language. Sound natural and finished, but
+    do NOT fill gaps with plausible-sounding specifics. Prefer phrasing like "a deadline
+    extension," "this week," or "the issue" over inventing which assignment, which day,
+    which person, or which event. Specificity is allowed ONLY for details the idea
+    actually contains.
   • NO REASON RULE (critical): If the user's idea does NOT state a reason, the output must
     NOT include any reason at all — not health, workload, personal circumstances,
     "unforeseen" events, or any other justification. The request must stand alone.
     This applies for short, medium, AND long length equally; never invent a reason to fill space.
   • When elaborating a request with no stated reason, add detail ONLY by:
-      - clarifying what the user is asking for,
+      - restating/clarifying the ask in general terms (no new nouns, dates, or names),
       - mentioning progress already made ONLY if the idea implies that progress,
       - offering flexibility on timing without inventing a date or deadline, or
       - asking what the reader needs next.
     Never turn elaboration into a made-up explanation for why the request exists.
   • Do not add new information beyond what the user implied.
-  • Every paragraph must stay specific to the actual subject in the idea. Restate and
-    develop that subject directly; do not replace it with vague references to "the
-    request," a "standard process," unspecified "conditions," or generic logistics.
+  • Stay faithful to the subject tokens in the idea (e.g. "deadline extension," "sink,"
+    "invoice"). Do not swap in a different scenario. When the idea lacks concrete details,
+    stay general — do not invent specifics just to sound concrete, and do not pad with
+    vague logistics about an unnamed "standard process" or unspecified "conditions."
   • For longer drafts, develop ONLY the substance of the ask (what is being requested,
     what outcome you want, and a polite close) — never invent a backstory, and never
     write commentary about the rules, instructions, or writing process.
   • Expand or rephrase what they gave you — never replace their intent with a different message."""
 
 GENERATE_EXAMPLES = """\
-EXAMPLE — idea has no reason stated:
+EXAMPLE — sparse idea, no reason stated (stay general — do not invent specifics):
 Idea: "asking my professor for a deadline extension"
-Correct output body: "I'm writing to request an extension on the upcoming assignment. Would it be possible to grant an extension?"
-Wrong: adding any reason, excuse, or missing-detail placeholder.
+Correct body (general): "I'm writing to request a deadline extension. Would that be possible?"
+Wrong: inventing an assignment title, course name, date, illness, workload story, or any
+  other detail not in the idea (e.g. "upcoming assignment," "PSYCH 201," "Friday," "I was sick").
 
-EXAMPLE — idea has a reason stated:
+EXAMPLE — sparse idea with a reason (use only the stated reason; invent nothing else):
 Idea: "asking my professor for extension, I was sick"
-Correct output body: includes being sick as the reason. Nothing else invented."""
+Correct: mention being sick as the reason; still do not invent assignment titles, dates, or names.
+Wrong: adding workload, family emergency, or any second reason not in the idea.
+
+EXAMPLE — idea already has specifics (keep them; do not add more):
+Idea: "email Maya at Riverton Parts that invoice 4421 for $320 is due Friday"
+Correct: keep Maya, Riverton Parts, 4421, $320, and Friday. Invent nothing beyond those."""
 
 EMAIL_GENERATION_GUIDE = """\
 TASK: GENERATE a complete email from the seed text, user notes, and document context.
@@ -110,6 +126,8 @@ General rules:
   • If a user note is informational only, it adds facts — it must not change tone or style.
   • If a user note includes a one-time tone instruction, follow that tone for this generation only.
   • If no reason is provided in the idea, include no reason whatsoever — do not invent one.
+  • If the idea is thin, keep body language general; never invent names, dates, titles,
+    amounts, or events to make the draft sound fuller.
   • Never write meta commentary about instructions, rules, length, or the drafting process.
   • When content naturally contains 3 or more distinct requirements, blockers, questions,
     or other list items, put each item on its own line as a proper numbered or bulleted list.
@@ -159,7 +177,9 @@ OUTPUT RULES (non-negotiable):
     "- First. - Second. - Third." inside one paragraph. Do not merge listed items into
     prose using transitions such as "additionally," "also," "firstly," or "secondly."
   • Two different ideas must produce substantively different bodies tied to their subjects,
-    not the same generic template with only a noun changed."""
+    not the same generic template with only a noun changed.
+  • Thin ideas still produce complete, natural emails — using general phrasing, not
+    fabricated names/numbers/dates/events. Completeness ≠ inventing missing facts."""
 
 GENERATE_LENGTH_GUIDANCE: dict[str, str] = {
     "short": """\
@@ -179,6 +199,7 @@ LENGTH — structure only (independent of tone and complexity):
   • Email: greeting, 2–3 body paragraphs, closing/sign-off.
   • Essay: 2–3 paragraphs of content.
   • Develop only what the user said. If they gave no reason, include none.
+  • If the idea is sparse, stay general — do not invent facts to hit the word target.
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
     "long": """\
 LENGTH — structure only (independent of tone and complexity):
@@ -188,16 +209,17 @@ LENGTH — structure only (independent of tone and complexity):
   • Paragraph and word counts are approximate targets. Accept a complete, grounded
     4-paragraph draft rather than padding it or rejecting it solely for missing one paragraph.
   • CRITICAL — pick exactly ONE example shape below:
-      - Idea STATES a reason → use WITH REASON shape, substituting the user's actual reason
-        (never the sample's workload/course story unless the user said that).
+      - Idea STATES a reason → use WITH REASON shape, substituting ONLY the user's actual
+        reason (never the sample's "I was sick" wording unless the user said that).
       - Idea states NO reason → use WITHOUT REASON shape ONLY. Elaborate only by
-        clarifying the ask, offering timing flexibility without inventing dates,
-        asking what the reader needs
-        next, or mentioning progress ONLY when the idea implies progress. Do not borrow
-        workload, stacked courses, research-progress, unexpected circumstances, or any
-        other justification from WITH REASON.
-  • Never invent excuses, dates, assignment titles, or backstory. Never copy these
-    examples verbatim — match their shape and depth for the user's actual idea.
+        restating the ask in general terms, offering timing flexibility without inventing
+        dates, asking what the reader needs next, or mentioning progress ONLY when the
+        idea implies progress. Do not borrow illness, workload, stacked courses, or any
+        other justification from WITH REASON. Do not invent assignment titles or dates.
+  • Never invent excuses, dates, assignment titles, names, numbers, or backstory. Never
+    copy these examples verbatim — match their shape and depth for the user's actual idea.
+    If the user's idea is thinner than the sample, stay thinner (general), do not "upgrade"
+    it with sample specifics.
   • Do not repeat the same ask in slightly different wording across paragraphs.
   • If no writer name is saved, end with the closing word and then exactly
     "[Your Name]" on the final line.
@@ -208,31 +230,31 @@ Subject: Request for Deadline Extension
 
 Hi Professor,
 
-I'm writing to request an extension on the upcoming assignment.
+I'm writing to request a deadline extension.
 
-Over the past week, my workload across a couple of courses has stacked up more than I anticipated.
+I was sick, and that made it hard to finish on time.
 
-Would it be possible to grant an extension? If a different timeline works better on your end, I'm happy to work with whatever you are able to offer. I'm also glad to provide any information you need when considering the request.
+Would it be possible to grant an extension? If a different timeline works better on your end, I'm happy to work with whatever you are able to offer.
 
-Thank you for taking the time to consider this — I know deadlines matter for grading and course pacing, and I don't take the flexibility for granted.
+Please let me know if you need anything else from me.
+
+Thank you for considering this.
 
 Best,
 [Your Name]
 
-EXAMPLE — WITHOUT REASON (idea gave no reason; do not invent one):
+EXAMPLE — WITHOUT REASON (idea gave no reason; stay general — invent nothing):
 Subject: Request for Deadline Extension
 
 Hi Professor,
 
-I'm writing to request an extension on the upcoming assignment.
+I'm writing to request a deadline extension.
 
 Would it be possible to grant an extension, or whatever timeline works best on your end?
 
-I'm flexible on the exact timing and happy to work with a shorter extension if that is easier to accommodate.
+I'm flexible on timing and happy to adjust if that helps.
 
-I'm also happy to follow whatever process you typically use for extension requests.
-
-Please let me know if you need any information from me to consider the request or what I should do next.
+Please let me know if you need anything from me, or what I should do next.
 
 Thank you for considering this — I appreciate any flexibility you're able to offer.
 
@@ -245,7 +267,8 @@ GENERATE_COMPLEXITY_GUIDANCE: dict[str, str] = {
     "simple": """\
 COMPLEXITY — plain wording (independent of length and tone):
   • Use short, plain, everyday words and short sentences.
-  • Examples:
+  • Wording-style samples only (do NOT copy their subjects/deadlines into your draft
+    unless the user's idea already has them):
     "I need the report by Monday or we'll be late."
     "Can you send me an update on the contract?"
     "Let me know if you need anything from me."
@@ -256,7 +279,8 @@ COMPLEXITY — plain wording (independent of length and tone):
     "standard": """\
 COMPLEXITY — normal clear wording (independent of length and tone):
   • Use normal, clear professional wording.
-  • Examples:
+  • Wording-style samples only (do NOT copy their subjects/deadlines into your draft
+    unless the user's idea already has them):
     "I need the report by Monday, or the project timeline will be affected."
     "Could you share the current status of the contract?"
     "Please let me know if there's anything you need from me."
@@ -266,7 +290,8 @@ COMPLEXITY — normal clear wording (independent of length and tone):
 COMPLEXITY — precise, developed wording (independent of length and tone):
   • Use more precise or formal word choice and more developed sentence structure, without
     sounding stiff, academic, or bloated.
-  • Examples:
+  • Wording-style samples only (do NOT copy their subjects/deadlines into your draft
+    unless the user's idea already has them):
     "I'll need the report by Monday to avoid any disruption to the project timeline."
     "Could you provide an update on where things currently stand with the contract?"
     "Please don't hesitate to reach out if there's anything further you require from me."
@@ -2059,7 +2084,8 @@ def _build_length_retry_instruction(
             + measured
             + f"Output ONE {kind} only with 2–3 body paragraphs ({minimum}–{maximum} body words). "
             "If the idea gave no reason, include no reason or excuse. "
-            "Add distinct detail grounded in the idea instead of restating the same request. "
+            "Expand with general phrasing grounded only in the idea — do not invent names, "
+            "dates, numbers, or events to fill space. "
             "Do not include two sentences that ask for the same thing in different words. "
             "Keep the requested complexity; individual sentence length may vary, but the "
             "whole body must remain in the target range."

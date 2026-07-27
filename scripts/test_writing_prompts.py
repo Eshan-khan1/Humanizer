@@ -103,6 +103,11 @@ class GeneratePromptIndependenceTests(unittest.TestCase):
         self.assertIn("Do not change the meaning", system)
         self.assertIn("Do not invent facts", system)
         self.assertIn("Do not add new information beyond what the user implied", system)
+        self.assertIn("SPARSE IDEA RULE", system)
+        self.assertIn("general, non-committal language", system)
+        # Few-shots must not teach inventing "upcoming assignment" from a thin idea.
+        self.assertNotIn("extension on the upcoming assignment", system.lower())
+        self.assertIn("request a deadline extension", system.lower())
 
     def test_tone_change_does_not_alter_length_or_vocabulary_rules(self) -> None:
         base = {
@@ -210,12 +215,14 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("selected Length range", system)
         self.assertIn("EXAMPLE — WITH REASON", system)
         self.assertIn("EXAMPLE — WITHOUT REASON", system)
-        self.assertIn("clarifying what the user is asking for", system)
+        self.assertIn("restating/clarifying the ask in general terms", system)
         self.assertIn("mentioning progress already made ONLY if the idea implies", system)
         self.assertIn("offering flexibility on timing", system)
         self.assertIn("asking what the reader needs next", system)
+        self.assertIn("SPARSE IDEA RULE", system)
         self.assertNotIn("I am not adding a separate reason", system)
         self.assertNotIn("I am requesting an extension on the current deadline and would appreciate", system)
+        self.assertNotIn("extension on the upcoming assignment", system.lower())
 
     def test_signoff_permanent_note_is_closing_only(self) -> None:
         name, remaining, only = _parse_signoff_permanent_note(
