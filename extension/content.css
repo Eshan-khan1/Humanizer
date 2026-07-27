@@ -3,36 +3,36 @@
 /* Humanizer content UI — Claude-inspired tokens (maps legacy grm-* names) */
 :host,
 .grm-card {
-  --color-pink: #c96442;
-  --color-purple: #a85a3f;
-  --color-violet: #8a6a4f;
+  --color-pink: #111111;
+  --color-purple: #333333;
+  --color-violet: #444444;
   --color-bg-darkest: #2b2a27;
   --color-bg-dark: #1f1e1b;
   --color-bg-mid: #393937;
   --color-text-muted: #a3a098;
   --color-white: #eeeeee;
   --gradient-brand: none;
-  --gradient-brand-btn: #c96442;
+  --gradient-brand-btn: #111111;
   --border-subtle: #3d3a35;
   --border-card: #3d3a35;
   --text-placeholder: rgba(163, 160, 152, 0.55);
   --shadow-card: none;
   --shadow-popup: none;
   --shadow-glow: none;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
+  --radius-sm: 0.4rem;
+  --radius-md: 0.55rem;
+  --radius-lg: 0.75rem;
   --radius-pill: 9999px;
   --font-sans: "Source Serif 4", "Tiempos Text", Georgia, Charter, serif;
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
   --grm-color-correctness: var(--color-pink);
-  --grm-color-clarity: #c9a227;
+  --grm-color-clarity: #555555;
   --grm-color-engagement: var(--color-purple);
   --grm-color-delivery: var(--color-violet);
   --grm-color-brand: var(--color-pink);
   --grm-color-accept: var(--color-pink);
-  --grm-color-accept-hover: #d97650;
+  --grm-color-accept-hover: #000000;
   --grm-color-text-primary: var(--color-white);
   --grm-color-text-secondary: var(--color-text-muted);
   --grm-color-text-muted: rgba(163, 160, 152, 0.75);
@@ -135,11 +135,11 @@
   z-index: 2147483647;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 280px;
-  max-width: 360px;
+  gap: 8px;
+  min-width: 220px;
+  max-width: 280px;
   width: max-content;
-  padding: 16px 20px;
+  padding: 10px 12px;
   font-family: var(--grm-font-family);
   background: var(--grm-color-surface);
   border: 1px solid var(--grm-color-border);
@@ -163,20 +163,20 @@
 .grm-card__header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   position: relative;
-  padding-right: 28px;
-  font-size: 12px;
+  padding-right: 24px;
+  font-size: 11px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--grm-color-text-muted);
   letter-spacing: 0.01em;
 }
 
 .grm-card__icon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }
 
 .grm-category-type {
@@ -197,16 +197,16 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   margin: 0;
   padding: 0;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--grm-color-text-muted);
-  font-size: 20px;
-  line-height: 28px;
+  font-size: 16px;
+  line-height: 22px;
   text-align: center;
   cursor: pointer;
   pointer-events: auto;
@@ -235,8 +235,8 @@
 
 .grm-card__preview {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--color-text-muted);
 }
 
@@ -270,13 +270,13 @@
 
 .grm-btn--accept {
   margin: 0;
-  padding: 10px 20px;
+  padding: 6px 14px;
   border: none;
   border-radius: var(--grm-btn-radius);
   background: var(--gradient-brand-btn);
-  color: var(--color-white);
+  color: #ffffff;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -284,12 +284,14 @@
   transition:
     opacity var(--transition-fast),
     box-shadow var(--transition-fast),
-    transform var(--transition-fast);
+    transform var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .grm-btn--accept:hover {
-  opacity: 0.9;
-  box-shadow: 0 6px 20px rgba(255, 77, 141, 0.55);
+  opacity: 1;
+  background: var(--grm-color-accept-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .grm-btn--accept:active {
@@ -298,13 +300,13 @@
 
 .grm-btn--dismiss {
   margin: 0;
-  padding: 8px 8px;
+  padding: 6px 8px;
   border: none;
   border-radius: var(--grm-btn-radius);
   background: transparent;
   color: var(--grm-color-text-muted);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: color 150ms ease, background 150ms ease;
@@ -330,14 +332,14 @@
 
 .humanizer-rewrite-btn {
   position: fixed;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: var(--gradient-brand-btn);
-  color: var(--color-white);
-  box-shadow: 0 4px 12px rgba(255, 77, 141, 0.45);
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
   cursor: pointer;
   z-index: 99999;
   display: flex;
@@ -353,7 +355,7 @@
 
 .humanizer-rewrite-btn:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 18px rgba(255, 77, 141, 0.6);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
 .humanizer-rewrite-btn--hidden {
@@ -376,7 +378,7 @@
 }
 
 .humanizer-rewrite-btn-icon {
-  font-size: 16px;
+  font-size: 13px;
   line-height: 1;
 }
 
@@ -441,11 +443,11 @@
 
 .humanizer-rewrite-box--error {
   animation: humanizer-rewrite-shake 0.35s ease;
-  border-color: rgba(255, 77, 141, 0.45);
+  border-color: rgba(17, 17, 17, 0.55);
 }
 
 .humanizer-rewrite-box input {
-  width: 180px;
+  width: 150px;
   border: none;
   outline: none;
   font-size: 13px;
@@ -475,8 +477,8 @@
 
 .humanizer-rewrite-preset:hover {
   color: var(--color-text-primary);
-  border-color: rgba(255, 77, 141, 0.35);
-  background: rgba(255, 77, 141, 0.08);
+  border-color: rgba(17, 17, 17, 0.45);
+  background: rgba(17, 17, 17, 0.2);
 }
 
 .humanizer-rewrite-box input::placeholder {
@@ -488,14 +490,14 @@
 }
 
 .humanizer-rewrite-box .humanizer-rewrite-send {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: var(--gradient-brand-btn);
-  color: var(--color-white);
-  font-size: 14px;
+  color: #ffffff;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
@@ -537,10 +539,10 @@
   position: fixed;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 220px;
-  max-width: 320px;
-  padding: 12px 36px 12px 14px;
+  gap: 6px;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 10px 30px 10px 12px;
   background: var(--color-bg-dark);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
@@ -644,12 +646,12 @@
 
 .humanizer-rewrite-menu-item {
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-white);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -662,14 +664,14 @@
   justify-content: center;
   width: auto;
   min-width: 0;
-  padding: 4px 6px;
+  padding: 3px 5px;
   line-height: 1;
   border-radius: 5px;
 }
 
 .humanizer-rewrite-menu-item-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   display: block;
   object-fit: contain;
@@ -699,8 +701,8 @@
 
 .humanizer-rewrite-menu-item--icon-only:hover .humanizer-rewrite-menu-item-icon {
   opacity: 1;
-  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(314deg)
-    brightness(101%) contrast(101%);
+  /* Keep brand black (inverted to white on dark menu) */
+  filter: brightness(0) invert(1);
 }
 
 /* Generate panel */
@@ -739,12 +741,12 @@
 
 .humanizer-generate-format-btn {
   flex: 1;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   background: var(--color-bg-mid);
   color: var(--color-white);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   font-family: var(--font-sans);
   cursor: pointer;
@@ -801,14 +803,14 @@
 
 .humanizer-generate-tone,
 .humanizer-generate-length {
-  width: 150px;
+  width: 130px;
   max-width: 58%;
-  padding: 6px 8px;
+  padding: 5px 7px;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   background: var(--color-bg-mid);
   color: var(--color-white);
-  font-size: 12px;
+  font-size: 11px;
   font-family: var(--font-sans);
 }
 

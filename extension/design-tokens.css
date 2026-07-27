@@ -10,8 +10,8 @@ html[data-theme="light"] {
   --hz-border: #e5e0d6;
   --hz-text: #1a1a18;
   --hz-text-muted: #5b5950;
-  --hz-action: #c96442;
-  --hz-action-hover: #b5563a;
+  --hz-action: #111111;
+  --hz-action-hover: #000000;
   --hz-action-text: #ffffff;
   --hz-chip-bg: transparent;
   --hz-chip-active: #e5e0d6;
@@ -23,8 +23,8 @@ html[data-theme="light"] {
 
   /* Backward-compatible aliases used by popup + content CSS */
   --color-pink: var(--hz-action);
-  --color-purple: #a85a3f;
-  --color-violet: #8a6a4f;
+  --color-purple: #333333;
+  --color-violet: #444444;
   --color-bg-darkest: var(--hz-bg);
   --color-bg-dark: var(--hz-surface);
   --color-bg-mid: var(--hz-surface-muted);
@@ -51,9 +51,10 @@ html[data-theme="dark"] {
   --hz-border: #3d3a35;
   --hz-text: #eeeeee;
   --hz-text-muted: #a3a098;
-  --hz-action: #c96442;
-  --hz-action-hover: #d97650;
-  --hz-action-text: #ffffff;
+  /* Light-on-dark brand so primary actions stay visible */
+  --hz-action: #eeeeee;
+  --hz-action-hover: #ffffff;
+  --hz-action-text: #111111;
   --hz-chip-bg: transparent;
   --hz-chip-active: #393937;
   --hz-icon: #a3a098;
@@ -73,9 +74,9 @@ html[data-theme="dark"] {
     --hz-border: #3d3a35;
     --hz-text: #eeeeee;
     --hz-text-muted: #a3a098;
-    --hz-action: #c96442;
-    --hz-action-hover: #d97650;
-    --hz-action-text: #ffffff;
+    --hz-action: #eeeeee;
+    --hz-action-hover: #ffffff;
+    --hz-action-text: #111111;
     --hz-chip-bg: transparent;
     --hz-chip-active: #393937;
     --hz-icon: #a3a098;

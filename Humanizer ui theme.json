@@ -18,8 +18,8 @@
         "userBubble": "#E5E0D6",
         "primaryText": "#1a1a18",
         "mutedText": "#5b5950",
-        "primaryAction": "#c96442",
-        "primaryActionHover": "#b5563a",
+        "primaryAction": "#111111",
+        "primaryActionHover": "#000000",
         "primaryActionText": "#FFFFFF",
         "divider": "#E5E0D6",
         "iconDefault": "#5b5950",
@@ -35,9 +35,9 @@
         "userBubble": "#393937",
         "primaryText": "#eeeeee",
         "mutedText": "#a3a098",
-        "primaryAction": "#c96442",
-        "primaryActionHover": "#d97650",
-        "primaryActionText": "#FFFFFF",
+        "primaryAction": "#eeeeee",
+        "primaryActionHover": "#ffffff",
+        "primaryActionText": "#111111",
         "divider": "#3d3a35",
         "iconDefault": "#a3a098",
         "iconHover": "#eeeeee",
@@ -56,7 +56,7 @@
         "fontFamily": "font-serif",
         "icon": {
           "name": "Sparkle",
-          "color": "#c96442",
+          "color": "#111111",
           "size": "1.5rem",
           "position": "inline-before-text"
         }
