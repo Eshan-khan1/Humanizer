@@ -383,7 +383,7 @@ def main() -> None:
         for version, case_id, issues in all_fails:
             print(f"  v{version} {case_id}: {issues[:3]}", flush=True)
 
-    summary_path = ROOT / "Test_data_generating_qwen3_8b_summary.text"
+    summary_path = ROOT / f"Test_data_generating_{model.replace(':', '_').replace('/', '_')}_summary.text"
     summary_path.write_text(
         "\n".join(
             [
