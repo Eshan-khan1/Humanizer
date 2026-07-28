@@ -263,7 +263,7 @@ def _profile_text(profile: dict[str, Any] | None) -> str:
 
 
 _COMPOUND_RE = re.compile(
-    r"\b(?!the\b|a\b|an\b|this\b|that\b)[A-Za-z][A-Za-z']+\s+"
+    r"\b(?!the\b|a\b|an\b|this\b|that\b|our\b|my\b|your\b|their\b)[A-Za-z][A-Za-z']+\s+"
     r"(?:boxes|box|costs|cost|tools|labs|essay|essays|faucet|faucets|"
     r"package|packages|samples|sample|invoice|invoices|quote|quotes|"
     r"extension|deadline|plumber|courier|shipment|shipments)\b",
