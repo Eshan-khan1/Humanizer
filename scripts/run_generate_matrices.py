@@ -44,6 +44,234 @@ SCAFFOLD = re.compile(
     r"(?i)\b(this concerns|the timing is|this relates to|this involves|the amount is)\b"
 )
 
+# Structural / greeting / sign-off / common Generate phrasing — never invent-warnings.
+# Keep this to scaffolding only. Domain nouns (cake, vet, invoice…) must come from the idea.
+_STRUCTURAL_ALLOW = frozenset(
+    {
+        # greetings / closings
+        "hi", "hey", "hello", "dear", "there", "sir", "madam",
+        "best", "sincerely", "regards", "thanks", "thank", "respectfully",
+        # signature placeholder pieces
+        "your", "name", "subject",
+        # pronouns / function words
+        "i", "me", "my", "mine", "we", "us", "our", "ours", "you", "your", "yours",
+        "he", "him", "his", "she", "her", "hers", "they", "them", "their", "theirs",
+        "it", "its", "this", "that", "these", "those", "who", "whom", "whose",
+        "what", "which", "when", "where", "why", "how",
+        "a", "an", "the", "and", "but", "or", "nor", "not", "no", "yes", "so", "too",
+        "as", "at", "by", "for", "in", "of", "on", "to", "from", "with", "without",
+        "into", "onto", "upon", "over", "under", "between", "among", "through",
+        "during", "before", "after", "since", "until", "while", "because",
+        "although", "though", "if", "unless", "whether", "than", "then",
+        "also", "just", "very", "really", "quite", "rather", "almost", "enough",
+        "some", "any", "all", "each", "every", "both", "either", "neither",
+        "other", "others", "such", "same", "different", "more", "most", "less",
+        "least", "few", "many", "much", "several", "various",
+        # common verbs / auxiliaries (not domain content)
+        "am", "is", "are", "was", "were", "be", "been", "being",
+        "have", "has", "had", "having", "do", "does", "did", "doing", "done",
+        "will", "shall", "should", "can", "cannot", "could", "may", "might", "must",
+        "would", "please", "let", "know", "need", "needs", "needed",
+        "want", "wanted", "like", "ask", "asking", "tell", "told",
+        "write", "writing", "written", "send", "sent", "share", "provide",
+        "confirm", "confirmation", "discuss", "discussion", "consider", "considering",
+        "appreciate", "appreciated", "hope", "looking", "forward", "reach", "out",
+        "contact", "help", "assist", "assistance", "able", "unable", "happy", "glad",
+        "possible", "possibility", "available", "availability", "flexible", "flexibility",
+        "timing", "schedule", "regarding", "about", "concerning", "following", "follow",
+        "up", "update", "updates", "status", "inquiry", "inquire", "enquire",
+        "information", "details", "options", "response", "reply", "question", "questions",
+        "issue", "issues", "concern", "concerns", "request", "requesting", "requested",
+        "message", "email", "note", "notes", "draft",
+        "anything", "else", "further", "additional", "next", "steps", "step",
+        "still", "already", "yet", "instead", "also", "additionally", "however",
+        "currently", "recent", "ongoing", "today", "tomorrow", "yesterday",
+        "morning", "afternoon", "evening", "night", "time", "times",
+        "day", "days", "week", "weeks", "month", "months", "year", "years",
+        "one", "two", "three", "first", "second", "third", "last", "next",
+        "new", "old", "good", "great", "fine", "sure", "okay", "ok", "well",
+        "better", "best", "soon", "ready", "open", "closed", "true", "false",
+        "make", "makes", "made", "making", "get", "got", "getting", "give", "given",
+        "take", "took", "taken", "see", "saw", "seen", "come", "came", "go", "went",
+        "say", "said", "keep", "kept", "leave", "left", "put", "set", "find", "found",
+        "include", "included", "including", "using", "used", "based", "related",
+        "ensure", "complete", "completed", "move", "forward", "proceed", "process",
+        "convenience", "opportunity", "suggestions", "suggestion", "clarifying",
+        "clarify", "restating", "restate", "generic", "specific", "general",
+        "necessary", "important", "appropriate", "potential", "actual", "exact",
+        "entire", "whole", "main", "primary", "final", "initial", "original",
+        "previous", "prior", "future", "past", "present", "certain", "particular",
+        "single", "multiple", "half", "full", "empty", "free", "high", "low",
+        "long", "short", "small", "large", "big", "little",
+        "test", "user", "reader", "recipient", "sender",
+        "here", "way", "ways", "thing", "things", "part", "parts",
+        "kind", "kinds", "sort", "sorts", "type", "types", "level", "levels",
+        "per", "via", "etc", "unto",
+        # polite filler that is not a fabricated domain fact
+        "greatly", "kindly", "sincerely", "warmly", "quickly", "simply",
+        "bring", "attention", "experiencing", "experience", "challenging",
+        "another", "causing", "adjustments", "repairs", "work", "works", "working",
+        "end", "side", "team", "office", "place", "area",
+    }
+)
+
+_TOKEN_RE = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)?|\$[\d,]+(?:\.\d{2})?|\b[A-Z]{1,5}-?\d{2,}\b|#\d{3,}\b|\d+(?:\.\d+)?")
+_MONEY_RE = re.compile(r"\$[\d,]+(?:\.\d{2})?")
+_ID_RE = re.compile(r"\b[A-Z]{1,5}-?\d{2,}\b|#\d{3,}\b")
+_MEASURE_RE = re.compile(
+    r"(?i)\b\d+(?:\.\d+)?\s*(?:inch|inches|in|cm|mm|ft|feet|lb|lbs|kg|oz|%)\b"
+)
+_WEEKDAY_RE = re.compile(
+    r"(?i)\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b"
+)
+_MONTH_RE = re.compile(
+    r"(?i)\b(?:january|february|march|april|may|june|july|august|september|"
+    r"october|november|december)\b"
+)
+
+
+def _normalize_term(term: str) -> str:
+    return re.sub(r"[^a-z0-9$#.-]", "", (term or "").lower())
+
+
+def _profile_and_note_text(case: dict) -> str:
+    settings = case.get("settings") or {}
+    bits = [
+        settings.get("profile") or "",
+        settings.get("permanent_note") or "",
+        case.get("idea") or case.get("original_text") or "",
+    ]
+    return " ".join(bits)
+
+
+def extract_concrete_terms(text: str) -> set[str]:
+    """Pull concrete / specific terms (content nouns-ish, money, IDs, measures)."""
+    terms: set[str] = set()
+    raw = text or ""
+    for match in _MONEY_RE.finditer(raw):
+        terms.add(_normalize_term(match.group(0)))
+    for match in _ID_RE.finditer(raw):
+        terms.add(_normalize_term(match.group(0)))
+    for match in _MEASURE_RE.finditer(raw):
+        terms.add(_normalize_term(match.group(0)))
+        for piece in re.findall(r"[A-Za-z]+|\d+(?:\.\d+)?", match.group(0)):
+            terms.add(_normalize_term(piece))
+    for match in _WEEKDAY_RE.finditer(raw):
+        terms.add(_normalize_term(match.group(0)))
+    for match in _MONTH_RE.finditer(raw):
+        terms.add(_normalize_term(match.group(0)))
+
+    tokens = _TOKEN_RE.findall(raw)
+    for token in tokens:
+        norm = _normalize_term(token)
+        if not norm or norm in _STRUCTURAL_ALLOW:
+            continue
+        if norm.isdigit() and len(norm) <= 2:
+            continue
+        # Content-ish tokens: longer words, proper-looking, money/id already added.
+        if len(norm) >= 4 or norm[:1].isalpha() and any(ch.isdigit() for ch in norm):
+            terms.add(norm)
+        elif len(norm) >= 3 and norm not in _STRUCTURAL_ALLOW:
+            # Short but specific (e.g. VPN, AC already allowlisted when common)
+            if norm.isalpha() and norm == token.lower() and len(norm) >= 3:
+                # Keep short content nouns that aren't structural (vet, cat, cake are allowlisted
+                # as seed subjects when present in idea — still extract for seed set).
+                terms.add(norm)
+
+    # Simple adjective+noun / noun+noun bigrams for product-like specifics.
+    words = [w for w in re.findall(r"[A-Za-z][A-Za-z']+", raw.lower()) if w not in _STRUCTURAL_ALLOW]
+    for left, right in zip(words, words[1:]):
+        if len(left) >= 4 and len(right) >= 4:
+            terms.add(f"{left} {right}")
+    return {t for t in terms if t}
+
+
+def invent_detail_warnings(case: dict, output: str) -> list[str]:
+    """Flag output concrete terms not traceable to the idea / note / profile.
+
+    Warnings only — expected false positives; for manual review.
+    """
+    if not (output or "").strip():
+        return []
+    seed_text = _profile_and_note_text(case)
+    seed_terms = extract_concrete_terms(seed_text)
+    seed_tokens = {
+        _normalize_term(tok)
+        for tok in _TOKEN_RE.findall(seed_text)
+        if _normalize_term(tok)
+    }
+    profile = parse_profile((case.get("settings") or {}).get("profile") or "")
+    for value in profile.values():
+        if isinstance(value, str):
+            for tok in _TOKEN_RE.findall(value):
+                seed_tokens.add(_normalize_term(tok))
+
+    # Ignore subject / greeting / signature scaffolding in the output scan.
+    body_lines: list[str] = []
+    for line in (output or "").splitlines():
+        stripped = line.strip()
+        if re.match(r"(?i)^subject\s*:", stripped):
+            continue
+        if re.match(r"(?i)^(hi|hey|hello|dear)\b", stripped) and len(stripped) < 48:
+            continue
+        if re.match(r"(?i)^(best|sincerely|thanks|thank you|regards),?\s*$", stripped):
+            break
+        if stripped in {"[Your Name]"}:
+            break
+        # Drop bare signature name line matching profile.
+        full = (profile.get("fullName") or "").strip().lower()
+        if full and stripped.lower() == full:
+            break
+        body_lines.append(line)
+    body_text = "\n".join(body_lines)
+
+    out_terms = extract_concrete_terms(body_text)
+    # Prefer single-token flags first (less noisy than every adjective+noun bigram).
+    unigrams = sorted(
+        (t for t in out_terms if " " not in t),
+        key=lambda t: (-len(t), t),
+    )
+    bigrams = sorted(
+        (t for t in out_terms if " " in t),
+        key=lambda t: (-len(t), t),
+    )
+
+    def _grounded(term: str) -> bool:
+        if term in _STRUCTURAL_ALLOW:
+            return True
+        if term in seed_terms or term in seed_tokens:
+            return True
+        parts = term.split()
+        if len(parts) > 1 and all(
+            part in seed_terms or part in seed_tokens or part in _STRUCTURAL_ALLOW
+            for part in parts
+        ):
+            return True
+        if any(
+            seed.startswith(term[:4]) or term.startswith(seed[:4])
+            for seed in seed_tokens
+            if len(seed) >= 4 and len(term) >= 4
+        ):
+            return True
+        return False
+
+    flagged: list[str] = []
+    for term in unigrams + bigrams:
+        if _grounded(term):
+            continue
+        # Skip bigrams once either side already flagged as a unigram invent.
+        if " " in term:
+            left, right = term.split(" ", 1)
+            if left in flagged or right in flagged:
+                continue
+            # Skip bigrams that only add noise around an already-grounded seed noun.
+            if left in seed_tokens or right in seed_tokens:
+                continue
+        flagged.append(term)
+        if len(flagged) >= 10:
+            break
+    return flagged
+
 
 def parse_profile(raw: str) -> dict:
     profile: dict = {"permanentNote": ""}
@@ -168,19 +396,22 @@ def flatten_cases(raw: dict | list, version: int) -> list[dict]:
     return flat
 
 
-def evaluate(case: dict, status: int, payload: dict, output: str) -> list[str]:
+def evaluate(
+    case: dict, status: int, payload: dict, output: str
+) -> tuple[list[str], list[str]]:
     checks = case.get("checks") or {}
     issues: list[str] = []
+    warnings: list[str] = []
     if checks.get("reject_http_500") and status == 500:
         issues.append("unexpected HTTP 500")
     if status != 200:
         if not (checks.get("reject_http_500") and status == 500):
             issues.append(f"HTTP {status}: {payload.get('detail')}")
-        return issues
+        return issues, warnings
     text = output or ""
     if not text.strip():
         issues.append("empty output")
-        return issues
+        return issues, warnings
     lower = text.lower()
     seed = (case.get("idea") or "").lower()
     greet = greeting_line(text)
@@ -206,35 +437,8 @@ def evaluate(case: dict, status: int, payload: dict, output: str) -> list[str]:
     for actor in checks.get("must_preserve_actors") or []:
         if actor.lower() not in lower:
             issues.append(f"missing preserved actor: {actor}")
-    note = (case.get("settings") or {}).get("permanent_note", "").lower()
-    for marker in FAB:
-        if marker in lower and marker not in seed and marker not in note:
-            message = f"fabricated marker: {marker}"
-            if (
-                message not in issues
-                and f"forbidden phrase: {marker}" not in issues
-            ):
-                issues.append(message)
     if SCAFFOLD.search(text):
         issues.append(f"scaffold leak: {SCAFFOLD.search(text).group(0)!r}")
-    invent_patterns = {
-        "Friday": r"\bFriday\b",
-        "Saturday": r"\bSaturday\b",
-        "October": r"\bOctober\b",
-        "2025": r"\b2025\b",
-        "2026": r"\b2026\b",
-        "next Tuesday": r"\bTuesday\b",
-        "appointment Tuesday": r"\bTuesday\b",
-    }
-    for label in checks.get("must_not_invent") or []:
-        pattern = invent_patterns.get(label)
-        if not pattern:
-            continue
-        for match in re.finditer(pattern, text, re.I):
-            if match.group(0).lower() in seed:
-                continue
-            issues.append(f"invented ({label}): {match.group(0)}")
-            break
     want = checks.get("must_greeting_name")
     if want and not re.search(
         rf"^(Dear|Hi|Hey|Hello)\s+{re.escape(want)}\s*,?\s*$", greet, re.I
@@ -253,7 +457,19 @@ def evaluate(case: dict, status: int, payload: dict, output: str) -> list[str]:
     ):
         if checks.get("min_paragraphs") and paras < checks["min_paragraphs"]:
             issues.append(f"paragraphs {paras} < {checks['min_paragraphs']}")
-    return issues
+
+    # General invent check (warnings only — for manual review).
+    invent_flags = invent_detail_warnings(case, text)
+    if invent_flags:
+        warnings.append("possible invent: " + ", ".join(invent_flags))
+    # Known catastrophic bleed phrases still surface as warnings if somehow missed.
+    note = (case.get("settings") or {}).get("permanent_note", "").lower()
+    for marker in FAB:
+        if marker in lower and marker not in seed and marker not in note:
+            msg = f"known bleed phrase: {marker}"
+            if msg not in warnings and f"forbidden phrase: {marker}" not in issues:
+                warnings.append(msg)
+    return issues, warnings
 
 
 def run_file(version: int, model: str) -> tuple[int, int, list[tuple[str, list[str]]]]:
@@ -292,7 +508,7 @@ def run_file(version: int, model: str) -> tuple[int, int, list[tuple[str, list[s
                 {"text": idea, "tone": instruction},
             )
             out = body.get("rewritten") if status == 200 else ""
-        issues = evaluate(case, status, body, out)
+        issues, warnings = evaluate(case, status, body, out)
         ok = not issues
         passed += int(ok)
         failed += int(not ok)
@@ -303,19 +519,24 @@ def run_file(version: int, model: str) -> tuple[int, int, list[tuple[str, list[s
                 "ms": ms,
                 "ok": ok,
                 "issues": issues,
+                "warnings": warnings,
                 "output": out or body.get("detail") or "",
             }
         )
+        warn_bit = f" WARN {warnings[0][:80]}" if warnings else ""
         print(
             f"v{version} [{index}/{len(cases)}] "
-            f"{'PASS' if ok else 'FAIL'} {case.get('id')} ({ms}ms) {issues[:2]}",
+            f"{'PASS' if ok else 'FAIL'} {case.get('id')} ({ms}ms) "
+            f"{issues[:2]}{warn_bit}",
             flush=True,
         )
+    warn_count = sum(1 for row in rows if row.get("warnings"))
     lines = [
         f"Humanizer Generate/Rewrite Test Results — {source.name}",
         f"Writing model: {model}",
         f"Run: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         f"Summary: {passed}/{passed + failed} passed, {failed}/{passed + failed} failed",
+        f"Invent warnings: {warn_count}/{passed + failed} cases flagged for review",
         "",
     ]
     for row in rows:
@@ -325,6 +546,7 @@ def run_file(version: int, model: str) -> tuple[int, int, list[tuple[str, list[s
             f"Settings: {json.dumps(row.get('settings') or {}, ensure_ascii=False)}",
             f"HTTP: {row['status']} | Duration: {row['ms']} ms",
             f"Issues: {'; '.join(row['issues']) if row['issues'] else 'None'}",
+            f"Warnings: {'; '.join(row['warnings']) if row['warnings'] else 'None'}",
             "Output:",
             str(row["output"]),
             "",
