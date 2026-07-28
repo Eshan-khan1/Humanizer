@@ -73,6 +73,9 @@ _GENERIC = frozenset(
         "based", "reaching", "recently", "grant", "implementing", "inquire",
         "confirm", "proceed", "additional", "complete", "revised",
         "opportunity", "arrangement", "arrangements",
+        "company", "concerns", "date", "delay", "diligently", "experienced",
+        "intended", "issue", "issues", "resolve", "sending", "setback",
+        "shipment", "team", "schedule", "slot", "could",
     }
 )
 
@@ -120,11 +123,13 @@ _RESTATE_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"quote", "quotation"}),
     frozenset({"revision", "revise", "revised"}),
     frozenset({"invoice", "invoices"}),
-    frozenset({"samples", "sample", "packages", "package"}),
+    frozenset({"samples", "sample", "packages", "package", "shipment", "shipments"}),
     frozenset({"courier", "courier service"}),
     frozenset({"steel", "steel costs"}),
     frozenset({"ethics essay", "ethics", "essay"}),
     frozenset({"bathroom", "bathroom faucet"}),
+    frozenset({"late", "delay", "delayed"}),
+    frozenset({"open", "slot", "close"}),
 )
 
 _STYLE_NOTE_RE = re.compile(r"(?i)^(?:style|tone)\s*:\s*")
@@ -258,7 +263,7 @@ def _profile_text(profile: dict[str, Any] | None) -> str:
 
 
 _COMPOUND_RE = re.compile(
-    r"\b[A-Za-z][A-Za-z']+\s+"
+    r"\b(?!the\b|a\b|an\b|this\b|that\b)[A-Za-z][A-Za-z']+\s+"
     r"(?:boxes|box|costs|cost|tools|labs|essay|essays|faucet|faucets|"
     r"package|packages|samples|sample|invoice|invoices|quote|quotes|"
     r"extension|deadline|plumber|courier|shipment|shipments)\b",
