@@ -70,6 +70,9 @@ _GENERIC = frozenset(
         "beginning", "accordingly", "significantly", "unfortunately",
         "appears", "particularly", "especially", "effectively",
         "everything", "slight", "current", "requires", "amount",
+        "based", "reaching", "recently", "grant", "implementing", "inquire",
+        "confirm", "proceed", "additional", "complete", "revised",
+        "opportunity", "arrangement", "arrangements",
     }
 )
 
@@ -300,8 +303,14 @@ def extract_claims(text: str, *, for_required: bool = False) -> list[str]:
 
     for match in _PROPER_RE.finditer(raw):
         phrase = match.group(0)
-        if _norm(phrase.split()[0]) in _GENERIC and len(phrase.split()) == 1:
-            continue
+        first = _norm(phrase.split()[0])
+        # Skip sentence-start determiners ("The cost") and lone generics.
+        if first in _GENERIC or first in {"the", "a", "an", "this", "that", "these", "those"}:
+            if len(phrase.split()) == 1:
+                continue
+            # Keep "Cobalt Tools"; drop "The Cost" / "The Quote".
+            if first in {"the", "a", "an", "this", "that"}:
+                continue
         _add(phrase)
 
     _weak_required = frozenset(
