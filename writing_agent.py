@@ -56,18 +56,29 @@ MEANING_FIDELITY_RULE = """\
 RULE — MEANING & FIDELITY (always on):
   • Do not change the meaning of the user's input.
   • Do not invent facts, names, requests, excuses, dates, assignment titles, health issues,
-    family emergencies, prior conversations, dollar amounts, IDs, places, events, or any
-    other detail the user did not state.
+    family emergencies, prior conversations, dollar amounts, IDs, places, events, flavors,
+    quantities, causes, or any other detail the user did not state.
   • Never complete a partial date or number. If the idea says "June 3rd," do not add
     a year; if it gives only a month, do not add a day. Preserve exactly the date
     components and other specific details the user supplied, even when a completion
     would seem reasonable.
-  • SPARSE IDEA RULE (critical): If the idea is short or thin, expand it into a complete
-    email/essay using general, non-committal language. Sound natural and finished, but
-    do NOT fill gaps with plausible-sounding specifics. Prefer phrasing like "a deadline
-    extension," "this week," or "the issue" over inventing which assignment, which day,
-    which person, or which event. Specificity is allowed ONLY for details the idea
-    actually contains.
+  • SPARSE IDEA RULE (critical — short, medium, AND long): When the idea leaves a detail
+    unspecified, do NOT supply a plausible value. Phrase that part generically so the
+    draft still reads complete and natural. Apply this whenever the idea does not state:
+      - a flavor, style, size, color, or product option → say "the cake" / "the order,"
+        not "vanilla with berries";
+      - a reason or cause → omit any reason; do not invent illness, workload, flooding,
+        or "prior issues";
+      - a quantity, count, price, or measurement → do not invent numbers;
+      - an event type or occasion → say "the centerpieces" / "the lunch boxes," not
+        "our wedding" or "the upcoming catering event";
+      - prior context (a visit, exam, conversation, or existing order) → do not invent
+        that it already happened.
+    What TO do instead: restate the ask with the nouns the user gave, ask a clarifying
+    question, or invite the reader to share the missing detail. Completeness comes from
+    polite structure (greeting, clear ask, close) — not from filling gaps with guesses.
+    Longer length must NOT invent more specifics to fill space; expand only by restating
+    the ask, offering timing flexibility without new dates, or asking what they need next.
   • NO REASON RULE (critical): If the user's idea does NOT state a reason, the output must
     NOT include any reason at all — not health, workload, personal circumstances,
     "unforeseen" events, or any other justification. The request must stand alone.
@@ -89,11 +100,28 @@ RULE — MEANING & FIDELITY (always on):
   • Expand or rephrase what they gave you — never replace their intent with a different message."""
 
 GENERATE_EXAMPLES = """\
-EXAMPLE — sparse idea, no reason stated (stay general — do not invent specifics):
+EXAMPLE — sparse idea: wrong invents a plausible detail; right stays generic
+Idea: "email the bakery about the cake"
+Wrong (invents flavor/size/topping the user never gave):
+  "I'd like a vanilla and chocolate layer cake, each layer 6 inches, iced in white frosting
+  with fresh berries."
+Right (complete email, no invented product details):
+  "I'm writing about the cake. Could you share options and pricing, or let me know what
+  details you need from me?"
+
+EXAMPLE — sparse idea: wrong invents event/context; right stays generic
+Idea: "email the florist about the centerpieces"
+Wrong (invents an occasion and prior order):
+  "I wanted to confirm the centerpieces for our upcoming event and make sure we have enough
+  arrangements packed safely."
+Right:
+  "I'm writing about the centerpieces. Could you share details on options and what you need
+  from me to move forward?"
+
+EXAMPLE — sparse idea, no reason (stay general — do not invent specifics):
 Idea: "asking my professor for a deadline extension"
-Correct body (general): "I'm writing to request a deadline extension. Would that be possible?"
-Wrong: inventing an assignment title, course name, date, illness, workload story, or any
-  other detail not in the idea (e.g. "upcoming assignment," "PSYCH 201," "Friday," "I was sick").
+Wrong: inventing an assignment title, course, date, illness, or workload story.
+Right: "I'm writing to request a deadline extension. Would that be possible?"
 
 EXAMPLE — sparse idea with a reason (use only the stated reason; invent nothing else):
 Idea: "asking my professor for extension, I was sick"
@@ -102,7 +130,11 @@ Wrong: adding workload, family emergency, or any second reason not in the idea.
 
 EXAMPLE — idea already has specifics (keep them; do not add more):
 Idea: "email Maya at Riverton Parts that invoice 4421 for $320 is due Friday"
-Correct: keep Maya, Riverton Parts, 4421, $320, and Friday. Invent nothing beyond those."""
+Correct: keep Maya, Riverton Parts, 4421, $320, and Friday. Invent nothing beyond those.
+
+These contrasts apply at short, medium, and long length alike. Longer drafts may add more
+sentences of the same general ask or clarifying questions — they must not invent flavors,
+event types, causes, quantities, or prior context the idea omitted."""
 
 EMAIL_GENERATION_GUIDE = """\
 TASK: GENERATE a complete email from the seed text, user notes, and document context.
@@ -127,7 +159,8 @@ General rules:
   • If a user note includes a one-time tone instruction, follow that tone for this generation only.
   • If no reason is provided in the idea, include no reason whatsoever — do not invent one.
   • If the idea is thin, keep body language general; never invent names, dates, titles,
-    amounts, or events to make the draft sound fuller.
+    amounts, flavors, event types, causes, quantities, or prior context to make the draft
+    sound fuller. Ask for missing details instead of guessing them.
   • Never write meta commentary about instructions, rules, length, or the drafting process.
   • When content naturally contains 3 or more distinct requirements, blockers, questions,
     or other list items, put each item on its own line as a proper numbered or bulleted list.
@@ -179,13 +212,15 @@ OUTPUT RULES (non-negotiable):
   • Two different ideas must produce substantively different bodies tied to their subjects,
     not the same generic template with only a noun changed.
   • Thin ideas still produce complete, natural emails — using general phrasing, not
-    fabricated names/numbers/dates/events. Completeness ≠ inventing missing facts."""
+    fabricated names/numbers/dates/events/flavors/causes. Completeness ≠ inventing
+    missing facts. If a detail is missing, phrase around it or ask — do not guess."""
 
 GENERATE_LENGTH_GUIDANCE: dict[str, str] = {
     "short": """\
 LENGTH — structure only (independent of tone and complexity):
   • Body: 1 short paragraph, at most 2 sentences (~20–50 words).
-  • Just the core request — no padding, no invented excuses or reasons.
+  • Just the core request — no padding, no invented excuses, flavors, quantities, or reasons.
+  • If the idea omits a concrete detail, phrase that part generically or ask — do not guess.
   • Email: greeting and sign-off are allowed but the BODY is only the core message.
   • Essay: 1 short paragraph or 2 sentences total.
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
@@ -199,7 +234,9 @@ LENGTH — structure only (independent of tone and complexity):
   • Email: greeting, 2–3 body paragraphs, closing/sign-off.
   • Essay: 2–3 paragraphs of content.
   • Develop only what the user said. If they gave no reason, include none.
-  • If the idea is sparse, stay general — do not invent facts to hit the word target.
+  • If the idea is sparse, stay general — do not invent flavors, event types, causes,
+    quantities, or prior context to hit the word target. Extra paragraphs may restate
+    the ask or ask clarifying questions; they must not invent missing facts.
   • LENGTH must NEVER change vocabulary difficulty or tone.""",
     "long": """\
 LENGTH — structure only (independent of tone and complexity):
@@ -208,6 +245,10 @@ LENGTH — structure only (independent of tone and complexity):
     rather than inventing or repeating content.
   • Paragraph and word counts are approximate targets. Accept a complete, grounded
     4-paragraph draft rather than padding it or rejecting it solely for missing one paragraph.
+  • CRITICAL — long length has more room to drift into invented specifics. Do not fill
+    space with plausible flavors, event types, causes, quantities, prior visits/orders,
+    or backstory. Expand only with general restatement, timing flexibility (no new dates),
+    and clarifying questions.
   • CRITICAL — pick exactly ONE example shape below:
       - Idea STATES a reason → use WITH REASON shape, substituting ONLY the user's actual
         reason (never the sample's "I was sick" wording unless the user said that).
@@ -216,10 +257,10 @@ LENGTH — structure only (independent of tone and complexity):
         dates, asking what the reader needs next, or mentioning progress ONLY when the
         idea implies progress. Do not borrow illness, workload, stacked courses, or any
         other justification from WITH REASON. Do not invent assignment titles or dates.
-  • Never invent excuses, dates, assignment titles, names, numbers, or backstory. Never
-    copy these examples verbatim — match their shape and depth for the user's actual idea.
-    If the user's idea is thinner than the sample, stay thinner (general), do not "upgrade"
-    it with sample specifics.
+  • Never invent excuses, dates, assignment titles, names, numbers, flavors, event types,
+    or backstory. Never copy these examples verbatim — match their shape and depth for
+    the user's actual idea. If the user's idea is thinner than the sample, stay thinner
+    (general), do not "upgrade" it with sample specifics.
   • Do not repeat the same ask in slightly different wording across paragraphs.
   • If no writer name is saved, end with the closing word and then exactly
     "[Your Name]" on the final line.
@@ -577,6 +618,8 @@ SHORT LENGTH CONTENT (mandatory when length is short):
   • 1 short paragraph with at most 2 sentences — core message only, no padding.
   • Include ONLY information from the seed input and any informational user note.
   • Never add sentences, instructions, or topics the user did not mention.
+  • If a concrete detail is missing (flavor, quantity, event type, reason, prior context),
+    phrase generically or ask — do not invent a plausible value.
   • Do NOT add "please review changes", "provide feedback", "let me know if you have questions",
     or similar unless the user specifically said those in the input.
   • Do not change tone or vocabulary — LENGTH only controls how much text."""
@@ -2075,6 +2118,8 @@ def _build_length_retry_instruction(
             + measured
             + f"Output ONE {kind} only with 1 short body paragraph and at most 2 body sentences. "
             "Core message only. If the idea gave no reason, include no reason. "
+            "If a detail is missing, phrase it generically — do not invent flavors, "
+            "quantities, event types, or prior context. "
             "Do not change tone or vocabulary."
             + draft
         )
@@ -2085,7 +2130,8 @@ def _build_length_retry_instruction(
             + f"Output ONE {kind} only with 2–3 body paragraphs ({minimum}–{maximum} body words). "
             "If the idea gave no reason, include no reason or excuse. "
             "Expand with general phrasing grounded only in the idea — do not invent names, "
-            "dates, numbers, or events to fill space. "
+            "dates, numbers, flavors, event types, causes, quantities, or prior context "
+            "to fill space. Ask for missing details instead of guessing. "
             "Do not include two sentences that ask for the same thing in different words. "
             "Keep the requested complexity; individual sentence length may vary, but the "
             "whole body must remain in the target range."
@@ -2104,7 +2150,9 @@ def _build_length_retry_instruction(
         "If the idea had no reason, elaborate ONLY by clarifying the ask, offering "
         "timing flexibility without inventing dates, asking what the reader needs next, "
         "or mentioning progress "
-        "only when the idea implies it. Do NOT invent a reason. Do NOT repeat the same ask in "
+        "only when the idea implies it. Do NOT invent a reason. Do NOT invent flavors, "
+        "event types, causes, quantities, or prior context to fill long length. "
+        "Do NOT repeat the same ask in "
         "slightly different wording across paragraphs. Do NOT write meta commentary. "
         "When no writer name is saved, put exactly \"[Your Name]\" on the final "
         "line after the closing word. "

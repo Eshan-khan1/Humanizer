@@ -104,10 +104,16 @@ class GeneratePromptIndependenceTests(unittest.TestCase):
         self.assertIn("Do not invent facts", system)
         self.assertIn("Do not add new information beyond what the user implied", system)
         self.assertIn("SPARSE IDEA RULE", system)
-        self.assertIn("general, non-committal language", system)
+        self.assertIn("phrase that part generically", system.lower())
+        self.assertIn("Wrong (invents flavor", system)
+        self.assertIn("Right (complete email, no invented product details)", system)
+        self.assertIn("email the bakery about the cake", system)
+        self.assertIn("email the florist about the centerpieces", system)
         # Few-shots must not teach inventing "upcoming assignment" from a thin idea.
         self.assertNotIn("extension on the upcoming assignment", system.lower())
         self.assertIn("request a deadline extension", system.lower())
+        # Applies at all lengths
+        self.assertIn("short, medium, AND long", system)
 
     def test_tone_change_does_not_alter_length_or_vocabulary_rules(self) -> None:
         base = {
@@ -220,9 +226,11 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("offering flexibility on timing", system)
         self.assertIn("asking what the reader needs next", system)
         self.assertIn("SPARSE IDEA RULE", system)
+        self.assertIn("phrase that part generically", system.lower())
         self.assertNotIn("I am not adding a separate reason", system)
         self.assertNotIn("I am requesting an extension on the current deadline and would appreciate", system)
         self.assertNotIn("extension on the upcoming assignment", system.lower())
+        self.assertIn("Longer length must NOT invent more specifics", system)
 
     def test_signoff_permanent_note_is_closing_only(self) -> None:
         name, remaining, only = _parse_signoff_permanent_note(
