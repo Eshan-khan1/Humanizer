@@ -36,6 +36,27 @@ class RewriteQualityTests(unittest.TestCase):
         self.assertEqual(user, "Please submit the form by Friday.")
         self.assertNotIn("REWRITE RULES", user)
 
+    def test_direction_flip_detected(self) -> None:
+        # "Send me X" (recipient acts) must not become "I'll send you X".
+        flipped = check_rewrite_quality(
+            "Send me the report now. I need it.",
+            "I'll send you the report right away since that's urgent for you.",
+            "friendly",
+        )
+        self.assertIn("direction_flip", flipped["issues"])
+        kept = check_rewrite_quality(
+            "Send me the report now. I need it.",
+            "Could you please send me the report soon? I really need it.",
+            "friendly",
+        )
+        self.assertNotIn("direction_flip", kept["issues"])
+        writer_original = check_rewrite_quality(
+            "I'll send you the file tonight.",
+            "I will send you the file tonight.",
+            "formal",
+        )
+        self.assertNotIn("direction_flip", writer_original["issues"])
+
     def test_restore_missing_closing_lines(self) -> None:
         original = (
             "Dear team,\n\nPlease review the attached document by Friday.\n\n"

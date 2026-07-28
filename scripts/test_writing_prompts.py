@@ -375,7 +375,8 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertIn("deadline extension", lower)
         self.assertNotIn("standard process for this request", lower)
         self.assertNotIn("information you need from me", lower)
-        self.assertGreaterEqual(_count_email_body_paragraphs(out), 5)
+        # A lean grounded draft is preferred over padding back to 5 paragraphs.
+        self.assertGreaterEqual(_count_email_body_paragraphs(out), 3)
 
     def test_length_bounds_and_candidate_scoring_use_filtered_output(self) -> None:
         seed = "asking my professor for a deadline extension"
@@ -681,26 +682,27 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertNotIn("current status of the contract", filtered_vendor.lower())
         self.assertNotIn("contract items that still need", filtered_vendor.lower())
 
-    def test_generate_errors_after_three_invalid_candidates(self) -> None:
+    def test_generate_returns_best_effort_after_three_invalid_candidates(self) -> None:
+        # After three rejected candidates, generate returns the best-scoring
+        # filtered draft instead of raising (avoids HTTP 500s on lean drafts).
         source = "Ask my accountant for an update on my tax filing."
         raw = (
             "Subject: Tax Filing\n\nHi there,\n\n"
             f"{source}\n\nBest,\n[Your Name]"
         )
         with patch("writing_agent._call_llm", return_value=raw) as call:
-            with self.assertRaisesRegex(
-                RuntimeError, "could not produce a complete draft"
-            ):
-                WritingAgent().generate(
-                    source,
-                    "email",
-                    settings={
-                        "tonePreset": "friendly",
-                        "length": "medium",
-                        "complexity": "standard",
-                    },
-                )
+            out = WritingAgent().generate(
+                source,
+                "email",
+                settings={
+                    "tonePreset": "friendly",
+                    "length": "medium",
+                    "complexity": "standard",
+                },
+            )
         self.assertEqual(call.call_count, 3)
+        self.assertIsInstance(out, str)
+        self.assertTrue(out.strip())
 
     def test_semantic_duplicate_requests_collapse(self) -> None:
         draft = (

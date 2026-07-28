@@ -257,14 +257,24 @@ _WORD_TOKEN_RE = re.compile(r"[A-Za-z0-9']+|\S")
 
 
 def _split_sentences(text: str) -> list[tuple[int, int, str]]:
-    """Return (start, end, sentence_text) spans covering the full text."""
+    """Return (start, end, sentence_text) spans covering the full text.
+
+    Spans are aligned to the stripped sentence text: `text[start:end] ==
+    sentence`. Without this, sentences after the first carried their leading
+    space inside the span, shifting every sentence-local offset by one and
+    dropping the joining space when the corrected text was reassembled.
+    """
     spans: list[tuple[int, int, str]] = []
     for match in _SENTENCE_SPLIT_RE.finditer(text):
-        sentence = match.group().strip()
+        raw = match.group()
+        sentence = raw.strip()
         if sentence:
-            spans.append((match.start(), match.end(), sentence))
+            start = match.start() + (len(raw) - len(raw.lstrip()))
+            spans.append((start, start + len(sentence), sentence))
     if not spans and text.strip():
-        spans.append((0, len(text), text.strip()))
+        stripped = text.strip()
+        lead = len(text) - len(text.lstrip())
+        spans.append((lead, lead + len(stripped), stripped))
     return spans
 
 

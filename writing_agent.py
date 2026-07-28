@@ -876,6 +876,9 @@ def check_rewrite_quality(
         "your", "their", "about", "into", "just", "more", "than", "then",
         "make", "made", "need", "needs", "please", "would", "unfortunately",
         "additional",
+        # Meta-communication verbs ("I am writing to inform you …") are not
+        # content facts; concise rewrites legitimately drop them.
+        "writing", "inform", "informing", "letting", "wanted", "regarding",
     }
     # Concrete content nouns (length >= 6) must survive tone-only rewrites.
     important = {
@@ -886,6 +889,28 @@ def check_rewrite_quality(
     out_tokens = set(re.findall(r"[a-z0-9']+", result.lower()))
     if important - out_tokens:
         issues.append("meaning_drift")
+
+    # Request direction must survive: "send me the report" (recipient acts)
+    # must not become "I'll send you the report" (writer acts).
+    source_lower = source.lower()
+    result_lower = result.lower()
+    for verb_match in re.finditer(
+        r"\b(send|give|get|forward|share|bring|email|call|show)\s+(?:me|us)\b",
+        source_lower,
+    ):
+        verb = verb_match.group(1)
+        writer_acts = re.search(
+            rf"\bi(?:'ll|'d)?\s+(?:will\s+|would\s+|can\s+|could\s+|"
+            rf"am\s+going\s+to\s+|going\s+to\s+)?{verb}\b",
+            result_lower,
+        )
+        recipient_still_asked = re.search(
+            rf"\b{verb}\b[^.!?]*\b(?:me|us)\b|\bcould you\b|\bcan you\b|\bplease\b",
+            result_lower,
+        )
+        if writer_acts and not recipient_still_asked:
+            issues.append("direction_flip")
+            break
 
     preset = _detect_rewrite_tone_preset(instruction)
     if preset == "casual":
@@ -1630,12 +1655,58 @@ def _trim_formal_body_openers(sentences: list[str]) -> list[str]:
     return result
 
 
+_PROSE_SIGNOFF_TAIL_RE = re.compile(
+    r"(?:^|\n)\s*"
+    r"(?:sincerely|best regards|kind regards|warm regards|regards|"
+    r"thanks|thank you|cheers|take care|best)\s*[,.!]?\s*"
+    r"(?:\n+\s*(?:\[.+?\]|[A-Z][A-Za-z'’\-]+(?:\s+[A-Z][A-Za-z'’\-]+){0,3})\s*)?$",
+    re.IGNORECASE,
+)
+
+# Same signoff, but glued to the end of a body sentence ("… benefit. Sincerely,").
+_PROSE_INLINE_SIGNOFF_TAIL_RE = re.compile(
+    r"(?<=[.!?])\s+"
+    r"(?:sincerely|best regards|kind regards|warm regards|regards|"
+    r"thanks|thank you|cheers|take care|best)\s*,\s*"
+    r"(?:\n+\s*(?:\[.+?\]|[A-Z][A-Za-z'’\-]+(?:\s+[A-Z][A-Za-z'’\-]+){0,3})\s*)?$",
+    re.IGNORECASE,
+)
+
+
+def _strip_email_scaffolding_from_prose(text: str) -> str:
+    """Essays must not carry email scaffolding the model tends to emit.
+
+    Removes a leading "Subject:" line, a greeting line ("Dear Sir or Madam,"),
+    and a trailing sign-off ("Sincerely,\n[Your Name]") whether the sign-off
+    sits on its own line or is glued to the final body sentence.
+    """
+    if not text.strip():
+        return text
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    if lines and lines[0].strip().lower().startswith("subject:"):
+        lines.pop(0)
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    if lines and _is_greeting_line(lines[0]):
+        lines.pop(0)
+    cleaned = "\n".join(lines).strip()
+    previous = None
+    while previous != cleaned:
+        previous = cleaned
+        cleaned = _PROSE_SIGNOFF_TAIL_RE.sub("", cleaned).strip()
+        cleaned = _PROSE_INLINE_SIGNOFF_TAIL_RE.sub("", cleaned).strip()
+    return cleaned or text
+
+
 def _filter_prose_block(
     text: str,
     *,
     tone_preset: str,
     length: str,
 ) -> str:
+    text = _strip_email_scaffolding_from_prose(text)
     paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", text) if paragraph.strip()]
     if not paragraphs:
         return text
@@ -2358,8 +2429,11 @@ def _sentence_carries_seed_content(sentence: str, seed_baseline: str) -> bool:
     """True when the sentence is a paraphrase of seed facts (not exact-string only)."""
     if not sentence.strip() or not (seed_baseline or "").strip():
         return False
-    ratio = _seed_token_overlap_ratio(sentence, seed_baseline)
     tokens = _seed_content_tokens(sentence)
+    if not tokens:
+        # Content-free fragments ("The", "Hi,") cannot carry seed facts.
+        return False
+    ratio = _seed_token_overlap_ratio(sentence, seed_baseline)
     if len(tokens) >= 5:
         return ratio >= 0.28
     return ratio >= 0.12 or bool(tokens & _seed_content_tokens(seed_baseline))
@@ -3470,10 +3544,10 @@ def _ensure_seed_key_details(
     # Relative timing — full sentences, not ", next week" comma tacks.
     timing_sentences = {
         "next week": "I need this next week.",
-        "this week": "I need this this week.",
+        "this week": "I need this done this week.",
         "last week": "This was for last week.",
         "next month": "I need this next month.",
-        "this weekend": "I need this this weekend.",
+        "this weekend": "I need this done this weekend.",
         "yesterday": "This happened yesterday.",
         "today": "I need this today.",
         "tomorrow": "I need this tomorrow.",
@@ -3569,6 +3643,63 @@ def _ensure_seed_key_details(
     return _reassemble_email_sections(sections)
 
 
+_UNSEEDED_ROLE_NOUN_RE = re.compile(
+    r"(?i)\b(?:a|an|the)\s+"
+    r"(plumber|technician|repairman|handyman|contractor|electrician|"
+    r"maintenance (?:team|crew|person|worker))\b"
+)
+
+
+def _neutralize_unseeded_role_nouns(sentence: str, seed_lower: str) -> str:
+    """Replace invented service-role nouns with generic "someone".
+
+    Deleting the bare noun (the old behavior) left dangling articles like
+    "arrange for a to come by"; substituting "someone" keeps the sentence
+    grammatical without committing to a role the user never mentioned.
+    """
+
+    def _repl(match: re.Match[str]) -> str:
+        noun = match.group(1).lower()
+        head = noun.split()[0]
+        if re.search(rf"\b{re.escape(head)}", seed_lower):
+            return match.group(0)
+        return "someone"
+
+    return _UNSEEDED_ROLE_NOUN_RE.sub(_repl, sentence)
+
+
+def _seed_clause_restatement(seed_baseline: str, shared_tokens: set[str]) -> str:
+    """Restate the seed clause containing the shared tokens as a plain sentence.
+
+    Used when invent-stripping destroys a sentence that carried a real seed
+    fact (e.g. "The sink in my apartment needs a plumber." with seed
+    "tell my landlord the sink is leaking"): rather than dropping the fact,
+    return "The sink is leaking." Meta-instruction prefixes are removed so
+    the raw ask ("tell my landlord …") never leaks into the draft.
+    """
+    if not shared_tokens or not (seed_baseline or "").strip():
+        return ""
+    for clause in re.split(r"[,;.]", seed_baseline):
+        clause = clause.strip()
+        if not clause:
+            continue
+        clause = re.sub(
+            r"(?i)^(?:please\s+)?(?:tell|ask|email|write(?:\s+to)?|remind|"
+            r"inform|notify|message|text|call)\s+"
+            r"(?:my|our|the|a)?\s*[a-z]+\s*(?:that|about|to)?\s+",
+            "",
+            clause,
+        ).strip()
+        if not clause:
+            continue
+        if _seed_content_tokens(clause) & shared_tokens:
+            sentence = clause[0].upper() + clause[1:]
+            if not sentence.endswith((".", "!", "?")):
+                sentence += "."
+            return sentence
+    return ""
+
+
 def _strip_invented_reasons_if_absent(
     text: str,
     *,
@@ -3640,6 +3771,7 @@ def _strip_invented_reasons_if_absent(
             sentences = _split_sentences(paragraph)
             kept_sents: list[str] = []
             for sentence in sentences:
+                sentence = _neutralize_unseeded_role_nouns(sentence, seed_lower)
                 if _sentence_has_foreign_scenario(sentence, seed_baseline):
                     lower = sentence.lower()
                     canned = any(
@@ -3709,6 +3841,15 @@ def _strip_invented_reasons_if_absent(
                             stripped = stripped[0].upper() + stripped[1:]
                             kept_sents.append(stripped)
                             continue
+                    # Sentence is unsalvageable, but the removed clause shared
+                    # real facts with the seed — restate that seed clause so
+                    # the fact survives instead of vanishing with the filler.
+                    shared = _seed_content_tokens(clause_hit.group(0)) & _seed_content_tokens(seed_baseline)
+                    restatement = _seed_clause_restatement(seed_baseline, shared)
+                    if restatement and restatement.lower() not in (
+                        "\n\n".join(cleaned_paras) + " " + " ".join(kept_sents)
+                    ).lower():
+                        kept_sents.append(restatement)
                     continue
                 if (
                     not seed_has_reason
@@ -5429,7 +5570,7 @@ def _generate_candidate_rejection_reasons(
             reasons.append(f"raw_{label}_leak")
     if body and re.search(
         r"\b(?:and|but|or|because|by|for|from|to|with|the|a|an|of)\s*$|"
-        r"(?i)\b(?:the|a|an|to|of|for|with)\.\s*$",
+        r"\b(?:the|a|an|to|of|for|with)\.\s*$",
         body,
         re.I,
     ):
@@ -5490,11 +5631,15 @@ class WritingAgent:
         if not quality["ok"] and (
             "meaning_drift" in quality["issues"]
             or "missing_number" in quality["issues"]
+            or "direction_flip" in quality["issues"]
         ):
             retry_system = (
                 f"{system_prompt}\n\nIMPORTANT: Keep every actor, number, date, and concrete "
                 "fact from the original. Do not replace subjects (for example 'the supplier') "
-                "with vague stand-ins. Preserve contrasts such as 'not 30'."
+                "with vague stand-ins. Preserve contrasts such as 'not 30'. "
+                "Keep who does what: if the original asks the reader to do something "
+                "(for example 'send me the report'), the rewrite must still ask the "
+                "reader — never turn it into the writer offering to do it."
             )
             raw = _call_llm(
                 user_message,
@@ -5511,6 +5656,7 @@ class WritingAgent:
             if not quality["ok"] and (
                 "meaning_drift" in quality["issues"]
                 or "missing_number" in quality["issues"]
+                or "direction_flip" in quality["issues"]
             ):
                 # Prefer the original over a rewritten draft that drops facts.
                 cleaned = text
