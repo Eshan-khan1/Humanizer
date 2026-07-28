@@ -5725,6 +5725,12 @@ class WritingAgent:
             )
             rejection_history.append(rejection_reasons)
             if not rejection_reasons:
+                self._log_claim_check(
+                    candidate,
+                    seed=text,
+                    permanent_note=raw_permanent_note,
+                    profile=effective_settings.get("profile"),
+                )
                 return candidate
             logger.warning(
                 "generate_candidate_rejected case=%r attempt=%d reasons=%s score=%s",
@@ -5774,11 +5780,53 @@ class WritingAgent:
                     seed_baseline=seed_baseline,
                 ),
             )
+            self._log_claim_check(
+                best,
+                seed=text,
+                permanent_note=raw_permanent_note,
+                profile=effective_settings.get("profile"),
+            )
             return best
         raise RuntimeError(
             "Generate could not produce a complete draft that satisfied the requested "
             "length and fidelity constraints after 3 attempts."
         )
+
+    def _log_claim_check(
+        self,
+        draft: str,
+        *,
+        seed: str,
+        permanent_note: str,
+        profile: dict[str, Any] | None,
+    ) -> None:
+        """Detection-only claim check — logs findings, never changes the draft."""
+        try:
+            from claim_check import claim_check_draft, claim_check_summary
+
+            findings = claim_check_draft(
+                draft,
+                seed=seed,
+                permanent_note=permanent_note or "",
+                profile=profile,
+            )
+            logger.info(
+                "claim_check case=%r summary=%s findings=%s",
+                (seed or "")[:160],
+                claim_check_summary(findings),
+                [
+                    {
+                        "detail": f.detail,
+                        "class": f.classification,
+                        "source": f.source,
+                        "expected": f.expected_source,
+                    }
+                    for f in findings
+                    if f.classification in {"fabricated", "missing"}
+                ],
+            )
+        except Exception:
+            logger.exception("claim_check failed case=%r", (seed or "")[:160])
 
 
 _agent = WritingAgent()
