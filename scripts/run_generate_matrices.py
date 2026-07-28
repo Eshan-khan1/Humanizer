@@ -261,100 +261,213 @@ def evaluate(
     return issues, warnings, claim_lines
 
 
-def run_file(version: int, model: str) -> tuple[int, int, list[tuple[str, list[str]]]]:
+def _flagged_claim_lines(claim_lines: list[str]) -> list[str]:
+    return [
+        line
+        for line in claim_lines
+        if "[fabricated]" in line or "[missing]" in line
+    ]
+
+
+def _run_case_once(case: dict) -> dict:
+    """Single request + evaluate + claim-check (unchanged per-run logic)."""
+    settings_raw = case.get("settings") or {}
+    tone = settings_raw.get("tone") or "friendly"
+    profile = parse_profile(settings_raw.get("profile") or "")
+    if settings_raw.get("permanent_note"):
+        profile["permanentNote"] = settings_raw["permanent_note"]
+    settings = {
+        "tonePreset": tone,
+        "tone": TONE_MAP.get(tone, tone),
+        "length": settings_raw.get("length") or "medium",
+        "complexity": settings_raw.get("complexity") or "standard",
+        "includeSubject": True,
+        "profile": profile,
+    }
+    feature = case.get("feature") or "generate"
+    idea = case.get("idea") or case.get("original_text") or ""
+    if feature == "generate":
+        status, body, ms = post(
+            "/generate",
+            {"text": idea, "format": "email", "settings": settings},
+        )
+        out = body.get("generated") if status == 200 else ""
+    else:
+        instruction = case.get("instruction") or TONE_MAP.get(tone, tone)
+        status, body, ms = post(
+            "/rewrite",
+            {"text": idea, "tone": instruction},
+        )
+        out = body.get("rewritten") if status == 200 else ""
+    issues, warnings, claim_lines = evaluate(case, status, body, out)
+    return {
+        "status": status,
+        "ms": ms,
+        "ok": not issues,
+        "issues": issues,
+        "warnings": warnings,
+        "claim_lines": claim_lines,
+        "output": out or body.get("detail") or "",
+    }
+
+
+def _aggregate_case_runs(case: dict, runs: list[dict], repeats: int) -> dict:
+    """Collapse N identical-input runs into one summary row."""
+    pass_count = sum(1 for run in runs if run["ok"])
+    finding_counts: dict[str, int] = {}
+    for run in runs:
+        for line in run.get("claim_lines") or []:
+            finding_counts[line] = finding_counts.get(line, 0) + 1
+
+    # Prefer an example from a run that had fabricated/missing findings.
+    example = next(
+        (run for run in runs if _flagged_claim_lines(run.get("claim_lines") or [])),
+        runs[0] if runs else {},
+    )
+
+    runs_with_claim_issues = sum(
+        1 for run in runs if _flagged_claim_lines(run.get("claim_lines") or [])
+    )
+    if runs_with_claim_issues == 0:
+        claim_stability = "clean"
+    elif runs_with_claim_issues == repeats:
+        claim_stability = "always"
+    else:
+        claim_stability = "flaky"
+
+    return {
+        **case,
+        "repeats": repeats,
+        "pass_count": pass_count,
+        "ok": pass_count == repeats,
+        "runs_with_claim_issues": runs_with_claim_issues,
+        "claim_stability": claim_stability,
+        "finding_counts": finding_counts,
+        "avg_ms": round(sum(run["ms"] for run in runs) / max(len(runs), 1), 1),
+        "example_output": example.get("output", ""),
+        "example_from_flagged": bool(
+            _flagged_claim_lines(example.get("claim_lines") or [])
+        ),
+        "issues_union": sorted(
+            {issue for run in runs for issue in (run.get("issues") or [])}
+        ),
+    }
+
+
+def run_file(
+    version: int, model: str, *, repeats: int = 5
+) -> tuple[int, int, list[tuple[str, list[str]]], dict[str, int]]:
     source = ROOT / f"Test_data_generating_{version}.json"
     destination = ROOT / f"Test_data_generating_{version}_results.text"
     raw = json.loads(source.read_text(encoding="utf-8"))
     cases = flatten_cases(raw, version)
     passed = failed = 0
     rows: list[dict] = []
+    stability = {"clean": 0, "flaky": 0, "always": 0}
+
     for index, case in enumerate(cases, 1):
-        settings_raw = case.get("settings") or {}
-        tone = settings_raw.get("tone") or "friendly"
-        profile = parse_profile(settings_raw.get("profile") or "")
-        if settings_raw.get("permanent_note"):
-            profile["permanentNote"] = settings_raw["permanent_note"]
-        settings = {
-            "tonePreset": tone,
-            "tone": TONE_MAP.get(tone, tone),
-            "length": settings_raw.get("length") or "medium",
-            "complexity": settings_raw.get("complexity") or "standard",
-            "includeSubject": True,
-            "profile": profile,
-        }
-        feature = case.get("feature") or "generate"
-        idea = case.get("idea") or case.get("original_text") or ""
-        if feature == "generate":
-            status, body, ms = post(
-                "/generate",
-                {"text": idea, "format": "email", "settings": settings},
+        runs: list[dict] = []
+        for run_index in range(1, repeats + 1):
+            run = _run_case_once(case)
+            runs.append(run)
+            warn_bit = f" CLAIM {run['warnings'][0]}" if run["warnings"] else ""
+            print(
+                f"v{version} [{index}/{len(cases)}] "
+                f"run {run_index}/{repeats} "
+                f"{'PASS' if run['ok'] else 'FAIL'} {case.get('id')} "
+                f"({run['ms']}ms) {run['issues'][:2]}{warn_bit}",
+                flush=True,
             )
-            out = body.get("generated") if status == 200 else ""
-        else:
-            instruction = case.get("instruction") or TONE_MAP.get(tone, tone)
-            status, body, ms = post(
-                "/rewrite",
-                {"text": idea, "tone": instruction},
-            )
-            out = body.get("rewritten") if status == 200 else ""
-        issues, warnings, claim_lines = evaluate(case, status, body, out)
-        ok = not issues
-        passed += int(ok)
-        failed += int(not ok)
-        rows.append(
-            {
-                **case,
-                "status": status,
-                "ms": ms,
-                "ok": ok,
-                "issues": issues,
-                "warnings": warnings,
-                "claim_lines": claim_lines,
-                "output": out or body.get("detail") or "",
-            }
-        )
-        warn_bit = f" CLAIM {warnings[0]}" if warnings else ""
+        row = _aggregate_case_runs(case, runs, repeats)
+        rows.append(row)
+        passed += int(row["ok"])
+        failed += int(not row["ok"])
+        stability[row["claim_stability"]] += 1
         print(
-            f"v{version} [{index}/{len(cases)}] "
-            f"{'PASS' if ok else 'FAIL'} {case.get('id')} ({ms}ms) "
-            f"{issues[:2]}{warn_bit}",
+            f"v{version} [{index}/{len(cases)}] AGG {case.get('id')}: "
+            f"pass {row['pass_count']}/{repeats}, "
+            f"claim-issues {row['runs_with_claim_issues']}/{repeats} "
+            f"({row['claim_stability']})",
             flush=True,
         )
-    claim_problem_cases = sum(
-        1
-        for row in rows
-        if any(
-            "[fabricated]" in line or "[missing]" in line
-            for line in row.get("claim_lines") or []
-        )
-    )
+
     lines = [
         f"Humanizer Generate/Rewrite Test Results — {source.name}",
         f"Writing model: {model}",
         f"Run: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        f"Summary: {passed}/{passed + failed} passed, {failed}/{passed + failed} failed",
-        f"Claim issues: {claim_problem_cases}/{passed + failed} cases with fabricated or missing details",
+        f"Repeats per case: {repeats}",
+        f"Summary: {passed}/{passed + failed} cases passed all {repeats} runs "
+        f"({failed}/{passed + failed} had at least one hard fail)",
+        (
+            f"Claim stability: {stability['clean']} clean (0/{repeats} with issues), "
+            f"{stability['flaky']} flaky (some runs), "
+            f"{stability['always']} always ({repeats}/{repeats} with issues)"
+        ),
         "",
     ]
     for row in rows:
+        finding_lines = []
+        if row["finding_counts"]:
+            # Problems first, then restatement/grounded; group by frequency desc.
+            order = {"fabricated": 0, "missing": 1, "restatement": 2, "grounded": 3}
+
+            def _sort_key(item: tuple[str, int]) -> tuple:
+                line, count = item
+                kind = 9
+                for name, rank in order.items():
+                    if f"[{name}]" in line:
+                        kind = rank
+                        break
+                return (kind, -count, line)
+
+            for line, count in sorted(row["finding_counts"].items(), key=_sort_key):
+                finding_lines.append(f"{line}  — {count}/{repeats}")
+        else:
+            finding_lines.append("  (no concrete claims extracted)")
+
+        example_note = (
+            "from a run with flagged findings"
+            if row["example_from_flagged"]
+            else "no flagged run; showing first run"
+        )
         lines += [
-            f"[{'PASS' if row['ok'] else 'FAIL'}] {row.get('id')} — "
+            f"[pass {row['pass_count']}/{repeats}] {row.get('id')} — "
             f"{row.get('scenario')} ({row.get('feature')})",
             f"Settings: {json.dumps(row.get('settings') or {}, ensure_ascii=False)}",
-            f"HTTP: {row['status']} | Duration: {row['ms']} ms",
-            f"Issues: {'; '.join(row['issues']) if row['issues'] else 'None'}",
-            "Claim check:",
-            *(row.get("claim_lines") or ["  (none)"]),
-            "Output:",
-            str(row["output"]),
+            f"Avg duration: {row['avg_ms']} ms | "
+            f"Claim-issue runs: {row['runs_with_claim_issues']}/{repeats} "
+            f"({row['claim_stability']})",
+            f"Hard-fail issues seen: "
+            f"{'; '.join(row['issues_union']) if row['issues_union'] else 'None'}",
+            "Claim findings (count of runs where the finding appeared):",
+            *finding_lines,
+            f"Example output ({example_note}):",
+            str(row["example_output"]),
             "",
             "-" * 80,
             "",
         ]
+
+    lines += [
+        "======== CLAIM STABILITY TOTALS ========",
+        f"Clean (zero claim issues in any of {repeats} runs): {stability['clean']}",
+        f"Flaky (issues in some but not all runs): {stability['flaky']}",
+        f"Always (issues in every run): {stability['always']}",
+        "",
+    ]
     destination.write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {destination} — {passed}/{passed + failed}", flush=True)
-    fails = [(str(row.get("id")), row["issues"]) for row in rows if not row["ok"]]
-    return passed, failed, fails
+    print(
+        f"Claim stability v{version}: clean={stability['clean']} "
+        f"flaky={stability['flaky']} always={stability['always']}",
+        flush=True,
+    )
+    fails = [
+        (str(row.get("id")), row["issues_union"])
+        for row in rows
+        if not row["ok"]
+    ]
+    return passed, failed, fails, stability
 
 
 def main() -> None:
@@ -364,7 +477,14 @@ def main() -> None:
         default="2-9",
         help="Comma list or range like 2-9 / 4,5,8",
     )
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        default=5,
+        help="Run each case N times with the same input (default: 5)",
+    )
     args = parser.parse_args()
+    repeats = max(1, int(args.repeats))
     versions: list[int] = []
     for part in args.versions.split(","):
         part = part.strip()
@@ -379,27 +499,44 @@ def main() -> None:
     )
     model = health.get("writing_model", "unknown")
     print(f"Writing model: {model}", flush=True)
+    print(f"Repeats per case: {repeats}", flush=True)
 
     summary: list[tuple[int, int, int]] = []
     all_fails: list[tuple[int, str, list[str]]] = []
+    total_stability = {"clean": 0, "flaky": 0, "always": 0}
     for version in versions:
         path = ROOT / f"Test_data_generating_{version}.json"
         if not path.exists():
             continue
         print(f"\n===== {path.name} ({model}) =====", flush=True)
-        passed, failed, fails = run_file(version, model)
+        passed, failed, fails, stability = run_file(
+            version, model, repeats=repeats
+        )
         summary.append((version, passed, failed))
         all_fails.extend((version, case_id, issues) for case_id, issues in fails)
+        for key in total_stability:
+            total_stability[key] += stability[key]
 
     print("\n======== OVERALL ========", flush=True)
     total_pass = total_fail = 0
     for version, passed, failed in summary:
-        print(f"v{version}: {passed}/{passed + failed}", flush=True)
+        print(f"v{version}: {passed}/{passed + failed} cases passed all {repeats} runs", flush=True)
         total_pass += passed
         total_fail += failed
-    print(f"TOTAL: {total_pass}/{total_pass + total_fail} on {model}", flush=True)
+    print(
+        f"TOTAL: {total_pass}/{total_pass + total_fail} cases passed all "
+        f"{repeats} runs on {model}",
+        flush=True,
+    )
+    print(
+        f"Claim stability across all cases: "
+        f"clean={total_stability['clean']} "
+        f"flaky={total_stability['flaky']} "
+        f"always={total_stability['always']}",
+        flush=True,
+    )
     if all_fails:
-        print("\nFailures:", flush=True)
+        print("\nFailures (hard-fail in at least one run):", flush=True)
         for version, case_id, issues in all_fails:
             print(f"  v{version} {case_id}: {issues[:3]}", flush=True)
 
@@ -407,17 +544,23 @@ def main() -> None:
     summary_path.write_text(
         "\n".join(
             [
-                "Qwen3 8B Generate/Rewrite full matrix summary",
+                "Generate/Rewrite matrix summary (repeat-run mode)",
                 f"Model: {model}",
+                f"Repeats per case: {repeats}",
                 f"Run: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                f"Total: {total_pass}/{total_pass + total_fail} passed",
+                f"Total: {total_pass}/{total_pass + total_fail} cases passed all {repeats} runs",
+                (
+                    f"Claim stability: clean={total_stability['clean']} "
+                    f"flaky={total_stability['flaky']} "
+                    f"always={total_stability['always']}"
+                ),
                 "",
                 *[
                     f"v{version}: {passed}/{passed + failed}"
                     for version, passed, failed in summary
                 ],
                 "",
-                "Failures:" if all_fails else "No failures.",
+                "Failures:" if all_fails else "No hard failures.",
                 *[
                     f"- v{version} {case_id}: {'; '.join(issues[:4])}"
                     for version, case_id, issues in all_fails
