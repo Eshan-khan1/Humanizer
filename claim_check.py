@@ -79,6 +79,102 @@ _GENERIC = frozenset(
     }
 )
 
+# Soft connective verbs / fillers — never fabricated, regardless of seed.
+# These are ordinary email glue, not concrete invented facts.
+_SOFT_CONNECTIVE = frozenset(
+    {
+        "review", "reviews", "reviewed", "reviewing",
+        "inform", "informs", "informed", "informing",
+        "reflect", "reflects", "reflected", "reflecting",
+        "proceed", "proceeds", "proceeded", "proceeding",
+        "adjust", "adjusts", "adjusted", "adjusting", "adjustment", "adjustments",
+        "aiming", "aimed", "aims", "aim",
+        "attention", "prompt", "prompts", "promptly",
+        "accurately", "accurate", "necessitated", "necessitates", "necessitate",
+        "changes", "change", "changed", "changing",
+        "conditions", "condition", "document", "documents",
+        "item", "items", "product", "products", "result", "results",
+        "recent", "market", "increases", "increase",
+        "advance", "consideration", "considerations",
+        "beneficial", "flexibility", "adapting", "allow", "allows", "allowed",
+        "continue", "continues", "continued", "extra", "found", "highly",
+        "implement", "implements", "implemented", "morale", "operations",
+        "permission", "productivity", "program", "proven", "required",
+        "transition", "look", "looks", "looking", "think", "thinks", "thinking",
+        "fixed", "fix", "providing", "provide", "provided",
+        "become", "becomes", "became", "containing", "contains", "contained",
+        "encountered", "encounter", "receive", "receives", "received",
+        "reported", "report", "reporting", "service", "situation", "situations",
+        "transit", "move", "moves", "moved", "moving",
+        "number", "numbers", "specific", "preferences", "preference",
+        "total", "totals", "shift", "shifts",
+        "bringing", "bring", "clarify", "clarifying", "restating",
+        "appreciate", "appreciated", "kindly", "sincerely",
+        "regarding", "concerning", "following", "including",
+        "additional", "further", "otherwise", "therefore", "however",
+        "unfortunately", "thankfully", "hopefully",
+        "confirm", "confirmed", "confirmation", "indicate", "indicated",
+        "arrange", "arranged", "arranging", "ensure", "ensuring",
+        "remain", "remains", "remaining", "apply", "applies", "applied",
+        "identify", "identified", "outline", "outlined",
+        "support", "supported", "supporting", "assist", "assisting",
+        "happy", "glad", "able", "unable", "willing",
+        "once", "upon", "within", "toward", "towards",
+        "new", "old", "full", "clear", "ready", "open", "closed",
+        "time", "times", "timing", "moment", "moments",
+        "end", "start", "starting", "started",
+        "day", "days", "week", "weeks", "month", "months",
+        "today", "tomorrow", "yesterday", "tonight",
+        "morning", "afternoon", "evening", "night",
+        "first", "second", "third", "last", "next", "early", "late",
+        "best", "better", "soon", "later", "again",
+        "also", "still", "already", "yet", "even", "ever", "never",
+        "really", "quite", "rather", "almost", "enough", "only",
+        "please", "kindly", "greatly", "sincerely", "warmly",
+        "writing", "reaching", "letting", "hoping", "looking",
+        "know", "need", "needed", "needs", "want", "wanted",
+        "ask", "asking", "tell", "told", "share", "shared",
+        "send", "sent", "sending", "get", "got", "make", "made",
+        "take", "took", "keep", "kept", "leave", "left",
+        "come", "came", "go", "went", "see", "saw",
+        "help", "helped", "helping", "work", "worked", "working",
+        "use", "used", "using", "try", "tried", "trying",
+        "plan", "plans", "planned", "planning",
+        "check", "checks", "checked", "checking",
+        "set", "setting", "put", "putting",
+    }
+)
+
+# Seed cues that license related wording as implied (not fabricated).
+# detail_words → seed must match cue_re.
+_SEED_IMPLIED_RULES: tuple[tuple[frozenset[str], re.Pattern[str]], ...] = (
+    # Extension / due-date requests inherently involve a deadline & submission.
+    (
+        frozenset({"deadline", "deadlines", "submission", "submissions", "due"}),
+        re.compile(r"(?i)\b(extension|extend|deadline|due\b|submit|submission)\b"),
+    ),
+    # Repair / plumber asks imply fixing.
+    (
+        frozenset({"fixed", "fix", "repair", "repairs", "repaired"}),
+        re.compile(r"(?i)\b(plumber|leak|drip|drips|faucet|broken|fix|repair)\b"),
+    ),
+    # Invoice / money asks imply a total/amount/payment wording.
+    (
+        frozenset({"total", "totals", "payment", "payments", "balance"}),
+        re.compile(r"(?i)(\$|\binvoice\b|\bdue\b|\bamount\b)"),
+    ),
+    # Shift-swap wording.
+    (
+        frozenset({"shift", "shifts"}),
+        re.compile(r"(?i)\b(swap|close|open|shift)\b"),
+    ),
+    # Quote revision implies review/adjust language.
+    (
+        frozenset({"review", "reviews", "adjust", "adjustment", "adjustments"}),
+        re.compile(r"(?i)\b(quote|revision|revise|costs?|prices?)\b"),
+    ),
+)
+
 _MONEY_RE = re.compile(r"\$[\d,]+(?:\.\d{2})?")
 _ID_RE = re.compile(r"\b[A-Z]{1,5}-?\d{2,}\b|#\d{3,}\b")
 _TIME_RE = re.compile(r"\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)\b", re.I)
@@ -405,13 +501,50 @@ def _is_restatement(detail: str, source_text: str) -> bool:
     return False
 
 
+def _is_soft_connective(detail: str) -> bool:
+    """True when every content token is ordinary connective/filler language."""
+    parts = [
+        part
+        for part in _norm(detail).split()
+        if part and part not in _GENERIC and len(part) >= 2
+    ]
+    if not parts:
+        return True
+    return all(
+        part in _SOFT_CONNECTIVE
+        or part in _GENERIC
+        or _stem(part) in _SOFT_CONNECTIVE
+        for part in parts
+    )
+
+
+def _is_seed_implied(detail: str, seed: str) -> bool:
+    """True when the detail is logically implied by the seed (not invented)."""
+    if not (seed or "").strip():
+        return False
+    tokens = {
+        part
+        for part in _norm(detail).split()
+        if part and part not in _GENERIC and len(part) >= 3
+    }
+    if not tokens:
+        return False
+    for implied_words, cue_re in _SEED_IMPLIED_RULES:
+        if tokens <= implied_words or tokens & implied_words:
+            # Only suppress when every content token is in the implied set
+            # (don't let "deadline Friday" slide — Friday is separate).
+            if tokens <= implied_words and cue_re.search(seed):
+                return True
+    return False
+
+
 def _classify_against_sources(
     detail: str,
     *,
     seed: str,
     note: str,
     profile_text: str,
-) -> ClaimFinding:
+) -> ClaimFinding | None:
     # Priority: seed → permanent_note → profile.
     for name, text in (
         ("seed", seed),
@@ -447,6 +580,14 @@ def _classify_against_sources(
                 for part in parts
             ):
                 return ClaimFinding(detail, "restatement", source=name)  # type: ignore[arg-type]
+
+    # Allowlist: soft connective fillers are never fabricated.
+    if _is_soft_connective(detail):
+        return None
+
+    # Allowlist: seed-implied concepts (deadline after extension, etc.).
+    if _is_seed_implied(detail, seed) or _is_seed_implied(detail, note):
+        return ClaimFinding(detail, "restatement", source="seed")
 
     return ClaimFinding(detail, "fabricated")
 
@@ -491,11 +632,11 @@ def claim_check_draft(
         if key in seen_detail:
             continue
         seen_detail.add(key)
-        findings.append(
-            _classify_against_sources(
-                detail, seed=seed, note=note, profile_text=profile_text
-            )
+        finding = _classify_against_sources(
+            detail, seed=seed, note=note, profile_text=profile_text
         )
+        if finding is not None:
+            findings.append(finding)
 
     for detail, source_name in _required_source_details(seed, note):
         key = _norm(detail)

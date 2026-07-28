@@ -105,6 +105,65 @@ class ClaimCheckTests(unittest.TestCase):
         )
         self.assertIn("event", fabricated)
 
+    def test_soft_connectives_not_fabricated(self) -> None:
+        findings = claim_check_draft(
+            "Subject: Quote\n\nDear Lena,\n\n"
+            "I am writing to inform you and ask you to review and reflect on "
+            "the quote from Cobalt Tools CT-552. Please proceed accordingly "
+            "by Friday.\n\nSincerely,\nHank Morris",
+            seed=(
+                "tell buyer Lena at Cobalt Tools that quote CT-552 needs revision "
+                "because steel costs rose, reply by Friday"
+            ),
+            profile={"fullName": "Hank Morris"},
+        )
+        fabricated = {
+            f.detail.lower()
+            for f in findings
+            if f.classification == "fabricated"
+        }
+        for soft in ("inform", "review", "reflect", "proceed"):
+            self.assertNotIn(soft, fabricated, fabricated)
+        grounded = " ".join(
+            f.detail.lower()
+            for f in findings
+            if f.classification in {"grounded", "restatement"}
+        )
+        self.assertIn("ct-552", grounded)
+
+    def test_deadline_implied_by_extension_seed(self) -> None:
+        findings = claim_check_draft(
+            "Subject: Extension\n\nDear Imran,\n\n"
+            "I am writing to request an extension of three days on the "
+            "submission deadline for the ethics essay.\n\nSincerely,\nSofi Tran",
+            seed="ask professor Imran for a three-day extension on the ethics essay",
+            profile={"fullName": "Sofi Tran"},
+        )
+        fabricated = {
+            f.detail.lower()
+            for f in findings
+            if f.classification == "fabricated"
+        }
+        self.assertNotIn("deadline", fabricated, fabricated)
+        self.assertNotIn("submission", fabricated, fabricated)
+        # Still flag real invents.
+        findings2 = claim_check_draft(
+            "Subject: Lunch\n\nHi there,\n\n"
+            "Please send lunch boxes for the wedding guests at our event.\n\n"
+            "Best,\nAlex Rivera",
+            seed="email the caterer about the lunch boxes",
+            profile={"fullName": "Alex Rivera"},
+        )
+        fabricated2 = " ".join(
+            f.detail.lower()
+            for f in findings2
+            if f.classification == "fabricated"
+        )
+        self.assertTrue(
+            any(tok in fabricated2 for tok in ("wedding", "guests", "event")),
+            fabricated2,
+        )
+
     def test_checklist_format_and_evaluate_wiring(self) -> None:
         case = {
             "idea": "email the bakery about the cake",
