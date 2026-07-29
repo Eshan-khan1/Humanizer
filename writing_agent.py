@@ -3620,7 +3620,10 @@ def _ensure_seed_key_details(
             _refresh()
 
     # Concrete seeded objects — short natural sentence, not "this concerns the X".
-    for token in ("plumber", "cleaning", "hard drive", "centerpieces", "package"):
+    for token in (
+        "plumber", "cleaning", "hard drive", "centerpieces", "package",
+        "caterer", "lunch boxes", "lunch box", "bakery", "florist",
+    ):
         if token in seed_lower_flex and not _already(token):
             if token == "plumber":
                 body = _append_natural_sentence(body, "We need a plumber.")
@@ -3634,6 +3637,18 @@ def _ensure_seed_key_details(
                 )
             elif token == "package":
                 body = _append_natural_sentence(body, "The package was lost.")
+            elif token == "caterer":
+                body = _append_natural_sentence(
+                    body, "I'm writing to the caterer."
+                )
+            elif token in {"lunch boxes", "lunch box"}:
+                body = _append_natural_sentence(
+                    body, "This is about the lunch boxes."
+                )
+            elif token == "bakery":
+                body = _append_natural_sentence(body, "I'm writing to the bakery.")
+            elif token == "florist":
+                body = _append_natural_sentence(body, "I'm writing to the florist.")
             else:
                 body = _append_natural_sentence(body, f"This is about the {token}.")
             _refresh()
@@ -3647,6 +3662,25 @@ _UNSEEDED_ROLE_NOUN_RE = re.compile(
     r"(?i)\b(?:a|an|the)\s+"
     r"(plumber|technician|repairman|handyman|contractor|electrician|"
     r"maintenance (?:team|crew|person|worker))\b"
+)
+
+# Invented occasion / order fills the model uses after dropping a seed noun.
+# Strip these when absent from the seed — never replace them with another
+# concrete noun (that recreates the drop-then-backfill bug).
+_UNSEEDED_CONCRETE_FILL_RES: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        r"(?i)\b(?:for|at|about|regarding|on|to)\s+"
+        r"(?:our|the|an|this|your)?\s*(?:upcoming\s+)?(?:wedding\s+)?"
+        r"(?:event|reception|celebration|party|occasion)\b"
+    ),
+    re.compile(
+        r"(?i)\b(?:our|the|an|this|your|upcoming)\s+"
+        r"(?:upcoming\s+)?(?:wedding\s+)?(?:event|reception|celebration|party|occasion)\b"
+    ),
+    re.compile(r"(?i)\b(?:upcoming\s+)?(?:wedding|reception|bridal|celebration)\b"),
+    re.compile(r"(?i)\b(?:number of\s+)?guests?\b"),
+    re.compile(r"(?i)\b(?:our|the|an|this|your)\s+order\b"),
+    re.compile(r"(?i)\bsecure\s+them\b"),
 )
 
 
@@ -3698,6 +3732,163 @@ def _seed_clause_restatement(seed_baseline: str, shared_tokens: set[str]) -> str
                 sentence += "."
             return sentence
     return ""
+
+
+def _cleanup_after_fill_strip(sentence: str) -> str:
+    """Repair grammar left behind after removing an invented fill phrase."""
+    cleaned = sentence
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    cleaned = re.sub(r"\s+,", ",", cleaned)
+    cleaned = re.sub(r",\s*,+", ",", cleaned)
+    cleaned = re.sub(r"\s+([.!?,;:])", r"\1", cleaned)
+    # Dangling prepositions / articles at the end: "needing for." / "about the."
+    cleaned = re.sub(
+        r"(?i)\b(?:for|at|about|regarding|on|to|with|of|from)\s+"
+        r"(?:the|a|an|our|my)?\s*[.!?,;:]*\s*$",
+        "",
+        cleaned,
+    ).strip()
+    cleaned = re.sub(
+        r"(?i)\b(?:for|at|about|regarding|on|to|with|of|from|the|a|an|our|my)\s*[.!?,;:]*\s*$",
+        "",
+        cleaned,
+    ).strip()
+    cleaned = re.sub(r"(?i)\bwe will be needing\b", "we need", cleaned)
+    cleaned = re.sub(r"(?i)\bneeding\b\s*$", "need", cleaned)
+    # "details on and what" / "options for and" after removing a noun phrase.
+    cleaned = re.sub(
+        r"(?i)\b(on|for|about|regarding|at|to|with|of)\s+(and|what|which|whether)\b",
+        r"\2",
+        cleaned,
+    )
+    cleaned = cleaned.strip(" ,;")
+    if cleaned and cleaned[-1] not in ".!?":
+        cleaned += "."
+    if cleaned:
+        cleaned = cleaned[0].upper() + cleaned[1:]
+    return cleaned
+
+
+def _strip_unseeded_concrete_fills(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str,
+) -> str:
+    """Remove invented occasion/order fills; rebuild around seed or drop.
+
+    Drop-then-backfill bug: invent-stripping (or the model) removes a seed-
+    adjacent noun and the draft patches the hole with a vague invent like
+    "event" or "order". This strips those unseeded fills and either keeps the
+    seed-grounded remainder, restates the seed clause, or drops the sentence —
+    never introducing a new concrete noun as a replacement.
+    """
+    if not text or not text.strip() or not (seed_baseline or "").strip():
+        return text
+    seed_lower = seed_baseline.lower()
+
+    def _fill_is_seeded(match_text: str) -> bool:
+        lower = match_text.lower()
+        for cue in (
+            "event", "wedding", "reception", "celebration", "party", "occasion",
+            "guest", "guests", "order", "bridal",
+        ):
+            if cue in lower and re.search(rf"\b{re.escape(cue)}\b", seed_lower):
+                return True
+        return False
+
+    def _clean_body(body: str) -> str:
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+        cleaned_paras: list[str] = []
+        used_restatement = False
+        for paragraph in paragraphs:
+            kept: list[str] = []
+            for sentence in _split_sentences(paragraph):
+                original = sentence
+                stripped = sentence
+                removed_flag = [False]
+                for pattern in _UNSEEDED_CONCRETE_FILL_RES:
+                    def _sub(match: re.Match[str]) -> str:
+                        if _fill_is_seeded(match.group(0)):
+                            return match.group(0)
+                        removed_flag[0] = True
+                        return " "
+
+                    stripped = pattern.sub(_sub, stripped)
+                if not removed_flag[0]:
+                    kept.append(original)
+                    continue
+                stripped = _cleanup_after_fill_strip(stripped)
+                if stripped and (
+                    _sentence_carries_seed_content(stripped, seed_baseline)
+                    or (
+                        len(stripped.split()) >= 3
+                        and any(
+                            cue in stripped.lower()
+                            for cue in (
+                                "please", "could you", "would you", "let me know",
+                                "share", "confirm", "request", "writing", "send",
+                                "discuss", "options",
+                            )
+                        )
+                    )
+                ):
+                    # Keep the cleaned seed-grounded sentence — no new noun injected.
+                    kept.append(stripped)
+                    continue
+                # Sentence was only invent-fill padding, or stripping destroyed it.
+                if not used_restatement:
+                    shared = _seed_content_tokens(original) & _seed_content_tokens(
+                        seed_baseline
+                    )
+                    restatement = _seed_clause_restatement(seed_baseline, shared)
+                    if not restatement:
+                        # Fall back to the densest seed content clause.
+                        restatement = _seed_clause_restatement(
+                            seed_baseline, _seed_content_tokens(seed_baseline)
+                        )
+                    if restatement:
+                        kept.append(restatement)
+                        used_restatement = True
+                        continue
+                # No safe rebuild — drop rather than invent a replacement noun.
+            if kept:
+                cleaned_paras.append(_join_sentences(kept))
+        return "\n\n".join(cleaned_paras)
+
+    if format_type == "email":
+        sections = _parse_email_sections(text)
+        # Also scrub subject-line invent fills ("Lunch Boxes for Upcoming Event").
+        prefix = sections.get("prefix", "")
+        if prefix.lower().startswith("subject:"):
+            subject = prefix.split(":", 1)[1].strip()
+            scrubbed = subject
+            for pattern in _UNSEEDED_CONCRETE_FILL_RES:
+                scrubbed = pattern.sub(
+                    lambda m: m.group(0) if _fill_is_seeded(m.group(0)) else " ",
+                    scrubbed,
+                )
+            scrubbed = re.sub(r"\s{2,}", " ", scrubbed).strip(" -–—|/")
+            scrubbed = re.sub(r"(?i)\b(?:for|about|regarding)\s*$", "", scrubbed).strip()
+            if scrubbed and scrubbed.lower() != subject.lower():
+                sections["prefix"] = f"Subject: {scrubbed}"
+            elif not scrubbed:
+                # Prefer a seed noun for the subject rather than inventing one.
+                seed_tokens = [
+                    tok
+                    for tok in re.findall(r"[A-Za-z][A-Za-z']+", seed_baseline)
+                    if len(tok) >= 4
+                    and tok.lower()
+                    not in {
+                        "email", "about", "tell", "ask", "write", "please",
+                        "from", "with", "that", "this",
+                    }
+                ]
+                if seed_tokens:
+                    sections["prefix"] = f"Subject: {' '.join(seed_tokens[:3]).title()}"
+        sections["body"] = _clean_body(sections.get("body", ""))
+        return _reassemble_email_sections(sections)
+    return _clean_body(text)
 
 
 def _strip_invented_reasons_if_absent(
@@ -3968,6 +4159,18 @@ def _ensure_safe_no_reason_elaboration(
             f"Please confirm the current status of the {item}.",
             f"Let me know what you need from me about the {item}.",
         )
+    elif any(word in seed_lower for word in ("caterer", "lunch")):
+        candidates = (
+            "I'm writing to the caterer about the lunch boxes.",
+            "Please share details on the lunch boxes.",
+            "Let me know what you need from me about the lunch boxes.",
+        )
+    elif any(word in seed_lower for word in ("florist", "centerpieces")):
+        candidates = (
+            "I'm writing about the centerpieces.",
+            "Please share details on the centerpieces.",
+            "Let me know what you need from me about the centerpieces.",
+        )
     elif any(word in seed_lower for word in ("brakes", "mechanic")):
         candidates = (
             "The brakes feel soft.",
@@ -4026,6 +4229,9 @@ def apply_generate_hard_filters(
     filtered = text
     filtered = _strip_meta_instruction_commentary(filtered, format_type)
     filtered = _strip_invented_reasons_if_absent(
+        filtered, format_type=format_type, seed_baseline=seed_baseline
+    )
+    filtered = _strip_unseeded_concrete_fills(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
     filtered = _ensure_nonempty_body(
@@ -4198,6 +4404,9 @@ def finalize_generate_output(
     # Length pads / model text can reintroduce bad filler — strip again.
     filtered = _strip_meta_instruction_commentary(filtered, format_type)
     filtered = _strip_invented_reasons_if_absent(
+        filtered, format_type=format_type, seed_baseline=seed_baseline
+    )
+    filtered = _strip_unseeded_concrete_fills(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
     filtered = _ensure_seed_key_details(
@@ -5428,6 +5637,9 @@ def _process_generate_candidate(
     cleaned = _strip_generate_instruction_leakage(cleaned)
     cleaned = _strip_meta_instruction_commentary(cleaned, format_type)
     cleaned = _strip_invented_reasons_if_absent(
+        cleaned, format_type=format_type, seed_baseline=seed_baseline
+    )
+    cleaned = _strip_unseeded_concrete_fills(
         cleaned, format_type=format_type, seed_baseline=seed_baseline
     )
     cleaned = _dedupe_semantic_requests(cleaned, format_type)

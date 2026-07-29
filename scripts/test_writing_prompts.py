@@ -846,6 +846,33 @@ class GenerateFidelityAndLengthTests(unittest.TestCase):
         self.assertNotIn("apartment", out.lower())
         self.assertNotIn("plumber", out.lower())
 
+    def test_unseeded_event_fill_stripped_and_caterer_restored(self) -> None:
+        # Drop-then-backfill: invent "event"/"order" must not replace seed nouns.
+        settings = {
+            "tonePreset": "friendly",
+            "length": "medium",
+            "complexity": "standard",
+            "profile": {"fullName": "Alex Rivera"},
+        }
+        draft = (
+            "Subject: Lunch Boxes for Upcoming Event\n\nHi there,\n\n"
+            "I'm writing to discuss the lunch boxes we will be needing for our event.\n\n"
+            "Could you share details on the order and what I need to provide to secure them?\n\n"
+            "Best,\nAlex Rivera"
+        )
+        out = apply_generate_hard_filters(
+            draft,
+            format_type="email",
+            settings=settings,
+            seed_baseline="email the caterer about the lunch boxes",
+        )
+        lower = out.lower()
+        self.assertNotIn("event", lower)
+        self.assertNotIn("wedding", lower)
+        self.assertNotRegex(lower, r"\bthe order\b|\bour order\b")
+        self.assertIn("lunch", lower)
+        self.assertIn("caterer", lower)
+
     def test_short_informational_note_is_included(self) -> None:
         draft = (
             "Subject: Extension\n\nHi there,\n\n"
