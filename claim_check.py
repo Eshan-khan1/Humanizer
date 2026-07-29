@@ -271,7 +271,8 @@ _RESTATE_GROUPS: tuple[frozenset[str], ...] = (
     frozenset({"ethics essay", "ethics", "essay"}),
     frozenset({"bathroom", "bathroom faucet"}),
     frozenset({"late", "delay", "delayed"}),
-    frozenset({"open", "slot", "close"}),
+    frozenset({"open", "slot", "close", "opening", "closing"}),
+    frozenset({"swap", "swapping", "swapped", "switch", "switching", "trade", "trading"}),
 )
 
 _STYLE_NOTE_RE = re.compile(r"(?i)^(?:style|tone)\s*:\s*")
