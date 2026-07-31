@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var writingPopup: NSPopUpButton!
     private var modelsHelpLabel: NSTextField!
     private var menuBarBanner: NSView!
+    private var menuBarConnectButton: NSButton!
     private var bgStatusLabel: NSTextField!
     private var busy = false
     private var online = false
@@ -227,6 +228,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         connect.bezelStyle = .rounded
         connect.frame = NSRect(x: 28, y: 44, width: 170, height: 32)
         content.addSubview(connect)
+        menuBarConnectButton = connect
 
         let restart = NSButton(title: "Restart", target: self, action: #selector(restartServer))
         restart.bezelStyle = .rounded
@@ -753,6 +755,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func updateMenuBarBanner() {
         let showing = isMenuBarItemShowing()
         menuBarBanner?.isHidden = showing
+        // Hide Connect once the menu bar icon is visible; show it again if macOS drops it.
+        menuBarConnectButton?.isHidden = showing
         logMenuBarGeometry(showing ? "visible" : "hidden")
     }
 
