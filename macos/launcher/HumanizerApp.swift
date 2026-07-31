@@ -1,6 +1,7 @@
 import Cocoa
 import Darwin
 import Foundation
+import QuartzCore
 import ServiceManagement
 
 private let accent = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 1) // #FFFFFF
@@ -8,6 +9,7 @@ private let bg = NSColor(calibratedRed: 0.0, green: 0.0, blue: 0.0, alpha: 1) //
 private let textColor = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 1) // #FFFFFF
 private let muted = NSColor(calibratedRed: 0.663, green: 0.663, blue: 0.663, alpha: 1) // #A9A9A9
 private let okColor = NSColor(calibratedRed: 0.024, green: 0.757, blue: 0.404, alpha: 1) // #06C167
+private let offlineColor = NSColor(calibratedRed: 0.882, green: 0.098, blue: 0.0, alpha: 1) // #E11900
 private let offColor = NSColor(calibratedRed: 0.478, green: 0.478, blue: 0.478, alpha: 1) // #7A7A7A
 private let surface = NSColor(calibratedRed: 0.122, green: 0.122, blue: 0.122, alpha: 1) // #1F1F1F
 private let inverse = NSColor(calibratedRed: 0.0, green: 0.0, blue: 0.0, alpha: 1) // #000000
@@ -20,9 +22,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var statusTitle: NSTextField!
     private var statusDetail: NSTextField!
     private var statusDot: NSView!
+    private var statusCard: NSView!
+    private var statusFill: NSView!
     private var restartButton: NSButton!
     private var restartSpinner: NSProgressIndicator!
-    private var restartProgress: NSProgressIndicator!
     private var powerSwitch: NSSwitch!
     private var grammarPopup: NSPopUpButton!
     private var writingPopup: NSPopUpButton!
@@ -204,7 +207,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
+        card.layer?.masksToBounds = true
         content.addSubview(card)
+        statusCard = card
+
+        // Green fill used for online state and the restart “charging” animation.
+        let fill = NSView(frame: NSRect(x: 0, y: 0, width: 0, height: 100))
+        fill.wantsLayer = true
+        fill.layer?.backgroundColor = okColor.cgColor
+        fill.autoresizingMask = []
+        card.addSubview(fill)
+        statusFill = fill
 
         let dot = NSView(frame: NSRect(x: 20, y: 58, width: 12, height: 12))
         dot.wantsLayer = true
@@ -254,16 +267,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         spinner.isHidden = true
         card.addSubview(spinner)
         restartSpinner = spinner
-
-        let progress = NSProgressIndicator(frame: NSRect(x: 20, y: 12, width: 324, height: 6))
-        progress.style = .bar
-        progress.isIndeterminate = false
-        progress.minValue = 0
-        progress.maxValue = 1
-        progress.doubleValue = 0
-        progress.isHidden = true
-        card.addSubview(progress)
-        restartProgress = progress
 
         let connect = NSButton(title: "Connect Menu Bar…", target: self, action: #selector(showMenuBarConnect))
         connect.bezelStyle = .rounded
@@ -1039,22 +1042,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func restartServer() {
         if busy { return }
         busy = true
-        setRestartUI(active: true, progress: 0.05, title: "Restarting…", detail: "1/3 Stopping server…")
+        // Reset to empty dark card, then charge green left → right.
+        statusCard?.layer?.backgroundColor = surface.cgColor
+        animateStatusFill(to: 0, color: okColor, animated: false)
+        setRestartUI(active: true, progress: 0.08, title: "Restarting…", detail: "1/3 Stopping server…")
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
 
             DispatchQueue.main.async {
-                self.setRestartUI(active: true, progress: 0.2, title: "Restarting…", detail: "1/3 Stopping server…")
+                self.setRestartUI(active: true, progress: 0.22, title: "Restarting…", detail: "1/3 Stopping server…")
             }
             _ = self.runService(["stop"])
 
             DispatchQueue.main.async {
-                self.setRestartUI(active: true, progress: 0.45, title: "Restarting…", detail: "2/3 Starting server…")
+                self.setRestartUI(active: true, progress: 0.5, title: "Restarting…", detail: "2/3 Starting server…")
             }
             let start = self.runService(["start"])
 
             DispatchQueue.main.async {
-                self.setRestartUI(active: true, progress: 0.75, title: "Restarting…", detail: "3/3 Checking health…")
+                self.setRestartUI(active: true, progress: 0.82, title: "Restarting…", detail: "3/3 Checking health…")
             }
             let status = self.runService(["status"])
             let ok = (status["ok"] as? Bool) ?? ((start["ok"] as? Bool) ?? false)
@@ -1064,7 +1070,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
             DispatchQueue.main.async {
                 self.setRestartUI(active: true, progress: 1.0, title: "Restarting…", detail: "Done")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     self.busy = false
                     self.setRestartUI(active: false, progress: 0, title: nil, detail: nil)
                     self.applyHealth(ok: ok, detail: detail)
@@ -1077,16 +1083,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         restartButton?.isEnabled = !active
         restartButton?.isHidden = active
         restartSpinner?.isHidden = !active
-        restartProgress?.isHidden = !active
         if active {
             restartSpinner?.startAnimation(nil)
-            restartProgress?.doubleValue = progress
             if let title { statusTitle.stringValue = title }
             if let detail { statusDetail.stringValue = detail }
-            statusDot.layer?.backgroundColor = muted.cgColor
+            statusTitle.textColor = textColor
+            statusDetail.textColor = textColor.withAlphaComponent(0.85)
+            statusDot.layer?.backgroundColor = NSColor.white.cgColor
+            restartButton?.contentTintColor = textColor
+            // Dark base with green charging fill left → right
+            statusCard?.layer?.backgroundColor = surface.cgColor
+            animateStatusFill(to: progress, color: okColor)
         } else {
             restartSpinner?.stopAnimation(nil)
-            restartProgress?.doubleValue = 0
+        }
+    }
+
+    private func animateStatusFill(to fraction: Double, color: NSColor, animated: Bool = true) {
+        guard let card = statusCard, let fill = statusFill else { return }
+        let clamped = min(max(fraction, 0), 1)
+        let targetWidth = card.bounds.width * CGFloat(clamped)
+        fill.layer?.backgroundColor = color.cgColor
+        let target = NSRect(x: 0, y: 0, width: targetWidth, height: card.bounds.height)
+        if animated {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.35
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                fill.animator().frame = target
+            }
+        } else {
+            fill.frame = target
+        }
+    }
+
+    private func applyStatusCardStyle(online: Bool) {
+        if online {
+            statusCard?.layer?.backgroundColor = okColor.cgColor
+            animateStatusFill(to: 1, color: okColor, animated: false)
+            statusTitle.textColor = textColor
+            statusDetail.textColor = textColor.withAlphaComponent(0.9)
+            statusDot.layer?.backgroundColor = NSColor.white.cgColor
+            restartButton?.contentTintColor = textColor
+        } else {
+            statusCard?.layer?.backgroundColor = offlineColor.cgColor
+            animateStatusFill(to: 0, color: okColor, animated: false)
+            statusTitle.textColor = textColor
+            statusDetail.textColor = textColor.withAlphaComponent(0.9)
+            statusDot.layer?.backgroundColor = NSColor.white.cgColor
+            restartButton?.contentTintColor = textColor
         }
     }
 
@@ -1114,7 +1158,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         online = ok
         statusTitle.stringValue = ok ? "Server online" : "Server offline"
         statusDetail.stringValue = detail
-        statusDot.layer?.backgroundColor = (ok ? okColor : offColor).cgColor
+        statusDot.layer?.backgroundColor = NSColor.white.cgColor
+        applyStatusCardStyle(online: ok)
         powerSwitch.state = ok ? .on : .off
         configureStatusButton(statusItem.button, online: ok)
         if let menuItem = statusItem.menu?.item(withTag: 100) {
