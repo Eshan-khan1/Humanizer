@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var busy = false
     private var online = false
     private var availableModels: [String] = []
+    private var modelLabels: [String: String] = [:]
     private var selectedGrammar = "humanizer-grammar"
     private var selectedWriting = "humanizer-writing"
     private var menuBarPromptPresented = false
@@ -835,9 +836,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc private func modelSelectionChanged(_ sender: NSPopUpButton) {
         if sender == grammarPopup {
-            selectedGrammar = sender.titleOfSelectedItem ?? selectedGrammar
+            selectedGrammar = selectedModelName(from: sender) ?? selectedGrammar
         } else if sender == writingPopup {
-            selectedWriting = sender.titleOfSelectedItem ?? selectedWriting
+            selectedWriting = selectedModelName(from: sender) ?? selectedWriting
+        }
+    }
+
+    private func selectedModelName(from popup: NSPopUpButton) -> String? {
+        if let name = popup.selectedItem?.representedObject as? String, !name.isEmpty {
+            return name
+        }
+        return popup.titleOfSelectedItem
+    }
+
+    private func displayLabel(for name: String) -> String {
+        if let label = modelLabels[name], !label.isEmpty {
+            return label
+        }
+        let base = name.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: true).first.map(String.init) ?? name
+        if let label = modelLabels[base], !label.isEmpty {
+            return label
+        }
+        // Local fallbacks when the service hasn't returned labels yet.
+        switch base {
+        case "humanizer-writing", "qwen-7b-trained":
+            return "Qwen 7B / trained"
+        case "humanizer-grammar":
+            return "Qwen grammar / trained"
+        case "qwen2.5":
+            if name.hasPrefix("qwen2.5:7b") { return "Qwen 7B" }
+            return name
+        default:
+            return name
         }
     }
 
@@ -853,10 +883,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func populateModelMenus(from result: [String: Any]) {
         var names: [String] = []
+        var labels: [String: String] = [:]
         if let models = result["models"] as? [[String: Any]] {
-            names = models.compactMap { $0["name"] as? String }
+            for entry in models {
+                guard let name = entry["name"] as? String, !name.isEmpty else { continue }
+                names.append(name)
+                if let label = entry["label"] as? String, !label.isEmpty {
+                    labels[name] = label
+                }
+            }
         }
         availableModels = names
+        modelLabels = labels
 
         if let g = result["grammar_model"] as? String, !g.isEmpty {
             selectedGrammar = g
@@ -883,13 +921,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } else if !items.contains(selected) {
             items.insert(selected, at: 0)
         }
-        popup.addItems(withTitles: items)
-        popup.selectItem(withTitle: selected)
+        for name in items {
+            let title = displayLabel(for: name)
+            popup.addItem(withTitle: title)
+            popup.lastItem?.representedObject = name
+            // Keep unique titles when two Ollama tags share a label.
+            if popup.itemArray.filter({ $0.title == title }).count > 1 {
+                popup.lastItem?.title = "\(title) (\(name))"
+            }
+        }
+        if let match = popup.itemArray.first(where: { ($0.representedObject as? String) == selected }) {
+            popup.select(match)
+        } else {
+            popup.selectItem(withTitle: displayLabel(for: selected))
+        }
     }
 
     @objc private func applyModelSettings() {
-        selectedGrammar = grammarPopup.titleOfSelectedItem ?? selectedGrammar
-        selectedWriting = writingPopup.titleOfSelectedItem ?? selectedWriting
+        selectedGrammar = selectedModelName(from: grammarPopup) ?? selectedGrammar
+        selectedWriting = selectedModelName(from: writingPopup) ?? selectedWriting
         modelsHelpLabel.stringValue = "Saving and restarting server…"
         busy = true
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -903,8 +953,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 self.busy = false
                 let ok = (result["ok"] as? Bool) ?? false
                 let detail = (result["detail"] as? String) ?? ""
+                let gLabel = self.displayLabel(for: self.selectedGrammar)
+                let wLabel = self.displayLabel(for: self.selectedWriting)
                 self.modelsHelpLabel.stringValue = ok
-                    ? "Using grammar “\(self.selectedGrammar)” and writing “\(self.selectedWriting)”."
+                    ? "Using grammar “\(gLabel)” and writing “\(wLabel)”."
                     : (detail.isEmpty ? "Saved, but the server may still be offline." : detail)
                 self.applyHealth(ok: ok, detail: ok ? "Server online" : "Server offline")
             }

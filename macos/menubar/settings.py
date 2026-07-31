@@ -14,6 +14,29 @@ logger = logging.getLogger("humanizer.menubar")
 DEFAULT_GRAMMAR_MODEL = "humanizer-grammar"
 DEFAULT_WRITING_MODEL = "humanizer-writing"
 
+# Friendly labels in the Mac app Settings → Local LLM pickers.
+# Keys may be bare names or full Ollama tags (name:tag).
+MODEL_LABELS: dict[str, str] = {
+    "humanizer-writing": "Qwen 7B / trained",
+    "qwen-7b-trained": "Qwen 7B / trained",
+    "humanizer-grammar": "Qwen grammar / trained",
+    "qwen2.5:7b": "Qwen 7B",
+    "qwen2.5:3b-instruct": "Qwen 3B",
+    "qwen2.5:0.5b": "Qwen 0.5B",
+    "qwen3:8b": "Qwen 3 8B",
+}
+
+
+def model_label(name: str) -> str:
+    """Human-readable label for an Ollama model name."""
+    raw = (name or "").strip()
+    if not raw:
+        return raw
+    if raw in MODEL_LABELS:
+        return MODEL_LABELS[raw]
+    base = raw.split(":", 1)[0]
+    return MODEL_LABELS.get(base, raw)
+
 
 def settings_path() -> Path:
     return support_dir() / "settings.json"
@@ -66,15 +89,17 @@ def list_ollama_models() -> list[dict[str, Any]]:
         name = entry.get("name") or entry.get("model")
         if not isinstance(name, str) or not name.strip():
             continue
+        cleaned = name.strip()
         models.append(
             {
-                "name": name.strip(),
+                "name": cleaned,
+                "label": model_label(cleaned),
                 "size": entry.get("size"),
                 "modified_at": entry.get("modified_at"),
                 "digest": entry.get("digest"),
             }
         )
-    models.sort(key=lambda m: m["name"].lower())
+    models.sort(key=lambda m: str(m["label"]).lower())
     return models
 
 
