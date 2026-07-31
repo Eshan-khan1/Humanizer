@@ -20,6 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var statusTitle: NSTextField!
     private var statusDetail: NSTextField!
     private var statusDot: NSView!
+    private var restartButton: NSButton!
+    private var restartSpinner: NSProgressIndicator!
+    private var restartProgress: NSProgressIndicator!
     private var powerSwitch: NSSwitch!
     private var grammarPopup: NSPopUpButton!
     private var writingPopup: NSPopUpButton!
@@ -213,27 +216,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let st = NSTextField(labelWithString: "Checking…")
         st.font = .systemFont(ofSize: 16, weight: .medium)
         st.textColor = textColor
-        st.frame = NSRect(x: 44, y: 52, width: 280, height: 24)
+        st.frame = NSRect(x: 44, y: 52, width: 250, height: 24)
         card.addSubview(st)
         statusTitle = st
 
         let detail = NSTextField(labelWithString: "Starting Ollama and the grammar server…")
         detail.font = .systemFont(ofSize: 12)
         detail.textColor = muted
-        detail.frame = NSRect(x: 44, y: 28, width: 300, height: 20)
+        detail.frame = NSRect(x: 44, y: 28, width: 250, height: 20)
         card.addSubview(detail)
         statusDetail = detail
+
+        // Restart icon on the right side of the Server online card
+        let restart = NSButton(frame: NSRect(x: 318, y: 36, width: 30, height: 30))
+        restart.bezelStyle = .inline
+        restart.isBordered = false
+        restart.imagePosition = .imageOnly
+        restart.imageScaling = .scaleProportionallyDown
+        if let icon = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "Restart server") {
+            let cfg = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+            restart.image = icon.withSymbolConfiguration(cfg)
+        } else {
+            restart.title = "↻"
+        }
+        restart.contentTintColor = muted
+        restart.target = self
+        restart.action = #selector(restartServer)
+        restart.toolTip = "Restart server"
+        restart.setAccessibilityLabel("Restart server")
+        card.addSubview(restart)
+        restartButton = restart
+
+        let spinner = NSProgressIndicator(frame: NSRect(x: 320, y: 40, width: 24, height: 24))
+        spinner.style = .spinning
+        spinner.controlSize = .small
+        spinner.isDisplayedWhenStopped = false
+        spinner.isHidden = true
+        card.addSubview(spinner)
+        restartSpinner = spinner
+
+        let progress = NSProgressIndicator(frame: NSRect(x: 20, y: 12, width: 324, height: 6))
+        progress.style = .bar
+        progress.isIndeterminate = false
+        progress.minValue = 0
+        progress.maxValue = 1
+        progress.doubleValue = 0
+        progress.isHidden = true
+        card.addSubview(progress)
+        restartProgress = progress
 
         let connect = NSButton(title: "Connect Menu Bar…", target: self, action: #selector(showMenuBarConnect))
         connect.bezelStyle = .rounded
         connect.frame = NSRect(x: 28, y: 44, width: 170, height: 32)
         content.addSubview(connect)
         menuBarConnectButton = connect
-
-        let restart = NSButton(title: "Restart", target: self, action: #selector(restartServer))
-        restart.bezelStyle = .rounded
-        restart.frame = NSRect(x: 210, y: 44, width: 80, height: 32)
-        content.addSubview(restart)
 
         // Banner shown when macOS is still blocking the status item.
         let banner = NSView(frame: NSRect(x: 28, y: 12, width: 364, height: 26))
@@ -1003,14 +1039,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func restartServer() {
         if busy { return }
         busy = true
-        statusTitle.stringValue = "Restarting…"
+        setRestartUI(active: true, progress: 0.05, title: "Restarting…", detail: "1/3 Stopping server…")
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let result = self?.runService(["restart"]) ?? ["ok": false, "detail": "Server offline"]
+            guard let self else { return }
+
             DispatchQueue.main.async {
-                self?.busy = false
-                self?.applyHealth(ok: (result["ok"] as? Bool) ?? false,
-                                  detail: (result["detail"] as? String) ?? "Server offline")
+                self.setRestartUI(active: true, progress: 0.2, title: "Restarting…", detail: "1/3 Stopping server…")
             }
+            _ = self.runService(["stop"])
+
+            DispatchQueue.main.async {
+                self.setRestartUI(active: true, progress: 0.45, title: "Restarting…", detail: "2/3 Starting server…")
+            }
+            let start = self.runService(["start"])
+
+            DispatchQueue.main.async {
+                self.setRestartUI(active: true, progress: 0.75, title: "Restarting…", detail: "3/3 Checking health…")
+            }
+            let status = self.runService(["status"])
+            let ok = (status["ok"] as? Bool) ?? ((start["ok"] as? Bool) ?? false)
+            let detail = (status["detail"] as? String)
+                ?? (start["detail"] as? String)
+                ?? (ok ? "Server online" : "Server offline")
+
+            DispatchQueue.main.async {
+                self.setRestartUI(active: true, progress: 1.0, title: "Restarting…", detail: "Done")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    self.busy = false
+                    self.setRestartUI(active: false, progress: 0, title: nil, detail: nil)
+                    self.applyHealth(ok: ok, detail: detail)
+                }
+            }
+        }
+    }
+
+    private func setRestartUI(active: Bool, progress: Double, title: String?, detail: String?) {
+        restartButton?.isEnabled = !active
+        restartButton?.isHidden = active
+        restartSpinner?.isHidden = !active
+        restartProgress?.isHidden = !active
+        if active {
+            restartSpinner?.startAnimation(nil)
+            restartProgress?.doubleValue = progress
+            if let title { statusTitle.stringValue = title }
+            if let detail { statusDetail.stringValue = detail }
+            statusDot.layer?.backgroundColor = muted.cgColor
+        } else {
+            restartSpinner?.stopAnimation(nil)
+            restartProgress?.doubleValue = 0
         }
     }
 
