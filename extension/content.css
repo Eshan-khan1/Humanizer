@@ -1,7 +1,50 @@
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap");
+/* Humanizer content UI tokens.
+   Do NOT @import remote fonts here — Google/Docs CSP can discard the whole
+   stylesheet when remote @import is blocked, which breaks the extension UI.
+   Do NOT set color-scheme on :root — that forces sites into light/dark mode. */
+:root {
+  --color-pink: #111111;
+  --color-purple: #333333;
+  --color-violet: #444444;
+  --color-bg-darkest: #2b2a27;
+  --color-bg-dark: #1f1e1b;
+  --color-bg-mid: #393937;
+  --color-text-muted: #a3a098;
+  --color-white: #eeeeee;
+  --gradient-brand: none;
+  --gradient-brand-btn: #111111;
+  --border-subtle: #3d3a35;
+  --border-card: #3d3a35;
+  --text-placeholder: rgba(163, 160, 152, 0.55);
+  --shadow-card: none;
+  --shadow-popup: none;
+  --shadow-glow: none;
+  --radius-sm: 0.4rem;
+  --radius-md: 0.55rem;
+  --radius-lg: 0.75rem;
+  --radius-pill: 9999px;
+  --font-sans: Georgia, Charter, "Times New Roman", serif;
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --grm-color-correctness: var(--color-pink);
+  --grm-color-clarity: #555555;
+  --grm-color-engagement: var(--color-purple);
+  --grm-color-delivery: var(--color-violet);
+  --grm-color-brand: var(--color-pink);
+  --grm-color-accept: var(--color-pink);
+  --grm-color-accept-hover: #000000;
+  --grm-color-text-primary: #111111;
+  --grm-color-text-secondary: var(--color-text-muted);
+  --grm-color-text-muted: rgba(163, 160, 152, 0.75);
+  --grm-color-surface: var(--color-bg-dark);
+  --grm-color-border: var(--border-subtle);
+  --grm-highlight-bg: transparent;
+  --grm-card-shadow: var(--shadow-popup);
+  --grm-card-radius: var(--radius-lg);
+  --grm-btn-radius: var(--radius-md);
+  --grm-font-family: var(--font-sans);
+}
 
-/* Humanizer content UI tokens — scoped to extension chrome only.
-   Never set color-scheme / :root theme here (that forces site dark mode). */
 :host,
 .grm-card,
 .grammar-inline-card,
@@ -29,7 +72,7 @@
   --radius-md: 0.55rem;
   --radius-lg: 0.75rem;
   --radius-pill: 9999px;
-  --font-sans: "Source Serif 4", "Tiempos Text", Georgia, Charter, serif;
+  --font-sans: Georgia, Charter, "Times New Roman", serif;
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
   --grm-color-correctness: var(--color-pink);
@@ -131,7 +174,7 @@
   background: transparent !important;
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
-  caret-color: var(--grm-color-text-primary) !important;
+  caret-color: #111111 !important;
 }
 
 /* Suggestion card (inline popup) */
