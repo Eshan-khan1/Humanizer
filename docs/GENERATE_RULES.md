@@ -80,8 +80,10 @@ Implementation:
 | Layer | File |
 |-------|------|
 | Prompts + filters | `writing_agent.py` |
+| Claim fidelity check | `claim_check.py` (log-only on generate) |
 | API | `server.py` → `POST /generate` |
 | Popup save/load | `extension/popup.js` |
 | Auto-apply on generate | `extension/content.js` |
+| Live presets in panel | `extension/content.js` (tone/length/complexity selects) |
 | Option labels | `extension/generate_tones.json` |
 | Machine-readable rules | `generate_feature_rules.json` |

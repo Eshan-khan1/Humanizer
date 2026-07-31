@@ -411,9 +411,12 @@ def ensure_home_payload(resources: Path) -> Path:
         for rel in (
             "server.py",
             "writing_agent.py",
+            "claim_check.py",
             "security.py",
             "cloud_ai.py",
             "rag.py",
+            "grammar_rules.json",
+            "generate_feature_rules.json",
             "requirements.txt",
             "macos",
         ):

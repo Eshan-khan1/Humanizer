@@ -1,0 +1,97 @@
+{
+    "name": "Uber App - Dark Theme Tokens",
+    "description": "Color and style tokens extracted from Uber app UI (Home, Services, Account screens) for use in a design project.",
+    "colors": {
+      "background": {
+        "primary": "#000000",
+        "secondary": "#141414",
+        "elevated": "#1C1C1E"
+      },
+      "surface": {
+        "card": "#1F1F1F",
+        "cardHover": "#2A2A2A",
+        "cardBorder": "#2E2E2E",
+        "pill": "#1C1C1E",
+        "pillActive": "#2C2C2E"
+      },
+      "text": {
+        "primary": "#FFFFFF",
+        "secondary": "#A9A9A9",
+        "tertiary": "#7A7A7A",
+        "disabled": "#4D4D4D",
+        "inverse": "#000000"
+      },
+      "accent": {
+        "green": "#276E45",
+        "greenText": "#3FCB6B",
+        "orange": "#FF9500",
+        "gold": "#E4B65C",
+        "eatsGreen": "#06C167"
+      },
+      "button": {
+        "primaryBackground": "#FFFFFF",
+        "primaryText": "#000000",
+        "secondaryBackground": "#1C1C1E",
+        "secondaryText": "#FFFFFF",
+        "darkPill": "#111111",
+        "darkPillText": "#FFFFFF"
+      },
+      "icon": {
+        "default": "#FFFFFF",
+        "muted": "#9C9C9C",
+        "accentGreen": "#3FCB6B"
+      },
+      "navigation": {
+        "background": "#0D0D0D",
+        "activeBackground": "#2C2C2E",
+        "activeIcon": "#FFFFFF",
+        "inactiveIcon": "#8E8E93"
+      },
+      "badge": {
+        "newBackground": "#E11900",
+        "newText": "#FFFFFF"
+      },
+      "divider": "#2E2E2E"
+    },
+    "typography": {
+      "fontFamily": "Uber Move, -apple-system, sans-serif",
+      "heading": {
+        "size": "34px",
+        "weight": "700",
+        "color": "#FFFFFF"
+      },
+      "sectionTitle": {
+        "size": "22px",
+        "weight": "700",
+        "color": "#FFFFFF"
+      },
+      "body": {
+        "size": "16px",
+        "weight": "400",
+        "color": "#FFFFFF"
+      },
+      "caption": {
+        "size": "13px",
+        "weight": "400",
+        "color": "#A9A9A9"
+      },
+      "priceHighlight": {
+        "size": "18px",
+        "weight": "600",
+        "color": "#FFFFFF"
+      }
+    },
+    "radius": {
+      "card": "16px",
+      "pill": "999px",
+      "button": "12px",
+      "iconContainer": "12px"
+    },
+    "spacing": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px"
+    }
+  }

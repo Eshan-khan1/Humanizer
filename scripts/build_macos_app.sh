@@ -19,14 +19,18 @@ echo "==> Building ${APP_NAME}.app"
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RESOURCES" "$HOME_PAYLOAD"
 
+VERSION="$(python3 -c "import json; print(json.load(open('$ROOT/extension/manifest.json'))['version'])")"
+
 # Bundle a lightweight server home (no huge model weights).
 COPY_PATHS=(
   server.py
   writing_agent.py
+  claim_check.py
   security.py
   cloud_ai.py
   rag.py
   grammar_rules.json
+  generate_feature_rules.json
   requirements.txt
   scripts/ollama_gpu_env.sh
 )
@@ -114,7 +118,7 @@ PY
 iconutil -c icns "$ICONSET" -o "$RESOURCES/AppIcon.icns"
 rm -rf "$ICONSET"
 
-cat > "$CONTENTS/Info.plist" <<'PLIST'
+cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -134,9 +138,9 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.9.2</string>
+  <string>${VERSION}</string>
   <key>CFBundleVersion</key>
-  <string>1.9.2</string>
+  <string>${VERSION}</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>LSMinimumSystemVersion</key>
@@ -182,7 +186,7 @@ LOGIN_ITEM_APP="$CONTENTS/Library/LoginItems/LaunchAtLogin.app"
 LOGIN_ITEM_CONTENTS="$LOGIN_ITEM_APP/Contents"
 LOGIN_ITEM_MACOS="$LOGIN_ITEM_CONTENTS/MacOS"
 mkdir -p "$LOGIN_ITEM_MACOS"
-cat > "$LOGIN_ITEM_CONTENTS/Info.plist" <<'LOGINPLIST'
+cat > "$LOGIN_ITEM_CONTENTS/Info.plist" <<LOGINPLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -202,9 +206,9 @@ cat > "$LOGIN_ITEM_CONTENTS/Info.plist" <<'LOGINPLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.9.2</string>
+  <string>${VERSION}</string>
   <key>CFBundleVersion</key>
-  <string>1.9.2</string>
+  <string>${VERSION}</string>
   <key>LSMinimumSystemVersion</key>
   <string>13.0</string>
   <key>LSUIElement</key>
