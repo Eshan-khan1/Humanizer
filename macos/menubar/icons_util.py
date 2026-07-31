@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import struct
 import zlib
 from pathlib import Path
@@ -27,15 +28,98 @@ def write_status_icons(directory: Path) -> tuple[Path, Path, Path]:
     offline = directory / "status-offline.png"
     mark = directory / "humanizer-mark.png"
     logo = logo_source()
+    # Menu bar needs a bold silhouette — the full logo is illegible at ~18pt.
+    write_beacon_template(online, size=44, filled=True)
+    write_beacon_template(offline, size=44, filled=False)
     if logo is not None:
         write_brand_mark_from_logo(mark, logo, size=256)
-        write_template_from_logo(online, logo, size=44, alpha_scale=1.0)
-        write_template_from_logo(offline, logo, size=44, alpha_scale=0.55)
     else:
-        write_h_icon(online, filled=True, size=44)
-        write_h_icon(offline, filled=False, size=44)
         write_brand_mark(mark, size=128)
     return online, offline, mark
+
+
+def write_beacon_template(path: Path, *, size: int = 44, filled: bool = True) -> None:
+    """Bold beacon glyph (circle + stem + base) for the macOS menu bar.
+
+    Drawn as an opaque black template so StatusKit can tint it for light/dark bars.
+    """
+    # Geometry in unit space, then scaled — keep strokes thick for 18pt.
+    cx = (size - 1) / 2.0
+    # Head — large solid disc so it reads at 18–20pt
+    head_r = size * 0.26
+    head_cy = size * 0.34
+    # Stem
+    stem_w = max(4.0, size * 0.14)
+    stem_top = head_cy + head_r * 0.45
+    stem_bot = size * 0.78
+    # Base (flat capsule)
+    base_w = size * 0.50
+    base_h = max(3.5, size * 0.12)
+    base_cy = size * 0.86
+    # Three chunky outward wedges around the head
+    plane_len = size * 0.22
+    plane_half = size * 0.08
+    plane_gap = head_r + size * 0.01
+
+    def in_disk(x: float, y: float, ox: float, oy: float, r: float) -> bool:
+        return (x - ox) ** 2 + (y - oy) ** 2 <= r * r
+
+    def in_rect(x: float, y: float, x0: float, y0: float, x1: float, y1: float) -> bool:
+        return x0 <= x <= x1 and y0 <= y <= y1
+
+    def in_rounded_base(x: float, y: float) -> bool:
+        x0, x1 = cx - base_w / 2, cx + base_w / 2
+        y0, y1 = base_cy - base_h / 2, base_cy + base_h / 2
+        if not (y0 <= y <= y1 and x0 <= x <= x1):
+            return False
+        # Round the short ends
+        r = base_h / 2
+        if x < x0 + r:
+            return in_disk(x, y, x0 + r, base_cy, r)
+        if x > x1 - r:
+            return in_disk(x, y, x1 - r, base_cy, r)
+        return True
+
+    def in_plane(x: float, y: float, angle_deg: float) -> bool:
+        rad = math.radians(angle_deg)
+        # Local coords relative to head center, rotated so +y is outward
+        dx, dy = x - cx, y - head_cy
+        lx = dx * math.cos(rad) + dy * math.sin(rad)
+        ly = -dx * math.sin(rad) + dy * math.cos(rad)
+        # Triangle pointing +y (outward): base near head, tip farther out
+        if ly < plane_gap or ly > plane_gap + plane_len:
+            return False
+        t = (ly - plane_gap) / plane_len  # 0 at base → 1 at tip
+        half = plane_half * (1.0 - t)
+        return abs(lx) <= half
+
+    alpha_fill = 255 if filled else 200
+    ring_only = not filled
+
+    def pixel(x: int, y: int) -> tuple[int, int, int, int]:
+        fx, fy = float(x), float(y)
+        hit = False
+        if in_disk(fx, fy, cx, head_cy, head_r):
+            if ring_only:
+                # Hollow head for offline
+                if not in_disk(fx, fy, cx, head_cy, head_r - max(2.2, size * 0.06)):
+                    hit = True
+            else:
+                hit = True
+        if in_rect(fx, fy, cx - stem_w / 2, stem_top, cx + stem_w / 2, stem_bot):
+            hit = True
+        if in_rounded_base(fx, fy):
+            hit = True
+        # Planes: top, upper-left, upper-right (skip bottom — stem is there)
+        for ang in (-90.0, -150.0, -30.0):
+            if in_plane(fx, fy, ang):
+                hit = True
+                break
+        if hit:
+            return (0, 0, 0, alpha_fill)
+        return (0, 0, 0, 0)
+
+    _write_png(path, size, pixel)
 
 
 def write_brand_mark_from_logo(path: Path, logo: Path, *, size: int = 256) -> None:
