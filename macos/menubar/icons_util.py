@@ -12,9 +12,22 @@ _LOGO_CANDIDATES = (
     Path(__file__).resolve().parent / "icons" / "logo.png",
 )
 
+# Dedicated menu-bar artwork (simpler beacon); falls back to procedural glyph.
+_MENUBAR_LOGO_CANDIDATES = (
+    Path(__file__).resolve().parents[2] / "assets" / "menubar-logo.png",
+    Path(__file__).resolve().parent / "icons" / "menubar-logo.png",
+)
+
 
 def logo_source() -> Path | None:
     for path in _LOGO_CANDIDATES:
+        if path.is_file():
+            return path
+    return None
+
+
+def menubar_logo_source() -> Path | None:
+    for path in _MENUBAR_LOGO_CANDIDATES:
         if path.is_file():
             return path
     return None
@@ -27,14 +40,74 @@ def write_status_icons(directory: Path) -> tuple[Path, Path, Path]:
     offline = directory / "status-offline.png"
     mark = directory / "humanizer-mark.png"
     logo = logo_source()
-    # Menu bar needs a bold silhouette — the full logo is illegible at ~18pt.
-    write_beacon_template(online, size=44, filled=True)
-    write_beacon_template(offline, size=44, filled=False)
+    menubar = menubar_logo_source()
+    if menubar is not None:
+        write_menubar_template(online, menubar, size=44, alpha_scale=1.0)
+        write_menubar_template(offline, menubar, size=44, alpha_scale=0.72)
+    else:
+        write_beacon_template(online, size=44, filled=True)
+        write_beacon_template(offline, size=44, filled=False)
     if logo is not None:
         write_brand_mark_from_logo(mark, logo, size=256)
     else:
         write_brand_mark(mark, size=128)
     return online, offline, mark
+
+
+def write_menubar_template(
+    path: Path, logo: Path, *, size: int = 44, alpha_scale: float = 1.0
+) -> None:
+    """Turn white-on-transparent menu-bar art into a black template PNG."""
+    try:
+        from PIL import Image, ImageFilter
+    except ImportError:
+        write_beacon_template(path, size=size, filled=alpha_scale >= 0.9)
+        return
+
+    src = Image.open(logo).convert("RGBA")
+    w, h = src.size
+    mask = Image.new("L", (w, h), 0)
+    sp = src.load()
+    mp = mask.load()
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = sp[x, y]
+            if a < 10:
+                continue
+            lum = (r + g + b) / 3.0
+            if lum < 30:
+                continue
+            mp[x, y] = min(255, int(lum * (a / 255.0)))
+
+    bbox = mask.getbbox()
+    if not bbox:
+        write_beacon_template(path, size=size, filled=alpha_scale >= 0.9)
+        return
+
+    cropped = mask.crop(bbox)
+    cw, ch = cropped.size
+    pad = int(max(cw, ch) * 0.10)
+    canvas_side = max(cw, ch) + 2 * pad
+    square = Image.new("L", (canvas_side, canvas_side), 0)
+    square.paste(cropped, ((canvas_side - cw) // 2, (canvas_side - ch) // 2))
+
+    # Upscale → thicken hairlines → downscale so planes survive at 16–18pt.
+    big = square.resize((size * 3, size * 3), Image.Resampling.LANCZOS)
+    big = big.filter(ImageFilter.MaxFilter(3))
+    small = big.resize((size, size), Image.Resampling.LANCZOS)
+
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    spx = small.load()
+    op = out.load()
+    for y in range(size):
+        for x in range(size):
+            a = spx[x, y]
+            if a < 18:
+                continue
+            op[x, y] = (0, 0, 0, int(min(255, a * alpha_scale)))
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    out.save(path, optimize=True)
 
 
 def write_beacon_template(path: Path, *, size: int = 44, filled: bool = True) -> None:
