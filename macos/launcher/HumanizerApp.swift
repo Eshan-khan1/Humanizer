@@ -155,23 +155,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let title = NSTextField(labelWithString: "Humanizer")
         title.font = .systemFont(ofSize: 28, weight: .bold)
         title.textColor = textColor
-        title.frame = NSRect(x: 98, y: 234, width: 200, height: 34)
+        title.frame = NSRect(x: 98, y: 234, width: 180, height: 34)
         content.addSubview(title)
 
         let subtitle = NSTextField(labelWithString: "Local writing server")
         subtitle.font = .systemFont(ofSize: 13)
         subtitle.textColor = muted
-        subtitle.frame = NSRect(x: 98, y: 212, width: 220, height: 20)
+        subtitle.frame = NSRect(x: 98, y: 212, width: 200, height: 20)
         content.addSubview(subtitle)
+
+        // Top-right settings gear
+        let settings = NSButton(frame: NSRect(x: 372, y: 244, width: 28, height: 28))
+        settings.bezelStyle = .inline
+        settings.isBordered = false
+        settings.imagePosition = .imageOnly
+        settings.imageScaling = .scaleProportionallyDown
+        if let gear = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Settings") {
+            let cfg = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+            settings.image = gear.withSymbolConfiguration(cfg)
+        } else {
+            settings.title = "⚙︎"
+        }
+        settings.contentTintColor = muted
+        settings.target = self
+        settings.action = #selector(showSettings)
+        settings.toolTip = "Settings"
+        settings.setAccessibilityLabel("Settings")
+        content.addSubview(settings)
 
         let serverCaption = NSTextField(labelWithString: "Server")
         serverCaption.font = .systemFont(ofSize: 11)
         serverCaption.textColor = muted
         serverCaption.alignment = .right
-        serverCaption.frame = NSRect(x: 300, y: 252, width: 90, height: 16)
+        serverCaption.frame = NSRect(x: 268, y: 252, width: 90, height: 16)
         content.addSubview(serverCaption)
 
-        let power = NSSwitch(frame: NSRect(x: 348, y: 220, width: 51, height: 31))
+        let power = NSSwitch(frame: NSRect(x: 316, y: 220, width: 51, height: 31))
         power.target = self
         power.action = #selector(powerToggled(_:))
         content.addSubview(power)
@@ -204,19 +223,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         card.addSubview(detail)
         statusDetail = detail
 
-        let settings = NSButton(title: "Settings…", target: self, action: #selector(showSettings))
-        settings.bezelStyle = .rounded
-        settings.frame = NSRect(x: 28, y: 44, width: 100, height: 32)
-        content.addSubview(settings)
-
         let connect = NSButton(title: "Connect Menu Bar…", target: self, action: #selector(showMenuBarConnect))
         connect.bezelStyle = .rounded
-        connect.frame = NSRect(x: 136, y: 44, width: 150, height: 32)
+        connect.frame = NSRect(x: 28, y: 44, width: 170, height: 32)
         content.addSubview(connect)
 
         let restart = NSButton(title: "Restart", target: self, action: #selector(restartServer))
         restart.bezelStyle = .rounded
-        restart.frame = NSRect(x: 294, y: 44, width: 80, height: 32)
+        restart.frame = NSRect(x: 210, y: 44, width: 80, height: 32)
         content.addSubview(restart)
 
         // Banner shown when macOS is still blocking the status item.
