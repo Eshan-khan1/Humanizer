@@ -54,65 +54,28 @@ python3 - <<PY
 from pathlib import Path
 import sys
 sys.path.insert(0, "$ROOT")
-from macos.menubar.icons_util import write_status_icons
+from macos.menubar.icons_util import write_status_icons, write_app_iconset, write_extension_icons
 write_status_icons(Path("$HOME_PAYLOAD/macos/menubar/icons"))
+write_extension_icons(Path("$HOME_PAYLOAD/extension/icons"))
+# Also refresh repo extension icons for Chrome reload from workspace.
+write_extension_icons(Path("$ROOT/extension/icons"))
 print("  status icons ready")
 PY
+
+# Keep logo next to icons so runtime helpers can find it if needed.
+mkdir -p "$HOME_PAYLOAD/assets"
+cp "$ROOT/assets/logo.png" "$HOME_PAYLOAD/assets/logo.png"
+cp "$ROOT/assets/logo.png" "$HOME_PAYLOAD/macos/menubar/icons/logo.png"
 
 ICONSET="$DIST/Humanizer.iconset"
 rm -rf "$ICONSET"
 mkdir -p "$ICONSET"
-python3 - <<'PY'
+python3 - <<PY
 from pathlib import Path
-import struct
-import zlib
-
-def write_png(path: Path, size: int) -> None:
-    def pixel(x, y):
-        cx = cy = (size - 1) / 2
-        dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-        if dist <= size * 0.42:
-            return (0, 0, 0, 255)
-        if dist <= size * 0.48:
-            return (0, 0, 0, 90)
-        return (0, 0, 0, 0)
-
-    raw = b""
-    for y in range(size):
-        raw += b"\x00"
-        for x in range(size):
-            raw += bytes(pixel(x, y))
-    compressed = zlib.compress(raw, 9)
-
-    def chunk(tag, data):
-        return (
-            struct.pack(">I", len(data))
-            + tag
-            + data
-            + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
-        )
-
-    ihdr = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)
-    path.write_bytes(
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", ihdr)
-        + chunk(b"IDAT", compressed)
-        + chunk(b"IEND", b"")
-    )
-
-iconset = Path("dist/Humanizer.iconset")
-mapping = {
-    16: ["icon_16x16.png"],
-    32: ["icon_16x16@2x.png", "icon_32x32.png"],
-    64: ["icon_32x32@2x.png"],
-    128: ["icon_128x128.png"],
-    256: ["icon_128x128@2x.png", "icon_256x256.png"],
-    512: ["icon_256x256@2x.png", "icon_512x512.png"],
-    1024: ["icon_512x512@2x.png"],
-}
-for size, names in mapping.items():
-    for name in names:
-        write_png(iconset / name, size)
+import sys
+sys.path.insert(0, "$ROOT")
+from macos.menubar.icons_util import write_app_iconset
+write_app_iconset(Path("$ICONSET"))
 print("  iconset ready")
 PY
 

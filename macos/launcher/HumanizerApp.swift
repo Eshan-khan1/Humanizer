@@ -134,14 +134,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func configureStatusButton(_ button: NSStatusBarButton?, online: Bool) {
         guard let button else { return }
-        // Always keep a letter title — image-only template icons can be invisible
-        // when StatusKit clamps the item to a zero/off-screen frame.
-        button.title = "H"
         if let image = loadTemplateIcon(named: online ? "status-online" : "status-offline") {
             image.isTemplate = true
             button.image = image
-            button.imagePosition = .imageLeading
+            button.imagePosition = .imageOnly
+            button.title = ""
         } else {
+            // Fallback letter if icons are missing.
+            button.title = "H"
             button.image = nil
         }
         button.toolTip = "Humanizer — local writing server"
