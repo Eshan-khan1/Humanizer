@@ -3965,8 +3965,8 @@
     notesBody.className = "humanizer-generate-notes-row";
 
     const notesInput = document.createElement("textarea");
-    notesInput.rows = 2;
-    notesInput.placeholder = "Anything to specify? (optional) — Enter to generate";
+    notesInput.rows = 1;
+    notesInput.placeholder = "Optional note — Enter";
     notesInput.setAttribute("aria-label", "Generation notes");
 
     notesInput.addEventListener("keydown", (event) => {
