@@ -44,6 +44,12 @@ body {
   flex-shrink: 0;
 }
 
+.popup-logo {
+  display: block;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
 .popup-header-actions {
   display: flex;
   align-items: center;

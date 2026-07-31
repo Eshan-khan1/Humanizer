@@ -30,6 +30,8 @@ stage_project_paths() {
 
   local paths=(
     extension/
+    macos/
+    assets/
     web/
     scripts/
     test_data/
@@ -51,6 +53,13 @@ stage_project_paths() {
     rewriting\ feature.json
     start_server.sh
     run.sh
+    server.py
+    security.py
+    writing_agent.py
+    claim_check.py
+    cloud_ai.py
+    rag.py
+    ui.json
   )
 
   local path
@@ -61,7 +70,7 @@ stage_project_paths() {
   while IFS= read -r file; do
     [[ -f "$file" ]] || continue
     case "$file" in
-      *.py|*.sh|*.bat|*.command|*.html|*.css|*.js|*.json|*.txt|*.md)
+      *.py|*.sh|*.bat|*.command|*.html|*.css|*.js|*.json|*.txt|*.md|*.png|*.icns|*.swift)
         should_skip "$file" && continue
         git add "$file" 2>/dev/null || true
         ;;
