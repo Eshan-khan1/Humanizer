@@ -3512,13 +3512,11 @@
     const cancelButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-cancel");
     const notesInput = generatePanelEl?.querySelector("textarea");
     const generateSend = generatePanelEl?.querySelector(".humanizer-generate-send");
-    const generateCancel = generatePanelEl?.querySelector(".humanizer-generate-cancel");
     if (input) input.disabled = loading;
     if (sendButton) sendButton.disabled = loading;
     if (cancelButton) cancelButton.disabled = loading;
     if (notesInput) notesInput.disabled = loading;
     if (generateSend) generateSend.disabled = loading;
-    if (generateCancel) generateCancel.disabled = loading;
 
     if (!rewriteCircleEl || !rewriteBoxEl) return;
 
@@ -3834,11 +3832,6 @@
     formatStep.appendChild(formatLabel);
     formatStep.appendChild(formatActions);
 
-    const panelCancel = createCancelButton(
-      "humanizer-generate-cancel",
-      "Cancel generate"
-    );
-
     const notesStep = document.createElement("div");
     notesStep.className = "humanizer-generate-notes humanizer-generate-notes--hidden";
 
@@ -3891,7 +3884,6 @@
     notesStep.appendChild(settingsSummary);
     notesStep.appendChild(notesBody);
 
-    panel.appendChild(panelCancel);
     panel.appendChild(formatStep);
     panel.appendChild(notesStep);
     panel.addEventListener("mousedown", (event) => {

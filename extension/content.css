@@ -600,7 +600,7 @@
   min-width: 220px;
   width: min(260px, calc(100vw - 24px));
   max-width: 260px;
-  padding: 8px 28px 8px 10px;
+  padding: 8px 10px;
   color: var(--color-text-primary, #eeeeee);
   background: var(--color-bg-dark);
   border: 1px solid var(--border-card);
@@ -614,15 +614,6 @@
     opacity var(--transition-normal),
     transform var(--transition-normal),
     box-shadow var(--transition-normal);
-}
-
-.humanizer-generate-panel > .humanizer-generate-cancel {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 20px;
-  height: 20px;
-  font-size: 15px;
 }
 
 .humanizer-generate-notes-row .humanizer-generate-send {
