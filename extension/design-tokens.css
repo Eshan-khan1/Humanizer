@@ -1,31 +1,88 @@
-/* Humanizer UI Theme — Claude-inspired (see Humanizer ui theme.json) */
+/* Humanizer UI Theme — Uber dark tokens (see ui.json) */
 
 /* Popup-only theme file. Do not inject into content scripts — :root
    color-scheme rules would force light/dark mode on every website. */
+
+html[data-theme="dark"],
+html:not([data-theme="light"]) {
+  color-scheme: dark;
+
+  --hz-bg: #000000;
+  --hz-surface: #1f1f1f;
+  --hz-surface-muted: #1c1c1e;
+  --hz-surface-elevated: #1c1c1e;
+  --hz-surface-hover: #2a2a2a;
+  --hz-border: #2e2e2e;
+  --hz-text: #ffffff;
+  --hz-text-muted: #a9a9a9;
+  --hz-text-tertiary: #7a7a7a;
+  --hz-action: #ffffff;
+  --hz-action-hover: #e8e8e8;
+  --hz-action-text: #000000;
+  --hz-chip-bg: #1c1c1e;
+  --hz-chip-active: #2c2c2e;
+  --hz-icon: #9c9c9c;
+  --hz-icon-hover: #ffffff;
+  --hz-success: #3fcb6b;
+  --hz-success-strong: #06c167;
+  --hz-danger: #e11900;
+  --hz-accent-green: #276e45;
+  --hz-accent-orange: #ff9500;
+  --hz-placeholder: rgba(169, 169, 169, 0.55);
+  --hz-nav-bg: #0d0d0d;
+  --hz-divider: #2e2e2e;
+
+  --color-pink: var(--hz-action);
+  --color-purple: #9c9c9c;
+  --color-violet: #7a7a7a;
+  --color-bg-darkest: var(--hz-bg);
+  --color-bg-dark: var(--hz-surface);
+  --color-bg-mid: var(--hz-surface-muted);
+  --color-text-muted: var(--hz-text-muted);
+  --color-white: var(--hz-text);
+  --gradient-brand: none;
+  --gradient-brand-h: none;
+  --gradient-brand-btn: var(--hz-action);
+  --border-subtle: var(--hz-border);
+  --border-card: var(--hz-border);
+  --text-placeholder: var(--hz-placeholder);
+  --shadow-card: none;
+  --shadow-popup: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --shadow-glow: none;
+  --shadow-icon-glow: none;
+}
+
 html[data-theme="light"] {
   color-scheme: light;
 
-  --hz-bg: #f0ece0;
-  --hz-surface: #ffffff;
-  --hz-surface-muted: #e5e0d6;
-  --hz-border: #e5e0d6;
-  --hz-text: #1a1a18;
-  --hz-text-muted: #5b5950;
-  --hz-action: #111111;
-  --hz-action-hover: #000000;
+  --hz-bg: #ffffff;
+  --hz-surface: #f6f6f6;
+  --hz-surface-muted: #eeeeee;
+  --hz-surface-elevated: #ffffff;
+  --hz-surface-hover: #ebebeb;
+  --hz-border: #e2e2e2;
+  --hz-text: #000000;
+  --hz-text-muted: #6b6b6b;
+  --hz-text-tertiary: #8e8e93;
+  --hz-action: #000000;
+  --hz-action-hover: #111111;
   --hz-action-text: #ffffff;
-  --hz-chip-bg: transparent;
-  --hz-chip-active: #e5e0d6;
-  --hz-icon: #5b5950;
-  --hz-icon-hover: #1a1a18;
-  --hz-success: #3f7d4e;
-  --hz-danger: #b42318;
-  --hz-placeholder: rgba(91, 89, 80, 0.55);
+  --hz-chip-bg: #f0f0f0;
+  --hz-chip-active: #e5e5e5;
+  --hz-icon: #6b6b6b;
+  --hz-icon-hover: #000000;
+  --hz-success: #06c167;
+  --hz-success-strong: #048848;
+  --hz-danger: #e11900;
+  --hz-accent-green: #276e45;
+  --hz-accent-orange: #ff9500;
+  --hz-placeholder: rgba(107, 107, 107, 0.55);
+  --hz-nav-bg: #ffffff;
+  --hz-divider: #e2e2e2;
 
-  /* Backward-compatible aliases used by popup + content CSS */
   --color-pink: var(--hz-action);
   --color-purple: #333333;
-  --color-violet: #444444;
+  --color-violet: #555555;
   --color-bg-darkest: var(--hz-bg);
   --color-bg-dark: var(--hz-surface);
   --color-bg-mid: var(--hz-surface-muted);
@@ -38,102 +95,25 @@ html[data-theme="light"] {
   --border-card: var(--hz-border);
   --text-placeholder: var(--hz-placeholder);
   --shadow-card: none;
-  --shadow-popup: none;
+  --shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.12);
   --shadow-glow: none;
   --shadow-icon-glow: none;
-}
-
-html[data-theme="dark"] {
-  color-scheme: dark;
-
-  --hz-bg: #2b2a27;
-  --hz-surface: #1f1e1b;
-  --hz-surface-muted: #393937;
-  --hz-border: #3d3a35;
-  --hz-text: #eeeeee;
-  --hz-text-muted: #a3a098;
-  /* Light-on-dark brand so primary actions stay visible */
-  --hz-action: #eeeeee;
-  --hz-action-hover: #ffffff;
-  --hz-action-text: #111111;
-  --hz-chip-bg: transparent;
-  --hz-chip-active: #393937;
-  --hz-icon: #a3a098;
-  --hz-icon-hover: #eeeeee;
-  --hz-success: #6fbf7a;
-  --hz-danger: #f07167;
-  --hz-placeholder: rgba(163, 160, 152, 0.55);
-
-  --color-pink: var(--hz-action);
-  --color-purple: #cccccc;
-  --color-violet: #bbbbbb;
-  --color-bg-darkest: var(--hz-bg);
-  --color-bg-dark: var(--hz-surface);
-  --color-bg-mid: var(--hz-surface-muted);
-  --color-text-muted: var(--hz-text-muted);
-  --color-white: var(--hz-text);
-  --gradient-brand: none;
-  --gradient-brand-h: none;
-  --gradient-brand-btn: var(--hz-action);
-  --border-subtle: var(--hz-border);
-  --border-card: var(--hz-border);
-  --text-placeholder: var(--hz-placeholder);
-  --shadow-card: none;
-  --shadow-popup: none;
-  --shadow-glow: none;
-  --shadow-icon-glow: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not([data-theme="light"]):not([data-theme="dark"]) {
-    color-scheme: dark;
-
-    --hz-bg: #2b2a27;
-    --hz-surface: #1f1e1b;
-    --hz-surface-muted: #393937;
-    --hz-border: #3d3a35;
-    --hz-text: #eeeeee;
-    --hz-text-muted: #a3a098;
-    --hz-action: #eeeeee;
-    --hz-action-hover: #ffffff;
-    --hz-action-text: #111111;
-    --hz-chip-bg: transparent;
-    --hz-chip-active: #393937;
-    --hz-icon: #a3a098;
-    --hz-icon-hover: #eeeeee;
-    --hz-success: #6fbf7a;
-    --hz-danger: #f07167;
-    --hz-placeholder: rgba(163, 160, 152, 0.55);
-
-    --color-pink: var(--hz-action);
-    --color-purple: #cccccc;
-    --color-violet: #bbbbbb;
-    --color-bg-darkest: var(--hz-bg);
-    --color-bg-dark: var(--hz-surface);
-    --color-bg-mid: var(--hz-surface-muted);
-    --color-text-muted: var(--hz-text-muted);
-    --color-white: var(--hz-text);
-    --gradient-brand: none;
-    --gradient-brand-h: none;
-    --gradient-brand-btn: var(--hz-action);
-    --border-subtle: var(--hz-border);
-    --border-card: var(--hz-border);
-    --text-placeholder: var(--hz-placeholder);
-    --shadow-card: none;
-    --shadow-popup: none;
-    --shadow-glow: none;
-    --shadow-icon-glow: none;
-  }
 }
 
 :root {
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-pill: 9999px;
-  --font-serif: "Source Serif 4", "Tiempos Text", Georgia, Charter, "Times New Roman", serif;
-  --font-sans: var(--font-serif);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-serif: var(--font-sans);
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
 }

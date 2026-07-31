@@ -47,10 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let aiConnected = false;
   let aiConnectTimer = null;
-  let currentTheme = "light";
+  let currentTheme = "dark";
 
   function applyTheme(theme) {
-    const next = theme === "dark" ? "dark" : "light";
+    const next = theme === "light" ? "light" : "dark";
     currentTheme = next;
     document.documentElement.setAttribute("data-theme", next);
     if (themeToggleEl) {
@@ -71,8 +71,8 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.storage.sync.set({ uiTheme: currentTheme });
   }
 
-  chrome.storage.sync.get({ uiTheme: "light" }, (result) => {
-    applyTheme(String(result.uiTheme || "light"));
+  chrome.storage.sync.get({ uiTheme: "dark" }, (result) => {
+    applyTheme(String(result.uiTheme || "dark"));
   });
 
   themeToggleEl?.addEventListener("click", () => {
@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   for (const btn of themeSegmentBtns) {
     btn.addEventListener("click", () => {
-      persistTheme(btn.getAttribute("data-theme-choice") || "light");
+      persistTheme(btn.getAttribute("data-theme-choice") || "dark");
     });
   }
 

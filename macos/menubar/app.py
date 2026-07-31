@@ -23,14 +23,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("humanizer.menubar")
 
-# Claude-inspired tokens from Humanizer ui theme.json
-_BG = (0.941, 0.925, 0.878, 1.0)  # #F0ECE0
-_CARD = (1.0, 1.0, 1.0, 1.0)
-_TEXT = (0.102, 0.102, 0.094, 1.0)  # #1a1a18
-_MUTED = (0.357, 0.349, 0.314, 1.0)  # #5b5950
-_ACCENT = (0.788, 0.392, 0.259, 1.0)  # #c96442
-_OK = (0.23, 0.60, 0.40, 1.0)
-_OFF = (0.55, 0.52, 0.48, 1.0)
+# Uber dark tokens from ui.json
+_BG = (0.0, 0.0, 0.0, 1.0)  # #000000
+_CARD = (0.122, 0.122, 0.122, 1.0)  # #1F1F1F
+_TEXT = (1.0, 1.0, 1.0, 1.0)  # #FFFFFF
+_MUTED = (0.663, 0.663, 0.663, 1.0)  # #A9A9A9
+_ACCENT = (1.0, 1.0, 1.0, 1.0)  # #FFFFFF primary
+_OK = (0.024, 0.757, 0.404, 1.0)  # #06C167
+_OFF = (0.478, 0.478, 0.478, 1.0)  # #7A7A7A
 
 
 def _reexec_native_if_needed() -> None:
@@ -187,8 +187,7 @@ def main() -> None:
             # Title
             title = AppKit.NSTextField.labelWithString_("Humanizer")
             title.setFont_(
-                AppKit.NSFont.fontWithName_size_("Georgia", 28.0)
-                or AppKit.NSFont.systemFontOfSize_weight_(28.0, AppKit.NSFontWeightRegular)
+                AppKit.NSFont.systemFontOfSize_weight_(28.0, AppKit.NSFontWeightBold)
             )
             title.setTextColor_(color(_TEXT))
             title.setFrame_(Foundation.NSMakeRect(98, 214, 200, 34))

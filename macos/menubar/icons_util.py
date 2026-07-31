@@ -56,16 +56,13 @@ def write_h_icon(path: Path, *, filled: bool, size: int = 44) -> None:
 
 
 def write_brand_mark(path: Path, *, size: int = 128) -> None:
-    """Warm terracotta rounded mark for the in-app interface."""
+    """White rounded mark with black H — readable on Uber black UI."""
     def pixel(x: int, y: int) -> tuple[int, int, int, int]:
         cx = cy = (size - 1) / 2
-        # rounded square background
         rx = abs(x - cx) / (size * 0.42)
         ry = abs(y - cy) / (size * 0.42)
-        # squircle-ish
         if rx ** 4 + ry ** 4 > 1:
             return (0, 0, 0, 0)
-        # terracotta #c96442
         pad = int(size * 0.28)
         stroke = max(4, size // 9)
         left = pad
@@ -80,8 +77,8 @@ def write_brand_mark(path: Path, *, size: int = 128) -> None:
             or (left <= x < right + stroke and mid_y0 <= y < mid_y1)
         )
         if in_h:
-            return (255, 255, 255, 255)
-        return (201, 100, 66, 255)
+            return (0, 0, 0, 255)
+        return (255, 255, 255, 255)
 
     _write_png(path, size, pixel)
 

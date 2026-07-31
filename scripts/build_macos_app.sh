@@ -71,9 +71,9 @@ def write_png(path: Path, size: int) -> None:
         cx = cy = (size - 1) / 2
         dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
         if dist <= size * 0.42:
-            return (201, 100, 66, 255)
+            return (0, 0, 0, 255)
         if dist <= size * 0.48:
-            return (201, 100, 66, 90)
+            return (0, 0, 0, 90)
         return (0, 0, 0, 0)
 
     raw = b""

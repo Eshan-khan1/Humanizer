@@ -3,12 +3,14 @@ import Darwin
 import Foundation
 import ServiceManagement
 
-private let accent = NSColor(calibratedRed: 0.788, green: 0.392, blue: 0.259, alpha: 1)
-private let bg = NSColor(calibratedRed: 0.941, green: 0.925, blue: 0.878, alpha: 1)
-private let textColor = NSColor(calibratedRed: 0.102, green: 0.102, blue: 0.094, alpha: 1)
-private let muted = NSColor(calibratedRed: 0.357, green: 0.349, blue: 0.314, alpha: 1)
-private let okColor = NSColor(calibratedRed: 0.23, green: 0.60, blue: 0.40, alpha: 1)
-private let offColor = NSColor(calibratedRed: 0.55, green: 0.52, blue: 0.48, alpha: 1)
+private let accent = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 1) // #FFFFFF
+private let bg = NSColor(calibratedRed: 0.0, green: 0.0, blue: 0.0, alpha: 1) // #000000
+private let textColor = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 1) // #FFFFFF
+private let muted = NSColor(calibratedRed: 0.663, green: 0.663, blue: 0.663, alpha: 1) // #A9A9A9
+private let okColor = NSColor(calibratedRed: 0.024, green: 0.757, blue: 0.404, alpha: 1) // #06C167
+private let offColor = NSColor(calibratedRed: 0.478, green: 0.478, blue: 0.478, alpha: 1) // #7A7A7A
+private let surface = NSColor(calibratedRed: 0.122, green: 0.122, blue: 0.122, alpha: 1) // #1F1F1F
+private let inverse = NSColor(calibratedRed: 0.0, green: 0.0, blue: 0.0, alpha: 1) // #000000
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var statusItem: NSStatusItem!
@@ -150,7 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         content.addSubview(mark)
 
         let title = NSTextField(labelWithString: "Humanizer")
-        title.font = NSFont(name: "Georgia", size: 28) ?? .systemFont(ofSize: 28)
+        title.font = .systemFont(ofSize: 28, weight: .bold)
         title.textColor = textColor
         title.frame = NSRect(x: 98, y: 234, width: 200, height: 34)
         content.addSubview(title)
@@ -176,7 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let card = NSView(frame: NSRect(x: 28, y: 92, width: 364, height: 100))
         card.wantsLayer = true
-        card.layer?.backgroundColor = NSColor.white.cgColor
+        card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
         content.addSubview(card)
 
@@ -259,7 +261,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         content.addSubview(icon)
 
         let title = NSTextField(labelWithString: "Allow Humanizer in Background?")
-        title.font = NSFont(name: "Georgia", size: 20) ?? .systemFont(ofSize: 20, weight: .semibold)
+        title.font = .systemFont(ofSize: 20, weight: .bold)
         title.textColor = textColor
         title.alignment = .center
         title.frame = NSRect(x: 28, y: 272, width: 404, height: 28)
@@ -274,7 +276,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let stepsCard = NSView(frame: NSRect(x: 36, y: 108, width: 388, height: 84))
         stepsCard.wantsLayer = true
-        stepsCard.layer?.backgroundColor = NSColor.white.cgColor
+        stepsCard.layer?.backgroundColor = surface.cgColor
         stepsCard.layer?.cornerRadius = 12
         content.addSubview(stepsCard)
 
@@ -459,7 +461,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard let content = win.contentView else { return }
 
         let heading = NSTextField(labelWithString: "Settings")
-        heading.font = NSFont(name: "Georgia", size: 24) ?? .systemFont(ofSize: 24)
+        heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
         heading.frame = NSRect(x: 28, y: 302, width: 300, height: 32)
         content.addSubview(heading)
@@ -467,7 +469,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // Local LLM section card
         let card = NSView(frame: NSRect(x: 28, y: 88, width: 424, height: 200))
         card.wantsLayer = true
-        card.layer?.backgroundColor = NSColor.white.cgColor
+        card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
         content.addSubview(card)
 
