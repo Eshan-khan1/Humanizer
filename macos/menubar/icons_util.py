@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import struct
 import zlib
 from pathlib import Path
@@ -39,27 +38,24 @@ def write_status_icons(directory: Path) -> tuple[Path, Path, Path]:
 
 
 def write_beacon_template(path: Path, *, size: int = 44, filled: bool = True) -> None:
-    """Bold beacon glyph (circle + stem + base) for the macOS menu bar.
+    """Clean beacon glyph for the macOS menu bar (circle + stem + base).
 
-    Drawn as an opaque black template so StatusKit can tint it for light/dark bars.
+    No side planes — those read as noise / a “cat” blob at 16–18pt.
+    Leaves ~20% padding so optical size matches system status icons.
     """
-    # Geometry in unit space, then scaled — keep strokes thick for 18pt.
     cx = (size - 1) / 2.0
-    # Head — large solid disc so it reads at 18–20pt
-    head_r = size * 0.26
-    head_cy = size * 0.34
-    # Stem
-    stem_w = max(4.0, size * 0.14)
-    stem_top = head_cy + head_r * 0.45
-    stem_bot = size * 0.78
-    # Base (flat capsule)
-    base_w = size * 0.50
-    base_h = max(3.5, size * 0.12)
-    base_cy = size * 0.86
-    # Three chunky outward wedges around the head
-    plane_len = size * 0.22
-    plane_half = size * 0.08
-    plane_gap = head_r + size * 0.01
+    # Inset so the glyph doesn't fill the status-item frame.
+    pad = size * 0.18
+    usable = size - 2 * pad
+
+    head_r = usable * 0.22
+    head_cy = pad + usable * 0.28
+    stem_w = max(2.5, size * 0.08)
+    stem_top = head_cy + head_r * 0.65
+    stem_bot = pad + usable * 0.82
+    base_w = usable * 0.42
+    base_h = max(2.5, size * 0.08)
+    base_cy = pad + usable * 0.90
 
     def in_disk(x: float, y: float, ox: float, oy: float, r: float) -> bool:
         return (x - ox) ** 2 + (y - oy) ** 2 <= r * r
@@ -72,7 +68,6 @@ def write_beacon_template(path: Path, *, size: int = 44, filled: bool = True) ->
         y0, y1 = base_cy - base_h / 2, base_cy + base_h / 2
         if not (y0 <= y <= y1 and x0 <= x <= x1):
             return False
-        # Round the short ends
         r = base_h / 2
         if x < x0 + r:
             return in_disk(x, y, x0 + r, base_cy, r)
@@ -80,29 +75,16 @@ def write_beacon_template(path: Path, *, size: int = 44, filled: bool = True) ->
             return in_disk(x, y, x1 - r, base_cy, r)
         return True
 
-    def in_plane(x: float, y: float, angle_deg: float) -> bool:
-        rad = math.radians(angle_deg)
-        # Local coords relative to head center, rotated so +y is outward
-        dx, dy = x - cx, y - head_cy
-        lx = dx * math.cos(rad) + dy * math.sin(rad)
-        ly = -dx * math.sin(rad) + dy * math.cos(rad)
-        # Triangle pointing +y (outward): base near head, tip farther out
-        if ly < plane_gap or ly > plane_gap + plane_len:
-            return False
-        t = (ly - plane_gap) / plane_len  # 0 at base → 1 at tip
-        half = plane_half * (1.0 - t)
-        return abs(lx) <= half
-
-    alpha_fill = 255 if filled else 200
+    alpha_fill = 255 if filled else 185
     ring_only = not filled
+    ring_w = max(2.0, size * 0.055)
 
     def pixel(x: int, y: int) -> tuple[int, int, int, int]:
         fx, fy = float(x), float(y)
         hit = False
         if in_disk(fx, fy, cx, head_cy, head_r):
             if ring_only:
-                # Hollow head for offline
-                if not in_disk(fx, fy, cx, head_cy, head_r - max(2.2, size * 0.06)):
+                if not in_disk(fx, fy, cx, head_cy, head_r - ring_w):
                     hit = True
             else:
                 hit = True
@@ -110,11 +92,6 @@ def write_beacon_template(path: Path, *, size: int = 44, filled: bool = True) ->
             hit = True
         if in_rounded_base(fx, fy):
             hit = True
-        # Planes: top, upper-left, upper-right (skip bottom — stem is there)
-        for ang in (-90.0, -150.0, -30.0):
-            if in_plane(fx, fy, ang):
-                hit = True
-                break
         if hit:
             return (0, 0, 0, alpha_fill)
         return (0, 0, 0, 0)
