@@ -337,11 +337,23 @@
   }
 
   function syncGeneratePanelSummary() {
-    const summary = generatePanelEl?.querySelector(
-      ".humanizer-generate-settings-summary"
-    );
-    if (summary) {
-      summary.textContent = formatGenerateSettingsSummary();
+    const row = generatePanelEl?.querySelector(".humanizer-generate-presets");
+    if (!row) return;
+    const tone = row.querySelector('[data-preset="tone"]');
+    const length = row.querySelector('[data-preset="length"]');
+    const complexity = row.querySelector('[data-preset="complexity"]');
+    if (tone instanceof HTMLSelectElement) {
+      fillPresetSelect(tone, generateTonePresets, generateSettings.tonePreset);
+    }
+    if (length instanceof HTMLSelectElement) {
+      fillPresetSelect(length, generateLengthOptions, generateSettings.length);
+    }
+    if (complexity instanceof HTMLSelectElement) {
+      fillPresetSelect(
+        complexity,
+        generateComplexityOptions,
+        generateSettings.complexity
+      );
     }
   }
 
@@ -352,6 +364,120 @@
 
   function formatGenerateSettingsSummary() {
     return `${getGenerateToneLabel(generateSettings.tonePreset)} · ${getGenerateLengthLabel(generateSettings.length)} · ${getGenerateComplexityLabel(generateSettings.complexity)}`;
+  }
+
+  function persistGeneratePresetSettings() {
+    if (!isValid() || !chrome.storage) return;
+    const payload = {
+      generateLength: generateSettings.length,
+      generateTonePreset: generateSettings.tonePreset,
+      generateTone: generateSettings.tone,
+      generateComplexity: generateSettings.complexity,
+    };
+    const store = chrome.storage.sync || chrome.storage.local;
+    store.set(payload, () => {
+      if (
+        chrome.runtime.lastError &&
+        chrome.storage.local &&
+        store !== chrome.storage.local
+      ) {
+        chrome.storage.local.set(payload);
+      }
+    });
+  }
+
+  function fillPresetSelect(select, options, selectedId) {
+    const previous = select.value;
+    select.replaceChildren();
+    for (const item of options) {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = item.label;
+      select.appendChild(option);
+    }
+    const next = options.some((item) => item.id === selectedId)
+      ? selectedId
+      : options.some((item) => item.id === previous)
+        ? previous
+        : options[0]?.id || "";
+    if (next) select.value = next;
+  }
+
+  function applyGeneratePresetChange(kind, value) {
+    if (kind === "tone") {
+      generateSettings.tonePreset = value;
+      const preset = generateTonePresets.find((item) => item.id === value);
+      generateSettings.tone =
+        preset?.tone || TONE_PRESET_VOICE[value] || generateSettings.tone;
+    } else if (kind === "length") {
+      generateSettings.length = value;
+    } else if (kind === "complexity") {
+      generateSettings.complexity = value;
+    } else {
+      return;
+    }
+    persistGeneratePresetSettings();
+    syncGeneratePanelSummary();
+  }
+
+  function createGeneratePresetSelect(kind, options, selectedId, ariaLabel) {
+    const select = document.createElement("select");
+    select.className = "humanizer-generate-preset";
+    select.dataset.preset = kind;
+    select.setAttribute("aria-label", ariaLabel);
+    fillPresetSelect(select, options, selectedId);
+    select.addEventListener("mousedown", (event) => {
+      event.stopPropagation();
+    });
+    select.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+    select.addEventListener("change", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      applyGeneratePresetChange(kind, select.value);
+    });
+    return select;
+  }
+
+  function createGeneratePresetsRow() {
+    const row = document.createElement("div");
+    row.className = "humanizer-generate-presets";
+    row.setAttribute("role", "group");
+    row.setAttribute("aria-label", "Generate presets");
+
+    const tone = createGeneratePresetSelect(
+      "tone",
+      generateTonePresets,
+      generateSettings.tonePreset,
+      "Tone"
+    );
+    const length = createGeneratePresetSelect(
+      "length",
+      generateLengthOptions,
+      generateSettings.length,
+      "Length"
+    );
+    const complexity = createGeneratePresetSelect(
+      "complexity",
+      generateComplexityOptions,
+      generateSettings.complexity,
+      "Complexity"
+    );
+
+    const dot1 = document.createElement("span");
+    dot1.className = "humanizer-generate-preset-sep";
+    dot1.textContent = "·";
+    const dot2 = document.createElement("span");
+    dot2.className = "humanizer-generate-preset-sep";
+    dot2.textContent = "·";
+
+    row.appendChild(tone);
+    row.appendChild(dot1);
+    row.appendChild(length);
+    row.appendChild(dot2);
+    row.appendChild(complexity);
+    return row;
   }
 
   function readStoredGenerateSettings() {
@@ -3835,10 +3961,7 @@
     const notesStep = document.createElement("div");
     notesStep.className = "humanizer-generate-notes humanizer-generate-notes--hidden";
 
-    const settingsSummary = document.createElement("p");
-    settingsSummary.className = "humanizer-generate-settings-summary";
-    settingsSummary.textContent = formatGenerateSettingsSummary();
-    settingsSummary.title = "Change in extension settings";
+    const settingsSummary = createGeneratePresetsRow();
 
     const notesBody = document.createElement("div");
     notesBody.className = "humanizer-generate-notes-row";
