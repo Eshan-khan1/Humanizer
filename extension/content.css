@@ -597,8 +597,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 200px;
-  max-width: 280px;
+  min-width: 280px;
+  width: min(340px, calc(100vw - 24px));
+  max-width: 340px;
   padding: 10px 30px 10px 12px;
   color: var(--color-text-primary, #eeeeee);
   background: var(--color-bg-dark);
@@ -624,16 +625,9 @@
   font-size: 17px;
 }
 
-.humanizer-generate-notes-row .humanizer-action-cancel,
 .humanizer-generate-notes-row .humanizer-generate-send {
   align-self: flex-end;
   margin-bottom: 2px;
-}
-
-.humanizer-generate-notes-row .humanizer-action-cancel {
-  width: 28px;
-  height: 28px;
-  font-size: 18px;
 }
 
 .humanizer-rewrite-box .humanizer-rewrite-send:hover:not(:disabled) {
@@ -958,22 +952,25 @@
 
 .humanizer-generate-notes-row textarea {
   flex: 1;
-  min-height: 44px;
-  max-height: 120px;
+  min-width: 0;
+  min-height: 72px;
+  max-height: 160px;
   resize: vertical;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   outline: none;
-  padding: 8px 10px;
+  padding: 10px 12px;
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.45;
   font-family: var(--font-sans);
   background: var(--color-bg-mid);
-  color: var(--color-white);
+  color: var(--color-text-primary, #eeeeee);
+  caret-color: #eeeeee;
 }
 
 .humanizer-generate-notes-row textarea::placeholder {
-  color: var(--text-placeholder);
+  color: #b0ada6;
+  opacity: 1;
 }
 
 .humanizer-generate-notes-row textarea:disabled {

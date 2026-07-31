@@ -3519,8 +3519,6 @@
     if (notesInput) notesInput.disabled = loading;
     if (generateSend) generateSend.disabled = loading;
     if (generateCancel) generateCancel.disabled = loading;
-    const notesCancel = generatePanelEl?.querySelector(".humanizer-generate-notes-cancel");
-    if (notesCancel) notesCancel.disabled = loading;
 
     if (!rewriteCircleEl || !rewriteBoxEl) return;
 
@@ -3853,7 +3851,7 @@
     notesBody.className = "humanizer-generate-notes-row";
 
     const notesInput = document.createElement("textarea");
-    notesInput.rows = 2;
+    notesInput.rows = 3;
     notesInput.placeholder = "Anything to specify? (optional)";
     notesInput.setAttribute("aria-label", "Generation notes");
 
@@ -3875,11 +3873,6 @@
     sendButton.setAttribute("aria-label", "Generate text");
     sendButton.textContent = "→";
 
-    const notesCancel = createCancelButton(
-      "humanizer-generate-notes-cancel",
-      "Cancel generate"
-    );
-
     sendButton.addEventListener("mousedown", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -3893,7 +3886,6 @@
     });
 
     notesBody.appendChild(notesInput);
-    notesBody.appendChild(notesCancel);
     notesBody.appendChild(sendButton);
 
     notesStep.appendChild(settingsSummary);
