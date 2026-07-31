@@ -1045,35 +1045,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // Reset to empty dark card, then charge green left → right.
         statusCard?.layer?.backgroundColor = surface.cgColor
         animateStatusFill(to: 0, color: okColor, animated: false)
-        setRestartUI(active: true, progress: 0.08, title: "Restarting…", detail: "1/3 Stopping server…")
+        setRestartUI(active: true, progress: 0.1, title: "Restarting…", detail: "Stopping old server…")
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
 
+            // Single restart path (stop + start) so progress/UI stay consistent.
             DispatchQueue.main.async {
-                self.setRestartUI(active: true, progress: 0.22, title: "Restarting…", detail: "1/3 Stopping server…")
+                self.setRestartUI(active: true, progress: 0.35, title: "Restarting…", detail: "Starting server…")
             }
-            _ = self.runService(["stop"])
+            let result = self.runService(["restart"])
+            let ok = (result["ok"] as? Bool) ?? false
 
             DispatchQueue.main.async {
-                self.setRestartUI(active: true, progress: 0.5, title: "Restarting…", detail: "2/3 Starting server…")
+                self.setRestartUI(
+                    active: true,
+                    progress: ok ? 1.0 : 0.9,
+                    title: "Restarting…",
+                    detail: ok ? "Server is back online" : "Checking…"
+                )
             }
-            let start = self.runService(["start"])
+
+            // Brief follow-up status poll in case health was mid-boot.
+            var finalOk = ok
+            var detail = (result["detail"] as? String) ?? (ok ? "Server online" : "Server offline")
+            if !finalOk {
+                for _ in 0..<8 {
+                    Thread.sleep(forTimeInterval: 0.4)
+                    let status = self.runService(["status"])
+                    if (status["ok"] as? Bool) == true {
+                        finalOk = true
+                        detail = (status["detail"] as? String) ?? "Server online"
+                        break
+                    }
+                }
+            }
 
             DispatchQueue.main.async {
-                self.setRestartUI(active: true, progress: 0.82, title: "Restarting…", detail: "3/3 Checking health…")
-            }
-            let status = self.runService(["status"])
-            let ok = (status["ok"] as? Bool) ?? ((start["ok"] as? Bool) ?? false)
-            let detail = (status["detail"] as? String)
-                ?? (start["detail"] as? String)
-                ?? (ok ? "Server online" : "Server offline")
-
-            DispatchQueue.main.async {
-                self.setRestartUI(active: true, progress: 1.0, title: "Restarting…", detail: "Done")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.setRestartUI(
+                    active: true,
+                    progress: 1.0,
+                    title: "Restarting…",
+                    detail: finalOk ? "Done" : "Restart failed"
+                )
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                     self.busy = false
                     self.setRestartUI(active: false, progress: 0, title: nil, detail: nil)
-                    self.applyHealth(ok: ok, detail: detail)
+                    self.applyHealth(ok: finalOk, detail: detail)
                 }
             }
         }

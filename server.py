@@ -1572,7 +1572,15 @@ def startup_warm_grammar() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    startup_warm_grammar()
+    # Warm LanguageTool off the request path so /health answers immediately and
+    # macOS app restart doesn't time out waiting for Java to boot.
+    import threading
+
+    threading.Thread(
+        target=startup_warm_grammar,
+        name="humanizer-grammar-warm",
+        daemon=True,
+    ).start()
     yield
 
 
@@ -1606,15 +1614,9 @@ def _secure_endpoint(request: Request) -> None:
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
+    """Fast liveness check — never block on LanguageTool boot."""
     global _grammar_available
     ollama_ok = is_ollama_running()
-    if not _grammar_available:
-        try:
-            _get_language_tool.cache_clear()
-            _get_language_tool()
-            _grammar_available = True
-        except Exception:
-            _grammar_available = False
     _debug_log(
         "H3",
         "server.py:health",
@@ -1622,7 +1624,7 @@ def health() -> HealthResponse:
         {"ollama_available": ollama_ok, "grammar_available": _grammar_available},
     )
     return HealthResponse(
-        ok=_grammar_available,
+        ok=True,
         ollama_available=ollama_ok,
         grammar_available=_grammar_available,
         grammar_model=OLLAMA_GRAMMAR_MODEL,

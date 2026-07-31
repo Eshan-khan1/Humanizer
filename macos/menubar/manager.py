@@ -232,7 +232,7 @@ def stop_server() -> None:
             except OSError:
                 pass
 
-    # Also clear anything still bound to the port.
+    # Also clear anything still bound to the API port.
     try:
         result = subprocess.run(
             ["lsof", "-ti", f":{DEFAULT_PORT}"],
@@ -251,8 +251,123 @@ def stop_server() -> None:
     except FileNotFoundError:
         pass
 
+    # Orphan LanguageTool Java servers left by failed/aborted starts block the
+    # next boot — clear them so restart can bind a fresh LT instance.
+    _kill_orphaned_languagetool()
+
     if pid_file().is_file():
         pid_file().unlink(missing_ok=True)
+
+
+def _kill_orphaned_languagetool() -> None:
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", "languagetool-server.jar"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            os.kill(int(line), signal.SIGTERM)
+        except (OSError, ValueError):
+            pass
+    time.sleep(0.3)
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", "languagetool-server.jar"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            os.kill(int(line), signal.SIGKILL)
+        except (OSError, ValueError):
+            pass
+
+
+def start_server(root: Path) -> bool:
+    if check_health().server_ok:
+        return True
+
+    # Another copy of the menu-bar app may already be starting the server.
+    pid = _read_pid()
+    if pid and _pid_alive(pid):
+        deadline = time.time() + 20
+        while time.time() < deadline:
+            if check_health().server_ok:
+                return True
+            time.sleep(0.4)
+        if check_health().server_ok:
+            return True
+
+    stop_server()
+    ensure_ollama_running()
+    python = ensure_venv(root)
+    log_path = logs_dir() / "server.log"
+    log_file = open(log_path, "a", encoding="utf-8")  # noqa: SIM115
+
+    env = os.environ.copy()
+    env.setdefault("OLLAMA_KEEP_ALIVE", "30m")
+    env.setdefault("OLLAMA_FLASH_ATTENTION", "1")
+    if "OLLAMA_LLM_LIBRARY" not in env:
+        env["OLLAMA_LLM_LIBRARY"] = "metal"
+    try:
+        from macos.menubar.settings import apply_to_env
+
+        env = apply_to_env(env)
+        logger.info(
+            "Starting server with grammar=%s writing=%s",
+            env.get("OLLAMA_GRAMMAR_MODEL"),
+            env.get("OLLAMA_WRITING_MODEL"),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not apply model settings: %s", exc)
+
+    process = subprocess.Popen(
+        _native_argv([str(python), "server.py"]),
+        cwd=str(root),
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+        env=env,
+    )
+    pid_file().write_text(str(process.pid), encoding="utf-8")
+
+    # With async grammar warm, /health should answer within a couple seconds.
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        if check_health().server_ok:
+            return True
+        if process.poll() is not None:
+            logger.error("Server exited early; see %s", log_path)
+            return False
+        time.sleep(0.25)
+    alive = process.poll() is None
+    if alive:
+        logger.warning(
+            "Server process %s is running but /health not ready yet; see %s",
+            process.pid,
+            log_path,
+        )
+    return check_health().server_ok
+
+
+def restart_server(root: Path) -> bool:
+    stop_server()
+    time.sleep(0.6)
+    return start_server(root)
 
 
 def ensure_venv(root: Path) -> Path:
@@ -312,71 +427,6 @@ def ensure_venv(root: Path) -> Path:
     else:
         logger.error("Dependency install incomplete; server may fail to start")
     return python
-
-
-def start_server(root: Path) -> bool:
-    if check_health().server_ok:
-        return True
-
-    # Another copy of the menu-bar app may already be starting the server.
-    pid = _read_pid()
-    if pid and _pid_alive(pid):
-        deadline = time.time() + 45
-        while time.time() < deadline:
-            if check_health().server_ok:
-                return True
-            time.sleep(0.5)
-        if check_health().server_ok:
-            return True
-
-    stop_server()
-    ensure_ollama_running()
-    python = ensure_venv(root)
-    log_path = logs_dir() / "server.log"
-    log_file = open(log_path, "a", encoding="utf-8")  # noqa: SIM115
-
-    env = os.environ.copy()
-    env.setdefault("OLLAMA_KEEP_ALIVE", "30m")
-    env.setdefault("OLLAMA_FLASH_ATTENTION", "1")
-    if "OLLAMA_LLM_LIBRARY" not in env:
-        env["OLLAMA_LLM_LIBRARY"] = "metal"
-    try:
-        from macos.menubar.settings import apply_to_env
-
-        env = apply_to_env(env)
-        logger.info(
-            "Starting server with grammar=%s writing=%s",
-            env.get("OLLAMA_GRAMMAR_MODEL"),
-            env.get("OLLAMA_WRITING_MODEL"),
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Could not apply model settings: %s", exc)
-
-    process = subprocess.Popen(
-        _native_argv([str(python), "server.py"]),
-        cwd=str(root),
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
-        start_new_session=True,
-        env=env,
-    )
-    pid_file().write_text(str(process.pid), encoding="utf-8")
-
-    deadline = time.time() + 60
-    while time.time() < deadline:
-        if check_health().server_ok:
-            return True
-        if process.poll() is not None:
-            logger.error("Server exited early; see %s", log_path)
-            return False
-        time.sleep(0.4)
-    return check_health().server_ok
-
-
-def restart_server(root: Path) -> bool:
-    stop_server()
-    time.sleep(0.5)
-    return start_server(root)
 
 
 def ensure_home_payload(resources: Path) -> Path:
