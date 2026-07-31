@@ -3851,7 +3851,7 @@
     notesBody.className = "humanizer-generate-notes-row";
 
     const notesInput = document.createElement("textarea");
-    notesInput.rows = 3;
+    notesInput.rows = 2;
     notesInput.placeholder = "Anything to specify? (optional)";
     notesInput.setAttribute("aria-label", "Generation notes");
 
