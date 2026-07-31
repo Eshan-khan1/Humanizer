@@ -1,6 +1,7 @@
 /* Humanizer UI Theme — Claude-inspired (see Humanizer ui theme.json) */
 
-:root,
+/* Popup-only theme file. Do not inject into content scripts — :root
+   color-scheme rules would force light/dark mode on every website. */
 html[data-theme="light"] {
   color-scheme: light;
 
@@ -65,7 +66,7 @@ html[data-theme="dark"] {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+  html:not([data-theme="light"]):not([data-theme="dark"]) {
     color-scheme: dark;
 
     --hz-bg: #2b2a27;

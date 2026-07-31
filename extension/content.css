@@ -1,8 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap");
 
-/* Humanizer content UI — Claude-inspired tokens (maps legacy grm-* names) */
+/* Humanizer content UI tokens — scoped to extension chrome only.
+   Never set color-scheme / :root theme here (that forces site dark mode). */
 :host,
-.grm-card {
+.grm-card,
+.grammar-inline-card,
+.humanizer-rewrite-btn,
+.humanizer-rewrite-box,
+.humanizer-rewrite-menu,
+.humanizer-generate-panel {
   --color-pink: #111111;
   --color-purple: #333333;
   --color-violet: #444444;

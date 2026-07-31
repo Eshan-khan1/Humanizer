@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Humanizer: Local Writing Assistant",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Grammar and spelling help on any site, including Google, Docs, Gmail, and search bars",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["http://127.0.0.1:8000/*"],
@@ -22,7 +22,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["api_auth.js", "content.js"],
-      "css": ["design-tokens.css", "content.css"],
+      "css": ["content.css"],
       "run_at": "document_idle",
       "all_frames": true,
       "match_about_blank": true,
