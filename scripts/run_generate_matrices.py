@@ -63,6 +63,11 @@ def parse_profile(raw: str) -> dict:
             profile["jobTitle"] = val
         elif key in {"business", "company"}:
             profile["companyName"] = val
+        elif key and val:
+            # Preserve member ID / account / unit / etc. for claim checking.
+            safe_key = re.sub(r"[^a-z0-9]+", "_", key).strip("_")
+            if safe_key and safe_key not in {"permanent_note", "permanentnote"}:
+                profile[safe_key] = val
     return profile
 
 

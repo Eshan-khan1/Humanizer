@@ -131,6 +131,147 @@ class ClaimCheckTests(unittest.TestCase):
         )
         self.assertIn("ct-552", grounded)
 
+    def test_profile_membership_id_missing_when_dropped(self) -> None:
+        """IDs like IC-4471 live on the profile and must be flagged if absent."""
+        draft = (
+            "Subject: Cancel Membership\n\nDear Ironclad Fitness,\n\n"
+            "Please cancel my membership. I am moving end of the month.\n\n"
+            "Sincerely,\nHalle Jorgensen"
+        )
+        findings = claim_check_draft(
+            draft,
+            seed="cancel my membership at Ironclad Fitness, moving to a new city end of the month",
+            profile={
+                "fullName": "Halle Jorgensen",
+                "member_id": "IC-4471",
+            },
+        )
+        missing = {
+            f.detail.upper().replace(" ", "")
+            for f in findings
+            if f.classification == "missing"
+        }
+        self.assertTrue(
+            any("IC4471" in m or "IC-4471" in m for m in missing)
+            or any(
+                f.classification == "missing" and "4471" in f.detail
+                for f in findings
+            ),
+            [(f.classification, f.detail, f.expected_source) for f in findings],
+        )
+        # Present ID is grounded, not missing.
+        findings_ok = claim_check_draft(
+            draft.replace(
+                "Please cancel my membership.",
+                "Please cancel membership IC-4471.",
+            ),
+            seed="cancel my membership at Ironclad Fitness, moving to a new city end of the month",
+            profile={
+                "fullName": "Halle Jorgensen",
+                "member_id": "IC-4471",
+            },
+        )
+        missing_ok = [
+            f.detail for f in findings_ok if f.classification == "missing"
+        ]
+        self.assertFalse(
+            any("4471" in m for m in missing_ok),
+            missing_ok,
+        )
+
+    def test_account_id_va_style_missing(self) -> None:
+        findings = claim_check_draft(
+            "Subject: Cancel\n\nHi,\n\n"
+            "Cancel my Vantage Analytics Pro subscription. Overcharged twice.\n\n"
+            "Thanks,\nOtis Calloway",
+            seed="cancel my subscription to Vantage Analytics Pro, been overcharged twice already",
+            profile={"fullName": "Otis Calloway", "account": "VA-90213"},
+        )
+        missing = " ".join(
+            f.detail for f in findings if f.classification == "missing"
+        ).upper()
+        self.assertIn("VA-90213", missing.replace(" ", ""), missing)
+        # Compact form also acceptable in assertion after norm — check digits.
+        self.assertTrue(
+            any(
+                f.classification == "missing" and "90213" in f.detail
+                for f in findings
+            ),
+            [(f.classification, f.detail) for f in findings],
+        )
+
+    def test_quantity_noun_three_reminders_missing(self) -> None:
+        findings = claim_check_draft(
+            "Subject: Utilities\n\nHi Kevin,\n\n"
+            "You owe $340 for last month's utilities. Pay soon.\n\n"
+            "Thanks,\nPriya Shah",
+            seed=(
+                "tell roommate Kevin he owes $340 for utilities from last month "
+                "and it's been three reminders now"
+            ),
+            profile={"fullName": "Priya Shah"},
+        )
+        missing = [
+            f.detail.lower() for f in findings if f.classification == "missing"
+        ]
+        self.assertTrue(
+            any("three reminders" == m or "three reminders" in m for m in missing),
+            missing,
+        )
+        # Contiguous phrase present → not missing, even if words appear apart.
+        findings_ok = claim_check_draft(
+            "Subject: Utilities\n\nHi Kevin,\n\n"
+            "You owe $340 for last month's utilities and it's been three reminders now.\n\n"
+            "Thanks,\nPriya Shah",
+            seed=(
+                "tell roommate Kevin he owes $340 for utilities from last month "
+                "and it's been three reminders now"
+            ),
+            profile={"fullName": "Priya Shah"},
+        )
+        missing_ok = [
+            f.detail.lower() for f in findings_ok if f.classification == "missing"
+        ]
+        self.assertFalse(
+            any("three reminders" in m for m in missing_ok),
+            missing_ok,
+        )
+
+    def test_quantity_noun_not_satisfied_by_scattered_tokens(self) -> None:
+        findings = claim_check_draft(
+            "Subject: Utilities\n\nHi Kevin,\n\n"
+            "Three days ago I sent reminders about the $340 utilities bill.\n\n"
+            "Thanks,\nPriya Shah",
+            seed=(
+                "tell roommate Kevin he owes $340 for utilities from last month "
+                "and it's been three reminders now"
+            ),
+            profile={"fullName": "Priya Shah"},
+        )
+        missing = [
+            f.detail.lower() for f in findings if f.classification == "missing"
+        ]
+        self.assertTrue(
+            any("three reminders" in m for m in missing),
+            missing,
+        )
+
+    def test_overcharged_twice_quantity_missing(self) -> None:
+        findings = claim_check_draft(
+            "Subject: Cancel\n\nHi,\n\n"
+            "Cancel my Vantage Analytics Pro subscription.\n\n"
+            "Thanks,\nOtis Calloway",
+            seed="cancel my subscription to Vantage Analytics Pro, been overcharged twice already",
+            profile={"fullName": "Otis Calloway", "account": "VA-90213"},
+        )
+        missing = [
+            f.detail.lower() for f in findings if f.classification == "missing"
+        ]
+        self.assertTrue(
+            any("overcharged twice" in m for m in missing),
+            missing,
+        )
+
     def test_deadline_implied_by_extension_seed(self) -> None:
         findings = claim_check_draft(
             "Subject: Extension\n\nDear Imran,\n\n"

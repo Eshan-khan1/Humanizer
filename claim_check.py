@@ -222,7 +222,8 @@ _SEED_IMPLIED_RULES: tuple[tuple[frozenset[str], re.Pattern[str]], ...] = (
 )
 
 _MONEY_RE = re.compile(r"\$[\d,]+(?:\.\d{2})?")
-_ID_RE = re.compile(r"\b[A-Z]{1,5}-?\d{2,}\b|#\d{3,}\b")
+# Alphanumeric codes: IC-4471, VA-90213, NL-904, CT-552, and #2291-style refs.
+_ID_RE = re.compile(r"\b[A-Za-z]{1,6}-?\d{2,8}\b|#\d{3,}\b")
 _TIME_RE = re.compile(r"\b\d{1,2}(?::\d{2})?\s*(?:a\.?m\.?|p\.?m\.?)\b", re.I)
 _WEEKDAY_RE = re.compile(
     r"\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
@@ -244,8 +245,53 @@ _DURATION_RE = re.compile(
     r"(?:-\s*|\s+)(?:day|days|week|weeks|month|months)\b",
     re.I,
 )
+# Quantity + noun: "three reminders", "two standups", "6 months" (overlaps
+# duration harmlessly), "two courses". Excludes clock times (handled by _TIME_RE).
+_NUMBER_WORD = (
+    r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|"
+    r"eleven|twelve|\d+)"
+)
+_QUANTITY_NOUN_RE = re.compile(
+    rf"\b{_NUMBER_WORD}\s+[A-Za-z][A-Za-z']+\b",
+    re.I,
+)
+# Verb/adj + once/twice/thrice: "overcharged twice", "called once".
+_TIMES_QUANTITY_RE = re.compile(
+    r"\b[A-Za-z][A-Za-z']+\s+(?:once|twice|thrice)\b",
+    re.I,
+)
 _PROPER_RE = re.compile(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\b")
 _TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z]+)?|\$[\d,]+(?:\.\d{2})?")
+
+
+def _is_identifier_detail(detail: str) -> bool:
+    """True for money amounts or alphanumeric / # codes."""
+    text = (detail or "").strip()
+    if not text:
+        return False
+    if _MONEY_RE.fullmatch(text):
+        return True
+    return bool(_ID_RE.fullmatch(text))
+
+
+def _is_quantity_noun_detail(detail: str) -> bool:
+    """True for number/word-number + noun phrases like 'three reminders'.
+
+    Duration phrases (three days / two weeks) are excluded so existing
+    day/week/month restatement behavior stays intact. Also covers
+    'overcharged twice'-style once/twice/thrice quantities.
+    """
+    text = (detail or "").strip()
+    if not text:
+        return False
+    if _TIMES_QUANTITY_RE.fullmatch(text):
+        return True
+    if not _QUANTITY_NOUN_RE.fullmatch(text):
+        return False
+    noun = _norm(text).split()[-1]
+    if noun in {"day", "days", "week", "weeks", "month", "months", "year", "years"}:
+        return False
+    return True
 
 # Soft paraphrase groups — any member can stand for any other in the group.
 _RESTATE_GROUPS: tuple[frozenset[str], ...] = (
@@ -387,10 +433,10 @@ def factual_permanent_note(permanent_note: str) -> str:
 
 
 def _profile_text(profile: dict[str, Any] | None) -> str:
+    """Flatten profile string fields (name, title, member ID, account, …)."""
     if not profile:
         return ""
-    bits: list[str] = []
-    for key in (
+    preferred = (
         "fullName",
         "name",
         "jobTitle",
@@ -398,10 +444,29 @@ def _profile_text(profile: dict[str, Any] | None) -> str:
         "companyName",
         "business",
         "company",
-    ):
+    )
+    bits: list[str] = []
+    seen: set[str] = set()
+
+    def _add(value: str) -> None:
+        text = value.strip()
+        if not text:
+            return
+        key = _norm(text)
+        if key in seen:
+            return
+        seen.add(key)
+        bits.append(text)
+
+    for key in preferred:
         value = profile.get(key)
-        if isinstance(value, str) and value.strip():
-            bits.append(value.strip())
+        if isinstance(value, str):
+            _add(value)
+    for key, value in profile.items():
+        if key in preferred or str(key).startswith("_"):
+            continue
+        if isinstance(value, str):
+            _add(value)
     return " ".join(bits)
 
 
@@ -442,6 +507,8 @@ def extract_claims(text: str, *, for_required: bool = False) -> list[str]:
         _TIME_RE,
         _RELATIVE_RE,
         _DURATION_RE,
+        _QUANTITY_NOUN_RE,
+        _TIMES_QUANTITY_RE,
         _WEEKDAY_RE,
         _MONTH_RE,
         _COMPOUND_RE,
@@ -492,6 +559,18 @@ def _source_blob(text: str) -> str:
 def _detail_in_source(detail: str, source_text: str) -> bool:
     if not source_text.strip():
         return False
+    # IDs and quantity-noun phrases must appear contiguously so claim-missing
+    # lines up with hard-fail substring checks (e.g. "IC-4471", "three reminders").
+    if _is_identifier_detail(detail) or _is_quantity_noun_detail(detail):
+        source_norm = _norm(source_text)
+        source_compact = source_norm.replace(" ", "")
+        for variant in _variants(detail):
+            if len(variant) <= 2:
+                continue
+            if f" {variant} " in f" {source_norm} " or variant.replace(" ", "") in source_compact:
+                return True
+        return False
+
     blob = _source_blob(source_text)
     for variant in _variants(detail):
         if len(variant) <= 2:
@@ -516,6 +595,11 @@ def _detail_in_source(detail: str, source_text: str) -> bool:
 def _is_restatement(detail: str, source_text: str) -> bool:
     if not source_text.strip():
         return False
+    # IDs / quantity-nouns are exact-ish claims — never soft-restate from
+    # scattered tokens ("three" + "reminders" ≠ "three reminders").
+    if _is_identifier_detail(detail) or _is_quantity_noun_detail(detail):
+        return False
+
     source_norm = _norm(source_text)
     source_tokens = set(source_norm.split())
     source_stems = {_stem(t) for t in source_tokens}
@@ -639,19 +723,39 @@ def _classify_against_sources(
     return ClaimFinding(detail, "fabricated")
 
 
-def _required_source_details(seed: str, note: str) -> list[tuple[str, SourceName]]:
-    """Concrete details that must appear in the draft (seed + factual note)."""
+def _required_source_details(
+    seed: str,
+    note: str,
+    profile_text: str = "",
+) -> list[tuple[str, SourceName]]:
+    """Concrete details that must appear in the draft.
+
+    Seed + factual note contribute full claim extraction. Profile contributes
+    only identifiers (member IDs, account codes, money) so names used only in
+    the signature are not treated as body requirements beyond grounding.
+    """
     required: list[tuple[str, SourceName]] = []
     seen: set[str] = set()
+
+    def _add(detail: str, source_name: SourceName) -> None:
+        key = _norm(detail)
+        if not key or key in seen or key in _GENERIC:
+            return
+        seen.add(key)
+        required.append((detail, source_name))
+
     for source_name, text in (("seed", seed), ("permanent_note", note)):
         if not text.strip():
             continue
         for detail in extract_claims(text, for_required=True):
-            key = _norm(detail)
-            if key in seen or key in _GENERIC:
-                continue
-            seen.add(key)
-            required.append((detail, source_name))  # type: ignore[arg-type]
+            _add(detail, source_name)  # type: ignore[arg-type]
+
+    # Profile IDs / account codes / money must survive in the draft when present.
+    if profile_text.strip():
+        for pattern in (_MONEY_RE, _ID_RE):
+            for match in pattern.finditer(profile_text):
+                _add(match.group(0), "profile")
+
     return required
 
 
@@ -685,7 +789,7 @@ def claim_check_draft(
         if finding is not None:
             findings.append(finding)
 
-    for detail, source_name in _required_source_details(seed, note):
+    for detail, source_name in _required_source_details(seed, note, profile_text):
         key = _norm(detail)
         if any(
             f.classification in {"grounded", "restatement"}
@@ -725,20 +829,24 @@ def claim_check_draft(
         )
     ]
 
-    # Drop missing bigrams when a unigram part is already marked missing,
-    # or when a restatement/grounded finding already covers the phrase.
-    missing_uni = {
+    # Prefer compound missing findings (quantity-noun phrases) over their
+    # component unigrams, so "three reminders" stays visible instead of being
+    # collapsed away when "three" / "reminders" are also flagged.
+    missing_multi = {
         _norm(f.detail)
         for f in findings
-        if f.classification == "missing" and " " not in f.detail
+        if f.classification == "missing" and " " in f.detail
     }
     findings = [
         f
         for f in findings
         if not (
             f.classification == "missing"
-            and " " in f.detail
-            and any(part in missing_uni for part in _norm(f.detail).split())
+            and " " not in f.detail
+            and any(
+                _norm(f.detail) in multi.split()
+                for multi in missing_multi
+            )
         )
     ]
 
