@@ -10,6 +10,8 @@
   --color-bg-dark: #1f1e1b;
   --color-bg-mid: #393937;
   --color-text-muted: #a3a098;
+  --color-text-primary: #eeeeee;
+  --color-text-secondary: #a3a098;
   --color-white: #eeeeee;
   --gradient-brand: none;
   --gradient-brand-btn: #111111;
@@ -52,15 +54,18 @@
 .humanizer-rewrite-box,
 .humanizer-rewrite-menu,
 .humanizer-generate-panel {
-  --color-pink: #111111;
-  --color-purple: #333333;
-  --color-violet: #444444;
+  --color-pink: #eeeeee;
+  --color-purple: #d4d4d4;
+  --color-violet: #c4c4c4;
   --color-bg-darkest: #2b2a27;
   --color-bg-dark: #1f1e1b;
   --color-bg-mid: #393937;
   --color-text-muted: #a3a098;
+  --color-text-primary: #eeeeee;
+  --color-text-secondary: #a3a098;
   --color-white: #eeeeee;
   --gradient-brand: none;
+  /* Keep action buttons dark-with-light-label for contrast */
   --gradient-brand-btn: #111111;
   --border-subtle: #3d3a35;
   --border-card: #3d3a35;
@@ -75,20 +80,21 @@
   --font-sans: Georgia, Charter, "Times New Roman", serif;
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
-  --grm-color-correctness: var(--color-pink);
-  --grm-color-clarity: #555555;
-  --grm-color-engagement: var(--color-purple);
-  --grm-color-delivery: var(--color-violet);
-  --grm-color-brand: var(--color-pink);
-  --grm-color-accept: var(--color-pink);
+  /* Light accent text on dark chrome (not the page-underline black) */
+  --grm-color-correctness: #eeeeee;
+  --grm-color-clarity: #c4c4c4;
+  --grm-color-engagement: #d4d4d4;
+  --grm-color-delivery: #c4c4c4;
+  --grm-color-brand: #eeeeee;
+  --grm-color-accept: #111111;
   --grm-color-accept-hover: #000000;
-  --grm-color-text-primary: var(--color-white);
-  --grm-color-text-secondary: var(--color-text-muted);
-  --grm-color-text-muted: rgba(163, 160, 152, 0.75);
-  --grm-color-surface: var(--color-bg-dark);
-  --grm-color-border: var(--border-subtle);
+  --grm-color-text-primary: #eeeeee;
+  --grm-color-text-secondary: #a3a098;
+  --grm-color-text-muted: rgba(163, 160, 152, 0.85);
+  --grm-color-surface: #1f1e1b;
+  --grm-color-border: #3d3a35;
   --grm-highlight-bg: transparent;
-  --grm-card-shadow: var(--shadow-popup);
+  --grm-card-shadow: none;
   --grm-card-radius: var(--radius-lg);
   --grm-btn-radius: var(--radius-md);
   --grm-font-family: var(--font-sans);
@@ -190,6 +196,7 @@
   width: max-content;
   padding: 10px 12px;
   font-family: var(--grm-font-family);
+  color: var(--grm-color-text-primary);
   background: var(--grm-color-surface);
   border: 1px solid var(--grm-color-border);
   border-radius: var(--grm-card-radius);
@@ -456,6 +463,7 @@
   align-items: stretch;
   gap: 8px;
   padding: 10px 12px;
+  color: var(--color-text-primary, #eeeeee);
   background: var(--color-bg-dark);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
@@ -504,7 +512,7 @@
   background: var(--color-bg-mid);
   border-radius: 8px;
   padding: 8px 10px;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #eeeeee);
 }
 
 .humanizer-rewrite-presets {
@@ -517,7 +525,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 999px;
   background: var(--color-bg-mid);
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #a3a098);
   font-size: 11px;
   font-weight: 500;
   padding: 4px 10px;
@@ -525,7 +533,7 @@
 }
 
 .humanizer-rewrite-preset:hover {
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #eeeeee);
   border-color: rgba(17, 17, 17, 0.45);
   background: rgba(17, 17, 17, 0.2);
 }
@@ -592,6 +600,7 @@
   min-width: 200px;
   max-width: 280px;
   padding: 10px 30px 10px 12px;
+  color: var(--color-text-primary, #eeeeee);
   background: var(--color-bg-dark);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
@@ -665,6 +674,7 @@
   width: fit-content;
   min-width: 0;
   padding: 3px;
+  color: var(--color-text-primary, #eeeeee);
   background: var(--color-bg-dark);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
