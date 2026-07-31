@@ -1632,6 +1632,38 @@ def health() -> HealthResponse:
     )
 
 
+@app.get("/connect")
+def connect_bootstrap() -> dict[str, Any]:
+    """Extension auto-connect bootstrap (localhost only). Includes token when auth is on."""
+    try:
+        from macos.menubar import extension_bridge
+
+        info = extension_bridge.connect_info(include_token=True)
+        extension_bridge.record_extension_ping({"via": "http", "type": "connect"})
+        return info
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "ok": True,
+            "app": "Humanizer",
+            "base_url": "http://127.0.0.1:8000",
+            "auth_required": bool(REQUIRE_AUTH and API_TOKEN),
+            "token": API_TOKEN if (REQUIRE_AUTH and API_TOKEN) else None,
+            "warning": str(exc),
+        }
+
+
+@app.post("/connect/ping")
+def connect_ping() -> dict[str, Any]:
+    """Heartbeat from the Chrome extension so the Mac app knows it is linked."""
+    try:
+        from macos.menubar import extension_bridge
+
+        data = extension_bridge.record_extension_ping({"via": "http", "type": "ping"})
+        return {"ok": True, "ts": data.get("ts")}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc)}
+
+
 def _grammar_quick_response(text: str) -> GrammarResponse:
     """LanguageTool-only — used for fast inline underlines."""
     matches = _check_grammar_languagetool(text)

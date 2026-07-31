@@ -32,6 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var modelsHelpLabel: NSTextField!
     private var menuBarBanner: NSView!
     private var menuBarConnectButton: NSButton!
+    private var chromeConnectButton: NSButton!
+    private var chromeConnectSheet: NSWindow!
+    private var chromeConnectPathLabel: NSTextField!
     private var bgStatusLabel: NSTextField!
     private var busy = false
     private var online = false
@@ -54,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         setupWindow()
         setupSettingsWindow()
         setupMenuBarConnectSheet()
+        setupChromeConnectSheet()
         // Keep the window available, but prioritize attaching the menu bar icon first.
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -65,6 +69,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         bgStatusLabel?.stringValue = "Background status: \(summary)"
         DispatchQueue.global(qos: .utility).async { [weak self] in
             _ = self?.runService(["autostart"])
+            // Sync Chrome extension + register native messaging host on every launch.
+            _ = self?.runService(["connect-extension"])
         }
         startServerAsync()
         Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { [weak self] _ in
@@ -116,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Open Humanizer", action: #selector(showWindow), keyEquivalent: "o"))
         menu.addItem(NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ","))
+        menu.addItem(NSMenuItem(title: "Connect Chrome Extension…", action: #selector(showChromeConnect), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Add to Menu Bar…", action: #selector(openMenuBarSettings), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Restart server", action: #selector(restartServer), keyEquivalent: "r"))
         menu.addItem(.separator())
@@ -143,7 +150,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupWindow() {
-        let rect = NSRect(x: 0, y: 0, width: 420, height: 300)
+        let rect = NSRect(x: 0, y: 0, width: 420, height: 330)
         let style: NSWindow.StyleMask = [.titled, .closable, .miniaturizable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
         win.title = "Humanizer"
@@ -154,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         guard let content = win.contentView else { return }
 
-        let mark = NSImageView(frame: NSRect(x: 28, y: 208, width: 56, height: 56))
+        let mark = NSImageView(frame: NSRect(x: 28, y: 238, width: 56, height: 56))
         mark.image = loadBrandMark()
         mark.imageScaling = .scaleProportionallyUpOrDown
         content.addSubview(mark)
@@ -162,17 +169,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let title = NSTextField(labelWithString: "Humanizer")
         title.font = .systemFont(ofSize: 28, weight: .bold)
         title.textColor = textColor
-        title.frame = NSRect(x: 98, y: 234, width: 180, height: 34)
+        title.frame = NSRect(x: 98, y: 264, width: 180, height: 34)
         content.addSubview(title)
 
         let subtitle = NSTextField(labelWithString: "Local writing server")
         subtitle.font = .systemFont(ofSize: 13)
         subtitle.textColor = muted
-        subtitle.frame = NSRect(x: 98, y: 212, width: 200, height: 20)
+        subtitle.frame = NSRect(x: 98, y: 242, width: 200, height: 20)
         content.addSubview(subtitle)
 
         // Top-right settings gear
-        let settings = NSButton(frame: NSRect(x: 372, y: 244, width: 28, height: 28))
+        let settings = NSButton(frame: NSRect(x: 372, y: 274, width: 28, height: 28))
         settings.bezelStyle = .inline
         settings.isBordered = false
         settings.imagePosition = .imageOnly
@@ -194,16 +201,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         serverCaption.font = .systemFont(ofSize: 11)
         serverCaption.textColor = muted
         serverCaption.alignment = .right
-        serverCaption.frame = NSRect(x: 268, y: 252, width: 90, height: 16)
+        serverCaption.frame = NSRect(x: 268, y: 282, width: 90, height: 16)
         content.addSubview(serverCaption)
 
-        let power = NSSwitch(frame: NSRect(x: 316, y: 220, width: 51, height: 31))
+        let power = NSSwitch(frame: NSRect(x: 316, y: 250, width: 51, height: 31))
         power.target = self
         power.action = #selector(powerToggled(_:))
         content.addSubview(power)
         powerSwitch = power
 
-        let card = NSView(frame: NSRect(x: 28, y: 92, width: 364, height: 100))
+        let card = NSView(frame: NSRect(x: 28, y: 122, width: 364, height: 100))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -268,14 +275,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         card.addSubview(spinner)
         restartSpinner = spinner
 
+        let chrome = NSButton(title: "Connect Chrome Extension…", target: self, action: #selector(showChromeConnect))
+        chrome.bezelStyle = .rounded
+        chrome.frame = NSRect(x: 28, y: 74, width: 210, height: 32)
+        content.addSubview(chrome)
+        chromeConnectButton = chrome
+
         let connect = NSButton(title: "Connect Menu Bar…", target: self, action: #selector(showMenuBarConnect))
         connect.bezelStyle = .rounded
-        connect.frame = NSRect(x: 28, y: 44, width: 170, height: 32)
+        connect.frame = NSRect(x: 248, y: 74, width: 144, height: 32)
         content.addSubview(connect)
         menuBarConnectButton = connect
 
         // Banner shown when macOS is still blocking the status item.
-        let banner = NSView(frame: NSRect(x: 28, y: 12, width: 364, height: 26))
+        let banner = NSView(frame: NSRect(x: 28, y: 36, width: 364, height: 26))
         banner.wantsLayer = true
         banner.layer?.backgroundColor = accent.withAlphaComponent(0.14).cgColor
         banner.layer?.cornerRadius = 8
@@ -611,6 +624,122 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc private func showMenuBarConnect() {
         autoConnectMenuBar(attempt: 1)
+    }
+
+    @objc private func showChromeConnect() {
+        presentChromeConnectSheet()
+    }
+
+    private func setupChromeConnectSheet() {
+        let rect = NSRect(x: 0, y: 0, width: 460, height: 360)
+        let win = NSWindow(
+            contentRect: rect,
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        win.title = "Connect Chrome Extension"
+        win.backgroundColor = bg
+        win.isReleasedWhenClosed = false
+        win.center()
+        win.level = .floating
+
+        guard let content = win.contentView else {
+            chromeConnectSheet = win
+            return
+        }
+
+        let title = NSTextField(labelWithString: "Link Chrome to Humanizer")
+        title.font = .systemFont(ofSize: 20, weight: .bold)
+        title.textColor = textColor
+        title.alignment = .center
+        title.frame = NSRect(x: 28, y: 300, width: 404, height: 28)
+        content.addSubview(title)
+
+        let body = NSTextField(wrappingLabelWithString: "One-time setup: load the bundled extension from Application Support. After that, the extension reconnects to this app automatically whenever Humanizer is running.")
+        body.font = .systemFont(ofSize: 13)
+        body.textColor = muted
+        body.alignment = .center
+        body.frame = NSRect(x: 36, y: 230, width: 388, height: 60)
+        content.addSubview(body)
+
+        let stepsCard = NSView(frame: NSRect(x: 36, y: 118, width: 388, height: 100))
+        stepsCard.wantsLayer = true
+        stepsCard.layer?.backgroundColor = surface.cgColor
+        stepsCard.layer?.cornerRadius = 12
+        content.addSubview(stepsCard)
+
+        let steps = NSTextField(wrappingLabelWithString: "1. Click Open Chrome Extensions\n2. Turn on Developer mode (top right)\n3. Click Load unpacked\n4. Paste the folder path (⌘V) and Open")
+        steps.font = .systemFont(ofSize: 12)
+        steps.textColor = textColor
+        steps.frame = NSRect(x: 16, y: 12, width: 356, height: 76)
+        stepsCard.addSubview(steps)
+
+        let path = NSTextField(labelWithString: "Path: preparing…")
+        path.font = .systemFont(ofSize: 11)
+        path.textColor = muted
+        path.alignment = .center
+        path.lineBreakMode = .byTruncatingMiddle
+        path.frame = NSRect(x: 36, y: 88, width: 388, height: 16)
+        content.addSubview(path)
+        chromeConnectPathLabel = path
+
+        let openBtn = NSButton(title: "Open Chrome Extensions", target: self, action: #selector(openChromeExtensions))
+        openBtn.bezelStyle = .rounded
+        openBtn.frame = NSRect(x: 100, y: 40, width: 200, height: 32)
+        content.addSubview(openBtn)
+
+        let done = NSButton(title: "Done", target: self, action: #selector(dismissChromeConnect))
+        done.bezelStyle = .rounded
+        done.frame = NSRect(x: 310, y: 40, width: 80, height: 32)
+        content.addSubview(done)
+
+        chromeConnectSheet = win
+    }
+
+    private func presentChromeConnectSheet() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let result = self?.runService(["connect-extension"]) ?? ["ok": false]
+            let path = (result["extension_path"] as? String)
+                ?? (FileManager.default.homeDirectoryForCurrentUser
+                    .appendingPathComponent("Library/Application Support/Humanizer/ChromeExtension").path)
+            DispatchQueue.main.async {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(path, forType: .string)
+                self?.chromeConnectPathLabel?.stringValue = "Path copied: \(path)"
+                self?.chromeConnectSheet.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
+    }
+
+    @objc private func openChromeExtensions() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let result = self?.runService(["connect-extension"]) ?? [:]
+            let path = (result["extension_path"] as? String)
+                ?? (FileManager.default.homeDirectoryForCurrentUser
+                    .appendingPathComponent("Library/Application Support/Humanizer/ChromeExtension").path)
+            DispatchQueue.main.async {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(path, forType: .string)
+                self?.chromeConnectPathLabel?.stringValue = "Path copied: \(path)"
+            }
+            let proc = Process()
+            proc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            proc.arguments = ["-a", "Google Chrome", "chrome://extensions"]
+            try? proc.run()
+            proc.waitUntilExit()
+            if proc.terminationStatus != 0 {
+                let fallback = Process()
+                fallback.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+                fallback.arguments = ["-a", "Chromium", "chrome://extensions"]
+                try? fallback.run()
+            }
+        }
+    }
+
+    @objc private func dismissChromeConnect() {
+        chromeConnectSheet.orderOut(nil)
     }
 
     @objc private func openMenuBarSettings() {
@@ -1163,8 +1292,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         DispatchQueue.global(qos: .utility).async { [weak self] in
             let result = self?.runService(["status"]) ?? ["ok": false, "detail": "Server offline"]
             DispatchQueue.main.async {
-                self?.applyHealth(ok: (result["ok"] as? Bool) ?? false,
-                                  detail: (result["detail"] as? String) ?? "Server offline")
+                let linked = (result["extension_linked"] as? Bool) ?? false
+                var detail = (result["detail"] as? String) ?? "Server offline"
+                if (result["ok"] as? Bool) == true {
+                    detail = linked ? "Chrome extension linked" : "Waiting for Chrome extension…"
+                }
+                self?.applyHealth(ok: (result["ok"] as? Bool) ?? false, detail: detail)
                 if let g = result["grammar_model"] as? String { self?.selectedGrammar = g }
                 if let w = result["writing_model"] as? String { self?.selectedWriting = w }
             }

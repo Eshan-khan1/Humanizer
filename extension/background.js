@@ -1,9 +1,119 @@
-const API_BASE = "http://127.0.0.1:8000";
+const DEFAULT_API_BASE = "http://127.0.0.1:8000";
+const NATIVE_HOST = "com.humanizer.app";
+const CONNECT_ALARM = "humanizer-auto-connect";
 const MAX_TEXT_CHARS = 50000;
 const MAX_PROMPT_CHARS = 2000;
 const MAX_NOTES_CHARS = 5000;
 
 importScripts("api_auth.js");
+
+let API_BASE = DEFAULT_API_BASE;
+
+async function loadApiBase() {
+  try {
+    const stored = await chrome.storage.local.get({ humanizerApiBase: DEFAULT_API_BASE });
+    const base = String(stored.humanizerApiBase || DEFAULT_API_BASE).trim().replace(/\/$/, "");
+    if (base.startsWith("http://127.0.0.1")) {
+      API_BASE = base;
+    }
+  } catch {
+    API_BASE = DEFAULT_API_BASE;
+  }
+  return API_BASE;
+}
+
+async function applyConnectInfo(info) {
+  if (!info || info.ok === false) {
+    return { ok: false };
+  }
+  const base = String(info.base_url || "").trim().replace(/\/$/, "");
+  const patch = {
+    humanizerAppConnected: true,
+    humanizerAppConnectedAt: Date.now(),
+  };
+  if (base.startsWith("http://127.0.0.1")) {
+    API_BASE = base;
+    patch.humanizerApiBase = base;
+  }
+  if (info.auth_required && info.token) {
+    patch.humanizerApiToken = String(info.token);
+  }
+  await chrome.storage.local.set(patch);
+  return { ok: true, base: API_BASE };
+}
+
+function sendNative(message) {
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendNativeMessage(NATIVE_HOST, message, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve(null);
+          return;
+        }
+        resolve(response || null);
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+async function connectViaHttp() {
+  await loadApiBase();
+  const bases = Array.from(new Set([API_BASE, DEFAULT_API_BASE]));
+  for (const base of bases) {
+    try {
+      const response = await fetch(`${base}/connect`, { method: "GET" });
+      if (!response.ok) continue;
+      const info = await response.json().catch(() => null);
+      if (info?.ok) {
+        await applyConnectInfo(info);
+        try {
+          await fetch(`${API_BASE}/connect/ping`, { method: "POST" });
+        } catch {
+          // Ignore ping failures.
+        }
+        return { ok: true, via: "http", base: API_BASE };
+      }
+    } catch {
+      // Try next base.
+    }
+  }
+  await chrome.storage.local.set({ humanizerAppConnected: false });
+  return { ok: false };
+}
+
+async function autoConnectToApp() {
+  await loadApiBase();
+  const native = await sendNative({ type: "connect" });
+  if (native?.ok) {
+    await applyConnectInfo(native);
+    try {
+      await fetch(`${API_BASE}/connect/ping`, { method: "POST" });
+    } catch {
+      // Server may still be starting; native link is enough.
+    }
+    return { ok: true, via: "native", base: API_BASE };
+  }
+  return connectViaHttp();
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  autoConnectToApp();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  autoConnectToApp();
+});
+
+chrome.alarms.create(CONNECT_ALARM, { periodInMinutes: 1 });
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === CONNECT_ALARM) {
+    autoConnectToApp();
+  }
+});
+
+autoConnectToApp();
 
 function validateTextPayload(text, fieldName, maxChars) {
   const value = String(text || "").trim();
@@ -20,6 +130,28 @@ function validateTextPayload(text, fieldName, maxChars) {
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.type === "autoConnect") {
+    autoConnectToApp().then((result) => sendResponse(result));
+    return true;
+  }
+
+  if (message?.type === "getConnectionStatus") {
+    (async () => {
+      await loadApiBase();
+      const stored = await chrome.storage.local.get({
+        humanizerAppConnected: false,
+        humanizerAppConnectedAt: 0,
+        humanizerApiBase: DEFAULT_API_BASE,
+      });
+      sendResponse({
+        ok: true,
+        connected: Boolean(stored.humanizerAppConnected),
+        connectedAt: stored.humanizerAppConnectedAt || 0,
+        base: stored.humanizerApiBase || API_BASE,
+      });
+    })();
+    return true;
+  }
   if (message?.type === "checkGrammar") {
     const textCheck = validateTextPayload(message.text, "text", MAX_TEXT_CHARS);
     if (!textCheck.ok) {

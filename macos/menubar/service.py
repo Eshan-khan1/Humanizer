@@ -11,7 +11,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from macos.menubar import autostart, manager, settings  # noqa: E402
+from macos.menubar import autostart, extension_bridge, manager, settings  # noqa: E402
 
 
 def bootstrap_root() -> Path:
@@ -26,13 +26,27 @@ def main(argv: list[str] | None = None) -> int:
     if not args:
         print(
             "usage: python -m macos.menubar.service "
-            "[start|stop|restart|status|autostart|models|set-models <grammar> <writing>]",
+            "[start|stop|restart|status|autostart|connect-extension|"
+            "models|set-models <grammar> <writing>]",
             file=sys.stderr,
         )
         return 2
 
     cmd = args[0]
     root = bootstrap_root()
+
+    if cmd == "connect-extension":
+        try:
+            # Refresh Home first so bundled extension/ lands under Application Support.
+            resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
+            if resources.is_dir():
+                root = manager.ensure_home_payload(resources)
+            result = extension_bridge.prepare_extension_connection(root)
+            print(json.dumps(result))
+            return 0
+        except Exception as exc:  # noqa: BLE001
+            print(json.dumps({"ok": False, "error": str(exc)}))
+            return 1
 
     if cmd == "autostart":
         try:
@@ -96,6 +110,7 @@ def main(argv: list[str] | None = None) -> int:
     if cmd == "status":
         snap = manager.check_health()
         cfg = settings.load_settings()
+        link = extension_bridge.extension_link_status()
         print(
             json.dumps(
                 {
@@ -106,6 +121,8 @@ def main(argv: list[str] | None = None) -> int:
                     "root": str(root),
                     "grammar_model": cfg.get("grammar_model"),
                     "writing_model": cfg.get("writing_model"),
+                    "extension_linked": link.get("linked"),
+                    "extension_path": str(extension_bridge.extension_install_dir()),
                 }
             )
         )
@@ -117,9 +134,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if cmd == "start":
+        try:
+            extension_bridge.sync_chrome_extension(root)
+            extension_bridge.register_native_messaging_host()
+        except Exception:  # noqa: BLE001
+            pass
         manager.ensure_ollama_running()
         ok = manager.start_server(root)
         cfg = settings.load_settings()
+        link = extension_bridge.extension_link_status()
         print(
             json.dumps(
                 {
@@ -128,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
                     "root": str(root),
                     "grammar_model": cfg.get("grammar_model"),
                     "writing_model": cfg.get("writing_model"),
+                    "extension_linked": link.get("linked"),
+                    "extension_path": str(extension_bridge.extension_install_dir()),
                 }
             )
         )

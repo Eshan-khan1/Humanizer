@@ -33,13 +33,14 @@ COPY_PATHS=(
   generate_feature_rules.json
   requirements.txt
   scripts/ollama_gpu_env.sh
+  extension
 )
 for rel in "${COPY_PATHS[@]}"; do
   src="$ROOT/$rel"
   dst="$HOME_PAYLOAD/$rel"
   mkdir -p "$(dirname "$dst")"
   if [[ -d "$src" ]]; then
-    rsync -a --delete --exclude '__pycache__' --exclude '*.pyc' --exclude '.DS_Store' "$src/" "$dst/"
+    rsync -a --delete --exclude '__pycache__' --exclude '*.pyc' --exclude '.DS_Store' --exclude '*.pem' "$src/" "$dst/"
   else
     cp "$src" "$dst"
   fi
@@ -250,4 +251,4 @@ echo "  1. Drag into /Applications and open once"
 echo "  2. System Settings → Menu Bar → turn Humanizer ON"
 echo "  3. Look for the H icon near the clock"
 echo ""
-echo "Needs: Python 3, Ollama app, Chrome extension loaded from extension/"
+echo "Needs: Python 3, Ollama app, Chrome extension (Connect Chrome Extension… in the app)"

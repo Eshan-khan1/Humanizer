@@ -882,33 +882,70 @@ document.addEventListener("DOMContentLoaded", () => {
   wireAiControls();
 
   (async () => {
-    const headers = {};
-    try {
-      const stored = await chrome.storage.local.get({ humanizerApiToken: "" });
-      const token = String(stored.humanizerApiToken || "").trim();
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
+    const reconnectBtn = document.getElementById("reconnect-app");
+    const setStatus = (text, state, title) => {
+      statusEl.textContent = text;
+      statusEl.classList.remove(
+        "server-tag--checking",
+        "server-tag--offline",
+        "server-tag--online",
+        "ok",
+        "error"
+      );
+      statusEl.classList.add(`server-tag--${state}`);
+      statusEl.title = title || "";
+      if (reconnectBtn) {
+        reconnectBtn.hidden = state === "online";
       }
-    } catch {
-      // Ignore storage errors.
+    };
+
+    const refreshConnection = async () => {
+      setStatus("Connecting…", "checking", "Linking to Humanizer.app");
+      try {
+        await chrome.runtime.sendMessage({ type: "autoConnect" });
+      } catch {
+        // Background may be waking up.
+      }
+
+      const headers = {};
+      try {
+        const stored = await chrome.storage.local.get({
+          humanizerApiToken: "",
+          humanizerApiBase: "http://127.0.0.1:8000",
+          humanizerAppConnected: false,
+        });
+        const token = String(stored.humanizerApiToken || "").trim();
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const base = String(stored.humanizerApiBase || "http://127.0.0.1:8000").replace(
+          /\/$/,
+          ""
+        );
+        const response = await fetch(`${base}/health`, { headers });
+        if (!response.ok) throw new Error("Server unavailable");
+        await response.json();
+        const linked = Boolean(stored.humanizerAppConnected);
+        setStatus(
+          linked ? "Connected to app" : "Server online",
+          "online",
+          linked
+            ? "Linked to Humanizer.app on this Mac"
+            : "Connected to the local Humanizer server"
+        );
+      } catch {
+        setStatus(
+          "App offline",
+          "offline",
+          "Open Humanizer.app, then click Reconnect"
+        );
+      }
+    };
+
+    if (reconnectBtn) {
+      reconnectBtn.addEventListener("click", () => {
+        refreshConnection();
+      });
     }
 
-    fetch("http://127.0.0.1:8000/health", { headers })
-    .then((response) => {
-      if (!response.ok) throw new Error("Server unavailable");
-      return response.json();
-    })
-    .then(() => {
-      statusEl.textContent = "Server online";
-      statusEl.classList.remove("server-tag--checking", "server-tag--offline", "ok", "error");
-      statusEl.classList.add("server-tag--online");
-      statusEl.title = "Connected to the local Humanizer server";
-    })
-    .catch(() => {
-      statusEl.textContent = "Server offline";
-      statusEl.classList.remove("server-tag--checking", "server-tag--online", "ok", "error");
-      statusEl.classList.add("server-tag--offline");
-      statusEl.title = "Start the server with ./start_server.sh or Start Humanizer.bat";
-    });
+    await refreshConnection();
   })();
 });

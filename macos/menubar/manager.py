@@ -469,6 +469,7 @@ def ensure_home_payload(resources: Path) -> Path:
             "generate_feature_rules.json",
             "requirements.txt",
             "macos",
+            "extension",
         ):
             s = src / rel
             d = dest / rel
