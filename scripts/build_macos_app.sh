@@ -66,6 +66,7 @@ PY
 mkdir -p "$HOME_PAYLOAD/assets"
 cp "$ROOT/assets/logo.png" "$HOME_PAYLOAD/assets/logo.png"
 cp "$ROOT/assets/menubar-logo.png" "$HOME_PAYLOAD/assets/menubar-logo.png"
+cp "$ROOT/assets/menubar-mask.png" "$HOME_PAYLOAD/assets/menubar-mask.png"
 cp "$ROOT/assets/logo.png" "$HOME_PAYLOAD/macos/menubar/icons/logo.png"
 cp "$ROOT/assets/menubar-logo.png" "$HOME_PAYLOAD/macos/menubar/icons/menubar-logo.png"
 

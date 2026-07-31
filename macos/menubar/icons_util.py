@@ -40,8 +40,13 @@ def write_status_icons(directory: Path) -> tuple[Path, Path, Path]:
     offline = directory / "status-offline.png"
     mark = directory / "humanizer-mark.png"
     logo = logo_source()
+    mask = Path(__file__).resolve().parents[2] / "assets" / "menubar-mask.png"
     menubar = menubar_logo_source()
-    if menubar is not None:
+    # Prefer the pre-baked solid “flower of send icons” mask (menu-bar weight).
+    if mask.is_file():
+        write_template_from_mask(online, mask, size=44, alpha_scale=1.0)
+        write_template_from_mask(offline, mask, size=44, alpha_scale=0.78)
+    elif menubar is not None:
         write_menubar_template(online, menubar, size=44, alpha_scale=1.0)
         write_menubar_template(offline, menubar, size=44, alpha_scale=0.72)
     else:
@@ -52,6 +57,30 @@ def write_status_icons(directory: Path) -> tuple[Path, Path, Path]:
     else:
         write_brand_mark(mark, size=128)
     return online, offline, mark
+
+
+def write_template_from_mask(
+    path: Path, mask: Path, *, size: int = 44, alpha_scale: float = 1.0
+) -> None:
+    """Bake a solid black template from a luminance/alpha mask PNG."""
+    try:
+        from PIL import Image
+    except ImportError:
+        write_beacon_template(path, size=size, filled=alpha_scale >= 0.9)
+        return
+    img = Image.open(mask).convert("L")
+    img = img.resize((size, size), Image.Resampling.LANCZOS)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    sp = img.load()
+    op = out.load()
+    for y in range(size):
+        for x in range(size):
+            v = sp[x, y]
+            if v < 64:
+                continue
+            op[x, y] = (0, 0, 0, int(min(255, (v / 255.0) * 255 * alpha_scale)))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    out.save(path, optimize=True)
 
 
 def write_menubar_template(
