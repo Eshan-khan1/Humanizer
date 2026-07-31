@@ -3637,12 +3637,10 @@
     const sendButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-send");
     const cancelButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-cancel");
     const notesInput = generatePanelEl?.querySelector("textarea");
-    const generateSend = generatePanelEl?.querySelector(".humanizer-generate-send");
     if (input) input.disabled = loading;
     if (sendButton) sendButton.disabled = loading;
     if (cancelButton) cancelButton.disabled = loading;
     if (notesInput) notesInput.disabled = loading;
-    if (generateSend) generateSend.disabled = loading;
 
     if (!rewriteCircleEl || !rewriteBoxEl) return;
 
@@ -3968,7 +3966,7 @@
 
     const notesInput = document.createElement("textarea");
     notesInput.rows = 2;
-    notesInput.placeholder = "Anything to specify? (optional)";
+    notesInput.placeholder = "Anything to specify? (optional) — Enter to generate";
     notesInput.setAttribute("aria-label", "Generation notes");
 
     notesInput.addEventListener("keydown", (event) => {
@@ -3983,26 +3981,7 @@
       }
     });
 
-    const sendButton = document.createElement("button");
-    sendButton.type = "button";
-    sendButton.className = "humanizer-generate-send";
-    sendButton.setAttribute("aria-label", "Generate text");
-    sendButton.textContent = "→";
-
-    sendButton.addEventListener("mousedown", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-    });
-    sendButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!rewriteSubmitting) {
-        submitGenerate(notesInput);
-      }
-    });
-
     notesBody.appendChild(notesInput);
-    notesBody.appendChild(sendButton);
 
     notesStep.appendChild(settingsSummary);
     notesStep.appendChild(notesBody);

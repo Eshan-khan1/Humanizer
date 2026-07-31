@@ -616,11 +616,6 @@
     box-shadow var(--transition-normal);
 }
 
-.humanizer-generate-notes-row .humanizer-generate-send {
-  align-self: flex-end;
-  margin-bottom: 2px;
-}
-
 .humanizer-rewrite-box .humanizer-rewrite-send:hover:not(:disabled) {
   opacity: 0.9;
 }
@@ -963,8 +958,8 @@
 
 .humanizer-generate-notes-row {
   display: flex;
-  align-items: flex-end;
-  gap: 6px;
+  align-items: stretch;
+  gap: 0;
 }
 
 .humanizer-generate-formats--hidden {
@@ -977,6 +972,7 @@
 
 .humanizer-generate-notes-row textarea {
   flex: 1;
+  width: 100%;
   min-width: 0;
   min-height: 36px;
   max-height: 88px;
@@ -1000,29 +996,6 @@
 
 .humanizer-generate-notes-row textarea:disabled {
   opacity: 0.6;
-}
-
-.humanizer-generate-send {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 50%;
-  background: var(--gradient-brand-btn);
-  color: var(--color-white);
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: var(--shadow-glow);
-}
-
-.humanizer-generate-send:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.humanizer-generate-send:disabled {
-  opacity: 0.55;
-  cursor: default;
 }
 
 /* Watery rewrite animation */
