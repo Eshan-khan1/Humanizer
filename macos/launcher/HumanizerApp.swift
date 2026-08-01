@@ -546,7 +546,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupSettingsWindow() {
-        let rect = NSRect(x: 0, y: 0, width: 480, height: 760)
+        let rect = NSRect(x: 0, y: 0, width: 480, height: 640)
         let style: NSWindow.StyleMask = [.titled, .closable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
         win.title = "Humanizer Settings"
@@ -570,7 +570,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let heading = NSTextField(labelWithString: "Settings")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 702, width: 200, height: 32)
+        heading.frame = NSRect(x: 28, y: 590, width: 200, height: 32)
         root.addSubview(heading)
 
         // Top Local / API mode switch
@@ -580,14 +580,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             target: self,
             action: #selector(aiProviderChanged(_:))
         )
-        provider.frame = NSRect(x: 260, y: 704, width: 192, height: 28)
+        provider.frame = NSRect(x: 260, y: 592, width: 192, height: 28)
         provider.selectedSegment = 0
         provider.setAccessibilityLabel("Writing backend")
         root.addSubview(provider)
         aiProviderControl = provider
 
         // Shared mode card frame — Local LLM and API key swap here.
-        let modeFrame = NSRect(x: 28, y: 488, width: 424, height: 200)
+        let modeFrame = NSRect(x: 28, y: 410, width: 424, height: 168)
 
         // Local LLM card
         let card = NSView(frame: modeFrame)
@@ -600,22 +600,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let section = NSTextField(labelWithString: "Local LLM")
         section.font = .systemFont(ofSize: 15, weight: .semibold)
         section.textColor = textColor
-        section.frame = NSRect(x: 20, y: 158, width: 280, height: 22)
+        section.frame = NSRect(x: 20, y: 134, width: 280, height: 22)
         card.addSubview(section)
 
-        let blurb = NSTextField(wrappingLabelWithString: "Models installed on this Mac via Ollama. Pick which one Humanizer should use for grammar checks and for rewrite / generate.")
+        let blurb = NSTextField(wrappingLabelWithString: "Pick Ollama models for grammar and for rewrite / generate.")
         blurb.font = .systemFont(ofSize: 12)
         blurb.textColor = muted
-        blurb.frame = NSRect(x: 20, y: 118, width: 384, height: 40)
+        blurb.frame = NSRect(x: 20, y: 108, width: 384, height: 22)
         card.addSubview(blurb)
 
         let grammarLabel = NSTextField(labelWithString: "Grammar model")
         grammarLabel.font = .systemFont(ofSize: 12)
         grammarLabel.textColor = muted
-        grammarLabel.frame = NSRect(x: 20, y: 88, width: 120, height: 18)
+        grammarLabel.frame = NSRect(x: 20, y: 76, width: 120, height: 18)
         card.addSubview(grammarLabel)
 
-        let grammar = NSPopUpButton(frame: NSRect(x: 150, y: 82, width: 250, height: 28), pullsDown: false)
+        let grammar = NSPopUpButton(frame: NSRect(x: 150, y: 70, width: 250, height: 28), pullsDown: false)
         grammar.target = self
         grammar.action = #selector(modelSelectionChanged(_:))
         card.addSubview(grammar)
@@ -624,10 +624,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let writingLabel = NSTextField(labelWithString: "Writing model")
         writingLabel.font = .systemFont(ofSize: 12)
         writingLabel.textColor = muted
-        writingLabel.frame = NSRect(x: 20, y: 50, width: 120, height: 18)
+        writingLabel.frame = NSRect(x: 20, y: 40, width: 120, height: 18)
         card.addSubview(writingLabel)
 
-        let writing = NSPopUpButton(frame: NSRect(x: 150, y: 44, width: 250, height: 28), pullsDown: false)
+        let writing = NSPopUpButton(frame: NSRect(x: 150, y: 34, width: 250, height: 28), pullsDown: false)
         writing.target = self
         writing.action = #selector(modelSelectionChanged(_:))
         card.addSubview(writing)
@@ -636,12 +636,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let help = NSTextField(labelWithString: "Loading models from Ollama…")
         help.font = .systemFont(ofSize: 11)
         help.textColor = muted
-        help.frame = NSRect(x: 20, y: 14, width: 384, height: 18)
+        help.frame = NSRect(x: 20, y: 10, width: 384, height: 18)
         card.addSubview(help)
         modelsHelpLabel = help
 
         // Hardware nav row → opens Hardware page (Local mode only)
-        let hwCard = NSView(frame: NSRect(x: 28, y: 388, width: 424, height: 84))
+        let hwCard = NSView(frame: NSRect(x: 28, y: 326, width: 424, height: 72))
         hwCard.wantsLayer = true
         hwCard.layer?.backgroundColor = surface.cgColor
         hwCard.layer?.cornerRadius = 14
@@ -651,13 +651,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let hwSection = NSTextField(labelWithString: "Hardware")
         hwSection.font = .systemFont(ofSize: 15, weight: .semibold)
         hwSection.textColor = textColor
-        hwSection.frame = NSRect(x: 20, y: 46, width: 280, height: 22)
+        hwSection.frame = NSRect(x: 20, y: 38, width: 280, height: 22)
         hwCard.addSubview(hwSection)
 
         let hwSummary = NSTextField(labelWithString: "RAM, GPU, estimated speed")
         hwSummary.font = .systemFont(ofSize: 12)
         hwSummary.textColor = muted
-        hwSummary.frame = NSRect(x: 20, y: 18, width: 320, height: 20)
+        hwSummary.frame = NSRect(x: 20, y: 14, width: 320, height: 18)
         hwCard.addSubview(hwSummary)
         hardwareSummaryLabel = hwSummary
 
@@ -665,7 +665,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         hwChevron.font = .systemFont(ofSize: 22, weight: .regular)
         hwChevron.textColor = muted
         hwChevron.alignment = .right
-        hwChevron.frame = NSRect(x: 370, y: 26, width: 30, height: 28)
+        hwChevron.frame = NSRect(x: 370, y: 20, width: 30, height: 28)
         hwCard.addSubview(hwChevron)
 
         let hwOpen = NSButton(frame: hwCard.bounds)
@@ -691,10 +691,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let aiSection = NSTextField(labelWithString: "API key")
         aiSection.font = .systemFont(ofSize: 15, weight: .semibold)
         aiSection.textColor = textColor
-        aiSection.frame = NSRect(x: 20, y: 158, width: 90, height: 22)
+        aiSection.frame = NSRect(x: 20, y: 134, width: 90, height: 22)
         aiCard.addSubview(aiSection)
 
-        let connectedTag = NSView(frame: NSRect(x: 112, y: 158, width: 84, height: 22))
+        let connectedTag = NSView(frame: NSRect(x: 112, y: 134, width: 84, height: 22))
         connectedTag.wantsLayer = true
         connectedTag.layer?.cornerRadius = 11
         connectedTag.layer?.backgroundColor = okColor.withAlphaComponent(0.22).cgColor
@@ -713,16 +713,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let aiBlurb = NSTextField(wrappingLabelWithString: "Use your own OpenAI, Groq, or compatible key for rewrite / generate.")
         aiBlurb.font = .systemFont(ofSize: 12)
         aiBlurb.textColor = muted
-        aiBlurb.frame = NSRect(x: 20, y: 122, width: 384, height: 32)
+        aiBlurb.frame = NSRect(x: 20, y: 106, width: 384, height: 24)
         aiCard.addSubview(aiBlurb)
 
-        let keyField = NSSecureTextField(frame: NSRect(x: 20, y: 78, width: 384, height: 30))
+        let keyField = NSSecureTextField(frame: NSRect(x: 20, y: 68, width: 384, height: 28))
         keyField.placeholderString = "API key"
         keyField.font = .systemFont(ofSize: 13)
         aiCard.addSubview(keyField)
         aiApiKeyField = keyField
 
-        let baseField = NSTextField(frame: NSRect(x: 20, y: 40, width: 384, height: 30))
+        let baseField = NSTextField(frame: NSRect(x: 20, y: 34, width: 384, height: 28))
         baseField.placeholderString = "Base URL (optional)"
         baseField.font = .systemFont(ofSize: 13)
         aiCard.addSubview(baseField)
@@ -731,12 +731,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let aiHelp = NSTextField(labelWithString: "Paste your key, then Save API key")
         aiHelp.font = .systemFont(ofSize: 11)
         aiHelp.textColor = muted
-        aiHelp.frame = NSRect(x: 20, y: 12, width: 384, height: 18)
+        aiHelp.frame = NSRect(x: 20, y: 10, width: 384, height: 18)
         aiCard.addSubview(aiHelp)
         aiHelpLabel = aiHelp
 
         // Features nav row → opens Features page
-        let featuresCard = NSView(frame: NSRect(x: 28, y: 288, width: 424, height: 84))
+        let featuresCard = NSView(frame: NSRect(x: 28, y: 242, width: 424, height: 72))
         featuresCard.wantsLayer = true
         featuresCard.layer?.backgroundColor = surface.cgColor
         featuresCard.layer?.cornerRadius = 14
@@ -745,13 +745,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let featuresSection = NSTextField(labelWithString: "Features")
         featuresSection.font = .systemFont(ofSize: 15, weight: .semibold)
         featuresSection.textColor = textColor
-        featuresSection.frame = NSRect(x: 20, y: 46, width: 280, height: 22)
+        featuresSection.frame = NSRect(x: 20, y: 38, width: 280, height: 22)
         featuresCard.addSubview(featuresSection)
 
         let featuresSummary = NSTextField(labelWithString: "Grammar, Rewrite, Generate")
         featuresSummary.font = .systemFont(ofSize: 12)
         featuresSummary.textColor = muted
-        featuresSummary.frame = NSRect(x: 20, y: 18, width: 320, height: 20)
+        featuresSummary.frame = NSRect(x: 20, y: 14, width: 320, height: 18)
         featuresCard.addSubview(featuresSummary)
         featuresSummaryLabel = featuresSummary
 
@@ -759,7 +759,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         featuresChevron.font = .systemFont(ofSize: 22, weight: .regular)
         featuresChevron.textColor = muted
         featuresChevron.alignment = .right
-        featuresChevron.frame = NSRect(x: 370, y: 26, width: 30, height: 28)
+        featuresChevron.frame = NSRect(x: 370, y: 20, width: 30, height: 28)
         featuresCard.addSubview(featuresChevron)
 
         let featuresOpen = NSButton(frame: featuresCard.bounds)
@@ -774,7 +774,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         featuresCard.addSubview(featuresOpen)
 
         // Chrome extension section
-        let chromeCard = NSView(frame: NSRect(x: 28, y: 188, width: 424, height: 84))
+        let chromeCard = NSView(frame: NSRect(x: 28, y: 158, width: 424, height: 72))
         chromeCard.wantsLayer = true
         chromeCard.layer?.backgroundColor = surface.cgColor
         chromeCard.layer?.cornerRadius = 14
@@ -783,44 +783,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let chromeSection = NSTextField(labelWithString: "Chrome extension")
         chromeSection.font = .systemFont(ofSize: 15, weight: .semibold)
         chromeSection.textColor = textColor
-        chromeSection.frame = NSRect(x: 20, y: 48, width: 220, height: 22)
+        chromeSection.frame = NSRect(x: 20, y: 38, width: 220, height: 22)
         chromeCard.addSubview(chromeSection)
 
-        let chromeBlurb = NSTextField(wrappingLabelWithString: "Load the bundled extension so Chrome can talk to this app automatically.")
+        let chromeBlurb = NSTextField(wrappingLabelWithString: "Load the bundled extension so Chrome can talk to this app.")
         chromeBlurb.font = .systemFont(ofSize: 12)
         chromeBlurb.textColor = muted
-        chromeBlurb.frame = NSRect(x: 20, y: 14, width: 240, height: 36)
+        chromeBlurb.frame = NSRect(x: 20, y: 12, width: 250, height: 22)
         chromeCard.addSubview(chromeBlurb)
 
         let chrome = NSButton(title: "Connect…", target: self, action: #selector(showChromeConnect))
         chrome.bezelStyle = .rounded
-        chrome.frame = NSRect(x: 300, y: 26, width: 104, height: 32)
+        chrome.frame = NSRect(x: 300, y: 20, width: 104, height: 32)
         chrome.toolTip = "Connect Chrome Extension"
         chromeCard.addSubview(chrome)
         chromeConnectButton = chrome
 
         let refresh = NSButton(title: "Refresh models", target: self, action: #selector(refreshModels))
         refresh.bezelStyle = .rounded
-        refresh.frame = NSRect(x: 28, y: 28, width: 130, height: 32)
+        refresh.frame = NSRect(x: 28, y: 24, width: 130, height: 32)
         root.addSubview(refresh)
         refreshModelsButton = refresh
 
         let apply = NSButton(title: "Apply models", target: self, action: #selector(applyModelSettings))
         apply.bezelStyle = .rounded
-        apply.frame = NSRect(x: 168, y: 28, width: 120, height: 32)
+        apply.frame = NSRect(x: 168, y: 24, width: 120, height: 32)
         root.addSubview(apply)
         applyModelsButton = apply
 
         let saveAi = NSButton(title: "Save API key", target: self, action: #selector(saveAiSettings))
         saveAi.bezelStyle = .rounded
-        saveAi.frame = NSRect(x: 168, y: 28, width: 120, height: 32)
+        saveAi.frame = NSRect(x: 168, y: 24, width: 120, height: 32)
         saveAi.isHidden = true
         root.addSubview(saveAi)
         saveApiButton = saveAi
 
         let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
         done.bezelStyle = .rounded
-        done.frame = NSRect(x: 372, y: 28, width: 80, height: 32)
+        done.frame = NSRect(x: 372, y: 24, width: 80, height: 32)
         root.addSubview(done)
 
         setupFeaturesPage(in: content)
@@ -848,23 +848,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let cfg = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
             back.image = chevron.withSymbolConfiguration(cfg)
         }
-        back.frame = NSRect(x: 16, y: 694, width: 140, height: 38)
+        back.frame = NSRect(x: 16, y: 582, width: 140, height: 38)
         back.setAccessibilityLabel("Back to Settings")
         page.addSubview(back)
 
         let heading = NSTextField(labelWithString: "Hardware")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 650, width: 300, height: 32)
+        heading.frame = NSRect(x: 28, y: 540, width: 300, height: 32)
         page.addSubview(heading)
 
         let blurb = NSTextField(wrappingLabelWithString: "Allocate RAM and GPU for local models. Estimated tokens/sec updates as you move the sliders.")
         blurb.font = .systemFont(ofSize: 13)
         blurb.textColor = muted
-        blurb.frame = NSRect(x: 28, y: 602, width: 424, height: 40)
+        blurb.frame = NSRect(x: 28, y: 496, width: 424, height: 36)
         page.addSubview(blurb)
 
-        let card = NSView(frame: NSRect(x: 28, y: 360, width: 424, height: 226))
+        let card = NSView(frame: NSRect(x: 28, y: 248, width: 424, height: 226))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -944,24 +944,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let hardwareHelp = NSTextField(labelWithString: "Move the sliders, then Apply")
         hardwareHelp.font = .systemFont(ofSize: 11)
         hardwareHelp.textColor = muted
-        hardwareHelp.frame = NSRect(x: 28, y: 320, width: 424, height: 18)
+        hardwareHelp.frame = NSRect(x: 28, y: 212, width: 424, height: 18)
         page.addSubview(hardwareHelp)
         hardwareHelpLabel = hardwareHelp
 
         let recommend = NSButton(title: "Recommend", target: self, action: #selector(applyHardwareRecommendation))
         recommend.bezelStyle = .rounded
-        recommend.frame = NSRect(x: 28, y: 28, width: 110, height: 32)
+        recommend.frame = NSRect(x: 28, y: 24, width: 110, height: 32)
         recommend.toolTip = "Set RAM and GPU to the recommended values for this Mac"
         page.addSubview(recommend)
 
         let apply = NSButton(title: "Apply", target: self, action: #selector(applyHardwareSettings))
         apply.bezelStyle = .rounded
-        apply.frame = NSRect(x: 148, y: 28, width: 100, height: 32)
+        apply.frame = NSRect(x: 148, y: 24, width: 100, height: 32)
         page.addSubview(apply)
 
         let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
         done.bezelStyle = .rounded
-        done.frame = NSRect(x: 372, y: 28, width: 80, height: 32)
+        done.frame = NSRect(x: 372, y: 24, width: 80, height: 32)
         page.addSubview(done)
 
         refreshHardwareRecommendation()
@@ -984,23 +984,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let cfg = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
             back.image = chevron.withSymbolConfiguration(cfg)
         }
-        back.frame = NSRect(x: 16, y: 694, width: 140, height: 38)
+        back.frame = NSRect(x: 16, y: 582, width: 140, height: 38)
         back.setAccessibilityLabel("Back to Settings")
         page.addSubview(back)
 
         let heading = NSTextField(labelWithString: "Features")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 650, width: 300, height: 32)
+        heading.frame = NSRect(x: 28, y: 540, width: 300, height: 32)
         page.addSubview(heading)
 
         let blurb = NSTextField(wrappingLabelWithString: "Turn features on or off for the Chrome extension and local server.")
         blurb.font = .systemFont(ofSize: 13)
         blurb.textColor = muted
-        blurb.frame = NSRect(x: 28, y: 610, width: 424, height: 36)
+        blurb.frame = NSRect(x: 28, y: 502, width: 424, height: 32)
         page.addSubview(blurb)
 
-        let card = NSView(frame: NSRect(x: 28, y: 430, width: 424, height: 164))
+        let card = NSView(frame: NSRect(x: 28, y: 320, width: 424, height: 164))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -1046,13 +1046,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let featuresHelp = NSTextField(labelWithString: "Changes apply immediately")
         featuresHelp.font = .systemFont(ofSize: 11)
         featuresHelp.textColor = muted
-        featuresHelp.frame = NSRect(x: 28, y: 390, width: 424, height: 18)
+        featuresHelp.frame = NSRect(x: 28, y: 284, width: 424, height: 18)
         page.addSubview(featuresHelp)
         featuresHelpLabel = featuresHelp
 
         let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
         done.bezelStyle = .rounded
-        done.frame = NSRect(x: 372, y: 28, width: 80, height: 32)
+        done.frame = NSRect(x: 372, y: 24, width: 80, height: 32)
         page.addSubview(done)
     }
 
