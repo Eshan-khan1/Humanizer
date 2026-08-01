@@ -122,6 +122,20 @@ class AiConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+def resolve_request_ai_config(body_ai: AiConfig | None) -> dict[str, Any] | None:
+    """Prefer per-request AI settings; fall back to Mac app Settings API key."""
+    raw = body_ai.model_dump(by_alias=False) if body_ai is not None else None
+    cleaned = sanitize_ai_config(raw)
+    if cleaned is not None:
+        return normalize_ai_config(cleaned)
+    try:
+        from macos.menubar import settings as app_settings
+
+        return normalize_ai_config(sanitize_ai_config(app_settings.cloud_ai_config()))
+    except Exception:  # noqa: BLE001
+        return None
+
+
 class TextRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_TEXT_CHARS)
     ai: Optional[AiConfig] = None
@@ -1778,9 +1792,7 @@ def humanize(body: TextRequest) -> HumanizeResponse:
     text = assert_text_length(body.text, field="text")
 
     try:
-        ai_config = normalize_ai_config(
-            sanitize_ai_config(body.ai.model_dump(by_alias=False) if body.ai else None)
-        )
+        ai_config = resolve_request_ai_config(body.ai)
         result = humanize_text(text, ai_config=ai_config)
     except CloudAIError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -1838,9 +1850,7 @@ def rewrite(body: RewriteRequest) -> RewriteResponse:
     direct = bool((body.prompt or "").strip())
 
     try:
-        ai_config = normalize_ai_config(
-            sanitize_ai_config(body.ai.model_dump(by_alias=False) if body.ai else None)
-        )
+        ai_config = resolve_request_ai_config(body.ai)
         rewritten = rewrite_text(
             text, user_prompt, context, direct=direct, ai_config=ai_config
         )
@@ -1876,9 +1886,7 @@ def generate(body: GenerateRequest) -> GenerateResponse:
         )
         if settings and isinstance(settings.get("profile"), dict):
             settings["profile"] = sanitize_profile_fields(settings["profile"])
-        ai_config = normalize_ai_config(
-            sanitize_ai_config(body.ai.model_dump(by_alias=False) if body.ai else None)
-        )
+        ai_config = resolve_request_ai_config(body.ai)
         generated = generate_text(
             text,
             format_type,

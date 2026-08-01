@@ -1,4 +1,4 @@
-"""Persistent Humanizer settings (local LLM model choices, etc.)."""
+"""Persistent Humanizer settings (local LLM model choices, cloud API key, etc.)."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ logger = logging.getLogger("humanizer.menubar")
 
 DEFAULT_GRAMMAR_MODEL = "humanizer-grammar"
 DEFAULT_WRITING_MODEL = "humanizer-writing"
+DEFAULT_AI_PROVIDER = "local"
 
 # Friendly labels in the Mac app Settings → Local LLM pickers.
 # Keys may be bare names or full Ollama tags (name:tag).
@@ -42,11 +43,24 @@ def settings_path() -> Path:
     return support_dir() / "settings.json"
 
 
+def _normalize_ai_provider(value: Any) -> str:
+    provider = str(value or DEFAULT_AI_PROVIDER).strip().lower()
+    if provider in {"", "local", "ollama"}:
+        return "local"
+    if provider in {"api", "groq", "openai"}:
+        return provider
+    return "local"
+
+
 def load_settings() -> dict[str, Any]:
     path = settings_path()
     data: dict[str, Any] = {
         "grammar_model": DEFAULT_GRAMMAR_MODEL,
         "writing_model": DEFAULT_WRITING_MODEL,
+        "ai_provider": DEFAULT_AI_PROVIDER,
+        "ai_api_key": "",
+        "ai_base_url": "",
+        "ai_model": "",
     }
     if not path.is_file():
         return data
@@ -57,6 +71,13 @@ def load_settings() -> dict[str, Any]:
                 data["grammar_model"] = raw["grammar_model"].strip()
             if isinstance(raw.get("writing_model"), str) and raw["writing_model"].strip():
                 data["writing_model"] = raw["writing_model"].strip()
+            data["ai_provider"] = _normalize_ai_provider(raw.get("ai_provider"))
+            if isinstance(raw.get("ai_api_key"), str):
+                data["ai_api_key"] = raw["ai_api_key"].strip()
+            if isinstance(raw.get("ai_base_url"), str):
+                data["ai_base_url"] = raw["ai_base_url"].strip()
+            if isinstance(raw.get("ai_model"), str):
+                data["ai_model"] = raw["ai_model"].strip()
     except (OSError, json.JSONDecodeError, TypeError) as exc:
         logger.warning("Could not read settings: %s", exc)
     return data
@@ -66,16 +87,61 @@ def save_settings(
     *,
     grammar_model: str | None = None,
     writing_model: str | None = None,
+    ai_provider: str | None = None,
+    ai_api_key: str | None = None,
+    ai_base_url: str | None = None,
+    ai_model: str | None = None,
 ) -> dict[str, Any]:
     data = load_settings()
     if grammar_model is not None and grammar_model.strip():
         data["grammar_model"] = grammar_model.strip()
     if writing_model is not None and writing_model.strip():
         data["writing_model"] = writing_model.strip()
+    if ai_provider is not None:
+        data["ai_provider"] = _normalize_ai_provider(ai_provider)
+    if ai_api_key is not None:
+        data["ai_api_key"] = ai_api_key.strip()
+    if ai_base_url is not None:
+        data["ai_base_url"] = ai_base_url.strip()
+    if ai_model is not None:
+        data["ai_model"] = ai_model.strip()
     path = settings_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     return data
+
+
+def cloud_ai_config() -> dict[str, Any] | None:
+    """Return a request-shaped AI config from app Settings, or None for local."""
+    data = load_settings()
+    provider = _normalize_ai_provider(data.get("ai_provider"))
+    if provider == "local":
+        return None
+    api_key = str(data.get("ai_api_key") or "").strip()
+    if not api_key:
+        return None
+    cfg: dict[str, Any] = {"provider": provider, "api_key": api_key}
+    base_url = str(data.get("ai_base_url") or "").strip()
+    model = str(data.get("ai_model") or "").strip()
+    if base_url:
+        cfg["base_url"] = base_url
+    if model:
+        cfg["model"] = model
+    return cfg
+
+
+def ai_status_summary() -> dict[str, Any]:
+    """Safe status fields (never include the raw API key)."""
+    data = load_settings()
+    provider = _normalize_ai_provider(data.get("ai_provider"))
+    has_key = bool(str(data.get("ai_api_key") or "").strip())
+    return {
+        "ai_provider": provider,
+        "ai_configured": provider != "local" and has_key,
+        "ai_has_key": has_key,
+        "ai_base_url": str(data.get("ai_base_url") or "").strip(),
+        "ai_model": str(data.get("ai_model") or "").strip(),
+    }
 
 
 def list_ollama_models() -> list[dict[str, Any]]:

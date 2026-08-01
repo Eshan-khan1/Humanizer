@@ -30,6 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var grammarPopup: NSPopUpButton!
     private var writingPopup: NSPopUpButton!
     private var modelsHelpLabel: NSTextField!
+    private var aiProviderControl: NSSegmentedControl!
+    private var aiApiKeyField: NSSecureTextField!
+    private var aiBaseUrlField: NSTextField!
+    private var aiHelpLabel: NSTextField!
     private var menuBarBanner: NSView!
     private var menuBarConnectButton: NSButton!
     private var chromeConnectButton: NSButton!
@@ -514,7 +518,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupSettingsWindow() {
-        let rect = NSRect(x: 0, y: 0, width: 480, height: 460)
+        let rect = NSRect(x: 0, y: 0, width: 480, height: 640)
         let style: NSWindow.StyleMask = [.titled, .closable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
         win.title = "Humanizer Settings"
@@ -527,11 +531,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let heading = NSTextField(labelWithString: "Settings")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 402, width: 300, height: 32)
+        heading.frame = NSRect(x: 28, y: 582, width: 300, height: 32)
         content.addSubview(heading)
 
         // Local LLM section card
-        let card = NSView(frame: NSRect(x: 28, y: 188, width: 424, height: 200))
+        let card = NSView(frame: NSRect(x: 28, y: 368, width: 424, height: 200))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -580,6 +584,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         card.addSubview(help)
         modelsHelpLabel = help
 
+        // API key section card
+        let aiCard = NSView(frame: NSRect(x: 28, y: 188, width: 424, height: 164))
+        aiCard.wantsLayer = true
+        aiCard.layer?.backgroundColor = surface.cgColor
+        aiCard.layer?.cornerRadius = 14
+        content.addSubview(aiCard)
+
+        let aiSection = NSTextField(labelWithString: "API key")
+        aiSection.font = .systemFont(ofSize: 15, weight: .semibold)
+        aiSection.textColor = textColor
+        aiSection.frame = NSRect(x: 20, y: 126, width: 200, height: 22)
+        aiCard.addSubview(aiSection)
+
+        let aiBlurb = NSTextField(wrappingLabelWithString: "Use your own OpenAI, Groq, or compatible key for rewrite / generate. Leave on Local to stay fully offline.")
+        aiBlurb.font = .systemFont(ofSize: 12)
+        aiBlurb.textColor = muted
+        aiBlurb.frame = NSRect(x: 20, y: 96, width: 384, height: 30)
+        aiCard.addSubview(aiBlurb)
+
+        let provider = NSSegmentedControl(labels: ["Local", "API"], trackingMode: .selectOne, target: self, action: #selector(aiProviderChanged(_:)))
+        provider.frame = NSRect(x: 20, y: 66, width: 160, height: 24)
+        provider.selectedSegment = 0
+        aiCard.addSubview(provider)
+        aiProviderControl = provider
+
+        let keyField = NSSecureTextField(frame: NSRect(x: 190, y: 64, width: 214, height: 28))
+        keyField.placeholderString = "API key"
+        keyField.isEnabled = false
+        keyField.font = .systemFont(ofSize: 12)
+        aiCard.addSubview(keyField)
+        aiApiKeyField = keyField
+
+        let baseField = NSTextField(frame: NSRect(x: 20, y: 30, width: 384, height: 28))
+        baseField.placeholderString = "Base URL (optional)"
+        baseField.isEnabled = false
+        baseField.font = .systemFont(ofSize: 12)
+        aiCard.addSubview(baseField)
+        aiBaseUrlField = baseField
+
+        let aiHelp = NSTextField(labelWithString: "Using local models")
+        aiHelp.font = .systemFont(ofSize: 11)
+        aiHelp.textColor = muted
+        aiHelp.frame = NSRect(x: 20, y: 8, width: 384, height: 16)
+        aiCard.addSubview(aiHelp)
+        aiHelpLabel = aiHelp
+
         // Chrome extension section
         let chromeCard = NSView(frame: NSRect(x: 28, y: 88, width: 424, height: 84))
         chromeCard.wantsLayer = true
@@ -608,17 +658,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let refresh = NSButton(title: "Refresh models", target: self, action: #selector(refreshModels))
         refresh.bezelStyle = .rounded
-        refresh.frame = NSRect(x: 28, y: 36, width: 130, height: 32)
+        refresh.frame = NSRect(x: 28, y: 36, width: 120, height: 32)
         content.addSubview(refresh)
 
-        let apply = NSButton(title: "Apply & Restart", target: self, action: #selector(applyModelSettings))
+        let apply = NSButton(title: "Apply models", target: self, action: #selector(applyModelSettings))
         apply.bezelStyle = .rounded
-        apply.frame = NSRect(x: 170, y: 36, width: 140, height: 32)
+        apply.frame = NSRect(x: 156, y: 36, width: 110, height: 32)
         content.addSubview(apply)
+
+        let saveAi = NSButton(title: "Save API key", target: self, action: #selector(saveAiSettings))
+        saveAi.bezelStyle = .rounded
+        saveAi.frame = NSRect(x: 274, y: 36, width: 110, height: 32)
+        content.addSubview(saveAi)
 
         let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
         done.bezelStyle = .rounded
-        done.frame = NSRect(x: 372, y: 36, width: 80, height: 32)
+        done.frame = NSRect(x: 392, y: 36, width: 60, height: 32)
         content.addSubview(done)
 
         settingsWindow = win
@@ -631,6 +686,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc private func showSettings() {
         refreshModels()
+        loadAiSettings()
         settingsWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -1116,8 +1172,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if names.isEmpty {
             modelsHelpLabel.stringValue = "No Ollama models found. Open Ollama and pull a model, then Refresh."
         } else {
-            modelsHelpLabel.stringValue = "\(names.count) model\(names.count == 1 ? "" : "s") on this Mac. Apply & Restart to use your choices."
+            modelsHelpLabel.stringValue = "\(names.count) model\(names.count == 1 ? "" : "s") on this Mac. Apply models to use your choices."
         }
+
+        applyAiFields(from: result)
     }
 
     private func fillPopup(_ popup: NSPopUpButton, selected: String) {
@@ -1141,6 +1199,89 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             popup.select(match)
         } else {
             popup.selectItem(withTitle: displayLabel(for: selected))
+        }
+    }
+
+    private func applyAiFields(from result: [String: Any]) {
+        let provider = (result["ai_provider"] as? String)?.lowercased() ?? "local"
+        let useApi = provider != "local" && provider != "ollama"
+        aiProviderControl?.selectedSegment = useApi ? 1 : 0
+        aiApiKeyField?.stringValue = (result["ai_api_key"] as? String) ?? ""
+        aiBaseUrlField?.stringValue = (result["ai_base_url"] as? String) ?? ""
+        updateAiFieldsEnabled()
+        if useApi {
+            let configured = (result["ai_configured"] as? Bool) ?? false
+            aiHelpLabel?.stringValue = configured
+                ? "Cloud API key saved — used for rewrite / generate"
+                : "Choose API and paste your key, then Save API key"
+        } else {
+            aiHelpLabel?.stringValue = "Using local models"
+        }
+    }
+
+    private func loadAiSettings() {
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let result = self?.runService(["get-ai"]) ?? [:]
+            DispatchQueue.main.async {
+                self?.applyAiFields(from: result)
+            }
+        }
+    }
+
+    private func updateAiFieldsEnabled() {
+        let useApi = (aiProviderControl?.selectedSegment ?? 0) == 1
+        aiApiKeyField?.isEnabled = useApi
+        aiBaseUrlField?.isEnabled = useApi
+        if !useApi {
+            aiHelpLabel?.stringValue = "Using local models"
+        }
+    }
+
+    @objc private func aiProviderChanged(_ sender: NSSegmentedControl) {
+        updateAiFieldsEnabled()
+        if sender.selectedSegment == 1 {
+            aiHelpLabel?.stringValue = "Paste your OpenAI / Groq / compatible key, then Save"
+            aiApiKeyField?.window?.makeFirstResponder(aiApiKeyField)
+        }
+    }
+
+    @objc private func saveAiSettings() {
+        let useApi = (aiProviderControl?.selectedSegment ?? 0) == 1
+        let provider = useApi ? "api" : "local"
+        let apiKey = aiApiKeyField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let baseUrl = aiBaseUrlField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if useApi && apiKey.isEmpty {
+            aiHelpLabel?.stringValue = "Add an API key first"
+            return
+        }
+        aiHelpLabel?.stringValue = useApi ? "Saving and testing key…" : "Switching to local models…"
+        busy = true
+        let payload: [String: Any] = [
+            "provider": provider,
+            "apiKey": apiKey,
+            "baseUrl": baseUrl,
+            "model": "",
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: payload),
+              let json = String(data: data, encoding: .utf8) else {
+            busy = false
+            aiHelpLabel?.stringValue = "Could not encode settings"
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let result = self?.runService(["set-ai", json]) ?? ["ok": false, "detail": "Save failed"]
+            DispatchQueue.main.async {
+                self?.busy = false
+                let ok = (result["ok"] as? Bool) ?? false
+                let detail = (result["detail"] as? String) ?? ""
+                if ok {
+                    self?.aiHelpLabel?.stringValue = useApi
+                        ? (detail.isEmpty ? "API key saved and verified" : detail)
+                        : "Using local models"
+                } else {
+                    self?.aiHelpLabel?.stringValue = detail.isEmpty ? "Could not verify API key" : detail
+                }
+            }
         }
     }
 

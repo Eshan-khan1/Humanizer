@@ -27,7 +27,8 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "usage: python -m macos.menubar.service "
             "[start|stop|restart|status|autostart|connect-extension|"
-            "models|set-models <grammar> <writing>]",
+            "models|set-models <grammar> <writing>|"
+            "get-ai|set-ai <provider> [api_key] [base_url] [model]]",
             file=sys.stderr,
         )
         return 2
@@ -73,10 +74,112 @@ def main(argv: list[str] | None = None) -> int:
                         "grammar_model": settings.DEFAULT_GRAMMAR_MODEL,
                         "writing_model": settings.DEFAULT_WRITING_MODEL,
                     },
+                    **settings.ai_status_summary(),
+                    # Include key only for the local Mac app Settings UI.
+                    "ai_api_key": cfg.get("ai_api_key") or "",
                 }
             )
         )
         return 0
+
+    if cmd == "get-ai":
+        cfg = settings.load_settings()
+        print(
+            json.dumps(
+                {
+                    "ok": True,
+                    **settings.ai_status_summary(),
+                    "ai_api_key": cfg.get("ai_api_key") or "",
+                }
+            )
+        )
+        return 0
+
+    if cmd == "set-ai":
+        if len(args) < 2:
+            print(
+                json.dumps(
+                    {
+                        "ok": False,
+                        "error": 'usage: set-ai \'{"provider":"api","apiKey":"..."}\'',
+                    }
+                )
+            )
+            return 2
+        provider = "local"
+        api_key = None
+        base_url = None
+        model = None
+        raw_arg = args[1].strip()
+        if raw_arg.startswith("{"):
+            try:
+                payload = json.loads(raw_arg)
+            except json.JSONDecodeError as exc:
+                print(json.dumps({"ok": False, "error": f"invalid JSON: {exc}"}))
+                return 2
+            if not isinstance(payload, dict):
+                print(json.dumps({"ok": False, "error": "set-ai payload must be an object"}))
+                return 2
+            provider = str(payload.get("provider") or payload.get("ai_provider") or "local")
+            if "apiKey" in payload or "ai_api_key" in payload:
+                api_key = str(payload.get("apiKey") or payload.get("ai_api_key") or "")
+            if "baseUrl" in payload or "ai_base_url" in payload:
+                base_url = str(payload.get("baseUrl") or payload.get("ai_base_url") or "")
+            if "model" in payload or "ai_model" in payload:
+                model = str(payload.get("model") or payload.get("ai_model") or "")
+        else:
+            provider = args[1]
+            api_key = args[2] if len(args) > 2 else None
+            base_url = args[3] if len(args) > 3 else None
+            model = args[4] if len(args) > 4 else None
+        cfg = settings.save_settings(
+            ai_provider=provider,
+            ai_api_key=api_key,
+            ai_base_url=base_url,
+            ai_model=model,
+        )
+        test: dict = {"ok": True, "detail": "Using local models"}
+        if settings.cloud_ai_config() is not None:
+            try:
+                import urllib.request
+
+                payload = json.dumps(
+                    {
+                        "ai": {
+                            "provider": cfg.get("ai_provider"),
+                            "apiKey": cfg.get("ai_api_key") or "",
+                            "baseUrl": cfg.get("ai_base_url") or "",
+                            "model": cfg.get("ai_model") or "",
+                        }
+                    }
+                ).encode("utf-8")
+                req = urllib.request.Request(
+                    "http://127.0.0.1:8000/ai/test",
+                    data=payload,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=25) as resp:
+                    test = json.loads(resp.read().decode("utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                test = {"ok": False, "detail": str(exc)}
+        print(
+            json.dumps(
+                {
+                    "ok": bool(test.get("ok", True)),
+                    "detail": test.get("detail")
+                    or (
+                        "API key saved"
+                        if settings.cloud_ai_config()
+                        else "Using local models"
+                    ),
+                    "provider": test.get("provider") or cfg.get("ai_provider"),
+                    "model": test.get("model") or cfg.get("ai_model") or "",
+                    **settings.ai_status_summary(),
+                }
+            )
+        )
+        return 0 if test.get("ok", True) else 1
 
     if cmd == "set-models":
         if len(args) < 3:
@@ -123,6 +226,7 @@ def main(argv: list[str] | None = None) -> int:
                     "writing_model": cfg.get("writing_model"),
                     "extension_linked": link.get("linked"),
                     "extension_path": str(extension_bridge.extension_install_dir()),
+                    **settings.ai_status_summary(),
                 }
             )
         )
@@ -153,6 +257,7 @@ def main(argv: list[str] | None = None) -> int:
                     "writing_model": cfg.get("writing_model"),
                     "extension_linked": link.get("linked"),
                     "extension_path": str(extension_bridge.extension_install_dir()),
+                    **settings.ai_status_summary(),
                 }
             )
         )
@@ -168,6 +273,7 @@ def main(argv: list[str] | None = None) -> int:
                     "detail": "Server online" if ok else "Server offline",
                     "grammar_model": cfg.get("grammar_model"),
                     "writing_model": cfg.get("writing_model"),
+                    **settings.ai_status_summary(),
                 }
             )
         )
