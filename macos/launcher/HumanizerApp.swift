@@ -46,6 +46,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var tokensEstimateLabel: NSTextField!
     private var hardwareHelpLabel: NSTextField!
     private var hardwareSummaryLabel: NSTextField!
+    private var hardwareRecommendLabel: NSTextField!
+    private var recommendedRamGB: Int = 8
+    private var recommendedGpuPercent: Int = 75
     private var systemRamGB: Int = 16
     private var refreshModelsButton: NSButton!
     private var applyModelsButton: NSButton!
@@ -861,7 +864,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         blurb.frame = NSRect(x: 28, y: 602, width: 424, height: 40)
         page.addSubview(blurb)
 
-        let card = NSView(frame: NSRect(x: 28, y: 390, width: 424, height: 196))
+        let card = NSView(frame: NSRect(x: 28, y: 360, width: 424, height: 226))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -870,7 +873,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let ramCaption = NSTextField(labelWithString: "RAM")
         ramCaption.font = .systemFont(ofSize: 12)
         ramCaption.textColor = muted
-        ramCaption.frame = NSRect(x: 20, y: 154, width: 50, height: 16)
+        ramCaption.frame = NSRect(x: 20, y: 184, width: 50, height: 16)
         card.addSubview(ramCaption)
 
         let defaultRam = Double(max(4, min(systemRamGB / 2, systemRamGB - 2)))
@@ -881,7 +884,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             target: self,
             action: #selector(hardwareSliderChanged(_:))
         )
-        ramSliderControl.frame = NSRect(x: 70, y: 150, width: 260, height: 24)
+        ramSliderControl.frame = NSRect(x: 70, y: 180, width: 260, height: 24)
         card.addSubview(ramSliderControl)
         ramSlider = ramSliderControl
 
@@ -889,14 +892,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         ramValue.font = .systemFont(ofSize: 12, weight: .medium)
         ramValue.textColor = textColor
         ramValue.alignment = .right
-        ramValue.frame = NSRect(x: 340, y: 154, width: 64, height: 16)
+        ramValue.frame = NSRect(x: 340, y: 184, width: 64, height: 16)
         card.addSubview(ramValue)
         ramValueLabel = ramValue
 
         let gpuCaption = NSTextField(labelWithString: "GPU")
         gpuCaption.font = .systemFont(ofSize: 12)
         gpuCaption.textColor = muted
-        gpuCaption.frame = NSRect(x: 20, y: 108, width: 50, height: 16)
+        gpuCaption.frame = NSRect(x: 20, y: 138, width: 50, height: 16)
         card.addSubview(gpuCaption)
 
         let gpuSliderControl = NSSlider(
@@ -906,7 +909,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             target: self,
             action: #selector(hardwareSliderChanged(_:))
         )
-        gpuSliderControl.frame = NSRect(x: 70, y: 104, width: 260, height: 24)
+        gpuSliderControl.frame = NSRect(x: 70, y: 134, width: 260, height: 24)
         card.addSubview(gpuSliderControl)
         gpuSlider = gpuSliderControl
 
@@ -914,39 +917,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         gpuValue.font = .systemFont(ofSize: 12, weight: .medium)
         gpuValue.textColor = textColor
         gpuValue.alignment = .right
-        gpuValue.frame = NSRect(x: 340, y: 108, width: 64, height: 16)
+        gpuValue.frame = NSRect(x: 340, y: 138, width: 64, height: 16)
         card.addSubview(gpuValue)
         gpuValueLabel = gpuValue
 
         let tokens = NSTextField(labelWithString: "Estimated speed: — tokens/sec")
         tokens.font = .systemFont(ofSize: 13, weight: .semibold)
         tokens.textColor = okColor
-        tokens.frame = NSRect(x: 20, y: 56, width: 384, height: 20)
+        tokens.frame = NSRect(x: 20, y: 90, width: 384, height: 20)
         card.addSubview(tokens)
         tokensEstimateLabel = tokens
 
-        let hwHint = NSTextField(wrappingLabelWithString: "Based on your writing model size and allocated RAM / GPU. Apply to save and restart.")
+        let recommendLine = NSTextField(wrappingLabelWithString: "Recommended: —")
+        recommendLine.font = .systemFont(ofSize: 12, weight: .medium)
+        recommendLine.textColor = textColor
+        recommendLine.frame = NSRect(x: 20, y: 52, width: 384, height: 32)
+        card.addSubview(recommendLine)
+        hardwareRecommendLabel = recommendLine
+
+        let hwHint = NSTextField(wrappingLabelWithString: "Recommend picks balanced values for this Mac. Apply to save and restart.")
         hwHint.font = .systemFont(ofSize: 11)
         hwHint.textColor = muted
-        hwHint.frame = NSRect(x: 20, y: 16, width: 384, height: 32)
+        hwHint.frame = NSRect(x: 20, y: 14, width: 384, height: 32)
         card.addSubview(hwHint)
 
         let hardwareHelp = NSTextField(labelWithString: "Move the sliders, then Apply")
         hardwareHelp.font = .systemFont(ofSize: 11)
         hardwareHelp.textColor = muted
-        hardwareHelp.frame = NSRect(x: 28, y: 350, width: 424, height: 18)
+        hardwareHelp.frame = NSRect(x: 28, y: 320, width: 424, height: 18)
         page.addSubview(hardwareHelp)
         hardwareHelpLabel = hardwareHelp
 
+        let recommend = NSButton(title: "Recommend", target: self, action: #selector(applyHardwareRecommendation))
+        recommend.bezelStyle = .rounded
+        recommend.frame = NSRect(x: 28, y: 28, width: 110, height: 32)
+        recommend.toolTip = "Set RAM and GPU to the recommended values for this Mac"
+        page.addSubview(recommend)
+
         let apply = NSButton(title: "Apply", target: self, action: #selector(applyHardwareSettings))
         apply.bezelStyle = .rounded
-        apply.frame = NSRect(x: 28, y: 28, width: 100, height: 32)
+        apply.frame = NSRect(x: 148, y: 28, width: 100, height: 32)
         page.addSubview(apply)
 
         let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
         done.bezelStyle = .rounded
         done.frame = NSRect(x: 372, y: 28, width: 80, height: 32)
         page.addSubview(done)
+
+        refreshHardwareRecommendation()
     }
 
     private func setupFeaturesPage(in content: NSView) {
@@ -1587,6 +1605,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         gpuSlider?.doubleValue = Double(gpu)
         ramValueLabel?.stringValue = "\(ram) GB"
         gpuValueLabel?.stringValue = "\(gpu)%"
+        if let recRam = result["recommended_ram_gb"] as? Int {
+            recommendedRamGB = recRam
+        }
+        if let recGpu = result["recommended_gpu_percent"] as? Int {
+            recommendedGpuPercent = recGpu
+        }
+        if let detail = result["recommend_detail"] as? String, !detail.isEmpty {
+            hardwareRecommendLabel?.stringValue = detail
+        } else {
+            refreshHardwareRecommendation()
+        }
         if let detail = result["tokens_detail"] as? String, !detail.isEmpty {
             tokensEstimateLabel?.stringValue = detail
             updateHardwareSummaryLabel(ram: ram, gpu: gpu)
@@ -1606,7 +1635,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         updateHardwareEstimate()
     }
 
+    private func refreshHardwareRecommendation() {
+        let total = max(4, systemRamGB)
+        let maxAlloc = max(4, total - 2)
+        let model = selectedWriting.lowercased()
+        let needed: Int
+        if model.contains("0.5b") {
+            needed = 2
+        } else if model.contains("1.5b") || model.contains("1b") {
+            needed = 3
+        } else if model.contains("3b") {
+            needed = 5
+        } else if model.contains("8b") {
+            needed = 10
+        } else if model.contains("14b") || model.contains("13b") {
+            needed = 16
+        } else {
+            needed = 9
+        }
+        let target = max(needed + 2, total / 2)
+        let ram = min(maxAlloc, max(4, target))
+        var gpu: Int
+        if total <= 8 {
+            gpu = 55
+        } else if total <= 16 {
+            gpu = 75
+        } else if total <= 24 {
+            gpu = 80
+        } else if total <= 32 {
+            gpu = 85
+        } else {
+            gpu = 90
+        }
+        if needed >= max(4, Int(Double(total) * 0.4)) {
+            gpu = min(95, gpu + 5)
+        }
+        recommendedRamGB = ram
+        recommendedGpuPercent = gpu
+        hardwareRecommendLabel?.stringValue =
+            "Recommended for this Mac (\(total) GB): \(ram) GB RAM · \(gpu)% GPU"
+    }
+
+    @objc private func applyHardwareRecommendation() {
+        refreshHardwareRecommendation()
+        let ram = recommendedRamGB
+        let gpu = recommendedGpuPercent
+        ramSlider?.doubleValue = Double(ram)
+        gpuSlider?.doubleValue = Double(gpu)
+        ramValueLabel?.stringValue = "\(ram) GB"
+        gpuValueLabel?.stringValue = "\(gpu)%"
+        updateHardwareEstimate()
+        hardwareHelpLabel?.stringValue = "Recommendation applied — press Apply to save"
+    }
+
     private func updateHardwareEstimate() {
+        refreshHardwareRecommendation()
         let ram = Int(ramSlider?.doubleValue.rounded() ?? Double(max(4, systemRamGB / 2)))
         let gpu = Int(gpuSlider?.doubleValue.rounded() ?? 75)
         let model = selectedWriting.lowercased()

@@ -66,6 +66,58 @@ def default_ram_gb() -> int:
     return _clamp_int(max(4, total // 2), 4, max(4, total - 2), DEFAULT_HARDWARE_RAM_GB)
 
 
+def _model_ram_need_gb(model_name: str) -> int:
+    model = (model_name or "").lower()
+    if "0.5b" in model:
+        return 2
+    if "1.5b" in model or "1b" in model:
+        return 3
+    if "3b" in model:
+        return 5
+    if "8b" in model:
+        return 10
+    if "14b" in model or "13b" in model:
+        return 16
+    # ~7B writing / grammar defaults
+    return 9
+
+
+def recommend_hardware(*, model_name: str | None = None) -> dict[str, Any]:
+    """Balanced RAM + GPU suggestion from this Mac and the writing model."""
+    total = system_ram_gb()
+    max_alloc = max(4, total - 2)
+    data = load_settings()
+    model = model_name or str(data.get("writing_model") or DEFAULT_WRITING_MODEL)
+    needed = _model_ram_need_gb(model)
+    # Enough for weights + KV, or ~half of system RAM — whichever is larger.
+    target = max(needed + 2, total // 2)
+    ram = _clamp_int(target, 4, max_alloc, default_ram_gb())
+
+    if total <= 8:
+        gpu = 55
+    elif total <= 16:
+        gpu = 75
+    elif total <= 24:
+        gpu = 80
+    elif total <= 32:
+        gpu = 85
+    else:
+        gpu = 90
+    if needed >= max(4, int(total * 0.4)):
+        gpu = min(95, gpu + 5)
+
+    detail = (
+        f"Recommended for this Mac ({total} GB) and "
+        f"{model_label(model)}: {ram} GB RAM · {gpu}% GPU"
+    )
+    return {
+        "recommended_ram_gb": ram,
+        "recommended_gpu_percent": gpu,
+        "recommend_detail": detail,
+        "system_ram_gb": total,
+    }
+
+
 def settings_path() -> Path:
     return support_dir() / "settings.json"
 
@@ -342,6 +394,7 @@ def estimate_tokens_per_sec(
 def hardware_summary() -> dict[str, Any]:
     data = load_settings()
     estimate = estimate_tokens_per_sec()
+    recommend = recommend_hardware()
     return {
         "hardware_ram_gb": int(data.get("hardware_ram_gb") or default_ram_gb()),
         "hardware_gpu_percent": int(
@@ -350,4 +403,7 @@ def hardware_summary() -> dict[str, Any]:
         "system_ram_gb": system_ram_gb(),
         "tokens_per_sec": estimate["tokens_per_sec"],
         "tokens_detail": estimate["detail"],
+        "recommended_ram_gb": recommend["recommended_ram_gb"],
+        "recommended_gpu_percent": recommend["recommended_gpu_percent"],
+        "recommend_detail": recommend["recommend_detail"],
     }
