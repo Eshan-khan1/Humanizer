@@ -39,6 +39,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var settingsLocalCard: NSView!
     private var settingsApiCard: NSView!
     private var settingsHardwareCard: NSView!
+    private var settingsFeaturesCard: NSView!
+    private var settingsChromeCard: NSView!
     private var ramSlider: NSSlider!
     private var gpuSlider: NSSlider!
     private var ramValueLabel: NSTextField!
@@ -53,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var refreshModelsButton: NSButton!
     private var applyModelsButton: NSButton!
     private var saveApiButton: NSButton!
+    private var settingsDoneButton: NSButton!
     private var featureGrammarSwitch: NSSwitch!
     private var featureRewriteSwitch: NSSwitch!
     private var featureGenerateSwitch: NSSwitch!
@@ -741,6 +744,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         featuresCard.layer?.backgroundColor = surface.cgColor
         featuresCard.layer?.cornerRadius = 14
         root.addSubview(featuresCard)
+        settingsFeaturesCard = featuresCard
 
         let featuresSection = NSTextField(labelWithString: "Features")
         featuresSection.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -779,6 +783,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         chromeCard.layer?.backgroundColor = surface.cgColor
         chromeCard.layer?.cornerRadius = 14
         root.addSubview(chromeCard)
+        settingsChromeCard = chromeCard
 
         let chromeSection = NSTextField(labelWithString: "Chrome extension")
         chromeSection.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -822,6 +827,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         done.bezelStyle = .rounded
         done.frame = NSRect(x: 372, y: 20, width: 80, height: 32)
         root.addSubview(done)
+        settingsDoneButton = done
 
         setupFeaturesPage(in: content)
         setupHardwarePage(in: content)
@@ -1895,6 +1901,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         saveApiButton?.isHidden = !useApi
         aiApiKeyField?.isEnabled = useApi
         aiBaseUrlField?.isEnabled = useApi
+        // When Hardware is hidden (API mode), pull Features / Chrome / buttons up
+        // so there isn’t an empty gap under the API key card.
+        let featuresY: CGFloat = useApi ? 292 : 216
+        let chromeY: CGFloat = useApi ? 216 : 140
+        let buttonsY: CGFloat = useApi ? 96 : 20
+        settingsFeaturesCard?.frame = NSRect(x: 28, y: featuresY, width: 424, height: 64)
+        settingsChromeCard?.frame = NSRect(x: 28, y: chromeY, width: 424, height: 64)
+        refreshModelsButton?.frame = NSRect(x: 28, y: buttonsY, width: 130, height: 32)
+        applyModelsButton?.frame = NSRect(x: 168, y: buttonsY, width: 120, height: 32)
+        saveApiButton?.frame = NSRect(x: 168, y: buttonsY, width: 120, height: 32)
+        settingsDoneButton?.frame = NSRect(x: 372, y: buttonsY, width: 80, height: 32)
         if !useApi {
             setApiConnectedTag(visible: false)
         }
