@@ -1901,17 +1901,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         saveApiButton?.isHidden = !useApi
         aiApiKeyField?.isEnabled = useApi
         aiBaseUrlField?.isEnabled = useApi
-        // When Hardware is hidden (API mode), pull Features / Chrome / buttons up
-        // so there isn’t an empty gap under the API key card.
+        // When Hardware is hidden (API mode), pull Features / Chrome up so there
+        // isn’t an empty gap — keep action buttons pinned to the bottom.
         let featuresY: CGFloat = useApi ? 292 : 216
         let chromeY: CGFloat = useApi ? 216 : 140
-        let buttonsY: CGFloat = useApi ? 96 : 20
         settingsFeaturesCard?.frame = NSRect(x: 28, y: featuresY, width: 424, height: 64)
         settingsChromeCard?.frame = NSRect(x: 28, y: chromeY, width: 424, height: 64)
-        refreshModelsButton?.frame = NSRect(x: 28, y: buttonsY, width: 130, height: 32)
-        applyModelsButton?.frame = NSRect(x: 168, y: buttonsY, width: 120, height: 32)
-        saveApiButton?.frame = NSRect(x: 168, y: buttonsY, width: 120, height: 32)
-        settingsDoneButton?.frame = NSRect(x: 372, y: buttonsY, width: 80, height: 32)
+        refreshModelsButton?.frame = NSRect(x: 28, y: 20, width: 130, height: 32)
+        applyModelsButton?.frame = NSRect(x: 168, y: 20, width: 120, height: 32)
+        // API: Save sits where Refresh was (left); Done stays bottom-right.
+        saveApiButton?.frame = NSRect(x: 28, y: 20, width: 120, height: 32)
+        settingsDoneButton?.frame = NSRect(x: 372, y: 20, width: 80, height: 32)
         if !useApi {
             setApiConnectedTag(visible: false)
         }
