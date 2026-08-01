@@ -38,6 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var featureRewriteSwitch: NSSwitch!
     private var featureGenerateSwitch: NSSwitch!
     private var featuresHelpLabel: NSTextField!
+    private var featuresSummaryLabel: NSTextField!
+    private var settingsRootView: NSView!
+    private var settingsFeaturesView: NSView!
     private var menuBarBanner: NSView!
     private var menuBarConnectButton: NSButton!
     private var chromeConnectButton: NSButton!
@@ -522,28 +525,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupSettingsWindow() {
-        let rect = NSRect(x: 0, y: 0, width: 480, height: 760)
+        let rect = NSRect(x: 0, y: 0, width: 480, height: 700)
         let style: NSWindow.StyleMask = [.titled, .closable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
         win.title = "Humanizer Settings"
         win.backgroundColor = bg
         win.isReleasedWhenClosed = false
         win.center()
+        win.delegate = self
 
         guard let content = win.contentView else { return }
+
+        let root = NSView(frame: content.bounds)
+        root.autoresizingMask = [.width, .height]
+        content.addSubview(root)
+        settingsRootView = root
 
         let heading = NSTextField(labelWithString: "Settings")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 702, width: 300, height: 32)
-        content.addSubview(heading)
+        heading.frame = NSRect(x: 28, y: 642, width: 300, height: 32)
+        root.addSubview(heading)
 
         // Local LLM section card
-        let card = NSView(frame: NSRect(x: 28, y: 488, width: 424, height: 200))
+        let card = NSView(frame: NSRect(x: 28, y: 428, width: 424, height: 200))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
-        content.addSubview(card)
+        root.addSubview(card)
 
         let section = NSTextField(labelWithString: "Local LLM")
         section.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -588,51 +597,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         card.addSubview(help)
         modelsHelpLabel = help
 
-        // Features section card
-        let featuresCard = NSView(frame: NSRect(x: 28, y: 356, width: 424, height: 116))
+        // Features nav row → opens Features page
+        let featuresCard = NSView(frame: NSRect(x: 28, y: 328, width: 424, height: 84))
         featuresCard.wantsLayer = true
         featuresCard.layer?.backgroundColor = surface.cgColor
         featuresCard.layer?.cornerRadius = 14
-        content.addSubview(featuresCard)
+        root.addSubview(featuresCard)
 
         let featuresSection = NSTextField(labelWithString: "Features")
         featuresSection.font = .systemFont(ofSize: 15, weight: .semibold)
         featuresSection.textColor = textColor
-        featuresSection.frame = NSRect(x: 20, y: 82, width: 200, height: 22)
+        featuresSection.frame = NSRect(x: 20, y: 46, width: 280, height: 22)
         featuresCard.addSubview(featuresSection)
 
-        func addFeatureRow(title: String, y: CGFloat, action: Selector) -> NSSwitch {
-            let label = NSTextField(labelWithString: title)
-            label.font = .systemFont(ofSize: 13)
-            label.textColor = textColor
-            label.frame = NSRect(x: 20, y: y + 4, width: 200, height: 18)
-            featuresCard.addSubview(label)
-            let toggle = NSSwitch(frame: NSRect(x: 350, y: y, width: 51, height: 28))
-            toggle.state = .on
-            toggle.target = self
-            toggle.action = action
-            featuresCard.addSubview(toggle)
-            return toggle
-        }
+        let featuresSummary = NSTextField(labelWithString: "Grammar, Rewrite, Generate")
+        featuresSummary.font = .systemFont(ofSize: 12)
+        featuresSummary.textColor = muted
+        featuresSummary.frame = NSRect(x: 20, y: 18, width: 320, height: 20)
+        featuresCard.addSubview(featuresSummary)
+        featuresSummaryLabel = featuresSummary
 
-        featureGrammarSwitch = addFeatureRow(title: "Grammar", y: 54, action: #selector(featureToggled(_:)))
-        featureRewriteSwitch = addFeatureRow(title: "Rewrite", y: 28, action: #selector(featureToggled(_:)))
-        featureGenerateSwitch = addFeatureRow(title: "Generate", y: 2, action: #selector(featureToggled(_:)))
+        let featuresChevron = NSTextField(labelWithString: "›")
+        featuresChevron.font = .systemFont(ofSize: 22, weight: .regular)
+        featuresChevron.textColor = muted
+        featuresChevron.alignment = .right
+        featuresChevron.frame = NSRect(x: 370, y: 26, width: 30, height: 28)
+        featuresCard.addSubview(featuresChevron)
 
-        let featuresHelp = NSTextField(labelWithString: "")
-        featuresHelp.font = .systemFont(ofSize: 11)
-        featuresHelp.textColor = muted
-        featuresHelp.frame = NSRect(x: 20, y: -100, width: 1, height: 1)
-        featuresHelp.isHidden = true
-        featuresCard.addSubview(featuresHelp)
-        featuresHelpLabel = featuresHelp
+        let featuresOpen = NSButton(frame: featuresCard.bounds)
+        featuresOpen.title = ""
+        featuresOpen.bezelStyle = .inline
+        featuresOpen.isBordered = false
+        featuresOpen.setButtonType(.momentaryChange)
+        featuresOpen.target = self
+        featuresOpen.action = #selector(showFeaturesPage)
+        featuresOpen.toolTip = "Open feature settings"
+        featuresOpen.setAccessibilityLabel("Features")
+        featuresCard.addSubview(featuresOpen)
 
         // API key section card
-        let aiCard = NSView(frame: NSRect(x: 28, y: 176, width: 424, height: 164))
+        let aiCard = NSView(frame: NSRect(x: 28, y: 148, width: 424, height: 164))
         aiCard.wantsLayer = true
         aiCard.layer?.backgroundColor = surface.cgColor
         aiCard.layer?.cornerRadius = 14
-        content.addSubview(aiCard)
+        root.addSubview(aiCard)
 
         let aiSection = NSTextField(labelWithString: "API key")
         aiSection.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -674,11 +682,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         aiHelpLabel = aiHelp
 
         // Chrome extension section
-        let chromeCard = NSView(frame: NSRect(x: 28, y: 76, width: 424, height: 84))
+        let chromeCard = NSView(frame: NSRect(x: 28, y: 48, width: 424, height: 84))
         chromeCard.wantsLayer = true
         chromeCard.layer?.backgroundColor = surface.cgColor
         chromeCard.layer?.cornerRadius = 14
-        content.addSubview(chromeCard)
+        root.addSubview(chromeCard)
 
         let chromeSection = NSTextField(labelWithString: "Chrome extension")
         chromeSection.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -701,25 +709,125 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let refresh = NSButton(title: "Refresh models", target: self, action: #selector(refreshModels))
         refresh.bezelStyle = .rounded
-        refresh.frame = NSRect(x: 28, y: 28, width: 120, height: 32)
-        content.addSubview(refresh)
+        refresh.frame = NSRect(x: 28, y: 8, width: 120, height: 28)
+        root.addSubview(refresh)
 
         let apply = NSButton(title: "Apply models", target: self, action: #selector(applyModelSettings))
         apply.bezelStyle = .rounded
-        apply.frame = NSRect(x: 156, y: 28, width: 110, height: 32)
-        content.addSubview(apply)
+        apply.frame = NSRect(x: 156, y: 8, width: 110, height: 28)
+        root.addSubview(apply)
 
         let saveAi = NSButton(title: "Save API key", target: self, action: #selector(saveAiSettings))
         saveAi.bezelStyle = .rounded
-        saveAi.frame = NSRect(x: 274, y: 28, width: 110, height: 32)
-        content.addSubview(saveAi)
+        saveAi.frame = NSRect(x: 274, y: 8, width: 110, height: 28)
+        root.addSubview(saveAi)
 
         let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
         done.bezelStyle = .rounded
-        done.frame = NSRect(x: 392, y: 28, width: 60, height: 32)
-        content.addSubview(done)
+        done.frame = NSRect(x: 392, y: 8, width: 60, height: 28)
+        root.addSubview(done)
 
+        setupFeaturesPage(in: content)
         settingsWindow = win
+        showSettingsRoot()
+    }
+
+    private func setupFeaturesPage(in content: NSView) {
+        let page = NSView(frame: content.bounds)
+        page.autoresizingMask = [.width, .height]
+        page.isHidden = true
+        content.addSubview(page)
+        settingsFeaturesView = page
+
+        let back = NSButton(title: "‹ Settings", target: self, action: #selector(showSettingsRoot))
+        back.bezelStyle = .inline
+        back.isBordered = false
+        back.font = .systemFont(ofSize: 14, weight: .medium)
+        back.contentTintColor = muted
+        back.frame = NSRect(x: 20, y: 642, width: 100, height: 28)
+        back.setAccessibilityLabel("Back to Settings")
+        page.addSubview(back)
+
+        let heading = NSTextField(labelWithString: "Features")
+        heading.font = .systemFont(ofSize: 24, weight: .bold)
+        heading.textColor = textColor
+        heading.frame = NSRect(x: 28, y: 600, width: 300, height: 32)
+        page.addSubview(heading)
+
+        let blurb = NSTextField(wrappingLabelWithString: "Turn features on or off for the Chrome extension and local server.")
+        blurb.font = .systemFont(ofSize: 13)
+        blurb.textColor = muted
+        blurb.frame = NSRect(x: 28, y: 560, width: 424, height: 36)
+        page.addSubview(blurb)
+
+        let card = NSView(frame: NSRect(x: 28, y: 380, width: 424, height: 164))
+        card.wantsLayer = true
+        card.layer?.backgroundColor = surface.cgColor
+        card.layer?.cornerRadius = 14
+        page.addSubview(card)
+
+        func addFeatureRow(title: String, detail: String, y: CGFloat) -> NSSwitch {
+            let label = NSTextField(labelWithString: title)
+            label.font = .systemFont(ofSize: 15, weight: .medium)
+            label.textColor = textColor
+            label.frame = NSRect(x: 20, y: y + 18, width: 280, height: 20)
+            card.addSubview(label)
+
+            let detailLabel = NSTextField(labelWithString: detail)
+            detailLabel.font = .systemFont(ofSize: 11)
+            detailLabel.textColor = muted
+            detailLabel.frame = NSRect(x: 20, y: y, width: 300, height: 16)
+            card.addSubview(detailLabel)
+
+            let toggle = NSSwitch(frame: NSRect(x: 350, y: y + 10, width: 51, height: 28))
+            toggle.state = .on
+            toggle.target = self
+            toggle.action = #selector(featureToggled(_:))
+            card.addSubview(toggle)
+            return toggle
+        }
+
+        featureGrammarSwitch = addFeatureRow(
+            title: "Grammar",
+            detail: "Inline spelling and grammar underlines",
+            y: 112
+        )
+        featureRewriteSwitch = addFeatureRow(
+            title: "Rewrite",
+            detail: "Rewrite selected text from the floating menu",
+            y: 58
+        )
+        featureGenerateSwitch = addFeatureRow(
+            title: "Generate",
+            detail: "Generate email or essay drafts from a selection",
+            y: 4
+        )
+
+        let featuresHelp = NSTextField(labelWithString: "Changes apply immediately")
+        featuresHelp.font = .systemFont(ofSize: 11)
+        featuresHelp.textColor = muted
+        featuresHelp.frame = NSRect(x: 28, y: 340, width: 424, height: 18)
+        page.addSubview(featuresHelp)
+        featuresHelpLabel = featuresHelp
+
+        let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
+        done.bezelStyle = .rounded
+        done.frame = NSRect(x: 372, y: 28, width: 80, height: 32)
+        page.addSubview(done)
+    }
+
+    @objc private func showSettingsRoot() {
+        settingsRootView?.isHidden = false
+        settingsFeaturesView?.isHidden = true
+        settingsWindow?.title = "Humanizer Settings"
+        updateFeaturesSummaryLabel()
+    }
+
+    @objc private func showFeaturesPage() {
+        loadFeatureSettings()
+        settingsRootView?.isHidden = true
+        settingsFeaturesView?.isHidden = false
+        settingsWindow?.title = "Features"
     }
 
     @objc private func showWindow() {
@@ -728,6 +836,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @objc private func showSettings() {
+        showSettingsRoot()
         refreshModels()
         loadAiSettings()
         loadFeatureSettings()
@@ -736,6 +845,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @objc private func closeSettings() {
+        showSettingsRoot()
         settingsWindow.orderOut(nil)
     }
 
@@ -1230,6 +1340,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         featureGrammarSwitch?.state = grammar ? .on : .off
         featureRewriteSwitch?.state = rewrite ? .on : .off
         featureGenerateSwitch?.state = generate ? .on : .off
+        updateFeaturesSummaryLabel(grammar: grammar, rewrite: rewrite, generate: generate)
+    }
+
+    private func updateFeaturesSummaryLabel(
+        grammar: Bool? = nil,
+        rewrite: Bool? = nil,
+        generate: Bool? = nil
+    ) {
+        let g = grammar ?? (featureGrammarSwitch?.state == .on)
+        let r = rewrite ?? (featureRewriteSwitch?.state == .on)
+        let gen = generate ?? (featureGenerateSwitch?.state == .on)
+        var parts: [String] = []
+        if g { parts.append("Grammar") }
+        if r { parts.append("Rewrite") }
+        if gen { parts.append("Generate") }
+        featuresSummaryLabel?.stringValue = parts.isEmpty ? "All features off" : parts.joined(separator: ", ")
     }
 
     private func loadFeatureSettings() {
@@ -1247,14 +1373,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             "rewrite": (featureRewriteSwitch?.state == .on),
             "generate": (featureGenerateSwitch?.state == .on),
         ]
+        updateFeaturesSummaryLabel()
+        featuresHelpLabel?.stringValue = "Saving…"
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: data, encoding: .utf8) else {
             return
         }
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            _ = self?.runService(["set-features", json])
-            // Refresh extension connect payload so Chrome picks up toggles on next poll.
+            let result = self?.runService(["set-features", json]) ?? [:]
             _ = self?.runService(["status"])
+            DispatchQueue.main.async {
+                let ok = (result["ok"] as? Bool) ?? false
+                self?.featuresHelpLabel?.stringValue = ok
+                    ? "Changes apply immediately"
+                    : ((result["detail"] as? String) ?? "Could not save")
+                self?.updateFeaturesSummaryLabel()
+            }
         }
     }
 
