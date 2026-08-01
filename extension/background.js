@@ -146,11 +146,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         });
         const data = await response.json().catch(() => ({}));
         if (response.ok && data?.ok) {
-          // Wait for the old process to drop, then for the new one to answer.
+          // Detached restart sleeps ~0.6s before kill — wait past that, then
+          // require a real outage before treating /health as the new process.
+          await new Promise((r) => setTimeout(r, 900));
           let sawDown = false;
           let online = false;
-          for (let i = 0; i < 40; i += 1) {
-            await new Promise((r) => setTimeout(r, 350));
+          const deadline = Date.now() + 45000;
+          while (Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, 400));
             try {
               const health = await fetch(`${API_BASE}/health`, {
                 method: "GET",
@@ -161,7 +164,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                   online = true;
                   break;
                 }
-                // Still the old server — keep waiting for the drop.
               } else {
                 sawDown = true;
               }
@@ -169,8 +171,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               sawDown = true;
             }
           }
-          if (!online) {
-            // Restart may have been so fast we never saw downtime.
+          if (!online && sawDown) {
             try {
               const health = await fetch(`${API_BASE}/health`, {
                 method: "GET",
@@ -181,9 +182,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               online = false;
             }
           }
-          await autoConnectToApp();
+          if (online) {
+            await autoConnectToApp();
+          }
           sendResponse({
             ok: online,
+            accepted: true,
             detail: online ? "Server online" : "Restart started, still booting",
             via: "http",
           });

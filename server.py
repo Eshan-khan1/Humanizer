@@ -1666,46 +1666,54 @@ def connect_ping() -> dict[str, Any]:
 
 @app.post("/connect/restart")
 def connect_restart() -> dict[str, Any]:
-    """Restart the local server (localhost only). Used by the Chrome extension."""
+    """Restart the local server (localhost only). Used by the Chrome extension.
+
+    Must detach *immediately* — a delayed in-process thread is killed when the
+    server stops itself, which left the extension stuck on "offline".
+    """
     import subprocess
     import sys
-    import threading
-
-    def _run_restart() -> None:
-        time.sleep(0.35)
-        try:
-            from macos.menubar import manager
-
-            root = manager.resolve_project_root()
-            # Prefer the Application Support venv python when available.
-            python = sys.executable
-            home = manager.support_dir() / "Home"
-            venv_py = home / ".venv" / "bin" / "python"
-            if venv_py.is_file():
-                python = str(venv_py)
-            env = os.environ.copy()
-            env["PYTHONPATH"] = str(root) + (
-                (os.pathsep + env["PYTHONPATH"]) if env.get("PYTHONPATH") else ""
-            )
-            subprocess.Popen(
-                [python, "-m", "macos.menubar.service", "restart"],
-                cwd=str(root),
-                env=env,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-        except Exception:  # noqa: BLE001
-            pass
 
     try:
-        from macos.menubar import extension_bridge
+        from macos.menubar import extension_bridge, manager
 
         extension_bridge.record_extension_ping({"via": "http", "type": "restart"})
-    except Exception:  # noqa: BLE001
-        pass
 
-    threading.Thread(target=_run_restart, name="humanizer-restart", daemon=True).start()
+        home = manager.support_dir() / "Home"
+        # Prefer the app-managed Home payload so restart matches Humanizer.app.
+        root = home if (home / "server.py").is_file() else manager.resolve_project_root()
+        python = sys.executable
+        venv_py = home / ".venv" / "bin" / "python"
+        if venv_py.is_file():
+            python = str(venv_py)
+        log_path = manager.logs_dir() / "restart.log"
+        env = os.environ.copy()
+        env["HUMANIZER_ROOT"] = str(root)
+        env["PYTHONPATH"] = str(root) + (
+            (os.pathsep + env["PYTHONPATH"]) if env.get("PYTHONPATH") else ""
+        )
+        # Sleep in the child so this request can finish, then restart out-of-process.
+        script = (
+            f'sleep 0.6\n'
+            f'cd "{root}" || exit 1\n'
+            f'export HUMANIZER_ROOT="{root}"\n'
+            f'export PYTHONPATH="{root}${{PYTHONPATH:+:$PYTHONPATH}}"\n'
+            f'echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) restart begin" >> "{log_path}"\n'
+            f'"{python}" -m macos.menubar.service restart >> "{log_path}" 2>&1\n'
+            f'echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) restart end exit=$?" >> "{log_path}"\n'
+        )
+        subprocess.Popen(
+            ["/bin/bash", "-c", script],
+            cwd=str(root),
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "detail": str(exc), "action": "restart"}
+
     return {"ok": True, "detail": "Restarting", "action": "restart"}
 
 

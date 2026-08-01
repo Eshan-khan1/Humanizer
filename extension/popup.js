@@ -990,19 +990,69 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus("Restarting…", "checking", "Stopping old server…");
 
         const progressTimer = window.setInterval(() => {
+          if (!statusCardEl) return;
           const current = Number.parseFloat(
             getComputedStyle(statusCardEl).getPropertyValue("--restart-progress")
           );
-          const next = Number.isFinite(current) ? Math.min(90, current + 8) : 35;
+          const next = Number.isFinite(current) ? Math.min(92, current + 6) : 35;
           setRestartProgress(next);
-        }, 350);
+        }, 400);
+
+        const waitUntilOnline = async (ms = 45000) => {
+          const deadline = Date.now() + ms;
+          let sawDown = false;
+          while (Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, 400));
+            try {
+              const stored = await chrome.storage.local.get({
+                humanizerApiBase: "http://127.0.0.1:8000",
+              });
+              const base = String(stored.humanizerApiBase || "http://127.0.0.1:8000").replace(
+                /\/$/,
+                ""
+              );
+              const response = await fetch(`${base}/health`, {
+                method: "GET",
+                cache: "no-store",
+              });
+              if (response.ok) {
+                if (sawDown) return true;
+              } else {
+                sawDown = true;
+              }
+            } catch {
+              sawDown = true;
+            }
+          }
+          try {
+            const stored = await chrome.storage.local.get({
+              humanizerApiBase: "http://127.0.0.1:8000",
+            });
+            const base = String(stored.humanizerApiBase || "http://127.0.0.1:8000").replace(
+              /\/$/,
+              ""
+            );
+            const response = await fetch(`${base}/health`, {
+              method: "GET",
+              cache: "no-store",
+            });
+            return response.ok;
+          } catch {
+            return false;
+          }
+        };
 
         try {
-          setRestartProgress(35);
+          setRestartProgress(30);
           setStatus("Restarting…", "checking", "Starting server…");
           const result = await chrome.runtime.sendMessage({ type: "restartServer" });
+          let online = Boolean(result?.ok);
+          if (!online && result?.accepted) {
+            setStatus("Restarting…", "checking", "Waiting for server…");
+            online = await waitUntilOnline(30000);
+          }
           window.clearInterval(progressTimer);
-          if (result?.ok) {
+          if (online) {
             setRestartProgress(100);
             setStatus("Restarting…", "checking", "Server is back online");
             await new Promise((r) => setTimeout(r, 280));
@@ -1011,7 +1061,7 @@ document.addEventListener("DOMContentLoaded", () => {
             setStatus(
               "Restart failed",
               "offline",
-              result?.error || "Could not restart server"
+              result?.error || result?.detail || "Could not restart server"
             );
           }
         } catch (error) {

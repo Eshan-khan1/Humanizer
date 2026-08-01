@@ -37,6 +37,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var chromeConnectPathLabel: NSTextField!
     private var bgStatusLabel: NSTextField!
     private var busy = false
+    /// Prevents programmatic power-switch updates from firing stop/start.
+    private var syncingPowerSwitch = false
     private var online = false
     private var availableModels: [String] = []
     private var modelLabels: [String: String] = [:]
@@ -1169,7 +1171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @objc private func powerToggled(_ sender: NSSwitch) {
-        if busy { return }
+        if busy || syncingPowerSwitch { return }
         busy = true
         let wantOn = sender.state == .on
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -1329,7 +1331,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusDetail.stringValue = detail
         statusDot.layer?.backgroundColor = NSColor.white.cgColor
         applyStatusCardStyle(online: ok)
+        syncingPowerSwitch = true
         powerSwitch.state = ok ? .on : .off
+        syncingPowerSwitch = false
         configureStatusButton(statusItem.button, online: ok)
         if let menuItem = statusItem.menu?.item(withTag: 100) {
             menuItem.title = "Status: \(detail)"

@@ -437,6 +437,15 @@ def ensure_home_payload(resources: Path) -> Path:
     if not src.is_dir():
         return resolve_project_root()
 
+    def _src_newer(s: Path, d: Path) -> bool:
+        """Avoid downgrading Application Support with an older app bundle."""
+        if not d.exists():
+            return True
+        try:
+            return s.stat().st_mtime > d.stat().st_mtime + 1.0
+        except OSError:
+            return True
+
     if not marker.is_file() or not (dest / "server.py").is_file():
         if dest.exists():
             shutil.rmtree(dest, ignore_errors=True)
@@ -476,6 +485,27 @@ def ensure_home_payload(resources: Path) -> Path:
             if not s.exists():
                 continue
             if s.is_dir():
+                # Replace only when the bundle copy is newer than Home.
+                stamp = d / ".bundle_stamp"
+                try:
+                    src_mtime = max(p.stat().st_mtime for p in s.rglob("*") if p.is_file())
+                except ValueError:
+                    src_mtime = s.stat().st_mtime
+                dest_mtime = 0.0
+                if stamp.is_file():
+                    try:
+                        dest_mtime = float(stamp.read_text().strip() or "0")
+                    except ValueError:
+                        dest_mtime = 0.0
+                elif d.exists():
+                    try:
+                        dest_mtime = max(
+                            p.stat().st_mtime for p in d.rglob("*") if p.is_file()
+                        )
+                    except ValueError:
+                        dest_mtime = 0.0
+                if src_mtime <= dest_mtime + 1.0:
+                    continue
                 if d.exists():
                     shutil.rmtree(d, ignore_errors=True)
                 shutil.copytree(
@@ -483,7 +513,11 @@ def ensure_home_payload(resources: Path) -> Path:
                     d,
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
                 )
+                stamp = d / ".bundle_stamp"
+                stamp.write_text(f"{src_mtime}\n", encoding="utf-8")
             else:
+                if not _src_newer(s, d):
+                    continue
                 d.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(s, d)
 
