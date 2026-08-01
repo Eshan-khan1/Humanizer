@@ -34,6 +34,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var aiApiKeyField: NSSecureTextField!
     private var aiBaseUrlField: NSTextField!
     private var aiHelpLabel: NSTextField!
+    private var aiConnectedTag: NSView!
+    private var aiConnectedTagLabel: NSTextField!
     private var settingsLocalCard: NSView!
     private var settingsApiCard: NSView!
     private var refreshModelsButton: NSButton!
@@ -631,8 +633,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let aiSection = NSTextField(labelWithString: "API key")
         aiSection.font = .systemFont(ofSize: 15, weight: .semibold)
         aiSection.textColor = textColor
-        aiSection.frame = NSRect(x: 20, y: 158, width: 280, height: 22)
+        aiSection.frame = NSRect(x: 20, y: 158, width: 90, height: 22)
         aiCard.addSubview(aiSection)
+
+        let connectedTag = NSView(frame: NSRect(x: 112, y: 158, width: 84, height: 22))
+        connectedTag.wantsLayer = true
+        connectedTag.layer?.cornerRadius = 11
+        connectedTag.layer?.backgroundColor = okColor.withAlphaComponent(0.22).cgColor
+        connectedTag.isHidden = true
+        aiCard.addSubview(connectedTag)
+        aiConnectedTag = connectedTag
+
+        let connectedLabel = NSTextField(labelWithString: "Connected")
+        connectedLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        connectedLabel.textColor = okColor
+        connectedLabel.alignment = .center
+        connectedLabel.frame = NSRect(x: 0, y: 2, width: 84, height: 16)
+        connectedTag.addSubview(connectedLabel)
+        aiConnectedTagLabel = connectedLabel
 
         let aiBlurb = NSTextField(wrappingLabelWithString: "Use your own OpenAI, Groq, or compatible key for rewrite / generate.")
         aiBlurb.font = .systemFont(ofSize: 12)
@@ -1451,11 +1469,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         updateSettingsModeUI()
         if useApi {
             let configured = (result["ai_configured"] as? Bool) ?? false
+            setApiConnectedTag(visible: configured)
             aiHelpLabel?.stringValue = configured
                 ? "Cloud API key saved — used for rewrite / generate"
                 : "Paste your key, then Save API key"
         } else {
+            setApiConnectedTag(visible: false)
             aiHelpLabel?.stringValue = "Using local models"
+        }
+    }
+
+    private func setApiConnectedTag(visible: Bool) {
+        aiConnectedTag?.isHidden = !visible
+        if visible {
+            aiConnectedTag?.layer?.backgroundColor = okColor.withAlphaComponent(0.22).cgColor
+            aiConnectedTagLabel?.textColor = okColor
+            aiConnectedTagLabel?.stringValue = "Connected"
         }
     }
 
@@ -1477,16 +1506,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         saveApiButton?.isHidden = !useApi
         aiApiKeyField?.isEnabled = useApi
         aiBaseUrlField?.isEnabled = useApi
+        if !useApi {
+            setApiConnectedTag(visible: false)
+        }
     }
 
     @objc private func aiProviderChanged(_ sender: NSSegmentedControl) {
         updateSettingsModeUI()
         if sender.selectedSegment == 1 {
+            setApiConnectedTag(visible: false)
             aiHelpLabel?.stringValue = "Paste your OpenAI / Groq / compatible key, then Save"
             DispatchQueue.main.async { [weak self] in
                 self?.aiApiKeyField?.window?.makeFirstResponder(self?.aiApiKeyField)
             }
+            // Re-check saved connection state for this mode.
+            loadAiSettings()
         } else {
+            setApiConnectedTag(visible: false)
             // Switching back to Local also clears the cloud provider preference.
             persistLocalProvider()
         }
@@ -1515,8 +1551,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let baseUrl = aiBaseUrlField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if useApi && apiKey.isEmpty {
             aiHelpLabel?.stringValue = "Add an API key first"
+            setApiConnectedTag(visible: false)
             return
         }
+        setApiConnectedTag(visible: false)
         aiHelpLabel?.stringValue = useApi ? "Saving and testing key…" : "Switching to local models…"
         busy = true
         let payload: [String: Any] = [
@@ -1538,10 +1576,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 let ok = (result["ok"] as? Bool) ?? false
                 let detail = (result["detail"] as? String) ?? ""
                 if ok {
+                    self?.setApiConnectedTag(visible: useApi)
                     self?.aiHelpLabel?.stringValue = useApi
                         ? (detail.isEmpty ? "API key saved and verified" : detail)
                         : "Using local models"
                 } else {
+                    self?.setApiConnectedTag(visible: false)
                     self?.aiHelpLabel?.stringValue = detail.isEmpty ? "Could not verify API key" : detail
                 }
             }
