@@ -883,8 +883,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   (async () => {
     const reconnectBtn = document.getElementById("reconnect-app");
+    const restartBtn = document.getElementById("restart-server");
     const statusCardEl = document.getElementById("status-card");
     const statusDetailEl = document.getElementById("status-detail");
+    let restartBusy = false;
+
     const setStatus = (text, state, detail) => {
       statusEl.textContent = text;
       if (statusDetailEl) {
@@ -900,12 +903,19 @@ document.addEventListener("DOMContentLoaded", () => {
         statusCardEl.title = detail || text;
       }
       if (reconnectBtn) {
-        reconnectBtn.hidden = state === "online";
+        reconnectBtn.hidden = state === "online" || restartBusy;
+      }
+      if (restartBtn) {
+        restartBtn.hidden = false;
+        restartBtn.disabled = restartBusy;
+        restartBtn.classList.toggle("is-spinning", restartBusy);
       }
     };
 
     const refreshConnection = async () => {
-      setStatus("Connecting…", "checking", "Linking to Humanizer.app");
+      if (!restartBusy) {
+        setStatus("Connecting…", "checking", "Linking to Humanizer.app");
+      }
       try {
         await chrome.runtime.sendMessage({ type: "autoConnect" });
       } catch {
@@ -948,6 +958,35 @@ document.addEventListener("DOMContentLoaded", () => {
     if (reconnectBtn) {
       reconnectBtn.addEventListener("click", () => {
         refreshConnection();
+      });
+    }
+
+    if (restartBtn) {
+      restartBtn.addEventListener("click", async () => {
+        if (restartBusy) return;
+        restartBusy = true;
+        setStatus("Restarting…", "checking", "Stopping old server…");
+        try {
+          const result = await chrome.runtime.sendMessage({ type: "restartServer" });
+          if (result?.ok) {
+            setStatus("Restarting…", "checking", "Server is back online");
+          } else {
+            setStatus(
+              "Restart failed",
+              "offline",
+              result?.error || "Could not restart server"
+            );
+          }
+        } catch (error) {
+          setStatus(
+            "Restart failed",
+            "offline",
+            error?.message || "Could not reach Humanizer.app"
+          );
+        } finally {
+          restartBusy = false;
+          await refreshConnection();
+        }
       });
     }
 

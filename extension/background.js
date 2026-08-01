@@ -135,6 +135,28 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === "restartServer") {
+    (async () => {
+      const native = await sendNative({ type: "restart" });
+      if (native?.ok) {
+        await autoConnectToApp();
+        sendResponse({
+          ok: true,
+          detail: native.detail || "Server online",
+          via: "native",
+        });
+        return;
+      }
+      sendResponse({
+        ok: false,
+        error:
+          native?.detail ||
+          "Could not restart. Open Humanizer.app and try again.",
+      });
+    })();
+    return true;
+  }
+
   if (message?.type === "getConnectionStatus") {
     (async () => {
       await loadApiBase();

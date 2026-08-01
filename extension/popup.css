@@ -256,6 +256,52 @@ h1 {
   background: rgba(255, 255, 255, 0.24);
 }
 
+.status-restart {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.status-restart:hover {
+  background: rgba(255, 255, 255, 0.16);
+  opacity: 1;
+}
+
+.status-card--checking .status-restart {
+  color: var(--hz-text-muted);
+}
+
+.status-card--checking .status-restart:hover {
+  background: var(--hz-chip-active);
+  color: var(--hz-text);
+}
+
+.status-restart:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.status-restart.is-spinning svg {
+  animation: hz-spin 0.8s linear infinite;
+}
+
+@keyframes hz-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .hero {
   display: none;
 }

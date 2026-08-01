@@ -59,6 +59,24 @@ def main() -> int:
         )
         return 0
 
+    if msg_type == "restart":
+        try:
+            root = manager.resolve_project_root()
+            ok = manager.restart_server(root)
+            snap = manager.check_health()
+            extension_bridge.record_extension_ping({"via": "native", "type": "restart"})
+            _write_message(
+                {
+                    "ok": ok and snap.server_ok,
+                    "detail": "Server online" if (ok and snap.server_ok) else "Restart failed",
+                    "server_ok": snap.server_ok,
+                }
+            )
+            return 0 if (ok and snap.server_ok) else 1
+        except Exception as exc:  # noqa: BLE001
+            _write_message({"ok": False, "detail": str(exc), "server_ok": False})
+            return 1
+
     # Default: full connect bootstrap (+ optional token when auth is on).
     try:
         info = extension_bridge.connect_info(include_token=True)
