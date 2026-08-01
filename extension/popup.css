@@ -172,6 +172,7 @@ h1 {
 }
 
 .status-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -182,6 +183,34 @@ h1 {
   border-radius: 14px;
   background: var(--hz-surface);
   color: var(--hz-text);
+  overflow: hidden;
+}
+
+.status-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: var(--hz-success-strong);
+  pointer-events: none;
+  transition: width 0.35s ease;
+  z-index: 0;
+}
+
+.status-card.is-restarting {
+  background: var(--hz-surface);
+  color: var(--hz-text);
+}
+
+.status-card.is-restarting .status-fill {
+  width: var(--restart-progress, 35%);
+}
+
+.status-card.is-restarting .status-dot,
+.status-card.is-restarting .status-copy,
+.status-card.is-restarting .status-restart,
+.status-card.is-restarting .status-reconnect {
+  position: relative;
+  z-index: 1;
 }
 
 .status-card--online {
@@ -258,6 +287,7 @@ h1 {
 
 .status-restart {
   flex-shrink: 0;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -288,12 +318,26 @@ h1 {
 }
 
 .status-restart:disabled {
-  opacity: 0.45;
+  opacity: 0.7;
   cursor: default;
 }
 
-.status-restart.is-spinning svg {
-  animation: hz-spin 0.8s linear infinite;
+.status-restart-spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: hz-spin 0.7s linear infinite;
+}
+
+.status-restart.is-spinning .status-restart-icon {
+  display: none;
+}
+
+.status-restart.is-spinning .status-restart-spinner {
+  display: block;
 }
 
 @keyframes hz-spin {

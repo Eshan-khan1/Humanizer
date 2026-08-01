@@ -1664,6 +1664,51 @@ def connect_ping() -> dict[str, Any]:
         return {"ok": False, "error": str(exc)}
 
 
+@app.post("/connect/restart")
+def connect_restart() -> dict[str, Any]:
+    """Restart the local server (localhost only). Used by the Chrome extension."""
+    import subprocess
+    import sys
+    import threading
+
+    def _run_restart() -> None:
+        time.sleep(0.35)
+        try:
+            from macos.menubar import manager
+
+            root = manager.resolve_project_root()
+            # Prefer the Application Support venv python when available.
+            python = sys.executable
+            home = manager.support_dir() / "Home"
+            venv_py = home / ".venv" / "bin" / "python"
+            if venv_py.is_file():
+                python = str(venv_py)
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(root) + (
+                (os.pathsep + env["PYTHONPATH"]) if env.get("PYTHONPATH") else ""
+            )
+            subprocess.Popen(
+                [python, "-m", "macos.menubar.service", "restart"],
+                cwd=str(root),
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    try:
+        from macos.menubar import extension_bridge
+
+        extension_bridge.record_extension_ping({"via": "http", "type": "restart"})
+    except Exception:  # noqa: BLE001
+        pass
+
+    threading.Thread(target=_run_restart, name="humanizer-restart", daemon=True).start()
+    return {"ok": True, "detail": "Restarting", "action": "restart"}
+
+
 def _grammar_quick_response(text: str) -> GrammarResponse:
     """LanguageTool-only — used for fast inline underlines."""
     matches = _check_grammar_languagetool(text)

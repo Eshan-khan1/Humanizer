@@ -68,13 +68,16 @@ def main() -> int:
             _write_message(
                 {
                     "ok": ok and snap.server_ok,
+                    "action": "restart",
                     "detail": "Server online" if (ok and snap.server_ok) else "Restart failed",
                     "server_ok": snap.server_ok,
                 }
             )
             return 0 if (ok and snap.server_ok) else 1
         except Exception as exc:  # noqa: BLE001
-            _write_message({"ok": False, "detail": str(exc), "server_ok": False})
+            _write_message(
+                {"ok": False, "action": "restart", "detail": str(exc), "server_ok": False}
+            )
             return 1
 
     # Default: full connect bootstrap (+ optional token when auth is on).

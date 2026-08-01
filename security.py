@@ -324,7 +324,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method == "GET" and request.url.path in ("/health", "/connect"):
             return await call_next(request)
-        if request.method == "POST" and request.url.path == "/connect/ping":
+        if request.method == "POST" and request.url.path in (
+            "/connect/ping",
+            "/connect/restart",
+        ):
             return await call_next(request)
 
         now = time.monotonic()

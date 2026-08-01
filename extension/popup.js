@@ -886,7 +886,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const restartBtn = document.getElementById("restart-server");
     const statusCardEl = document.getElementById("status-card");
     const statusDetailEl = document.getElementById("status-detail");
+    const statusFillEl = document.getElementById("status-fill");
     let restartBusy = false;
+
+    const setRestartProgress = (pct) => {
+      if (!statusCardEl) return;
+      const value = Math.max(0, Math.min(100, pct));
+      statusCardEl.style.setProperty("--restart-progress", `${value}%`);
+      if (statusFillEl) {
+        statusFillEl.style.width = `${value}%`;
+      }
+    };
 
     const setStatus = (text, state, detail) => {
       statusEl.textContent = text;
@@ -899,6 +909,10 @@ document.addEventListener("DOMContentLoaded", () => {
           "status-card--offline",
           "status-card--online"
         );
+        if (!restartBusy) {
+          statusCardEl.classList.remove("is-restarting");
+          setRestartProgress(0);
+        }
         statusCardEl.classList.add(`status-card--${state}`);
         statusCardEl.title = detail || text;
       }
@@ -946,12 +960,14 @@ document.addEventListener("DOMContentLoaded", () => {
             ? "Chrome extension linked"
             : "Local Humanizer server is running"
         );
+        return true;
       } catch {
         setStatus(
           "Server offline",
           "offline",
           "Open Humanizer.app, then reconnect"
         );
+        return false;
       }
     };
 
@@ -965,12 +981,33 @@ document.addEventListener("DOMContentLoaded", () => {
       restartBtn.addEventListener("click", async () => {
         if (restartBusy) return;
         restartBusy = true;
+        if (statusCardEl) {
+          statusCardEl.classList.add("is-restarting");
+          statusCardEl.classList.remove("status-card--online", "status-card--offline");
+          statusCardEl.classList.add("status-card--checking");
+        }
+        setRestartProgress(12);
         setStatus("Restarting…", "checking", "Stopping old server…");
+
+        const progressTimer = window.setInterval(() => {
+          const current = Number.parseFloat(
+            getComputedStyle(statusCardEl).getPropertyValue("--restart-progress")
+          );
+          const next = Number.isFinite(current) ? Math.min(90, current + 8) : 35;
+          setRestartProgress(next);
+        }, 350);
+
         try {
+          setRestartProgress(35);
+          setStatus("Restarting…", "checking", "Starting server…");
           const result = await chrome.runtime.sendMessage({ type: "restartServer" });
+          window.clearInterval(progressTimer);
           if (result?.ok) {
+            setRestartProgress(100);
             setStatus("Restarting…", "checking", "Server is back online");
+            await new Promise((r) => setTimeout(r, 280));
           } else {
+            setRestartProgress(0);
             setStatus(
               "Restart failed",
               "offline",
@@ -978,13 +1015,20 @@ document.addEventListener("DOMContentLoaded", () => {
             );
           }
         } catch (error) {
+          window.clearInterval(progressTimer);
+          setRestartProgress(0);
           setStatus(
             "Restart failed",
             "offline",
             error?.message || "Could not reach Humanizer.app"
           );
         } finally {
+          window.clearInterval(progressTimer);
           restartBusy = false;
+          if (statusCardEl) {
+            statusCardEl.classList.remove("is-restarting");
+          }
+          setRestartProgress(0);
           await refreshConnection();
         }
       });

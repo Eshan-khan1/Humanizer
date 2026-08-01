@@ -137,8 +137,69 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message?.type === "restartServer") {
     (async () => {
+      await loadApiBase();
+
+      // Prefer HTTP restart — works even when native messaging is stale.
+      try {
+        const response = await fetch(`${API_BASE}/connect/restart`, {
+          method: "POST",
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.ok) {
+          // Wait for the old process to drop, then for the new one to answer.
+          let sawDown = false;
+          let online = false;
+          for (let i = 0; i < 40; i += 1) {
+            await new Promise((r) => setTimeout(r, 350));
+            try {
+              const health = await fetch(`${API_BASE}/health`, {
+                method: "GET",
+                cache: "no-store",
+              });
+              if (health.ok) {
+                if (sawDown) {
+                  online = true;
+                  break;
+                }
+                // Still the old server — keep waiting for the drop.
+              } else {
+                sawDown = true;
+              }
+            } catch {
+              sawDown = true;
+            }
+          }
+          if (!online) {
+            // Restart may have been so fast we never saw downtime.
+            try {
+              const health = await fetch(`${API_BASE}/health`, {
+                method: "GET",
+                cache: "no-store",
+              });
+              online = health.ok;
+            } catch {
+              online = false;
+            }
+          }
+          await autoConnectToApp();
+          sendResponse({
+            ok: online,
+            detail: online ? "Server online" : "Restart started, still booting",
+            via: "http",
+          });
+          return;
+        }
+      } catch {
+        // Fall through to native messaging.
+      }
+
       const native = await sendNative({ type: "restart" });
-      if (native?.ok) {
+      // Connect payloads also have ok:true — require action/server_ok.
+      const isRestart =
+        native &&
+        (native.action === "restart" || typeof native.server_ok === "boolean") &&
+        !native.base_url;
+      if (isRestart && native.ok) {
         await autoConnectToApp();
         sendResponse({
           ok: true,
@@ -150,6 +211,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({
         ok: false,
         error:
+          (isRestart && native?.detail) ||
           native?.detail ||
           "Could not restart. Open Humanizer.app and try again.",
       });

@@ -42,6 +42,7 @@
         role="status"
         aria-live="polite"
       >
+        <div id="status-fill" class="status-fill" aria-hidden="true"></div>
         <span class="status-dot" aria-hidden="true"></span>
         <div class="status-copy">
           <p id="status" class="status-title">Checking…</p>
@@ -57,12 +58,13 @@
           aria-label="Restart server"
           title="Restart server"
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <svg class="status-restart-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path
               fill="currentColor"
               d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"
             />
           </svg>
+          <span class="status-restart-spinner" aria-hidden="true"></span>
         </button>
       </div>
     </div>
