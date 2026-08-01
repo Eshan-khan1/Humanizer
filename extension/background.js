@@ -38,6 +38,12 @@ async function applyConnectInfo(info) {
   if (info.auth_required && info.token) {
     patch.humanizerApiToken = String(info.token);
   }
+  const features = info.features && typeof info.features === "object" ? info.features : null;
+  if (features) {
+    patch.featureGrammar = features.feature_grammar !== false;
+    patch.featureRewrite = features.feature_rewrite !== false;
+    patch.featureGenerate = features.feature_generate !== false;
+  }
   await chrome.storage.local.set(patch);
   return { ok: true, base: API_BASE };
 }

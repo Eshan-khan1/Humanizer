@@ -136,6 +136,22 @@ def resolve_request_ai_config(body_ai: AiConfig | None) -> dict[str, Any] | None
         return None
 
 
+def require_feature(name: str) -> None:
+    """Raise 403 when an app Settings feature toggle is off."""
+    try:
+        from macos.menubar import settings as app_settings
+
+        if not app_settings.feature_enabled(name):
+            raise HTTPException(
+                status_code=403,
+                detail=f"{name.capitalize()} is turned off in Humanizer Settings",
+            )
+    except HTTPException:
+        raise
+    except Exception:  # noqa: BLE001
+        return
+
+
 class TextRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_TEXT_CHARS)
     ai: Optional[AiConfig] = None
@@ -1747,6 +1763,7 @@ def reload_rules() -> dict[str, Any]:
 @app.post("/grammar/quick", response_model=GrammarResponse, dependencies=[Depends(_secure_endpoint)])
 def grammar_quick(body: TextRequest) -> GrammarResponse:
     """Fast LanguageTool-only check for snappy inline underlines."""
+    require_feature("grammar")
     text = assert_text_length(body.text, field="text")
     try:
         return _grammar_quick_response(text)
@@ -1759,6 +1776,7 @@ def grammar(
     body: TextRequest,
     quick: bool = Query(False, description="Fast LanguageTool-only check"),
 ) -> GrammarResponse:
+    require_feature("grammar")
     text = assert_text_length(body.text, field="text")
 
     if quick:
@@ -1789,6 +1807,7 @@ def grammar(
 
 @app.post("/humanize", response_model=HumanizeResponse, dependencies=[Depends(_secure_endpoint)])
 def humanize(body: TextRequest) -> HumanizeResponse:
+    require_feature("rewrite")
     text = assert_text_length(body.text, field="text")
 
     try:
@@ -1838,6 +1857,7 @@ def ai_test(body: AiTestRequest) -> AiTestResponse:
 
 @app.post("/rewrite", response_model=RewriteResponse, dependencies=[Depends(_secure_endpoint)])
 def rewrite(body: RewriteRequest) -> RewriteResponse:
+    require_feature("rewrite")
     text = assert_text_length(body.text, field="text")
 
     user_prompt = (body.prompt or body.tone or "").strip()
@@ -1866,6 +1886,7 @@ def rewrite(body: RewriteRequest) -> RewriteResponse:
 
 @app.post("/generate", response_model=GenerateResponse, dependencies=[Depends(_secure_endpoint)])
 def generate(body: GenerateRequest) -> GenerateResponse:
+    require_feature("generate")
     text = assert_text_length(body.text, field="text")
 
     format_type = (body.format or "essay").strip().lower()

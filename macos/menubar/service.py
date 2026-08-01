@@ -77,6 +77,7 @@ def main(argv: list[str] | None = None) -> int:
                     **settings.ai_status_summary(),
                     # Include key only for the local Mac app Settings UI.
                     "ai_api_key": cfg.get("ai_api_key") or "",
+                    **settings.features_summary(),
                 }
             )
         )
@@ -90,9 +91,44 @@ def main(argv: list[str] | None = None) -> int:
                     "ok": True,
                     **settings.ai_status_summary(),
                     "ai_api_key": cfg.get("ai_api_key") or "",
+                    **settings.features_summary(),
                 }
             )
         )
+        return 0
+
+    if cmd == "set-features":
+        if len(args) < 2:
+            print(
+                json.dumps(
+                    {
+                        "ok": False,
+                        "error": 'usage: set-features \'{"grammar":true,"rewrite":true,"generate":true}\'',
+                    }
+                )
+            )
+            return 2
+        try:
+            payload = json.loads(args[1])
+        except json.JSONDecodeError as exc:
+            print(json.dumps({"ok": False, "error": f"invalid JSON: {exc}"}))
+            return 2
+        if not isinstance(payload, dict):
+            print(json.dumps({"ok": False, "error": "set-features payload must be an object"}))
+            return 2
+
+        def _flag(key: str) -> bool | None:
+            for name in (key, f"feature_{key}"):
+                if name in payload:
+                    return bool(payload[name])
+            return None
+
+        settings.save_settings(
+            feature_grammar=_flag("grammar"),
+            feature_rewrite=_flag("rewrite"),
+            feature_generate=_flag("generate"),
+        )
+        print(json.dumps({"ok": True, "detail": "Features saved", **settings.features_summary()}))
         return 0
 
     if cmd == "set-ai":
@@ -227,6 +263,7 @@ def main(argv: list[str] | None = None) -> int:
                     "extension_linked": link.get("linked"),
                     "extension_path": str(extension_bridge.extension_install_dir()),
                     **settings.ai_status_summary(),
+                    **settings.features_summary(),
                 }
             )
         )

@@ -38,6 +38,9 @@
   let enabled = true;
   let autoFixAll = true;
   let rewriteInSearchBars = true;
+  let featureGrammar = true;
+  let featureRewrite = true;
+  let featureGenerate = true;
   let autoFixInProgress = false;
   let autoFixPass = 0;
   let lastAutoFixFingerprint = "";
@@ -233,6 +236,27 @@
       ) {
         hideRewriteUI();
         clearRewriteSelectionState();
+      }
+    }
+    if (
+      changes.featureGrammar ||
+      changes.featureRewrite ||
+      changes.featureGenerate
+    ) {
+      if (changes.featureGrammar) {
+        featureGrammar = changes.featureGrammar.newValue !== false;
+        if (!featureGrammar) {
+          syncGrammarDisplay(activeField, []);
+          updateBadge(0);
+        }
+      }
+      if (changes.featureRewrite) {
+        featureRewrite = changes.featureRewrite.newValue !== false;
+        if (!featureRewrite) hideRewriteUI();
+      }
+      if (changes.featureGenerate) {
+        featureGenerate = changes.featureGenerate.newValue !== false;
+        if (!featureGenerate) hideRewriteSubpanels();
       }
     }
     if (
@@ -513,6 +537,9 @@
       enabled = result.enabled !== false;
       autoFixAll = result.autoFixAll !== false;
       rewriteInSearchBars = result.rewriteInSearchBars !== false;
+      featureGrammar = result.featureGrammar !== false;
+      featureRewrite = result.featureRewrite !== false;
+      featureGenerate = result.featureGenerate !== false;
       applyGenerateSettingsFromStorage({
         generateTone: result.generateTone || defaults.generateTone,
         generateTonePreset: result.generateTonePreset || defaults.generateTonePreset,
@@ -536,12 +563,27 @@
       });
     };
 
+    const featureDefaults = {
+      featureGrammar: true,
+      featureRewrite: true,
+      featureGenerate: true,
+    };
+
     chrome.storage.sync.get(defaults, (syncResult) => {
+      const mergeAndApply = (base) => {
+        if (!chrome.storage?.local) {
+          applyLoadedSettings(base);
+          return;
+        }
+        chrome.storage.local.get(featureDefaults, (localResult) => {
+          applyLoadedSettings({ ...base, ...localResult });
+        });
+      };
       if (chrome.runtime.lastError && chrome.storage?.local) {
-        chrome.storage.local.get(defaults, applyLoadedSettings);
+        chrome.storage.local.get({ ...defaults, ...featureDefaults }, applyLoadedSettings);
         return;
       }
-      applyLoadedSettings(syncResult);
+      mergeAndApply(syncResult);
     });
   }
 
@@ -2442,6 +2484,13 @@
   }
 
   function checkGrammar(field, trimmed, trimStart, { quick = false } = {}) {
+    if (!featureGrammar) {
+      if (!quick) {
+        syncGrammarDisplay(field, []);
+        updateBadge(0);
+      }
+      return;
+    }
     const requestId = quick ? ++lastQuickRequestId : ++lastFullRequestId;
 
     chrome.runtime.sendMessage(
@@ -3905,6 +3954,12 @@
 
     menu.appendChild(rewriteBtn);
     menu.appendChild(generateBtn);
+    const syncFeatureButtons = () => {
+      rewriteBtn.hidden = !featureRewrite;
+      generateBtn.hidden = !featureGenerate;
+    };
+    syncFeatureButtons();
+    menu._syncFeatureButtons = syncFeatureButtons;
     menu.addEventListener("mousedown", (event) => {
       event.stopPropagation();
     });
@@ -3999,10 +4054,14 @@
 
   function openRewriteActionMenu() {
     if (!savedRewriteField && !savedRewriteRange) return;
+    if (!featureRewrite && !featureGenerate) return;
     hideRewriteSubpanels();
     rewriteMenuOpen = true;
     const circle = ensureRewriteCircle();
     const menu = ensureRewriteMenu();
+    if (typeof menu._syncFeatureButtons === "function") {
+      menu._syncFeatureButtons();
+    }
     circle.classList.add("humanizer-rewrite-btn--hidden");
     circle.classList.remove("humanizer-rewrite-btn--visible");
     menu.classList.remove("humanizer-rewrite-menu--hidden", "humanizer-rewrite-menu--hiding");
@@ -4015,6 +4074,7 @@
   }
 
   function openGenerateFormatStep() {
+    if (!featureGenerate) return;
     if (!savedRewriteField && !savedRewriteRange) return;
     rewriteMenuOpen = false;
     generateStep = "format";
@@ -4061,6 +4121,7 @@
   }
 
   function showRewriteCircle(range) {
+    if (!featureRewrite && !featureGenerate) return;
     hideRewriteSubpanels();
     const circle = ensureRewriteCircle();
     const box = ensureRewriteBox();
@@ -4088,6 +4149,7 @@
   }
 
   function openRewriteInput() {
+    if (!featureRewrite) return;
     if (!savedRewriteField && !savedRewriteRange) return;
     rewriteMenuOpen = false;
     generateStep = null;

@@ -61,6 +61,9 @@ def load_settings() -> dict[str, Any]:
         "ai_api_key": "",
         "ai_base_url": "",
         "ai_model": "",
+        "feature_grammar": True,
+        "feature_rewrite": True,
+        "feature_generate": True,
     }
     if not path.is_file():
         return data
@@ -78,6 +81,9 @@ def load_settings() -> dict[str, Any]:
                 data["ai_base_url"] = raw["ai_base_url"].strip()
             if isinstance(raw.get("ai_model"), str):
                 data["ai_model"] = raw["ai_model"].strip()
+            for key in ("feature_grammar", "feature_rewrite", "feature_generate"):
+                if key in raw:
+                    data[key] = bool(raw[key])
     except (OSError, json.JSONDecodeError, TypeError) as exc:
         logger.warning("Could not read settings: %s", exc)
     return data
@@ -91,6 +97,9 @@ def save_settings(
     ai_api_key: str | None = None,
     ai_base_url: str | None = None,
     ai_model: str | None = None,
+    feature_grammar: bool | None = None,
+    feature_rewrite: bool | None = None,
+    feature_generate: bool | None = None,
 ) -> dict[str, Any]:
     data = load_settings()
     if grammar_model is not None and grammar_model.strip():
@@ -105,10 +114,31 @@ def save_settings(
         data["ai_base_url"] = ai_base_url.strip()
     if ai_model is not None:
         data["ai_model"] = ai_model.strip()
+    if feature_grammar is not None:
+        data["feature_grammar"] = bool(feature_grammar)
+    if feature_rewrite is not None:
+        data["feature_rewrite"] = bool(feature_rewrite)
+    if feature_generate is not None:
+        data["feature_generate"] = bool(feature_generate)
     path = settings_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     return data
+
+
+def features_summary() -> dict[str, bool]:
+    data = load_settings()
+    return {
+        "feature_grammar": bool(data.get("feature_grammar", True)),
+        "feature_rewrite": bool(data.get("feature_rewrite", True)),
+        "feature_generate": bool(data.get("feature_generate", True)),
+    }
+
+
+def feature_enabled(name: str) -> bool:
+    """name: grammar | rewrite | generate"""
+    key = f"feature_{str(name or '').strip().lower()}"
+    return bool(features_summary().get(key, True))
 
 
 def cloud_ai_config() -> dict[str, Any] | None:

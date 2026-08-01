@@ -167,6 +167,16 @@ def connect_info(*, include_token: bool = True) -> dict:
         "extension_id": EXTENSION_ID,
         "extension_path": str(extension_install_dir()),
     }
+    try:
+        from macos.menubar import settings as app_settings
+
+        info["features"] = app_settings.features_summary()
+    except Exception:  # noqa: BLE001
+        info["features"] = {
+            "feature_grammar": True,
+            "feature_rewrite": True,
+            "feature_generate": True,
+        }
     if include_token and auth_required and API_TOKEN:
         info["token"] = API_TOKEN
     return info
