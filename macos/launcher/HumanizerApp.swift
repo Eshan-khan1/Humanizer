@@ -742,9 +742,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let back = NSButton(title: "‹ Settings", target: self, action: #selector(showSettingsRoot))
         back.bezelStyle = .inline
         back.isBordered = false
-        back.font = .systemFont(ofSize: 14, weight: .medium)
+        back.font = .systemFont(ofSize: 18, weight: .semibold)
         back.contentTintColor = muted
-        back.frame = NSRect(x: 20, y: 642, width: 100, height: 28)
+        back.frame = NSRect(x: 20, y: 638, width: 130, height: 34)
         back.setAccessibilityLabel("Back to Settings")
         page.addSubview(back)
 
