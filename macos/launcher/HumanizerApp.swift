@@ -58,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     /// Prevents programmatic power-switch updates from firing stop/start.
     private var syncingPowerSwitch = false
     private var online = false
+    private var aiConfiguredCached = false
     private var availableModels: [String] = []
     private var modelLabels: [String: String] = [:]
     private var selectedGrammar = "humanizer-grammar"
@@ -1463,12 +1464,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func applyAiFields(from result: [String: Any]) {
         let provider = (result["ai_provider"] as? String)?.lowercased() ?? "local"
         let useApi = provider != "local" && provider != "ollama"
+        let configured = (result["ai_configured"] as? Bool) ?? false
+        aiConfiguredCached = configured
         aiProviderControl?.selectedSegment = useApi ? 1 : 0
         aiApiKeyField?.stringValue = (result["ai_api_key"] as? String) ?? ""
         aiBaseUrlField?.stringValue = (result["ai_base_url"] as? String) ?? ""
         updateSettingsModeUI()
         if useApi {
-            let configured = (result["ai_configured"] as? Bool) ?? false
             setApiConnectedTag(visible: configured)
             aiHelpLabel?.stringValue = configured
                 ? "Cloud API key saved — used for rewrite / generate"
@@ -1514,16 +1516,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func aiProviderChanged(_ sender: NSSegmentedControl) {
         updateSettingsModeUI()
         if sender.selectedSegment == 1 {
-            setApiConnectedTag(visible: false)
-            aiHelpLabel?.stringValue = "Paste your OpenAI / Groq / compatible key, then Save"
+            let hasKey = !(aiApiKeyField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+            setApiConnectedTag(visible: hasKey && aiConfiguredCached)
+            aiHelpLabel?.stringValue = (hasKey && aiConfiguredCached)
+                ? "Cloud API key saved — used for rewrite / generate"
+                : "Paste your OpenAI / Groq / compatible key, then Save"
             DispatchQueue.main.async { [weak self] in
                 self?.aiApiKeyField?.window?.makeFirstResponder(self?.aiApiKeyField)
             }
-            // Re-check saved connection state for this mode.
-            loadAiSettings()
         } else {
             setApiConnectedTag(visible: false)
-            // Switching back to Local also clears the cloud provider preference.
+            aiHelpLabel?.stringValue = "Using local models"
             persistLocalProvider()
         }
     }
@@ -1576,11 +1579,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 let ok = (result["ok"] as? Bool) ?? false
                 let detail = (result["detail"] as? String) ?? ""
                 if ok {
+                    self?.aiConfiguredCached = useApi
                     self?.setApiConnectedTag(visible: useApi)
                     self?.aiHelpLabel?.stringValue = useApi
                         ? (detail.isEmpty ? "API key saved and verified" : detail)
                         : "Using local models"
                 } else {
+                    self?.aiConfiguredCached = false
                     self?.setApiConnectedTag(visible: false)
                     self?.aiHelpLabel?.stringValue = detail.isEmpty ? "Could not verify API key" : detail
                 }
