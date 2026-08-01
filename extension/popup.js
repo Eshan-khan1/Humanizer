@@ -883,17 +883,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   (async () => {
     const reconnectBtn = document.getElementById("reconnect-app");
-    const setStatus = (text, state, title) => {
+    const statusCardEl = document.getElementById("status-card");
+    const statusDetailEl = document.getElementById("status-detail");
+    const setStatus = (text, state, detail) => {
       statusEl.textContent = text;
-      statusEl.classList.remove(
-        "server-tag--checking",
-        "server-tag--offline",
-        "server-tag--online",
-        "ok",
-        "error"
-      );
-      statusEl.classList.add(`server-tag--${state}`);
-      statusEl.title = title || "";
+      if (statusDetailEl) {
+        statusDetailEl.textContent = detail || "";
+      }
+      if (statusCardEl) {
+        statusCardEl.classList.remove(
+          "status-card--checking",
+          "status-card--offline",
+          "status-card--online"
+        );
+        statusCardEl.classList.add(`status-card--${state}`);
+        statusCardEl.title = detail || text;
+      }
       if (reconnectBtn) {
         reconnectBtn.hidden = state === "online";
       }
@@ -928,14 +933,14 @@ document.addEventListener("DOMContentLoaded", () => {
           linked ? "Connected to app" : "Server online",
           "online",
           linked
-            ? "Linked to Humanizer.app on this Mac"
-            : "Connected to the local Humanizer server"
+            ? "Chrome extension linked"
+            : "Local Humanizer server is running"
         );
       } catch {
         setStatus(
-          "App offline",
+          "Server offline",
           "offline",
-          "Open Humanizer.app, then click Reconnect"
+          "Open Humanizer.app, then reconnect"
         );
       }
     };

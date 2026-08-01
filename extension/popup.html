@@ -10,30 +10,13 @@
   <body>
     <header class="popup-header">
       <div class="popup-brand">
-        <img class="popup-logo" src="icons/icon-32.png" width="18" height="18" alt="" />
-        <h1>Humanizer</h1>
+        <img class="popup-logo" src="icons/icon-48.png" width="40" height="40" alt="" />
+        <div class="popup-brand-text">
+          <h1>Humanizer</h1>
+          <p class="popup-subtitle">Local writing assistant</p>
+        </div>
       </div>
       <div class="popup-header-actions">
-        <button
-          type="button"
-          id="theme-toggle"
-          class="icon-btn"
-          aria-label="Switch to dark mode"
-          title="Theme"
-        >
-          <svg class="theme-icon theme-icon--sun" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0-5.5a1 1 0 0 1 1 1V5a1 1 0 1 1-2 0V2.5a1 1 0 0 1 1-1zm0 16a1 1 0 0 1 1 1V22a1 1 0 1 1-2 0v-2.5a1 1 0 0 1 1-1zM3.5 11a1 1 0 0 1 1-1H7a1 1 0 1 1 0 2H4.5a1 1 0 0 1-1-1zm13.5 0a1 1 0 0 1 1-1H21a1 1 0 1 1 0 2h-2.5a1 1 0 0 1-1-1zM5.64 5.64a1 1 0 0 1 1.41 0l1.77 1.77a1 1 0 0 1-1.41 1.41L5.64 7.05a1 1 0 0 1 0-1.41zm9.54 9.54a1 1 0 0 1 1.41 0l1.77 1.77a1 1 0 0 1-1.41 1.41l-1.77-1.77a1 1 0 0 1 0-1.41zM18.36 5.64a1 1 0 0 1 0 1.41l-1.77 1.77a1 1 0 1 1-1.41-1.41l1.77-1.77a1 1 0 0 1 1.41 0zM8.82 15.18a1 1 0 0 1 0 1.41L7.05 18.36a1 1 0 1 1-1.41-1.41l1.77-1.77a1 1 0 0 1 1.41 0z"
-            />
-          </svg>
-          <svg class="theme-icon theme-icon--moon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M12.3 2.1a1 1 0 0 1 .9 1.45A7.5 7.5 0 1 0 19.5 14a1 1 0 0 1 1.55.9A9.5 9.5 0 1 1 11.2 2.05a1 1 0 0 1 1.1.05z"
-            />
-          </svg>
-        </button>
         <button
           type="button"
           id="settings-open"
@@ -41,7 +24,7 @@
           aria-label="Open settings"
           title="Settings"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path
               fill="currentColor"
               d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.63c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.63c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"
@@ -52,33 +35,24 @@
     </header>
 
     <div id="main-view" class="view">
-      <section class="hero">
-        <h2 class="hero-title">
-          <svg class="hero-sparkle" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M12 2.5l1.2 5.1L18 9l-4.8 1.4L12 15.5l-1.2-5.1L6 9l4.8-1.4L12 2.5zm6.5 9.2l.7 2.9 2.8.8-2.8.8-.7 2.9-.7-2.9-2.8-.8 2.8-.8.7-2.9zM5.5 13.8l.6 2.4 2.3.7-2.3.7-.6 2.4-.6-2.4-2.3-.7 2.3-.7.6-2.4z"
-            />
-          </svg>
-          How can I help you today?
-        </h2>
-        <p class="hero-subtitle">
-          Fix grammar, rewrite tone, and generate drafts right in any text field.
-        </p>
-      </section>
-
-      <div class="server-status-row">
-        <span
-          id="status"
-          class="server-tag server-tag--checking"
-          role="status"
-          aria-live="polite"
-        >Checking server…</span>
-        <button type="button" id="reconnect-app" class="text-btn" hidden>
+      <p class="server-caption">Server</p>
+      <div
+        id="status-card"
+        class="status-card status-card--checking"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="status-dot" aria-hidden="true"></span>
+        <div class="status-copy">
+          <p id="status" class="status-title">Checking…</p>
+          <p id="status-detail" class="status-detail">Looking for Humanizer.app…</p>
+        </div>
+        <button type="button" id="reconnect-app" class="status-reconnect" hidden>
           Reconnect
         </button>
       </div>
 
+      <p class="server-caption">Tools</p>
       <div class="chip-row" role="list">
         <span class="chip chip--active" role="listitem">Write</span>
         <span class="chip" role="listitem">Rewrite</span>
@@ -181,7 +155,7 @@
               type="password"
               autocomplete="off"
               spellcheck="false"
-              placeholder="Bearer token from ./start_server.sh"
+              placeholder="Bearer token from Humanizer.app"
             />
           </label>
         </div>
