@@ -760,12 +760,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         content.addSubview(page)
         settingsFeaturesView = page
 
-        let back = NSButton(title: "‹ Settings", target: self, action: #selector(showSettingsRoot))
+        let back = NSButton(title: "Settings", target: self, action: #selector(showSettingsRoot))
         back.bezelStyle = .inline
         back.isBordered = false
-        back.font = .systemFont(ofSize: 18, weight: .semibold)
+        back.font = .systemFont(ofSize: 16, weight: .semibold)
         back.contentTintColor = muted
-        back.frame = NSRect(x: 20, y: 558, width: 130, height: 34)
+        back.imagePosition = .imageLeading
+        if let chevron = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: "Back") {
+            let cfg = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            back.image = chevron.withSymbolConfiguration(cfg)
+        }
+        back.frame = NSRect(x: 16, y: 554, width: 140, height: 38)
         back.setAccessibilityLabel("Back to Settings")
         page.addSubview(back)
 
