@@ -122,7 +122,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Open Humanizer", action: #selector(showWindow), keyEquivalent: "o"))
         menu.addItem(NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ","))
-        menu.addItem(NSMenuItem(title: "Connect Chrome Extension…", action: #selector(showChromeConnect), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Add to Menu Bar…", action: #selector(openMenuBarSettings), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Restart server", action: #selector(restartServer), keyEquivalent: "r"))
         menu.addItem(.separator())
@@ -275,15 +274,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         card.addSubview(spinner)
         restartSpinner = spinner
 
-        let chrome = NSButton(title: "Connect Chrome Extension…", target: self, action: #selector(showChromeConnect))
-        chrome.bezelStyle = .rounded
-        chrome.frame = NSRect(x: 28, y: 74, width: 210, height: 32)
-        content.addSubview(chrome)
-        chromeConnectButton = chrome
-
         let connect = NSButton(title: "Connect Menu Bar…", target: self, action: #selector(showMenuBarConnect))
         connect.bezelStyle = .rounded
-        connect.frame = NSRect(x: 248, y: 74, width: 144, height: 32)
+        connect.frame = NSRect(x: 28, y: 74, width: 170, height: 32)
         content.addSubview(connect)
         menuBarConnectButton = connect
 
@@ -519,7 +512,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupSettingsWindow() {
-        let rect = NSRect(x: 0, y: 0, width: 480, height: 360)
+        let rect = NSRect(x: 0, y: 0, width: 480, height: 460)
         let style: NSWindow.StyleMask = [.titled, .closable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
         win.title = "Humanizer Settings"
@@ -532,11 +525,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let heading = NSTextField(labelWithString: "Settings")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 302, width: 300, height: 32)
+        heading.frame = NSRect(x: 28, y: 402, width: 300, height: 32)
         content.addSubview(heading)
 
         // Local LLM section card
-        let card = NSView(frame: NSRect(x: 28, y: 88, width: 424, height: 200))
+        let card = NSView(frame: NSRect(x: 28, y: 188, width: 424, height: 200))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -584,6 +577,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         help.frame = NSRect(x: 20, y: 14, width: 384, height: 18)
         card.addSubview(help)
         modelsHelpLabel = help
+
+        // Chrome extension section
+        let chromeCard = NSView(frame: NSRect(x: 28, y: 88, width: 424, height: 84))
+        chromeCard.wantsLayer = true
+        chromeCard.layer?.backgroundColor = surface.cgColor
+        chromeCard.layer?.cornerRadius = 14
+        content.addSubview(chromeCard)
+
+        let chromeSection = NSTextField(labelWithString: "Chrome extension")
+        chromeSection.font = .systemFont(ofSize: 15, weight: .semibold)
+        chromeSection.textColor = textColor
+        chromeSection.frame = NSRect(x: 20, y: 48, width: 220, height: 22)
+        chromeCard.addSubview(chromeSection)
+
+        let chromeBlurb = NSTextField(wrappingLabelWithString: "Load the bundled extension so Chrome can talk to this app automatically.")
+        chromeBlurb.font = .systemFont(ofSize: 12)
+        chromeBlurb.textColor = muted
+        chromeBlurb.frame = NSRect(x: 20, y: 14, width: 240, height: 36)
+        chromeCard.addSubview(chromeBlurb)
+
+        let chrome = NSButton(title: "Connect…", target: self, action: #selector(showChromeConnect))
+        chrome.bezelStyle = .rounded
+        chrome.frame = NSRect(x: 300, y: 26, width: 104, height: 32)
+        chrome.toolTip = "Connect Chrome Extension"
+        chromeCard.addSubview(chrome)
+        chromeConnectButton = chrome
 
         let refresh = NSButton(title: "Refresh models", target: self, action: #selector(refreshModels))
         refresh.bezelStyle = .rounded
