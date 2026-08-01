@@ -34,6 +34,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var aiApiKeyField: NSSecureTextField!
     private var aiBaseUrlField: NSTextField!
     private var aiHelpLabel: NSTextField!
+    private var settingsLocalCard: NSView!
+    private var settingsApiCard: NSView!
+    private var refreshModelsButton: NSButton!
+    private var applyModelsButton: NSButton!
+    private var saveApiButton: NSButton!
     private var featureGrammarSwitch: NSSwitch!
     private var featureRewriteSwitch: NSSwitch!
     private var featureGenerateSwitch: NSSwitch!
@@ -525,7 +530,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupSettingsWindow() {
-        let rect = NSRect(x: 0, y: 0, width: 480, height: 700)
+        let rect = NSRect(x: 0, y: 0, width: 480, height: 620)
         let style: NSWindow.StyleMask = [.titled, .closable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
         win.title = "Humanizer Settings"
@@ -544,15 +549,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let heading = NSTextField(labelWithString: "Settings")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 642, width: 300, height: 32)
+        heading.frame = NSRect(x: 28, y: 562, width: 200, height: 32)
         root.addSubview(heading)
 
-        // Local LLM section card
-        let card = NSView(frame: NSRect(x: 28, y: 428, width: 424, height: 200))
+        // Top Local / API mode switch
+        let provider = NSSegmentedControl(
+            labels: ["Local", "API"],
+            trackingMode: .selectOne,
+            target: self,
+            action: #selector(aiProviderChanged(_:))
+        )
+        provider.frame = NSRect(x: 260, y: 564, width: 192, height: 28)
+        provider.selectedSegment = 0
+        provider.setAccessibilityLabel("Writing backend")
+        root.addSubview(provider)
+        aiProviderControl = provider
+
+        // Shared mode card frame — Local LLM and API key swap here.
+        let modeFrame = NSRect(x: 28, y: 340, width: 424, height: 200)
+
+        // Local LLM card
+        let card = NSView(frame: modeFrame)
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
         root.addSubview(card)
+        settingsLocalCard = card
 
         let section = NSTextField(labelWithString: "Local LLM")
         section.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -597,8 +619,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         card.addSubview(help)
         modelsHelpLabel = help
 
+        // API key card (same slot as Local LLM)
+        let aiCard = NSView(frame: modeFrame)
+        aiCard.wantsLayer = true
+        aiCard.layer?.backgroundColor = surface.cgColor
+        aiCard.layer?.cornerRadius = 14
+        aiCard.isHidden = true
+        root.addSubview(aiCard)
+        settingsApiCard = aiCard
+
+        let aiSection = NSTextField(labelWithString: "API key")
+        aiSection.font = .systemFont(ofSize: 15, weight: .semibold)
+        aiSection.textColor = textColor
+        aiSection.frame = NSRect(x: 20, y: 158, width: 280, height: 22)
+        aiCard.addSubview(aiSection)
+
+        let aiBlurb = NSTextField(wrappingLabelWithString: "Use your own OpenAI, Groq, or compatible key for rewrite / generate.")
+        aiBlurb.font = .systemFont(ofSize: 12)
+        aiBlurb.textColor = muted
+        aiBlurb.frame = NSRect(x: 20, y: 122, width: 384, height: 32)
+        aiCard.addSubview(aiBlurb)
+
+        let keyField = NSSecureTextField(frame: NSRect(x: 20, y: 78, width: 384, height: 30))
+        keyField.placeholderString = "API key"
+        keyField.font = .systemFont(ofSize: 13)
+        aiCard.addSubview(keyField)
+        aiApiKeyField = keyField
+
+        let baseField = NSTextField(frame: NSRect(x: 20, y: 40, width: 384, height: 30))
+        baseField.placeholderString = "Base URL (optional)"
+        baseField.font = .systemFont(ofSize: 13)
+        aiCard.addSubview(baseField)
+        aiBaseUrlField = baseField
+
+        let aiHelp = NSTextField(labelWithString: "Paste your key, then Save API key")
+        aiHelp.font = .systemFont(ofSize: 11)
+        aiHelp.textColor = muted
+        aiHelp.frame = NSRect(x: 20, y: 12, width: 384, height: 18)
+        aiCard.addSubview(aiHelp)
+        aiHelpLabel = aiHelp
+
         // Features nav row → opens Features page
-        let featuresCard = NSView(frame: NSRect(x: 28, y: 328, width: 424, height: 84))
+        let featuresCard = NSView(frame: NSRect(x: 28, y: 240, width: 424, height: 84))
         featuresCard.wantsLayer = true
         featuresCard.layer?.backgroundColor = surface.cgColor
         featuresCard.layer?.cornerRadius = 14
@@ -635,54 +697,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         featuresOpen.setAccessibilityLabel("Features")
         featuresCard.addSubview(featuresOpen)
 
-        // API key section card
-        let aiCard = NSView(frame: NSRect(x: 28, y: 148, width: 424, height: 164))
-        aiCard.wantsLayer = true
-        aiCard.layer?.backgroundColor = surface.cgColor
-        aiCard.layer?.cornerRadius = 14
-        root.addSubview(aiCard)
-
-        let aiSection = NSTextField(labelWithString: "API key")
-        aiSection.font = .systemFont(ofSize: 15, weight: .semibold)
-        aiSection.textColor = textColor
-        aiSection.frame = NSRect(x: 20, y: 126, width: 200, height: 22)
-        aiCard.addSubview(aiSection)
-
-        let aiBlurb = NSTextField(wrappingLabelWithString: "Use your own OpenAI, Groq, or compatible key for rewrite / generate. Leave on Local to stay fully offline.")
-        aiBlurb.font = .systemFont(ofSize: 12)
-        aiBlurb.textColor = muted
-        aiBlurb.frame = NSRect(x: 20, y: 96, width: 384, height: 30)
-        aiCard.addSubview(aiBlurb)
-
-        let provider = NSSegmentedControl(labels: ["Local", "API"], trackingMode: .selectOne, target: self, action: #selector(aiProviderChanged(_:)))
-        provider.frame = NSRect(x: 20, y: 66, width: 160, height: 24)
-        provider.selectedSegment = 0
-        aiCard.addSubview(provider)
-        aiProviderControl = provider
-
-        let keyField = NSSecureTextField(frame: NSRect(x: 190, y: 64, width: 214, height: 28))
-        keyField.placeholderString = "API key"
-        keyField.isEnabled = false
-        keyField.font = .systemFont(ofSize: 12)
-        aiCard.addSubview(keyField)
-        aiApiKeyField = keyField
-
-        let baseField = NSTextField(frame: NSRect(x: 20, y: 30, width: 384, height: 28))
-        baseField.placeholderString = "Base URL (optional)"
-        baseField.isEnabled = false
-        baseField.font = .systemFont(ofSize: 12)
-        aiCard.addSubview(baseField)
-        aiBaseUrlField = baseField
-
-        let aiHelp = NSTextField(labelWithString: "Using local models")
-        aiHelp.font = .systemFont(ofSize: 11)
-        aiHelp.textColor = muted
-        aiHelp.frame = NSRect(x: 20, y: 8, width: 384, height: 16)
-        aiCard.addSubview(aiHelp)
-        aiHelpLabel = aiHelp
-
         // Chrome extension section
-        let chromeCard = NSView(frame: NSRect(x: 28, y: 48, width: 424, height: 84))
+        let chromeCard = NSView(frame: NSRect(x: 28, y: 140, width: 424, height: 84))
         chromeCard.wantsLayer = true
         chromeCard.layer?.backgroundColor = surface.cgColor
         chromeCard.layer?.cornerRadius = 14
@@ -709,27 +725,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let refresh = NSButton(title: "Refresh models", target: self, action: #selector(refreshModels))
         refresh.bezelStyle = .rounded
-        refresh.frame = NSRect(x: 28, y: 8, width: 120, height: 28)
+        refresh.frame = NSRect(x: 28, y: 28, width: 130, height: 32)
         root.addSubview(refresh)
+        refreshModelsButton = refresh
 
         let apply = NSButton(title: "Apply models", target: self, action: #selector(applyModelSettings))
         apply.bezelStyle = .rounded
-        apply.frame = NSRect(x: 156, y: 8, width: 110, height: 28)
+        apply.frame = NSRect(x: 168, y: 28, width: 120, height: 32)
         root.addSubview(apply)
+        applyModelsButton = apply
 
         let saveAi = NSButton(title: "Save API key", target: self, action: #selector(saveAiSettings))
         saveAi.bezelStyle = .rounded
-        saveAi.frame = NSRect(x: 274, y: 8, width: 110, height: 28)
+        saveAi.frame = NSRect(x: 168, y: 28, width: 120, height: 32)
+        saveAi.isHidden = true
         root.addSubview(saveAi)
+        saveApiButton = saveAi
 
         let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
         done.bezelStyle = .rounded
-        done.frame = NSRect(x: 392, y: 8, width: 60, height: 28)
+        done.frame = NSRect(x: 372, y: 28, width: 80, height: 32)
         root.addSubview(done)
 
         setupFeaturesPage(in: content)
         settingsWindow = win
         showSettingsRoot()
+        updateSettingsModeUI()
     }
 
     private func setupFeaturesPage(in content: NSView) {
@@ -744,23 +765,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         back.isBordered = false
         back.font = .systemFont(ofSize: 18, weight: .semibold)
         back.contentTintColor = muted
-        back.frame = NSRect(x: 20, y: 638, width: 130, height: 34)
+        back.frame = NSRect(x: 20, y: 558, width: 130, height: 34)
         back.setAccessibilityLabel("Back to Settings")
         page.addSubview(back)
 
         let heading = NSTextField(labelWithString: "Features")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 600, width: 300, height: 32)
+        heading.frame = NSRect(x: 28, y: 520, width: 300, height: 32)
         page.addSubview(heading)
 
         let blurb = NSTextField(wrappingLabelWithString: "Turn features on or off for the Chrome extension and local server.")
         blurb.font = .systemFont(ofSize: 13)
         blurb.textColor = muted
-        blurb.frame = NSRect(x: 28, y: 560, width: 424, height: 36)
+        blurb.frame = NSRect(x: 28, y: 480, width: 424, height: 36)
         page.addSubview(blurb)
 
-        let card = NSView(frame: NSRect(x: 28, y: 380, width: 424, height: 164))
+        let card = NSView(frame: NSRect(x: 28, y: 300, width: 424, height: 164))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -806,7 +827,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let featuresHelp = NSTextField(labelWithString: "Changes apply immediately")
         featuresHelp.font = .systemFont(ofSize: 11)
         featuresHelp.textColor = muted
-        featuresHelp.frame = NSRect(x: 28, y: 340, width: 424, height: 18)
+        featuresHelp.frame = NSRect(x: 28, y: 260, width: 424, height: 18)
         page.addSubview(featuresHelp)
         featuresHelpLabel = featuresHelp
 
@@ -1422,12 +1443,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         aiProviderControl?.selectedSegment = useApi ? 1 : 0
         aiApiKeyField?.stringValue = (result["ai_api_key"] as? String) ?? ""
         aiBaseUrlField?.stringValue = (result["ai_base_url"] as? String) ?? ""
-        updateAiFieldsEnabled()
+        updateSettingsModeUI()
         if useApi {
             let configured = (result["ai_configured"] as? Bool) ?? false
             aiHelpLabel?.stringValue = configured
                 ? "Cloud API key saved — used for rewrite / generate"
-                : "Choose API and paste your key, then Save API key"
+                : "Paste your key, then Save API key"
         } else {
             aiHelpLabel?.stringValue = "Using local models"
         }
@@ -1442,20 +1463,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    private func updateAiFieldsEnabled() {
+    private func updateSettingsModeUI() {
         let useApi = (aiProviderControl?.selectedSegment ?? 0) == 1
+        settingsLocalCard?.isHidden = useApi
+        settingsApiCard?.isHidden = !useApi
+        refreshModelsButton?.isHidden = useApi
+        applyModelsButton?.isHidden = useApi
+        saveApiButton?.isHidden = !useApi
         aiApiKeyField?.isEnabled = useApi
         aiBaseUrlField?.isEnabled = useApi
-        if !useApi {
-            aiHelpLabel?.stringValue = "Using local models"
-        }
     }
 
     @objc private func aiProviderChanged(_ sender: NSSegmentedControl) {
-        updateAiFieldsEnabled()
+        updateSettingsModeUI()
         if sender.selectedSegment == 1 {
             aiHelpLabel?.stringValue = "Paste your OpenAI / Groq / compatible key, then Save"
-            aiApiKeyField?.window?.makeFirstResponder(aiApiKeyField)
+            DispatchQueue.main.async { [weak self] in
+                self?.aiApiKeyField?.window?.makeFirstResponder(self?.aiApiKeyField)
+            }
+        } else {
+            // Switching back to Local also clears the cloud provider preference.
+            persistLocalProvider()
+        }
+    }
+
+    private func persistLocalProvider() {
+        let payload: [String: Any] = [
+            "provider": "local",
+            "apiKey": aiApiKeyField?.stringValue ?? "",
+            "baseUrl": aiBaseUrlField?.stringValue ?? "",
+            "model": "",
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: payload),
+              let json = String(data: data, encoding: .utf8) else {
+            return
+        }
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            _ = self?.runService(["set-ai", json])
         }
     }
 
