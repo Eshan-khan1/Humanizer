@@ -38,6 +38,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var aiConnectedTagLabel: NSTextField!
     private var settingsLocalCard: NSView!
     private var settingsApiCard: NSView!
+    private var settingsHardwareCard: NSView!
+    private var ramSlider: NSSlider!
+    private var gpuSlider: NSSlider!
+    private var ramValueLabel: NSTextField!
+    private var gpuValueLabel: NSTextField!
+    private var tokensEstimateLabel: NSTextField!
+    private var systemRamGB: Int = 16
     private var refreshModelsButton: NSButton!
     private var applyModelsButton: NSButton!
     private var saveApiButton: NSButton!
@@ -533,7 +540,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func setupSettingsWindow() {
-        let rect = NSRect(x: 0, y: 0, width: 480, height: 620)
+        let rect = NSRect(x: 0, y: 0, width: 480, height: 760)
         let style: NSWindow.StyleMask = [.titled, .closable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
         win.title = "Humanizer Settings"
@@ -544,6 +551,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         guard let content = win.contentView else { return }
 
+        var mem: UInt64 = 0
+        var len = MemoryLayout<UInt64>.size
+        sysctlbyname("hw.memsize", &mem, &len, nil, 0)
+        systemRamGB = max(4, Int(mem / (1024 * 1024 * 1024)))
+
         let root = NSView(frame: content.bounds)
         root.autoresizingMask = [.width, .height]
         content.addSubview(root)
@@ -552,7 +564,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let heading = NSTextField(labelWithString: "Settings")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 562, width: 200, height: 32)
+        heading.frame = NSRect(x: 28, y: 702, width: 200, height: 32)
         root.addSubview(heading)
 
         // Top Local / API mode switch
@@ -562,14 +574,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             target: self,
             action: #selector(aiProviderChanged(_:))
         )
-        provider.frame = NSRect(x: 260, y: 564, width: 192, height: 28)
+        provider.frame = NSRect(x: 260, y: 704, width: 192, height: 28)
         provider.selectedSegment = 0
         provider.setAccessibilityLabel("Writing backend")
         root.addSubview(provider)
         aiProviderControl = provider
 
         // Shared mode card frame — Local LLM and API key swap here.
-        let modeFrame = NSRect(x: 28, y: 340, width: 424, height: 200)
+        let modeFrame = NSRect(x: 28, y: 488, width: 424, height: 200)
 
         // Local LLM card
         let card = NSView(frame: modeFrame)
@@ -621,6 +633,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         help.frame = NSRect(x: 20, y: 14, width: 384, height: 18)
         card.addSubview(help)
         modelsHelpLabel = help
+
+        // Hardware card (Local mode only)
+        let hwCard = NSView(frame: NSRect(x: 28, y: 308, width: 424, height: 164))
+        hwCard.wantsLayer = true
+        hwCard.layer?.backgroundColor = surface.cgColor
+        hwCard.layer?.cornerRadius = 14
+        root.addSubview(hwCard)
+        settingsHardwareCard = hwCard
+
+        let hwSection = NSTextField(labelWithString: "Hardware")
+        hwSection.font = .systemFont(ofSize: 15, weight: .semibold)
+        hwSection.textColor = textColor
+        hwSection.frame = NSRect(x: 20, y: 128, width: 200, height: 22)
+        hwCard.addSubview(hwSection)
+
+        let ramCaption = NSTextField(labelWithString: "RAM")
+        ramCaption.font = .systemFont(ofSize: 12)
+        ramCaption.textColor = muted
+        ramCaption.frame = NSRect(x: 20, y: 100, width: 50, height: 16)
+        hwCard.addSubview(ramCaption)
+
+        let defaultRam = Double(max(4, min(systemRamGB / 2, systemRamGB - 2)))
+        let ramSliderControl = NSSlider(
+            value: defaultRam,
+            minValue: 4,
+            maxValue: Double(max(4, systemRamGB - 2)),
+            target: self,
+            action: #selector(hardwareSliderChanged(_:))
+        )
+        ramSliderControl.frame = NSRect(x: 70, y: 96, width: 260, height: 24)
+        hwCard.addSubview(ramSliderControl)
+        ramSlider = ramSliderControl
+
+        let ramValue = NSTextField(labelWithString: "\(Int(defaultRam)) GB")
+        ramValue.font = .systemFont(ofSize: 12, weight: .medium)
+        ramValue.textColor = textColor
+        ramValue.alignment = .right
+        ramValue.frame = NSRect(x: 340, y: 100, width: 64, height: 16)
+        hwCard.addSubview(ramValue)
+        ramValueLabel = ramValue
+
+        let gpuCaption = NSTextField(labelWithString: "GPU")
+        gpuCaption.font = .systemFont(ofSize: 12)
+        gpuCaption.textColor = muted
+        gpuCaption.frame = NSRect(x: 20, y: 66, width: 50, height: 16)
+        hwCard.addSubview(gpuCaption)
+
+        let gpuSliderControl = NSSlider(
+            value: 75,
+            minValue: 25,
+            maxValue: 95,
+            target: self,
+            action: #selector(hardwareSliderChanged(_:))
+        )
+        gpuSliderControl.frame = NSRect(x: 70, y: 62, width: 260, height: 24)
+        hwCard.addSubview(gpuSliderControl)
+        gpuSlider = gpuSliderControl
+
+        let gpuValue = NSTextField(labelWithString: "75%")
+        gpuValue.font = .systemFont(ofSize: 12, weight: .medium)
+        gpuValue.textColor = textColor
+        gpuValue.alignment = .right
+        gpuValue.frame = NSRect(x: 340, y: 66, width: 64, height: 16)
+        hwCard.addSubview(gpuValue)
+        gpuValueLabel = gpuValue
+
+        let tokens = NSTextField(labelWithString: "Estimated speed: — tokens/sec")
+        tokens.font = .systemFont(ofSize: 12, weight: .semibold)
+        tokens.textColor = okColor
+        tokens.frame = NSRect(x: 20, y: 28, width: 384, height: 18)
+        hwCard.addSubview(tokens)
+        tokensEstimateLabel = tokens
+
+        let hwHint = NSTextField(labelWithString: "Estimate updates as you move the sliders. Apply models to save.")
+        hwHint.font = .systemFont(ofSize: 11)
+        hwHint.textColor = muted
+        hwHint.frame = NSRect(x: 20, y: 8, width: 384, height: 16)
+        hwCard.addSubview(hwHint)
 
         // API key card (same slot as Local LLM)
         let aiCard = NSView(frame: modeFrame)
@@ -679,7 +769,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         aiHelpLabel = aiHelp
 
         // Features nav row → opens Features page
-        let featuresCard = NSView(frame: NSRect(x: 28, y: 240, width: 424, height: 84))
+        let featuresCard = NSView(frame: NSRect(x: 28, y: 208, width: 424, height: 84))
         featuresCard.wantsLayer = true
         featuresCard.layer?.backgroundColor = surface.cgColor
         featuresCard.layer?.cornerRadius = 14
@@ -717,7 +807,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         featuresCard.addSubview(featuresOpen)
 
         // Chrome extension section
-        let chromeCard = NSView(frame: NSRect(x: 28, y: 140, width: 424, height: 84))
+        let chromeCard = NSView(frame: NSRect(x: 28, y: 108, width: 424, height: 84))
         chromeCard.wantsLayer = true
         chromeCard.layer?.backgroundColor = surface.cgColor
         chromeCard.layer?.cornerRadius = 14
@@ -770,6 +860,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         settingsWindow = win
         showSettingsRoot()
         updateSettingsModeUI()
+        updateHardwareEstimate()
     }
 
     private func setupFeaturesPage(in content: NSView) {
@@ -789,23 +880,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let cfg = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
             back.image = chevron.withSymbolConfiguration(cfg)
         }
-        back.frame = NSRect(x: 16, y: 554, width: 140, height: 38)
+        back.frame = NSRect(x: 16, y: 694, width: 140, height: 38)
         back.setAccessibilityLabel("Back to Settings")
         page.addSubview(back)
 
         let heading = NSTextField(labelWithString: "Features")
         heading.font = .systemFont(ofSize: 24, weight: .bold)
         heading.textColor = textColor
-        heading.frame = NSRect(x: 28, y: 520, width: 300, height: 32)
+        heading.frame = NSRect(x: 28, y: 650, width: 300, height: 32)
         page.addSubview(heading)
 
         let blurb = NSTextField(wrappingLabelWithString: "Turn features on or off for the Chrome extension and local server.")
         blurb.font = .systemFont(ofSize: 13)
         blurb.textColor = muted
-        blurb.frame = NSRect(x: 28, y: 480, width: 424, height: 36)
+        blurb.frame = NSRect(x: 28, y: 610, width: 424, height: 36)
         page.addSubview(blurb)
 
-        let card = NSView(frame: NSRect(x: 28, y: 300, width: 424, height: 164))
+        let card = NSView(frame: NSRect(x: 28, y: 430, width: 424, height: 164))
         card.wantsLayer = true
         card.layer?.backgroundColor = surface.cgColor
         card.layer?.cornerRadius = 14
@@ -851,7 +942,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let featuresHelp = NSTextField(labelWithString: "Changes apply immediately")
         featuresHelp.font = .systemFont(ofSize: 11)
         featuresHelp.textColor = muted
-        featuresHelp.frame = NSRect(x: 28, y: 260, width: 424, height: 18)
+        featuresHelp.frame = NSRect(x: 28, y: 390, width: 424, height: 18)
         page.addSubview(featuresHelp)
         featuresHelpLabel = featuresHelp
 
@@ -1302,6 +1393,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } else if sender == writingPopup {
             selectedWriting = selectedModelName(from: sender) ?? selectedWriting
         }
+        updateHardwareEstimate()
     }
 
     private func selectedModelName(from popup: NSPopUpButton) -> String? {
@@ -1376,6 +1468,68 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         applyAiFields(from: result)
         applyFeatureFields(from: result)
+        applyHardwareFields(from: result)
+    }
+
+    private func applyHardwareFields(from result: [String: Any]) {
+        if let total = result["system_ram_gb"] as? Int, total >= 4 {
+            systemRamGB = total
+            ramSlider?.maxValue = Double(max(4, total - 2))
+        }
+        let ram = (result["hardware_ram_gb"] as? Int)
+            ?? Int(ramSlider?.doubleValue ?? Double(max(4, systemRamGB / 2)))
+        let gpu = (result["hardware_gpu_percent"] as? Int) ?? 75
+        ramSlider?.doubleValue = Double(ram)
+        gpuSlider?.doubleValue = Double(gpu)
+        ramValueLabel?.stringValue = "\(ram) GB"
+        gpuValueLabel?.stringValue = "\(gpu)%"
+        if let detail = result["tokens_detail"] as? String, !detail.isEmpty {
+            tokensEstimateLabel?.stringValue = detail
+        } else if let tps = result["tokens_per_sec"] as? Double {
+            tokensEstimateLabel?.stringValue = String(format: "Estimated speed: ~%.0f tokens/sec", tps)
+        } else {
+            updateHardwareEstimate()
+        }
+    }
+
+    @objc private func hardwareSliderChanged(_ sender: NSSlider) {
+        let ram = Int(ramSlider?.doubleValue.rounded() ?? 8)
+        let gpu = Int(gpuSlider?.doubleValue.rounded() ?? 75)
+        ramValueLabel?.stringValue = "\(ram) GB"
+        gpuValueLabel?.stringValue = "\(gpu)%"
+        updateHardwareEstimate()
+    }
+
+    private func updateHardwareEstimate() {
+        let ram = Int(ramSlider?.doubleValue.rounded() ?? Double(max(4, systemRamGB / 2)))
+        let gpu = Int(gpuSlider?.doubleValue.rounded() ?? 75)
+        let model = selectedWriting.lowercased()
+        let params: Double
+        let base: Double
+        if model.contains("0.5b") {
+            params = 0.5; base = 95
+        } else if model.contains("1.5b") || model.contains("1b") {
+            params = 1.5; base = 70
+        } else if model.contains("3b") {
+            params = 3; base = 48
+        } else if model.contains("8b") {
+            params = 8; base = 28
+        } else if model.contains("14b") || model.contains("13b") {
+            params = 14; base = 16
+        } else {
+            params = 7; base = 32
+        }
+        let needed = max(2.0, params * 1.2)
+        var ramFactor = min(1.15, Double(ram) / needed)
+        if Double(ram) < needed {
+            ramFactor = max(0.25, pow(Double(ram) / needed, 1.4))
+        }
+        let gpuFactor = 0.55 + (Double(gpu) / 100.0) * 0.55
+        let tokens = max(4.0, base * ramFactor * gpuFactor)
+        tokensEstimateLabel?.stringValue = String(
+            format: "Estimated speed: ~%.0f tokens/sec with current RAM + GPU",
+            tokens
+        )
     }
 
     private func applyFeatureFields(from result: [String: Any]) {
@@ -1503,6 +1657,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let useApi = (aiProviderControl?.selectedSegment ?? 0) == 1
         settingsLocalCard?.isHidden = useApi
         settingsApiCard?.isHidden = !useApi
+        settingsHardwareCard?.isHidden = useApi
         refreshModelsButton?.isHidden = useApi
         applyModelsButton?.isHidden = useApi
         saveApiButton?.isHidden = !useApi
@@ -1596,6 +1751,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func applyModelSettings() {
         selectedGrammar = selectedModelName(from: grammarPopup) ?? selectedGrammar
         selectedWriting = selectedModelName(from: writingPopup) ?? selectedWriting
+        let ram = Int(ramSlider?.doubleValue.rounded() ?? Double(max(4, systemRamGB / 2)))
+        let gpu = Int(gpuSlider?.doubleValue.rounded() ?? 75)
         modelsHelpLabel.stringValue = "Saving and restarting server…"
         busy = true
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -1604,6 +1761,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 "set-models",
                 self.selectedGrammar,
                 self.selectedWriting,
+                String(ram),
+                String(gpu),
             ])
             DispatchQueue.main.async {
                 self.busy = false
@@ -1614,6 +1773,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 self.modelsHelpLabel.stringValue = ok
                     ? "Using grammar “\(gLabel)” and writing “\(wLabel)”."
                     : (detail.isEmpty ? "Saved, but the server may still be offline." : detail)
+                self.applyHardwareFields(from: result)
                 self.applyHealth(ok: ok, detail: ok ? "Server online" : "Server offline")
             }
         }

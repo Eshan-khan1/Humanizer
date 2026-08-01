@@ -78,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
                     # Include key only for the local Mac app Settings UI.
                     "ai_api_key": cfg.get("ai_api_key") or "",
                     **settings.features_summary(),
+                    **settings.hardware_summary(),
                 }
             )
         )
@@ -92,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
                     **settings.ai_status_summary(),
                     "ai_api_key": cfg.get("ai_api_key") or "",
                     **settings.features_summary(),
+                    **settings.hardware_summary(),
                 }
             )
         )
@@ -223,14 +225,21 @@ def main(argv: list[str] | None = None) -> int:
                 json.dumps(
                     {
                         "ok": False,
-                        "error": "usage: set-models <grammar_model> <writing_model>",
+                        "error": "usage: set-models <grammar_model> <writing_model> [ram_gb] [gpu_percent]",
                     }
                 )
             )
             return 2
         grammar = args[1]
         writing = args[2]
-        cfg = settings.save_settings(grammar_model=grammar, writing_model=writing)
+        ram_gb = int(args[3]) if len(args) > 3 else None
+        gpu_percent = int(args[4]) if len(args) > 4 else None
+        cfg = settings.save_settings(
+            grammar_model=grammar,
+            writing_model=writing,
+            hardware_ram_gb=ram_gb,
+            hardware_gpu_percent=gpu_percent,
+        )
         # Restart so the server picks up new model env.
         ok = manager.restart_server(root)
         print(
@@ -241,6 +250,7 @@ def main(argv: list[str] | None = None) -> int:
                     "writing_model": cfg.get("writing_model"),
                     "detail": "Server online" if ok else "Saved, but server is offline",
                     "restarted": True,
+                    **settings.hardware_summary(),
                 }
             )
         )

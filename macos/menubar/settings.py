@@ -14,6 +14,8 @@ logger = logging.getLogger("humanizer.menubar")
 DEFAULT_GRAMMAR_MODEL = "humanizer-grammar"
 DEFAULT_WRITING_MODEL = "humanizer-writing"
 DEFAULT_AI_PROVIDER = "local"
+DEFAULT_HARDWARE_GPU_PERCENT = 75
+DEFAULT_HARDWARE_RAM_GB = 8
 
 # Friendly labels in the Mac app Settings → Local LLM pickers.
 # Keys may be bare names or full Ollama tags (name:tag).
@@ -39,6 +41,31 @@ def model_label(name: str) -> str:
     return MODEL_LABELS.get(base, raw)
 
 
+def system_ram_gb() -> int:
+    try:
+        import subprocess
+
+        out = subprocess.check_output(
+            ["sysctl", "-n", "hw.memsize"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+        return max(4, int(out) // (1024**3))
+    except Exception:  # noqa: BLE001
+        return 16
+
+
+def _clamp_int(value: Any, lo: int, hi: int, default: int) -> int:
+    try:
+        return max(lo, min(hi, int(value)))
+    except (TypeError, ValueError):
+        return default
+
+
+def default_ram_gb() -> int:
+    total = system_ram_gb()
+    # Leave headroom for macOS; default to ~half of RAM capped reasonably.
+    return _clamp_int(max(4, total // 2), 4, max(4, total - 2), DEFAULT_HARDWARE_RAM_GB)
+
+
 def settings_path() -> Path:
     return support_dir() / "settings.json"
 
@@ -54,6 +81,7 @@ def _normalize_ai_provider(value: Any) -> str:
 
 def load_settings() -> dict[str, Any]:
     path = settings_path()
+    total_ram = system_ram_gb()
     data: dict[str, Any] = {
         "grammar_model": DEFAULT_GRAMMAR_MODEL,
         "writing_model": DEFAULT_WRITING_MODEL,
@@ -64,6 +92,8 @@ def load_settings() -> dict[str, Any]:
         "feature_grammar": True,
         "feature_rewrite": True,
         "feature_generate": True,
+        "hardware_ram_gb": default_ram_gb(),
+        "hardware_gpu_percent": DEFAULT_HARDWARE_GPU_PERCENT,
     }
     if not path.is_file():
         return data
@@ -84,6 +114,14 @@ def load_settings() -> dict[str, Any]:
             for key in ("feature_grammar", "feature_rewrite", "feature_generate"):
                 if key in raw:
                     data[key] = bool(raw[key])
+            if "hardware_ram_gb" in raw:
+                data["hardware_ram_gb"] = _clamp_int(
+                    raw.get("hardware_ram_gb"), 4, max(4, total_ram - 2), default_ram_gb()
+                )
+            if "hardware_gpu_percent" in raw:
+                data["hardware_gpu_percent"] = _clamp_int(
+                    raw.get("hardware_gpu_percent"), 25, 95, DEFAULT_HARDWARE_GPU_PERCENT
+                )
     except (OSError, json.JSONDecodeError, TypeError) as exc:
         logger.warning("Could not read settings: %s", exc)
     return data
@@ -100,8 +138,11 @@ def save_settings(
     feature_grammar: bool | None = None,
     feature_rewrite: bool | None = None,
     feature_generate: bool | None = None,
+    hardware_ram_gb: int | None = None,
+    hardware_gpu_percent: int | None = None,
 ) -> dict[str, Any]:
     data = load_settings()
+    total_ram = system_ram_gb()
     if grammar_model is not None and grammar_model.strip():
         data["grammar_model"] = grammar_model.strip()
     if writing_model is not None and writing_model.strip():
@@ -120,6 +161,14 @@ def save_settings(
         data["feature_rewrite"] = bool(feature_rewrite)
     if feature_generate is not None:
         data["feature_generate"] = bool(feature_generate)
+    if hardware_ram_gb is not None:
+        data["hardware_ram_gb"] = _clamp_int(
+            hardware_ram_gb, 4, max(4, total_ram - 2), default_ram_gb()
+        )
+    if hardware_gpu_percent is not None:
+        data["hardware_gpu_percent"] = _clamp_int(
+            hardware_gpu_percent, 25, 95, DEFAULT_HARDWARE_GPU_PERCENT
+        )
     path = settings_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
@@ -200,10 +249,105 @@ def list_ollama_models() -> list[dict[str, Any]]:
 
 
 def apply_to_env(env: dict[str, str]) -> dict[str, str]:
-    """Inject selected local LLM models into a server process environment."""
+    """Inject selected local LLM models and hardware knobs into server env."""
     data = load_settings()
     env["OLLAMA_GRAMMAR_MODEL"] = str(data.get("grammar_model") or DEFAULT_GRAMMAR_MODEL)
     env["OLLAMA_WRITING_MODEL"] = str(data.get("writing_model") or DEFAULT_WRITING_MODEL)
     # Keep legacy alias in sync for older code paths.
     env["OLLAMA_MODEL"] = env["OLLAMA_GRAMMAR_MODEL"]
+
+    total = max(4, system_ram_gb())
+    ram_gb = _clamp_int(data.get("hardware_ram_gb"), 4, max(4, total - 2), default_ram_gb())
+    gpu_pct = _clamp_int(
+        data.get("hardware_gpu_percent"), 25, 95, DEFAULT_HARDWARE_GPU_PERCENT
+    )
+    # Unified-memory Macs: use the tighter of RAM allotment and GPU power %.
+    fraction = min(gpu_pct / 100.0, ram_gb / float(total))
+    fraction = max(0.25, min(0.95, fraction))
+    env["OLLAMA_GPU_MEMORY_FRACTION"] = f"{fraction:.2f}"
+    env["OLLAMA_FLASH_ATTENTION"] = env.get("OLLAMA_FLASH_ATTENTION") or "1"
+    env["OLLAMA_LLM_LIBRARY"] = env.get("OLLAMA_LLM_LIBRARY") or "metal"
+    env["OLLAMA_KEEP_ALIVE"] = env.get("OLLAMA_KEEP_ALIVE") or "30m"
+    try:
+        total_bytes = total * (1024**3)
+        env["OLLAMA_GPU_OVERHEAD"] = str(int(total_bytes * (1.0 - fraction)))
+    except Exception:  # noqa: BLE001
+        pass
     return env
+
+
+def estimate_tokens_per_sec(
+    *,
+    model_name: str | None = None,
+    ram_gb: int | None = None,
+    gpu_percent: int | None = None,
+) -> dict[str, Any]:
+    """Heuristic tok/s estimate from model size + allocated hardware."""
+    data = load_settings()
+    total = system_ram_gb()
+    model = (model_name or str(data.get("writing_model") or DEFAULT_WRITING_MODEL)).lower()
+    ram = _clamp_int(
+        ram_gb if ram_gb is not None else data.get("hardware_ram_gb"),
+        4,
+        max(4, total - 2),
+        default_ram_gb(),
+    )
+    gpu = _clamp_int(
+        gpu_percent if gpu_percent is not None else data.get("hardware_gpu_percent"),
+        25,
+        95,
+        DEFAULT_HARDWARE_GPU_PERCENT,
+    )
+
+    # Rough Apple Silicon Metal baselines (tok/s) when well allocated.
+    if "0.5b" in model or "0.5" in model:
+        base = 95.0
+        params_b = 0.5
+    elif "1.5b" in model or "1b" in model:
+        base = 70.0
+        params_b = 1.5
+    elif "3b" in model:
+        base = 48.0
+        params_b = 3.0
+    elif "8b" in model:
+        base = 28.0
+        params_b = 8.0
+    elif "7b" in model or "writing" in model or "grammar" in model:
+        base = 32.0
+        params_b = 7.0
+    elif "14b" in model or "13b" in model:
+        base = 16.0
+        params_b = 14.0
+    else:
+        base = 30.0
+        params_b = 7.0
+
+    # Need ~1.2GB RAM per billion params (Q4-ish); under-alloc slows sharply.
+    needed = max(2.0, params_b * 1.2)
+    ram_factor = min(1.15, ram / needed)
+    if ram < needed:
+        ram_factor = max(0.25, (ram / needed) ** 1.4)
+    gpu_factor = 0.55 + (gpu / 100.0) * 0.55  # 25%→0.69, 75%→0.96, 95%→1.07
+    tokens = max(4.0, base * ram_factor * gpu_factor)
+    return {
+        "tokens_per_sec": round(tokens, 1),
+        "model": model_name or data.get("writing_model") or DEFAULT_WRITING_MODEL,
+        "hardware_ram_gb": ram,
+        "hardware_gpu_percent": gpu,
+        "system_ram_gb": total,
+        "detail": f"~{tokens:.0f} tokens/sec estimated for {model_label(str(model_name or data.get('writing_model') or DEFAULT_WRITING_MODEL))}",
+    }
+
+
+def hardware_summary() -> dict[str, Any]:
+    data = load_settings()
+    estimate = estimate_tokens_per_sec()
+    return {
+        "hardware_ram_gb": int(data.get("hardware_ram_gb") or default_ram_gb()),
+        "hardware_gpu_percent": int(
+            data.get("hardware_gpu_percent") or DEFAULT_HARDWARE_GPU_PERCENT
+        ),
+        "system_ram_gb": system_ram_gb(),
+        "tokens_per_sec": estimate["tokens_per_sec"],
+        "tokens_detail": estimate["detail"],
+    }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Humanizer: Local Writing Assistant",
-  "version": "1.10.26",
+  "version": "1.10.27",
   "description": "Grammar and spelling help on any site, including Google, Docs, Gmail, and search bars",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuBsZj3DLhSiviWxHqQiVlx1UBszd1forl+xgiomVq7ZfaWnkYLa2Qq04nfcryZuFBkgQkI3Be+W1kzE6XhwG4lMbOEJDcrl8LxBsbRDpzial34NSyzJ1ewDA2qwsmRTGMHTBKbo7kLUtVhRb8aMRp0Q1195uZQHndcGNhK6+9MJZPxueOEJrg3fqg5EGR3dCs07QHJIYeDNISW1P6yO+bw5HA/B8EfMDTgkjPgYG98AXdUu7PofHCYyLYk1HMaTkyIC2OMLHwTbkHQls9JPlh/33Kz/Z1nK9Zp2hPgws/In4t5PR7LjZSqDh5yt//GxeKEB/dM8xRmuy/oVKIrUcCQIDAQAB",
   "permissions": [
