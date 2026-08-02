@@ -89,7 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        ProcessInfo.processInfo.processName = "Humanizer"
+        ProcessInfo.processInfo.processName = "Thoth"
         setupStatusItem()
         setupWindow()
         setupSettingsWindow()
@@ -157,12 +157,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         status.tag = 100
         menu.addItem(status)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Open Humanizer", action: #selector(showWindow), keyEquivalent: "o"))
+        menu.addItem(NSMenuItem(title: "Open Thoth", action: #selector(showWindow), keyEquivalent: "o"))
         menu.addItem(NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "Add to Menu Bar…", action: #selector(openMenuBarSettings), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Restart server", action: #selector(restartServer), keyEquivalent: "r"))
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit Humanizer", action: #selector(quitApp), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Thoth", action: #selector(quitApp), keyEquivalent: "q"))
         item.menu = menu
         statusItem = item
         logMenuBarGeometry("setup")
@@ -180,16 +180,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             button.title = "H"
             button.image = nil
         }
-        button.toolTip = "Humanizer — local writing server"
+        button.toolTip = "Thoth — local writing server"
         button.appearsDisabled = false
-        button.setAccessibilityTitle("Humanizer")
+        button.setAccessibilityTitle("Thoth")
     }
 
     private func setupWindow() {
         let rect = NSRect(x: 0, y: 0, width: 420, height: 330)
         let style: NSWindow.StyleMask = [.titled, .closable, .miniaturizable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
-        win.title = "Humanizer"
+        win.title = "Thoth"
         win.backgroundColor = bg
         win.isReleasedWhenClosed = false
         win.center()
@@ -202,7 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         mark.imageScaling = .scaleProportionallyUpOrDown
         content.addSubview(mark)
 
-        let title = NSTextField(labelWithString: "Humanizer")
+        let title = NSTextField(labelWithString: "Thoth")
         title.font = .systemFont(ofSize: 28, weight: .bold)
         title.textColor = textColor
         title.frame = NSRect(x: 98, y: 264, width: 180, height: 34)
@@ -359,14 +359,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         icon.imageScaling = .scaleProportionallyUpOrDown
         content.addSubview(icon)
 
-        let title = NSTextField(labelWithString: "Allow Humanizer in Background?")
+        let title = NSTextField(labelWithString: "Allow Thoth in Background?")
         title.font = .systemFont(ofSize: 20, weight: .bold)
         title.textColor = textColor
         title.alignment = .center
         title.frame = NSRect(x: 28, y: 272, width: 404, height: 28)
         content.addSubview(title)
 
-        let body = NSTextField(wrappingLabelWithString: "macOS requires two permissions for menu bar apps: Background Activity (so Humanizer can stay running) and Menu Bar (so the H icon can appear near the clock).")
+        let body = NSTextField(wrappingLabelWithString: "macOS requires two permissions for menu bar apps: Background Activity (so Thoth can stay running) and Menu Bar (so the H icon can appear near the clock).")
         body.font = .systemFont(ofSize: 13)
         body.textColor = muted
         body.alignment = .center
@@ -379,7 +379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         stepsCard.layer?.cornerRadius = 12
         content.addSubview(stepsCard)
 
-        let steps = NSTextField(wrappingLabelWithString: "macOS parked this icon off-screen (StatusKit bug).\n1. Click Fix Menu Bar Icon\n2. In Menu Bar settings turn Humanizer OFF, then ON\n3. Look for the H near the clock")
+        let steps = NSTextField(wrappingLabelWithString: "macOS parked this icon off-screen (StatusKit bug).\n1. Click Fix Menu Bar Icon\n2. In Menu Bar settings turn Thoth OFF, then ON\n3. Look for the H near the clock")
         steps.font = .systemFont(ofSize: 12)
         steps.textColor = textColor
         steps.frame = NSRect(x: 16, y: 10, width: 356, height: 70)
@@ -426,7 +426,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         menuBarSheet = win
     }
 
-    /// Registers Humanizer with System Settings → Login Items & Background Activity.
+    /// Registers Thoth with System Settings → Login Items & Background Activity.
     @discardableResult
     private func registerBackgroundActivity(forceReregister: Bool = false) -> String {
         // Drop the old silent LaunchAgent — confuses Background Task Management.
@@ -457,7 +457,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let loginItem = SMAppService.loginItem(identifier: "com.humanizer.macos.LaunchAtLogin")
         let main = SMAppService.mainApp
-        // Do NOT register the LaunchAgent that runs Contents/MacOS/Humanizer —
+        // Do NOT register the LaunchAgent that runs Contents/MacOS/Thoth —
         // that starts a second GUI process and a second menu bar icon.
         let staleAgents = [
             "com.humanizer.macos.agent.plist",
@@ -481,7 +481,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             // SMAppService.mainApp only covers this process's bundle.
         }
 
-        // Only open the helper when first registering — avoids a second Humanizer launch.
+        // Only open the helper when first registering — avoids a second Thoth launch.
         if forceReregister {
             let helperURL = Bundle.main.bundleURL
                 .appendingPathComponent("Contents/Library/LoginItems/LaunchAtLogin.app")
@@ -552,7 +552,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let rect = NSRect(x: 0, y: 0, width: 480, height: 580)
         let style: NSWindow.StyleMask = [.titled, .closable]
         let win = NSWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
-        win.title = "Humanizer Settings"
+        win.title = "Thoth Settings"
         win.backgroundColor = bg
         win.isReleasedWhenClosed = false
         win.center()
@@ -1066,7 +1066,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         settingsRootView?.isHidden = false
         settingsFeaturesView?.isHidden = true
         settingsHardwareView?.isHidden = true
-        settingsWindow?.title = "Humanizer Settings"
+        settingsWindow?.title = "Thoth Settings"
         updateFeaturesSummaryLabel()
         updateHardwareSummaryLabel()
     }
@@ -1144,14 +1144,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
-        let title = NSTextField(labelWithString: "Link Chrome to Humanizer")
+        let title = NSTextField(labelWithString: "Link Chrome to Thoth")
         title.font = .systemFont(ofSize: 20, weight: .bold)
         title.textColor = textColor
         title.alignment = .center
         title.frame = NSRect(x: 28, y: 300, width: 404, height: 28)
         content.addSubview(title)
 
-        let body = NSTextField(wrappingLabelWithString: "One-time setup: load the bundled extension from Application Support. After that, the extension reconnects to this app automatically whenever Humanizer is running.")
+        let body = NSTextField(wrappingLabelWithString: "One-time setup: load the bundled extension from Application Support. After that, the extension reconnects to this app automatically whenever Thoth is running.")
         body.font = .systemFont(ofSize: 13)
         body.textColor = muted
         body.alignment = .center
@@ -1313,14 +1313,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 self.updateMenuBarBanner()
                 let alert = NSAlert()
                 alert.messageText = "Menu bar connected"
-                alert.informativeText = "Look for the Humanizer H near the clock."
+                alert.informativeText = "Look for the Thoth icon near the clock."
                 alert.addButton(withTitle: "OK")
                 alert.runModal()
             } else {
                 let alert = NSAlert()
                 alert.messageText = "Still waiting for Menu Bar access"
                 alert.informativeText = """
-                In System Settings → Menu Bar, find Humanizer and turn it ON.
+                In System Settings → Menu Bar, find Thoth and turn it ON.
 
                 Then click “I’ve allowed it — check again”.
                 """
@@ -1463,10 +1463,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 return
             }
             let alert = NSAlert()
-            alert.messageText = "Allow Humanizer in the Menu Bar"
+            alert.messageText = "Allow Thoth in the Menu Bar"
             alert.informativeText = """
-            Turn Humanizer ON in System Settings → Menu Bar.
-            Humanizer will reconnect automatically the next time it opens.
+            Turn Thoth ON in System Settings → Menu Bar.
+            Thoth will reconnect automatically the next time it opens.
             """
             alert.addButton(withTitle: "OK")
             alert.runModal()
@@ -2290,7 +2290,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 }
 
 enum HumanizerMain {
-    /// CLI: `Humanizer service <cmd…>` runs the Python helper and exits (no GUI).
+    /// CLI: `Thoth service <cmd…>` runs the Python helper and exits (no GUI).
     /// Prevents accidental menu-bar loss when a tool invokes the binary with args.
     static func runServiceCLI(arguments: [String]) -> Never {
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -2337,7 +2337,7 @@ enum HumanizerMain {
             proc.waitUntilExit()
             exit(proc.terminationStatus)
         } catch {
-            fputs("Humanizer: could not run service helper: \(error)\n", stderr)
+            fputs("Thoth: could not run service helper: \(error)\n", stderr)
             exit(1)
         }
     }

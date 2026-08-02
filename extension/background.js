@@ -223,7 +223,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         error:
           (isRestart && native?.detail) ||
           native?.detail ||
-          "Could not restart. Open Humanizer.app and try again.",
+          "Could not restart. Open Thoth.app and try again.",
       });
     })();
     return true;

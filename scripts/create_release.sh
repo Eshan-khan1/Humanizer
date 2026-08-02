@@ -18,20 +18,20 @@ TAG="v${VERSION}"
 MAC_ZIP="$ROOT/dist/humanizer-extension-mac-v${VERSION}.zip"
 WIN_ZIP="$ROOT/dist/humanizer-extension-windows-v${VERSION}.zip"
 GENERIC_ZIP="$ROOT/dist/humanizer-extension-v${VERSION}.zip"
-APP_ZIP="$ROOT/dist/Humanizer-macOS-v${VERSION}.zip"
-APP_ZIP_STABLE="$ROOT/dist/Humanizer-macOS.zip"
+APP_ZIP="$ROOT/dist/Thoth-macOS-v${VERSION}.zip"
+APP_ZIP_STABLE="$ROOT/dist/Thoth-macOS.zip"
 
-if [[ ! -d "$ROOT/dist/Humanizer.app" ]]; then
-  echo "Error: dist/Humanizer.app not found"
+if [[ ! -d "$ROOT/dist/Thoth.app" ]]; then
+  echo "Error: dist/Thoth.app not found"
   exit 1
 fi
 
-echo "==> Zipping Humanizer.app"
+echo "==> Zipping Thoth.app"
 rm -f "$APP_ZIP" "$APP_ZIP_STABLE"
 (
   cd "$ROOT/dist"
-  ditto -c -k --keepParent Humanizer.app "Humanizer-macOS-v${VERSION}.zip"
-  cp "Humanizer-macOS-v${VERSION}.zip" "Humanizer-macOS.zip"
+  ditto -c -k --keepParent Thoth.app "Thoth-macOS-v${VERSION}.zip"
+  cp "Thoth-macOS-v${VERSION}.zip" "Thoth-macOS.zip"
 )
 
 for f in "$MAC_ZIP" "$WIN_ZIP" "$GENERIC_ZIP" "$APP_ZIP" "$APP_ZIP_STABLE"; do
@@ -42,15 +42,15 @@ for f in "$MAC_ZIP" "$WIN_ZIP" "$GENERIC_ZIP" "$APP_ZIP" "$APP_ZIP_STABLE"; do
 done
 
 NOTES="$(cat <<EOF
-# Humanizer ${TAG}
+# Thoth ${TAG}
 
 Chrome extension + local writing server for **Windows** and **macOS**.
 
 ## macOS — menu bar app (recommended)
 
-1. Download **[Humanizer-macOS.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Humanizer-macOS.zip)**
+1. Download **[Thoth-macOS.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Thoth-macOS.zip)**
 2. Download **[humanizer-extension-mac-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/humanizer-extension-mac-v${VERSION}.zip)**
-3. Unzip the app zip → drag **Humanizer.app** into **Applications** → open it once
+3. Unzip the app zip → drag **Thoth.app** into **Applications** → open it once
 4. Unzip the extension → Chrome → \`chrome://extensions\` → **Developer mode** → **Load unpacked**
 5. Leave the menu bar icon running; it starts the server and relaunches after login
 

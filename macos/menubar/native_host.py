@@ -43,7 +43,7 @@ def main() -> int:
 
     if msg_type in ("ping", "hello"):
         extension_bridge.record_extension_ping({"via": "native"})
-        _write_message({"ok": True, "app": "Humanizer", "type": "pong"})
+        _write_message({"ok": True, "app": "Thoth", "type": "pong"})
         return 0
 
     if msg_type == "status":
@@ -86,7 +86,7 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         info = {
             "ok": True,
-            "app": "Humanizer",
+            "app": "Thoth",
             "base_url": f"http://127.0.0.1:{manager.DEFAULT_PORT}",
             "auth_required": False,
             "warning": str(exc),

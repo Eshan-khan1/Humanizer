@@ -68,7 +68,7 @@ def main() -> None:
     except ImportError as exc:
         logger.exception("AppKit/PyObjC missing: %s", exc)
         raise SystemExit(
-            "Humanizer needs PyObjC (pyobjc-framework-Cocoa). Re-open after deps install."
+            "Thoth needs PyObjC (pyobjc-framework-Cocoa). Re-open after deps install."
         ) from exc
 
     root = bootstrap_root()
@@ -135,7 +135,7 @@ def main() -> None:
             return self
 
         def applicationDidFinishLaunching_(self, _notification):
-            Foundation.NSProcessInfo.processInfo().setProcessName_("Humanizer")
+            Foundation.NSProcessInfo.processInfo().setProcessName_("Thoth")
             AppKit.NSApp.setActivationPolicy_(
                 AppKit.NSApplicationActivationPolicyRegular
             )
@@ -166,7 +166,7 @@ def main() -> None:
                 AppKit.NSBackingStoreBuffered,
                 False,
             )
-            window.setTitle_("Humanizer")
+            window.setTitle_("Thoth")
             window.setBackgroundColor_(color(_BG))
             window.center()
             window.setReleasedWhenClosed_(False)
@@ -185,7 +185,7 @@ def main() -> None:
             self.mark_view = mark
 
             # Title
-            title = AppKit.NSTextField.labelWithString_("Humanizer")
+            title = AppKit.NSTextField.labelWithString_("Thoth")
             title.setFont_(
                 AppKit.NSFont.systemFontOfSize_weight_(28.0, AppKit.NSFontWeightBold)
             )
@@ -268,7 +268,7 @@ def main() -> None:
             content.addSubview_(quit_btn)
 
             tip = AppKit.NSTextField.labelWithString_(
-                "On macOS 26: System Settings → Menu Bar → turn Humanizer ON."
+                "On macOS 26: System Settings → Menu Bar → turn Thoth ON."
             )
             tip.setFont_(AppKit.NSFont.systemFontOfSize_(11.0))
             tip.setTextColor_(color(_MUTED))
@@ -311,7 +311,7 @@ def main() -> None:
                     button.setTitle_("")
                 else:
                     button.setTitle_("Hz")
-                button.setToolTip_("Humanizer — local writing server")
+                button.setToolTip_("Thoth — local writing server")
 
             menu = AppKit.NSMenu.alloc().init()
 
@@ -323,7 +323,7 @@ def main() -> None:
             menu.addItem_(AppKit.NSMenuItem.separatorItem())
 
             open_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-                "Open Humanizer", "showWindow:", ""
+                "Open Thoth", "showWindow:", ""
             )
             open_item.setTarget_(self)
             menu.addItem_(open_item)
@@ -342,7 +342,7 @@ def main() -> None:
             menu.addItem_(AppKit.NSMenuItem.separatorItem())
 
             quit_item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-                "Quit Humanizer", "onQuit:", "q"
+                "Quit Thoth", "onQuit:", "q"
             )
             quit_item.setTarget_(self)
             menu.addItem_(quit_item)
@@ -376,8 +376,8 @@ def main() -> None:
             if not opened:
                 AppKit.NSWorkspace.sharedWorkspace().launchApplication_("System Settings")
             notify_user(
-                "Add Humanizer to the menu bar",
-                "In System Settings, open Menu Bar (or Control Center) and turn Humanizer ON / Show in Menu Bar.",
+                "Add Thoth to the menu bar",
+                "In System Settings, open Menu Bar (or Control Center) and turn Thoth ON / Show in Menu Bar.",
             )
 
         def checkStatusItemVisibility_(self, _timer):
@@ -405,13 +405,13 @@ def main() -> None:
                 screen,
             )
             alert = AppKit.NSAlert.alloc().init()
-            alert.setMessageText_("Show Humanizer in the menu bar")
+            alert.setMessageText_("Show Thoth in the menu bar")
             alert.setInformativeText_(
-                "macOS may be hiding the Humanizer icon.\n\n"
+                "macOS may be hiding the Thoth icon.\n\n"
                 "1. Open System Settings → Menu Bar (or Control Center)\n"
-                "2. Find Humanizer\n"
+                "2. Find Thoth\n"
                 "3. Turn it ON / set “Show in Menu Bar”\n\n"
-                "You can also click “Add to Menu Bar…” in the Humanizer window."
+                "You can also click “Add to Menu Bar…” in the Thoth window."
             )
             alert.addButtonWithTitle_("Open Settings")
             alert.addButtonWithTitle_("Later")
@@ -465,7 +465,7 @@ def main() -> None:
 
             if online and not self.notified_ready:
                 self.notified_ready = True
-                notify_user("Server online", "Humanizer is ready.")
+                notify_user("Server online", "Thoth is ready.")
 
         def startServerAsync(self):
             def work():

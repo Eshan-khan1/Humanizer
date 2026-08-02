@@ -144,7 +144,7 @@ def require_feature(name: str) -> None:
         if not app_settings.feature_enabled(name):
             raise HTTPException(
                 status_code=403,
-                detail=f"{name.capitalize()} is turned off in Humanizer Settings",
+                detail=f"{name.capitalize()} is turned off in Thoth Settings",
             )
     except HTTPException:
         raise
@@ -1615,7 +1615,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="Humanizer API",
+    title="Thoth API",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs" if DEBUG_OLLAMA else None,
@@ -1674,7 +1674,7 @@ def connect_bootstrap() -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001
         return {
             "ok": True,
-            "app": "Humanizer",
+            "app": "Thoth",
             "base_url": "http://127.0.0.1:8000",
             "auth_required": bool(REQUIRE_AUTH and API_TOKEN),
             "token": API_TOKEN if (REQUIRE_AUTH and API_TOKEN) else None,

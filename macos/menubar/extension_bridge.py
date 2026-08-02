@@ -104,7 +104,7 @@ def register_native_messaging_host() -> dict:
     host_path = _native_host_launcher()
     manifest = {
         "name": NATIVE_HOST_NAME,
-        "description": "Humanizer local writing assistant",
+        "description": "Thoth local writing assistant",
         "path": str(host_path),
         "type": "stdio",
         "allowed_origins": [f"chrome-extension://{EXTENSION_ID}/"],
@@ -158,7 +158,7 @@ def connect_info(*, include_token: bool = True) -> dict:
     auth_required = bool(REQUIRE_AUTH and API_TOKEN)
     info = {
         "ok": True,
-        "app": "Humanizer",
+        "app": "Thoth",
         "host": "127.0.0.1",
         "port": port,
         "base_url": f"http://127.0.0.1:{port}",

@@ -57,7 +57,7 @@ Humanizer for macOS
 1. Install Python 3.10+, Ollama, and Java 11+ (e.g. brew install openjdk@17).
 2. From the GitHub release, download Humanizer-macOS.zip and humanizer-extension-mac-….zip:
    https://github.com/Eshan-khan1/Humanizer/releases/latest
-3. Unzip Humanizer-macOS.zip, drag Humanizer.app into Applications, and open it once.
+3. Unzip Thoth-macOS.zip, drag Thoth.app into Applications, and open it once.
 4. Unzip the extension zip.
 5. Chrome → chrome://extensions → Developer mode → Load unpacked → select the unzipped folder.
 

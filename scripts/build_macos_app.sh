@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Build a double-clickable Humanizer.app (menu bar) for macOS.
+# Build a double-clickable Thoth.app (menu bar) for macOS.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-APP_NAME="Humanizer"
+APP_NAME="Thoth"
 DIST="$ROOT/dist"
 APP="$DIST/${APP_NAME}.app"
 CONTENTS="$APP/Contents"
@@ -93,15 +93,15 @@ cat > "$CONTENTS/Info.plist" <<PLIST
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleExecutable</key>
-  <string>Humanizer</string>
+  <string>Thoth</string>
   <key>CFBundleIdentifier</key>
   <string>com.humanizer.macos</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Humanizer</string>
+  <string>Thoth</string>
   <key>CFBundleDisplayName</key>
-  <string>Humanizer</string>
+  <string>Thoth</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -117,7 +117,7 @@ cat > "$CONTENTS/Info.plist" <<PLIST
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSHumanReadableCopyright</key>
-  <string>Copyright (c) Humanizer</string>
+  <string>Copyright (c) Thoth</string>
 </dict>
 </plist>
 PLIST
@@ -138,7 +138,7 @@ cat > "$LAUNCH_AGENTS_DIR/com.humanizer.macos.agent.plist" <<'AGENT'
     <string>com.humanizer.macos</string>
   </array>
   <key>BundleProgram</key>
-  <string>Contents/MacOS/Humanizer</string>
+  <string>Contents/MacOS/Thoth</string>
   <key>RunAtLoad</key>
   <true/>
   <key>ProcessType</key>
@@ -148,7 +148,7 @@ cat > "$LAUNCH_AGENTS_DIR/com.humanizer.macos.agent.plist" <<'AGENT'
 AGENT
 
 # Login Item helper (same pattern Stats / Raycast use). This is what gets
-# Humanizer a row in System Settings → Login Items & Background Activity.
+# Thoth a row in System Settings → Login Items & Background Activity.
 LOGIN_ITEM_APP="$CONTENTS/Library/LoginItems/LaunchAtLogin.app"
 LOGIN_ITEM_CONTENTS="$LOGIN_ITEM_APP/Contents"
 LOGIN_ITEM_MACOS="$LOGIN_ITEM_CONTENTS/MacOS"
@@ -167,9 +167,9 @@ cat > "$LOGIN_ITEM_CONTENTS/Info.plist" <<LOGINPLIST
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Humanizer</string>
+  <string>Thoth</string>
   <key>CFBundleDisplayName</key>
-  <string>Humanizer</string>
+  <string>Thoth</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -194,7 +194,7 @@ swiftc -O \
   "$ROOT/macos/launcher/LaunchAtLogin.swift"
 codesign --force --sign - "$LOGIN_ITEM_APP" >/dev/null 2>&1 || true
 
-# Native AppKit host (Swift). Required on macOS 26 so Humanizer appears in
+# Native AppKit host (Swift). Required on macOS 26 so Thoth appears in
 # System Settings → Menu Bar / Background Activity.
 LAUNCHER_SRC="$ROOT/macos/launcher/HumanizerApp.swift"
 echo "  compiling native menu-bar host (Swift/AppKit + ServiceManagement)"
@@ -202,11 +202,11 @@ swiftc -O \
   -target arm64-apple-macos13.0 \
   -sdk "$(xcrun --show-sdk-path)" \
   -framework AppKit -framework Foundation -framework ServiceManagement \
-  -o "$MACOS/Humanizer" \
+  -o "$MACOS/Thoth" \
   "$LAUNCHER_SRC"
 
 # Ad-hoc sign so Gatekeeper is less likely to block double-click opens.
-codesign --force --sign - "$MACOS/Humanizer" >/dev/null 2>&1 || true
+codesign --force --sign - "$MACOS/Thoth" >/dev/null 2>&1 || true
 codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
 
 echo ""
@@ -214,7 +214,7 @@ echo "Built: $APP"
 echo ""
 echo "To use:"
 echo "  1. Drag into /Applications and open once"
-echo "  2. System Settings → Menu Bar → turn Humanizer ON"
-echo "  3. Look for the Humanizer icon near the clock"
+echo "  2. System Settings → Menu Bar → turn Thoth ON"
+echo "  3. Look for the Thoth icon near the clock"
 echo ""
 echo "Needs: Python 3, Ollama app, Chrome extension (Connect Chrome Extension… in the app)"

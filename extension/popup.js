@@ -928,7 +928,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const refreshConnection = async () => {
       if (!restartBusy) {
-        setStatus("Connecting…", "checking", "Linking to Humanizer.app");
+        setStatus("Connecting…", "checking", "Linking to Thoth.app");
       }
       try {
         await chrome.runtime.sendMessage({ type: "autoConnect" });
@@ -958,14 +958,14 @@ document.addEventListener("DOMContentLoaded", () => {
           "online",
           linked
             ? "Chrome extension linked"
-            : "Local Humanizer server is running"
+            : "Local Thoth server is running"
         );
         return true;
       } catch {
         setStatus(
           "Server offline",
           "offline",
-          "Open Humanizer.app, then reconnect"
+          "Open Thoth.app, then reconnect"
         );
         return false;
       }
@@ -1070,7 +1070,7 @@ document.addEventListener("DOMContentLoaded", () => {
           setStatus(
             "Restart failed",
             "offline",
-            error?.message || "Could not reach Humanizer.app"
+            error?.message || "Could not reach Thoth.app"
           );
         } finally {
           window.clearInterval(progressTimer);
