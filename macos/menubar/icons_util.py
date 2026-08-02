@@ -64,19 +64,29 @@ def write_template_from_mask(
 ) -> None:
     """Bake a solid black template from a luminance/alpha mask PNG."""
     try:
-        from PIL import Image
+        from PIL import Image, ImageFilter
     except ImportError:
         write_beacon_template(path, size=size, filled=alpha_scale >= 0.9)
         return
     img = Image.open(mask).convert("L")
-    img = img.resize((size, size), Image.Resampling.LANCZOS)
+    # Upscale → thicken hairlines → downscale so the diamond reads at 16–18pt.
+    big = img.resize((size * 4, size * 4), Image.Resampling.LANCZOS)
+    for _ in range(3):
+        big = big.filter(ImageFilter.MaxFilter(5))
+    px = big.load()
+    w, h = big.size
+    for y in range(h):
+        for x in range(w):
+            px[x, y] = 255 if px[x, y] > 36 else 0
+    big = big.filter(ImageFilter.MaxFilter(3))
+    small = big.resize((size, size), Image.Resampling.LANCZOS)
     out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    sp = img.load()
+    sp = small.load()
     op = out.load()
     for y in range(size):
         for x in range(size):
             v = sp[x, y]
-            if v < 64:
+            if v < 48:
                 continue
             op[x, y] = (0, 0, 0, int(min(255, (v / 255.0) * 255 * alpha_scale)))
     path.parent.mkdir(parents=True, exist_ok=True)
