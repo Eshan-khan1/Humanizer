@@ -69,20 +69,24 @@ def write_template_from_mask(
         write_beacon_template(path, size=size, filled=alpha_scale >= 0.9)
         return
     img = Image.open(mask).convert("L")
-    # Mild thicken, then hard threshold so the glyph renders bright white
-    # (soft gray antialias looks dull in the menu bar).
-    big = img.resize((size * 3, size * 3), Image.Resampling.LANCZOS)
+    # Supersample for smooth diagonals, mild thicken, keep AA (bright, not crunchy).
+    big = img.resize((size * 4, size * 4), Image.Resampling.LANCZOS)
     big = big.filter(ImageFilter.MaxFilter(3))
     small = big.resize((size, size), Image.Resampling.LANCZOS)
     out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     sp = small.load()
     op = out.load()
-    # Full opacity for solid strokes; alpha_scale only for offline dimming.
-    solid = int(min(255, round(255 * alpha_scale)))
     for y in range(size):
         for x in range(size):
-            if sp[x, y] >= 96:
-                op[x, y] = (0, 0, 0, solid)
+            v = sp[x, y]
+            if v < 28:
+                continue
+            # Lift midtones so the glyph reads bright white in the menu bar
+            lifted = min(255, int(255 * ((v / 255.0) ** 0.55)))
+            alpha = int(min(255, lifted * alpha_scale))
+            if alpha < 20:
+                continue
+            op[x, y] = (0, 0, 0, alpha)
     path.parent.mkdir(parents=True, exist_ok=True)
     out.save(path, optimize=True)
 
