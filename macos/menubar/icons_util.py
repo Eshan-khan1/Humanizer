@@ -45,7 +45,7 @@ def write_status_icons(directory: Path) -> tuple[Path, Path, Path]:
     # Prefer the pre-baked solid “flower of send icons” mask (menu-bar weight).
     if mask.is_file():
         write_template_from_mask(online, mask, size=44, alpha_scale=1.0)
-        write_template_from_mask(offline, mask, size=44, alpha_scale=0.78)
+        write_template_from_mask(offline, mask, size=44, alpha_scale=0.92)
     elif menubar is not None:
         write_menubar_template(online, menubar, size=44, alpha_scale=1.0)
         write_menubar_template(offline, menubar, size=44, alpha_scale=0.72)
@@ -69,19 +69,20 @@ def write_template_from_mask(
         write_beacon_template(path, size=size, filled=alpha_scale >= 0.9)
         return
     img = Image.open(mask).convert("L")
-    # Mild thicken only — mask is already sized for menu-bar weight.
+    # Mild thicken, then hard threshold so the glyph renders bright white
+    # (soft gray antialias looks dull in the menu bar).
     big = img.resize((size * 3, size * 3), Image.Resampling.LANCZOS)
     big = big.filter(ImageFilter.MaxFilter(3))
     small = big.resize((size, size), Image.Resampling.LANCZOS)
     out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     sp = small.load()
     op = out.load()
+    # Full opacity for solid strokes; alpha_scale only for offline dimming.
+    solid = int(min(255, round(255 * alpha_scale)))
     for y in range(size):
         for x in range(size):
-            v = sp[x, y]
-            if v < 56:
-                continue
-            op[x, y] = (0, 0, 0, int(min(255, (v / 255.0) * 255 * alpha_scale)))
+            if sp[x, y] >= 96:
+                op[x, y] = (0, 0, 0, solid)
     path.parent.mkdir(parents=True, exist_ok=True)
     out.save(path, optimize=True)
 
