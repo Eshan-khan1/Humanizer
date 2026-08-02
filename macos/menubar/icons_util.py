@@ -69,15 +69,8 @@ def write_template_from_mask(
         write_beacon_template(path, size=size, filled=alpha_scale >= 0.9)
         return
     img = Image.open(mask).convert("L")
-    # Upscale → thicken hairlines → downscale so the diamond reads at 16–18pt.
-    big = img.resize((size * 4, size * 4), Image.Resampling.LANCZOS)
-    for _ in range(3):
-        big = big.filter(ImageFilter.MaxFilter(5))
-    px = big.load()
-    w, h = big.size
-    for y in range(h):
-        for x in range(w):
-            px[x, y] = 255 if px[x, y] > 36 else 0
+    # Mild thicken only — mask is already sized for menu-bar weight.
+    big = img.resize((size * 3, size * 3), Image.Resampling.LANCZOS)
     big = big.filter(ImageFilter.MaxFilter(3))
     small = big.resize((size, size), Image.Resampling.LANCZOS)
     out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
@@ -86,7 +79,7 @@ def write_template_from_mask(
     for y in range(size):
         for x in range(size):
             v = sp[x, y]
-            if v < 48:
+            if v < 56:
                 continue
             op[x, y] = (0, 0, 0, int(min(255, (v / 255.0) * 255 * alpha_scale)))
     path.parent.mkdir(parents=True, exist_ok=True)
