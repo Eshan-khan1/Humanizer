@@ -1,5 +1,5 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  
+  <rect width="1024" height="1024" rx="228" fill="#000000"/>
   <!-- H left -->
   <rect x="327" y="277" width="95" height="430" rx="26" fill="#FFFFFF"/>
   <!-- H right -->
@@ -7,5 +7,5 @@
   <!-- H crossbar -->
   <rect x="360" y="449" width="304" height="87" rx="30" fill="#FFFFFF"/>
   <!-- accent -->
-  <rect x="430" y="767" width="164" height="37" rx="18" fill="#FFFFFF"/>
+  <rect x="430" y="767" width="164" height="37" rx="18" fill="#06C167"/>
 </svg>
