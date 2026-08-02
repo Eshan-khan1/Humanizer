@@ -2279,7 +2279,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let url = dir.appendingPathComponent("\(name).png")
         guard let image = NSImage(contentsOf: url) else { return nil }
         image.isTemplate = true
-        image.size = NSSize(width: 26, height: 26)
+        image.size = NSSize(width: 24, height: 24)
         return image
     }
 
