@@ -1,6 +1,6 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <rect width="1024" height="1024" fill="#000000"/>
-  <!-- Humanizer diamond mark — raster master is logo.png -->
+  <!-- Thoth diamond mark — raster master is logo.png -->
   <g transform="translate(512 512)">
     <polygon points="0,-70 48,0 0,70 -48,0" fill="#FFFFFF"/>
     <g fill="none" stroke="#C8C8C8" stroke-width="18" stroke-linecap="round">
