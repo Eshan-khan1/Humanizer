@@ -1,4 +1,4 @@
-/* Humanizer UI Theme — Uber dark tokens (see ui.json) */
+/* Thoth UI Theme — Uber dark tokens (see ui.json) */
 
 /* Popup-only theme file. Do not inject into content scripts — :root
    color-scheme rules would force light/dark mode on every website. */

@@ -1,1 +1,1 @@
-"""Humanizer macOS menu-bar package."""
+"""Thoth macOS menu-bar package."""

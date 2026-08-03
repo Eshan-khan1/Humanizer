@@ -1,4 +1,4 @@
-"""Humanizer macOS app — control window + right-side menu bar icon."""
+"""Thoth macOS app — control window + right-side menu bar icon."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
-logger = logging.getLogger("humanizer.menubar")
+logger = logging.getLogger("thoth.menubar")
 
 # Uber dark tokens from ui.json
 _BG = (0.0, 0.0, 0.0, 1.0)  # #000000
@@ -47,7 +47,7 @@ _reexec_native_if_needed()
 
 
 def bootstrap_root() -> Path:
-    resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
+    resources = Path(os.environ.get("THOTH_BUNDLE_RESOURCES", "")).expanduser()
     if resources.is_dir() and (resources / "ThothHome" / "server.py").is_file():
         return manager.ensure_home_payload(resources)
     return manager.resolve_project_root()
@@ -72,7 +72,7 @@ def main() -> None:
         ) from exc
 
     root = bootstrap_root()
-    logger.info("Humanizer root: %s", root)
+    logger.info("Thoth root: %s", root)
     logger.info(
         "System: macOS %s %s",
         platform.mac_ver()[0] or "unknown",
@@ -296,7 +296,7 @@ def main() -> None:
             bar = AppKit.NSStatusBar.systemStatusBar()
             item = bar.statusItemWithLength_(AppKit.NSVariableStatusItemLength)
             try:
-                item.setAutosaveName_("com.humanizer.menubar.statusItem")
+                item.setAutosaveName_("com.thoth.menubar.statusItem")
             except Exception:  # noqa: BLE001
                 logger.warning("Could not set status item autosaveName")
             try:
@@ -350,7 +350,7 @@ def main() -> None:
             item.setMenu_(menu)
             self.status_item = item
             logger.info(
-                "Menu bar status item registered (autosaveName=com.humanizer.menubar.statusItem)"
+                "Menu bar status item registered (autosaveName=com.thoth.menubar.statusItem)"
             )
             # After Control Center settles, warn if macOS is still hiding the icon.
             Foundation.NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
@@ -358,7 +358,7 @@ def main() -> None:
             )
 
         def openMenuBarSettings_(self, _sender):
-            # Opens System Settings where the user can enable Humanizer in the menu bar.
+            # Opens System Settings where the user can enable Thoth in the menu bar.
             opened = False
             for url in (
                 "x-apple.systempreferences:com.apple.ControlCenter-Settings.extension",

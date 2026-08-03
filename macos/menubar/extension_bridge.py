@@ -17,7 +17,7 @@ from macos.menubar import manager
 
 # Stable ID from the public key in extension/manifest.json ("key" field).
 EXTENSION_ID = "mhenjgoinbneknfpjjemjlhjjifmgmdi"
-NATIVE_HOST_NAME = "com.humanizer.app"
+NATIVE_HOST_NAME = "com.thoth.app"
 DEFAULT_PORT = manager.DEFAULT_PORT
 
 
@@ -34,7 +34,7 @@ def extension_ping_file() -> Path:
 def _extension_source(root: Path) -> Path | None:
     candidates = [
         root / "extension",
-        Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")) / "ThothHome" / "extension",
+        Path(os.environ.get("THOTH_BUNDLE_RESOURCES", "")) / "ThothHome" / "extension",
         manager.support_dir() / "Home" / "extension",
     ]
     for path in candidates:
@@ -77,7 +77,7 @@ def _native_host_launcher() -> Path:
     home = manager.support_dir() / "Home"
     venv_py = home / ".venv" / "bin" / "python"
     script = f"""#!/bin/bash
-export HUMANIZER_ROOT="{home}"
+export THOTH_ROOT="{home}"
 export PYTHONPATH="{home}${{PYTHONPATH:+:$PYTHONPATH}}"
 cd "{home}"
 if [[ -x "{venv_py}" ]]; then
@@ -154,7 +154,7 @@ def connect_info(*, include_token: bool = True) -> dict:
     """Payload returned to the extension via /connect or native messaging."""
     from security import API_TOKEN, REQUIRE_AUTH  # local import: server deps
 
-    port = int(os.environ.get("HUMANIZER_PORT", str(DEFAULT_PORT)))
+    port = int(os.environ.get("THOTH_PORT", str(DEFAULT_PORT)))
     auth_required = bool(REQUIRE_AUTH and API_TOKEN)
     info = {
         "ok": True,

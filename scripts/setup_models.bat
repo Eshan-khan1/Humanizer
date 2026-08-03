@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-title Humanizer — Setup models
+title Thoth — Setup models
 cd /d "%~dp0.."
 
 where ollama >nul 2>&1
@@ -16,27 +16,27 @@ if errorlevel 1 (
 )
 
 if exist "models\thoth-3b\gguf\Modelfile" (
-  echo Creating humanizer-grammar / humanizer-writing from fine-tuned 3B Modelfile...
+  echo Creating thoth-grammar / thoth-writing from fine-tuned 3B Modelfile...
   pushd "models\thoth-3b\gguf"
-  ollama create humanizer-grammar -f Modelfile
+  ollama create thoth-grammar -f Modelfile
   if exist Modelfile.writing (
-    ollama create humanizer-writing -f Modelfile.writing
+    ollama create thoth-writing -f Modelfile.writing
   ) else (
-    ollama create humanizer-writing -f Modelfile
+    ollama create thoth-writing -f Modelfile
   )
   popd
 ) else if exist "models\thoth-grammar\gguf\Modelfile" (
-  echo Creating humanizer-grammar from local Modelfile...
-  ollama create humanizer-grammar -f "models\thoth-grammar\gguf\Modelfile"
+  echo Creating thoth-grammar from local Modelfile...
+  ollama create thoth-grammar -f "models\thoth-grammar\gguf\Modelfile"
   if exist "models\thoth-grammar\gguf\Modelfile.writing" (
-    ollama create humanizer-writing -f "models\thoth-grammar\gguf\Modelfile.writing"
+    ollama create thoth-writing -f "models\thoth-grammar\gguf\Modelfile.writing"
   )
 ) else (
   echo Pulling base models from Ollama Hub...
   ollama pull qwen2.5:0.5b
-  ollama cp qwen2.5:0.5b humanizer-grammar
+  ollama cp qwen2.5:0.5b thoth-grammar
   ollama pull qwen2.5:3b-instruct
-  ollama cp qwen2.5:3b-instruct humanizer-writing
+  ollama cp qwen2.5:3b-instruct thoth-writing
 )
 
 echo.

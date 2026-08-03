@@ -1,4 +1,4 @@
-"""Chrome Native Messaging host for Humanizer.
+"""Chrome Native Messaging host for Thoth.
 
 Protocol: 4-byte little-endian length + UTF-8 JSON, one request → one reply.
 """

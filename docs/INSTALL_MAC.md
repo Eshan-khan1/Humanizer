@@ -1,4 +1,4 @@
-# Install Humanizer on macOS
+# Install Thoth on macOS
 
 Setup is meant to feel like a normal Mac app: download once, open once, then forget.
 
@@ -15,23 +15,23 @@ Install each one:
 
 Open the latest release page:
 
-**[Download Humanizer for Mac](https://github.com/Eshan-khan1/Humanizer/releases/latest)**
+**[Download Thoth for Mac](https://github.com/Eshan-khan1/Thoth/releases/latest)**
 
-1. Under **Assets**, download `Humanizer-macOS.zip` (or `Humanizer-macOS-v….zip`)
-2. Also download `humanizer-extension-mac-….zip` for the Chrome extension
+1. Under **Assets**, download `Thoth-macOS.zip` (or `Thoth-macOS-v….zip`)
+2. Also download `thoth-extension-mac-….zip` for the Chrome extension
 3. Unzip both downloads
 
 Direct app download (latest release):
 
-https://github.com/Eshan-khan1/Humanizer/releases/latest
+https://github.com/Eshan-khan1/Thoth/releases/latest
 
 ## Step 3: Install the menu bar app
 
 1. Drag **Thoth.app** into your **Applications** folder
 2. Open it once (double-click)
    - If macOS says the app can’t be opened, right-click **Thoth.app** → **Open** → **Open**
-3. You should see the Humanizer window and an **H** icon near the clock
-4. If the icon is missing: System Settings → **Menu Bar** → turn **Humanizer** ON  
+3. You should see the Thoth window and an **H** icon near the clock
+4. If the icon is missing: System Settings → **Menu Bar** → turn **Thoth** ON  
    (or click **Add to Menu Bar…** in the app window)
 5. The first time it opens, it also sets itself to relaunch after restart or login
 
@@ -40,7 +40,7 @@ Menu bar actions:
 
 - **Status** shows whether the server is healthy
 - **Restart server** if something looks stuck
-- **Quit Humanizer** leaves the Chrome extension for later (the local server may stay running)
+- **Quit Thoth** leaves the Chrome extension for later (the local server may stay running)
 
 The icon changes when the server is online vs offline.
 
@@ -49,7 +49,7 @@ The icon changes when the server is online vs offline.
 1. Open Chrome and go to `chrome://extensions`
 2. Turn on **Developer mode**
 3. Click **Load unpacked**
-4. Select the unzipped extension folder (from `humanizer-extension-mac-….zip`), or the `extension` folder if you cloned the repo
+4. Select the unzipped extension folder (from `thoth-extension-mac-….zip`), or the `extension` folder if you cloned the repo
 
 ## Step 5: Try it
 
@@ -64,7 +64,7 @@ Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 
 | Problem | Fix |
 |---------|-----|
-| No menu bar icon | Look for **Hz** top-right. Open `Thoth.app` again. Soften Focus / check Control Center › Menu Bar. Logs: `~/Library/Logs/Humanizer/` |
+| No menu bar icon | Look for **Hz** top-right. Open `Thoth.app` again. Soften Focus / check Control Center › Menu Bar. Logs: `~/Library/Logs/Thoth/` |
 | “App can’t be opened” | Right-click the app → **Open** → **Open**. Or drag a fresh copy from the zip into Applications. |
 | Server stays offline | Open the Ollama app, then choose **Restart server** from the menu |
 | Extension cannot connect | Confirm the menu bar status is online, then reload the extension |
@@ -76,8 +76,8 @@ Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 If you prefer to build the `.app` yourself instead of downloading it:
 
 ```bash
-git clone https://github.com/Eshan-khan1/Humanizer.git
-cd Humanizer
+git clone https://github.com/Eshan-khan1/Thoth.git
+cd Thoth
 chmod +x scripts/build_macos_app.sh
 ./scripts/build_macos_app.sh
 open dist/Thoth.app

@@ -1,8 +1,8 @@
 {
     "meta": {
-      "name": "Humanizer UI Theme — Claude-Inspired",
+      "name": "Thoth UI Theme — Claude-Inspired",
       "version": "1.0.0",
-      "description": "Design tokens for restyling the Humanizer popup/UI to match a Claude.ai-style editorial interface: warm cream background, serif type, orange accent, borderless composer, hover-only action bars.",
+      "description": "Design tokens for restyling the Thoth popup/UI to match a Claude.ai-style editorial interface: warm cream background, serif type, orange accent, borderless composer, hover-only action bars.",
       "font_family": {
         "primary": "font-serif",
         "stack": "\"Tiempos Text\", \"Georgia\", \"Charter\", serif",
@@ -141,7 +141,7 @@
         "border": "1px solid composerBorder",
         "shadow": "none",
         "radius": "composer",
-        "placeholder": "Message Humanizer...",
+        "placeholder": "Message Thoth...",
         "placeholderColor": "mutedText",
         "fontFamily": "font-serif",
         "primaryActionButton": {

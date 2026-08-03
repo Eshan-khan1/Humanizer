@@ -1,16 +1,16 @@
-# Humanizer
+# Thoth
 
 **A local-first writing assistant for Chrome.** Grammar checking, tone rewriting, and content generation — without sending your drafts to a cloud service by default.
 
-[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-FF4D8D)](https://github.com/Eshan-khan1/Humanizer)
+[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-FF4D8D)](https://github.com/Eshan-khan1/Thoth)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB)](https://www.python.org/)
 [![Local First](https://img.shields.io/badge/Privacy-Local%20First-9B6BFF)](#privacy)
 
 ---
 
-## What is Humanizer?
+## What is Thoth?
 
-Humanizer is an open-source alternative to cloud writing tools like Grammarly. It runs a **small API server on your computer** and pairs it with a **Chrome extension** that works on Gmail, Google Docs, search bars, and most editable fields on the web.
+Thoth is an open-source alternative to cloud writing tools like Grammarly. It runs a **small API server on your computer** and pairs it with a **Chrome extension** that works on Gmail, Google Docs, search bars, and most editable fields on the web.
 
 | Feature | What it does |
 |---------|----------------|
@@ -25,7 +25,7 @@ Everything can run **fully offline** if you use local Ollama models. Cloud AI (G
 
 ## How it works
 
-Humanizer is two parts that talk over `localhost`:
+Thoth is two parts that talk over `localhost`:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -84,10 +84,10 @@ Follow the guide for your computer. Each guide is written as simple numbered ste
 
 | Platform | Full step-by-step guide | Download |
 |----------|-------------------------|----------|
-| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Humanizer/releases/latest) (extension zip) |
-| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Humanizer/releases/latest) (menu bar app + extension) |
+| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) (extension zip) |
+| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Thoth/releases/latest) (menu bar app + extension) |
 
-Mac users: download **`Humanizer-macOS.zip`** from the latest release, drag **Thoth.app** into Applications, and open it once. No Terminal required.
+Mac users: download **`Thoth-macOS.zip`** from the latest release, drag **Thoth.app** into Applications, and open it once. No Terminal required.
 
 ---
 
@@ -100,15 +100,15 @@ Mac users: download **`Humanizer-macOS.zip`** from the latest release, drag **Th
 - [Ollama](https://ollama.com/download) (open it once after install)
 - [Java 11+](https://adoptium.net/)
 
-**Step 2: Download Humanizer**
+**Step 2: Download Thoth**
 
-1. Open https://github.com/Eshan-khan1/Humanizer
+1. Open https://github.com/Eshan-khan1/Thoth
 2. Click **Code**, then **Download ZIP**
-3. Unzip the folder (example: `C:\Users\YourName\Humanizer`)
+3. Unzip the folder (example: `C:\Users\YourName\Thoth`)
 
 **Step 3: Paste this into Command Prompt**
 
-Open Command Prompt, go into the Humanizer folder, then paste:
+Open Command Prompt, go into the Thoth folder, then paste:
 
 ```bat
 scripts\install.bat
@@ -154,10 +154,10 @@ More detail: **[docs/INSTALL_WINDOWS.md](docs/INSTALL_WINDOWS.md)**
 
 Open the latest GitHub release and download the Mac app:
 
-**[Download Humanizer for Mac](https://github.com/Eshan-khan1/Humanizer/releases/latest)**
+**[Download Thoth for Mac](https://github.com/Eshan-khan1/Thoth/releases/latest)**
 
-1. Download **`Humanizer-macOS.zip`** from **Assets**
-2. Also download **`humanizer-extension-mac-….zip`** for Chrome
+1. Download **`Thoth-macOS.zip`** from **Assets**
+2. Also download **`thoth-extension-mac-….zip`** for Chrome
 3. Unzip both files
 
 **Step 3: Install the app (no Terminal)**
@@ -187,14 +187,14 @@ You should see `"ok": true`.
 
 - Type in any text box to see underlines on mistakes
 - Select text to use Rewrite or Generate
-- Click the Humanizer toolbar icon for Settings
+- Click the Thoth toolbar icon for Settings
 
 ---
 
 ## Project structure
 
 ```
-Humanizer/
+Thoth/
 ├── extension/                 # Chrome extension (Manifest V3)
 │   ├── manifest.json
 │   ├── content.js             # In-page UI: grammar, rewrite, generate
@@ -253,7 +253,7 @@ Base URL: `http://127.0.0.1:8000`
 Optional header when auth is enabled:
 
 ```
-Authorization: Bearer <HUMANIZER_API_TOKEN>
+Authorization: Bearer <THOTH_API_TOKEN>
 ```
 
 Rewrite/Generate bodies may include optional cloud AI:
@@ -284,14 +284,14 @@ Keys are sent from the extension to **your** local server only; they are not sto
 
 | Variable | Effect |
 |----------|--------|
-| `HUMANIZER_REQUIRE_AUTH=1` | Require Bearer token on all requests |
-| `HUMANIZER_API_TOKEN` | Token value (auto-generated if unset) |
-| `HUMANIZER_DEBUG=1` | Verbose server errors |
+| `THOTH_REQUIRE_AUTH=1` | Require Bearer token on all requests |
+| `THOTH_API_TOKEN` | Token value (auto-generated if unset) |
+| `THOTH_DEBUG=1` | Verbose server errors |
 
 Example:
 
 ```bash
-HUMANIZER_REQUIRE_AUTH=1 ./start_server.sh
+THOTH_REQUIRE_AUTH=1 ./start_server.sh
 ```
 
 Paste the printed token into the extension → Settings → AI & API keys → Local server token.
@@ -313,7 +313,7 @@ Paste the printed token into the extension → Settings → AI & API keys → Lo
 
 ```bash
 ./scripts/package_extension.sh
-# → dist/humanizer-extension-v1.8.0.zip
+# → dist/thoth-extension-v1.8.0.zip
 ```
 
 ### Publish a GitHub Release
@@ -341,12 +341,12 @@ python scripts/benchmark_rewrite.py   # if present
 
 ## Models
 
-Humanizer expects these **Ollama** models (created by `scripts/setup_models.sh`):
+Thoth expects these **Ollama** models (created by `scripts/setup_models.sh`):
 
 | Model | Used for |
 |-------|----------|
-| `humanizer-grammar` | Optional grammar assistance |
-| `humanizer-writing` | Rewrite & Generate (local) |
+| `thoth-grammar` | Optional grammar assistance |
+| `thoth-writing` | Rewrite & Generate (local) |
 
 If local Modelfiles exist under `models/`, setup uses them. Otherwise setup pulls small **Qwen2.5** bases from Ollama Hub.
 
@@ -371,7 +371,7 @@ UI colors, typography, and components are defined in [`Thoth ui theme.json`](Tho
 - **Grammar** uses LanguageTool locally (Java).
 - **Rewrite/Generate** use local Ollama unless you opt into Groq/OpenAI in settings.
 - API keys live in **Chrome storage** on your device and are only sent to `127.0.0.1:8000`.
-- No Humanizer account, telemetry, or central server.
+- No Thoth account, telemetry, or central server.
 
 ---
 
@@ -382,7 +382,7 @@ UI colors, typography, and components are defined in [`Thoth ui theme.json`](Tho
 | Server offline in popup | Run `start_server.bat` (Windows) or `./start_server.sh` (Mac); check `/health` |
 | No underlines | Enable “Check writing while I type”; ensure Java is installed |
 | Rewrite/Generate error | Start Ollama; run `scripts\setup_models.bat` or `./scripts/setup_models.sh` |
-| `humanizer-grammar` missing | `ollama list` then setup_models script for your OS |
+| `thoth-grammar` missing | `ollama list` then setup_models script for your OS |
 | Extension not updating | `chrome://extensions` → Reload |
 | Port 8000 in use | Starter scripts free the port; or close the other process |
 | Windows: `python` not found | Reinstall Python with **Add to PATH**, open a new terminal |
@@ -415,7 +415,7 @@ Open source — use, study, and modify on your own machine. See the repository f
 
 ## Links
 
-- **Repository:** https://github.com/Eshan-khan1/Humanizer
-- **Download Mac app + extension:** https://github.com/Eshan-khan1/Humanizer/releases/latest
-- **Releases:** https://github.com/Eshan-khan1/Humanizer/releases
-- **Issues:** https://github.com/Eshan-khan1/Humanizer/issues
+- **Repository:** https://github.com/Eshan-khan1/Thoth
+- **Download Mac app + extension:** https://github.com/Eshan-khan1/Thoth/releases/latest
+- **Releases:** https://github.com/Eshan-khan1/Thoth/releases
+- **Issues:** https://github.com/Eshan-khan1/Thoth/issues

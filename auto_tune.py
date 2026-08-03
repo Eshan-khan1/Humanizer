@@ -6,7 +6,7 @@ corrections, append rules for missed errors, repeat until target accuracy.
 Pairs that score 100% are saved to test_data/mastered_pairs.json and skipped on
 later attempts. Delete that file to re-test everything.
 
-Requires the Humanizer server (./start_server.sh) and Ollama/qwen2.5:7b running.
+Requires the Thoth server (./start_server.sh) and Ollama/qwen2.5:7b running.
 """
 
 from __future__ import annotations

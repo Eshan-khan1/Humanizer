@@ -77,15 +77,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var aiConfiguredCached = false
     private var availableModels: [String] = []
     private var modelLabels: [String: String] = [:]
-    private var selectedGrammar = "humanizer-grammar"
-    private var selectedWriting = "humanizer-writing"
+    private var selectedGrammar = "thoth-grammar"
+    private var selectedWriting = "thoth-writing"
     private var menuBarPromptPresented = false
     private var lastStatusRecreate = Date.distantPast
     private var didAutoResetControlCenter = false
     private var menuBarAutoConnectRunning = false
 
     private let defaults = UserDefaults.standard
-    private let menuBarAckKey = "humanizer.menuBar.acknowledged"
+    private let menuBarAckKey = "thoth.menuBar.acknowledged"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -99,7 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         // Register with macOS Login Items & Background Activity (SMAppService).
-        let regKey = "humanizer.background.reregistered.v3"
+        let regKey = "thoth.background.reregistered.v3"
         let force = !defaults.bool(forKey: regKey)
         let summary = registerBackgroundActivity(forceReregister: force)
         if force { defaults.set(true, forKey: regKey) }
@@ -430,15 +430,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @discardableResult
     private func registerBackgroundActivity(forceReregister: Bool = false) -> String {
         // Drop the old silent LaunchAgent — confuses Background Task Management.
-        let legacy = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/LaunchAgents/com.humanizer.app.plist")
-        let legacy2 = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/LaunchAgents/com.humanizer.macos.plist")
-        for path in [legacy, legacy2] where FileManager.default.fileExists(atPath: path.path) {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        // Prefer Thoth Application Support; migrate from Humanizer once.
+        let thothSupport = home.appendingPathComponent("Library/Application Support/Thoth")
+        let humanizerSupport = home.appendingPathComponent("Library/Application Support/Humanizer")
+        if !FileManager.default.fileExists(atPath: thothSupport.path),
+           FileManager.default.fileExists(atPath: humanizerSupport.path) {
+            try? FileManager.default.moveItem(at: humanizerSupport, to: thothSupport)
+        }
+        let thothLogs = home.appendingPathComponent("Library/Logs/Thoth")
+        let humanizerLogs = home.appendingPathComponent("Library/Logs/Humanizer")
+        if !FileManager.default.fileExists(atPath: thothLogs.path),
+           FileManager.default.fileExists(atPath: humanizerLogs.path) {
+            try? FileManager.default.moveItem(at: humanizerLogs, to: thothLogs)
+        }
+
+        let legacyPaths = [
+            "Library/LaunchAgents/com.thoth.app.plist",
+            "Library/LaunchAgents/com.thoth.macos.plist",
+            "Library/LaunchAgents/com.humanizer.app.plist",
+            "Library/LaunchAgents/com.humanizer.macos.plist",
+        ].map { home.appendingPathComponent($0) }
+        for path in legacyPaths where FileManager.default.fileExists(atPath: path.path) {
             try? FileManager.default.removeItem(at: path)
         }
         let uid = getuid()
         for label in [
+            "com.thoth.app",
+            "com.thoth.app.agent",
+            "com.thoth.macos",
+            "com.thoth.macos.agent",
             "com.humanizer.app",
             "com.humanizer.app.agent",
             "com.humanizer.macos",
@@ -455,11 +476,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return "macOS 13+ required for Background Activity"
         }
 
-        let loginItem = SMAppService.loginItem(identifier: "com.humanizer.macos.LaunchAtLogin")
+        let loginItem = SMAppService.loginItem(identifier: "com.thoth.macos.LaunchAtLogin")
         let main = SMAppService.mainApp
         // Do NOT register the LaunchAgent that runs Contents/MacOS/Thoth —
         // that starts a second GUI process and a second menu bar icon.
         let staleAgents = [
+            "com.thoth.macos.agent.plist",
+            "com.thoth.app.agent.plist",
             "com.humanizer.macos.agent.plist",
             "com.humanizer.app.agent.plist",
         ]
@@ -476,6 +499,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             for name in staleAgents {
                 try? SMAppService.agent(plistName: name).unregister()
             }
+            try? SMAppService.loginItem(identifier: "com.thoth.app.LaunchAtLogin").unregister()
+            try? SMAppService.loginItem(identifier: "com.humanizer.macos.LaunchAtLogin").unregister()
             try? SMAppService.loginItem(identifier: "com.humanizer.app.LaunchAtLogin").unregister()
             // Also drop the old mainApp registration for the previous bundle id if present —
             // SMAppService.mainApp only covers this process's bundle.
@@ -525,13 +550,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func backgroundStatusSummary() -> String {
         guard #available(macOS 13.0, *) else { return "unsupported OS" }
         let main = statusLabel(SMAppService.mainApp.status)
-        let login = statusLabel(SMAppService.loginItem(identifier: "com.humanizer.macos.LaunchAtLogin").status)
+        let login = statusLabel(SMAppService.loginItem(identifier: "com.thoth.macos.LaunchAtLogin").status)
         return "main=\(main) loginItem=\(login)"
     }
 
     private func writeBackgroundStatusLog(_ line: String) {
         let dir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/Humanizer")
+            .appendingPathComponent("Library/Logs/Thoth")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let url = dir.appendingPathComponent("background-status.log")
         let stamp = ISO8601DateFormatter().string(from: Date())
@@ -1197,7 +1222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let result = self?.runService(["connect-extension"]) ?? ["ok": false]
             let path = (result["extension_path"] as? String)
                 ?? (FileManager.default.homeDirectoryForCurrentUser
-                    .appendingPathComponent("Library/Application Support/Humanizer/ChromeExtension").path)
+                    .appendingPathComponent("Library/Application Support/Thoth/ChromeExtension").path)
             DispatchQueue.main.async {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(path, forType: .string)
@@ -1213,7 +1238,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let result = self?.runService(["connect-extension"]) ?? [:]
             let path = (result["extension_path"] as? String)
                 ?? (FileManager.default.homeDirectoryForCurrentUser
-                    .appendingPathComponent("Library/Application Support/Humanizer/ChromeExtension").path)
+                    .appendingPathComponent("Library/Application Support/Thoth/ChromeExtension").path)
             DispatchQueue.main.async {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(path, forType: .string)
@@ -1427,6 +1452,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if let existing = statusItem {
             NSStatusBar.system.removeStatusItem(existing)
         }
+        UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.thoth.macos.statusItem")
+        UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.thoth.app.statusItem")
         UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.humanizer.macos.statusItem")
         UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.humanizer.app.statusItem")
         setupStatusItem()
@@ -1438,6 +1465,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
         didAutoResetControlCenter = true
+        UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.thoth.macos.statusItem")
+        UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.thoth.app.statusItem")
         UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.humanizer.macos.statusItem")
         UserDefaults.standard.removeObject(forKey: "NSStatusItem Preferred Position com.humanizer.app.statusItem")
         let task = Process()
@@ -1488,7 +1517,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             line += " button/window=nil visible=\(statusItem?.isVisible == true)"
         }
         let dir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/Humanizer")
+            .appendingPathComponent("Library/Logs/Thoth")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let url = dir.appendingPathComponent("menubar-visibility.log")
         let stamp = ISO8601DateFormatter().string(from: Date())
@@ -1541,9 +1570,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         // Local fallbacks when the service hasn't returned labels yet.
         switch base {
-        case "humanizer-writing", "qwen-7b-trained":
+        case "thoth-writing", "qwen-7b-trained":
             return "Qwen 7B / trained"
-        case "humanizer-grammar":
+        case "thoth-grammar":
             return "Qwen grammar / trained"
         case "qwen2.5":
             if name.hasPrefix("qwen2.5:7b") { return "Qwen 7B" }
@@ -2205,7 +2234,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func supportHome() -> URL {
         let base = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/Humanizer/Home")
+            .appendingPathComponent("Library/Application Support/Thoth/Home")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }
@@ -2233,8 +2262,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         proc.arguments = ["-m", "macos.menubar.service"] + args
         proc.currentDirectoryURL = resources
         var env = ProcessInfo.processInfo.environment
-        env["HUMANIZER_BUNDLE_RESOURCES"] = Bundle.main.resourcePath ?? ""
-        env["HUMANIZER_APP_EXECUTABLE"] = Bundle.main.executablePath ?? ""
+        env["THOTH_BUNDLE_RESOURCES"] = Bundle.main.resourcePath ?? ""
+        env["THOTH_APP_EXECUTABLE"] = Bundle.main.executablePath ?? ""
         env["PYTHONUNBUFFERED"] = "1"
         var pythonPath = [support.path, resources.path]
         let versions = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -2289,12 +2318,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 }
 
-enum HumanizerMain {
+enum ThothMain {
     /// CLI: `Thoth service <cmd…>` runs the Python helper and exits (no GUI).
     /// Prevents accidental menu-bar loss when a tool invokes the binary with args.
     static func runServiceCLI(arguments: [String]) -> Never {
         let home = FileManager.default.homeDirectoryForCurrentUser
-        let support = home.appendingPathComponent("Library/Application Support/Humanizer/Home")
+        let support = home.appendingPathComponent("Library/Application Support/Thoth/Home")
         let resources = Bundle.main.resourceURL?.appendingPathComponent("ThothHome")
         var python = "/usr/bin/python3"
         let venvPython = support.appendingPathComponent(".venv/bin/python")
@@ -2311,8 +2340,8 @@ enum HumanizerMain {
             proc.currentDirectoryURL = resources
         }
         var env = ProcessInfo.processInfo.environment
-        env["HUMANIZER_BUNDLE_RESOURCES"] = Bundle.main.resourcePath ?? ""
-        env["HUMANIZER_APP_EXECUTABLE"] = Bundle.main.executablePath ?? ""
+        env["THOTH_BUNDLE_RESOURCES"] = Bundle.main.resourcePath ?? ""
+        env["THOTH_APP_EXECUTABLE"] = Bundle.main.executablePath ?? ""
         env["PYTHONUNBUFFERED"] = "1"
         var pythonPath = [support.path]
         if let resources { pythonPath.append(resources.path) }
@@ -2359,7 +2388,7 @@ enum HumanizerMain {
                     }
                 }
                 let main = label(SMAppService.mainApp.status)
-                let login = label(SMAppService.loginItem(identifier: "com.humanizer.macos.LaunchAtLogin").status)
+                let login = label(SMAppService.loginItem(identifier: "com.thoth.macos.LaunchAtLogin").status)
                 print("{\"mainApp\":\"\(main)\",\"loginItem\":\"\(login)\"}")
             } else {
                 print("{\"error\":\"macOS 13+ required\"}")
@@ -2384,4 +2413,4 @@ enum HumanizerMain {
     }
 }
 
-HumanizerMain.main()
+ThothMain.main()

@@ -292,7 +292,7 @@ def summarize(results: list[RewriteResult]) -> dict[str, Any]:
 
 
 def print_report(results: list[RewriteResult], summary: dict[str, Any]) -> None:
-    print("\n=== Humanizer Rewrite Benchmark ===\n")
+    print("\n=== Thoth Rewrite Benchmark ===\n")
     print(f"Cases: {summary['total']}  Success: {summary['success']}  Failed: {summary['failed']}")
     print(f"Success rate: {summary['success_rate']:.1%}")
 
@@ -374,7 +374,7 @@ def main() -> int:
         health = requests.get(HEALTH_URL, timeout=10).json()
     except requests.RequestException as exc:
         print(f"Server not reachable at {HEALTH_URL}: {exc}", file=sys.stderr)
-        print("Start it with: OLLAMA_MODEL=humanizer-grammar ./start_server.sh", file=sys.stderr)
+        print("Start it with: OLLAMA_MODEL=thoth-grammar ./start_server.sh", file=sys.stderr)
         return 1
 
     if not health.get("ok"):

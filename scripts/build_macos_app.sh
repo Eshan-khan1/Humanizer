@@ -70,7 +70,7 @@ cp "$ROOT/assets/menubar-mask.png" "$HOME_PAYLOAD/assets/menubar-mask.png"
 cp "$ROOT/assets/logo.png" "$HOME_PAYLOAD/macos/menubar/icons/logo.png"
 cp "$ROOT/assets/menubar-logo.png" "$HOME_PAYLOAD/macos/menubar/icons/menubar-logo.png"
 
-ICONSET="$DIST/Humanizer.iconset"
+ICONSET="$DIST/Thoth.iconset"
 rm -rf "$ICONSET"
 mkdir -p "$ICONSET"
 python3 - <<PY
@@ -95,7 +95,7 @@ cat > "$CONTENTS/Info.plist" <<PLIST
   <key>CFBundleExecutable</key>
   <string>Thoth</string>
   <key>CFBundleIdentifier</key>
-  <string>com.humanizer.macos</string>
+  <string>com.thoth.macos</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
@@ -126,16 +126,16 @@ PLIST
 # Background Activity (“Allow in the Background”) via SMAppService.
 LAUNCH_AGENTS_DIR="$CONTENTS/Library/LaunchAgents"
 mkdir -p "$LAUNCH_AGENTS_DIR"
-cat > "$LAUNCH_AGENTS_DIR/com.humanizer.macos.agent.plist" <<'AGENT'
+cat > "$LAUNCH_AGENTS_DIR/com.thoth.macos.agent.plist" <<'AGENT'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.humanizer.macos.agent</string>
+  <string>com.thoth.macos.agent</string>
   <key>AssociatedBundleIdentifiers</key>
   <array>
-    <string>com.humanizer.macos</string>
+    <string>com.thoth.macos</string>
   </array>
   <key>BundleProgram</key>
   <string>Contents/MacOS/Thoth</string>
@@ -163,7 +163,7 @@ cat > "$LOGIN_ITEM_CONTENTS/Info.plist" <<LOGINPLIST
   <key>CFBundleExecutable</key>
   <string>LaunchAtLogin</string>
   <key>CFBundleIdentifier</key>
-  <string>com.humanizer.macos.LaunchAtLogin</string>
+  <string>com.thoth.macos.LaunchAtLogin</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>

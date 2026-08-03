@@ -53,7 +53,7 @@ from security import (
 from writing_agent import OLLAMA_WRITING_MODEL, generate_text, rewrite_text
 
 OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "humanizer-grammar")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "thoth-grammar")
 OLLAMA_GRAMMAR_MODEL = os.environ.get(
     "OLLAMA_GRAMMAR_MODEL", OLLAMA_MODEL
 )
@@ -68,12 +68,12 @@ OLLAMA_GRAMMAR_NUM_CTX = int(os.environ.get("OLLAMA_GRAMMAR_NUM_CTX", "4096"))
 GRAMMAR_SYSTEM_PROMPT = (
     "Fix grammar and spelling with minimal, safe edits. Return only the corrected sentence."
 )
-DEBUG_OLLAMA = os.environ.get("HUMANIZER_DEBUG_OLLAMA", "").lower() in ("1", "true", "yes")
+DEBUG_OLLAMA = os.environ.get("THOTH_DEBUG_OLLAMA", "").lower() in ("1", "true", "yes")
 
-HOST = os.environ.get("HUMANIZER_HOST", "127.0.0.1")
+HOST = os.environ.get("THOTH_HOST", "127.0.0.1")
 if HOST not in {"127.0.0.1", "localhost"}:
     HOST = "127.0.0.1"
-PORT = int(os.environ.get("HUMANIZER_PORT", "8000"))
+PORT = int(os.environ.get("THOTH_PORT", "8000"))
 DEBUG_LOG_PATH = str(resolve_debug_log_path(".cursor/debug-2bb802.log"))
 
 LANGUAGE_CODE = "en-US"
@@ -1317,7 +1317,7 @@ def _call_ollama_for_grammar(
         return [], False, None, None
 
 
-class HumanizerLanguageTool(language_tool_python.LanguageTool):
+class ThothLanguageTool(language_tool_python.LanguageTool):
     """LanguageTool configured for en-US with picky mode and broad rule coverage."""
 
     def __init__(self) -> None:
@@ -1368,10 +1368,10 @@ def _is_low_confidence_match(match: Any, match_type: str) -> bool:
 
 
 @lru_cache(maxsize=1)
-def _get_language_tool() -> HumanizerLanguageTool:
+def _get_language_tool() -> ThothLanguageTool:
     """Local LanguageTool instance (en-US, picky mode, Java 8 via LTP 2.8.1)."""
     _debug_log("H1", "server.py:_get_language_tool", "initializing LanguageTool")
-    tool = HumanizerLanguageTool()
+    tool = ThothLanguageTool()
     _debug_log("H1", "server.py:_get_language_tool", "LanguageTool ready")
     return tool
 
@@ -1608,7 +1608,7 @@ async def lifespan(_app: FastAPI):
 
     threading.Thread(
         target=startup_warm_grammar,
-        name="humanizer-grammar-warm",
+        name="thoth-grammar-warm",
         daemon=True,
     ).start()
     yield
@@ -1718,7 +1718,7 @@ def connect_restart() -> dict[str, Any]:
             python = str(venv_py)
         log_path = manager.logs_dir() / "restart.log"
         env = os.environ.copy()
-        env["HUMANIZER_ROOT"] = str(root)
+        env["THOTH_ROOT"] = str(root)
         env["PYTHONPATH"] = str(root) + (
             (os.pathsep + env["PYTHONPATH"]) if env.get("PYTHONPATH") else ""
         )
@@ -1726,7 +1726,7 @@ def connect_restart() -> dict[str, Any]:
         script = (
             f'sleep 0.6\n'
             f'cd "{root}" || exit 1\n'
-            f'export HUMANIZER_ROOT="{root}"\n'
+            f'export THOTH_ROOT="{root}"\n'
             f'export PYTHONPATH="{root}${{PYTHONPATH:+:$PYTHONPATH}}"\n'
             f'echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) restart begin" >> "{log_path}"\n'
             f'"{python}" -m macos.menubar.service restart >> "{log_path}" 2>&1\n'
@@ -1930,7 +1930,7 @@ def generate(body: GenerateRequest) -> GenerateResponse:
 if __name__ == "__main__":
     if REQUIRE_AUTH and API_TOKEN:
         print("  API auth: enabled (Bearer token required)")
-        print(f"  HUMANIZER_API_TOKEN={API_TOKEN}")
+        print(f"  THOTH_API_TOKEN={API_TOKEN}")
     elif not API_TOKEN:
-        print("  Security note: set HUMANIZER_REQUIRE_AUTH=1 or HUMANIZER_API_TOKEN for Bearer auth")
+        print("  Security note: set THOTH_REQUIRE_AUTH=1 or THOTH_API_TOKEN for Bearer auth")
     uvicorn.run(app, host=HOST, port=PORT, reload=False)

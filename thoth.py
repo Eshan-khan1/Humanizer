@@ -16,7 +16,7 @@ SERVER_REQUEST_TIMEOUT_SEC = 600.0
 
 
 class OllamaError(Exception):
-    """Humanizer server or Ollama is unavailable."""
+    """Thoth server or Ollama is unavailable."""
 
 Intensity = Literal["mild", "moderate", "aggressive"]
 
@@ -868,11 +868,11 @@ def _server_request(
     except urllib.error.URLError as exc:
         reason = getattr(exc, "reason", exc)
         raise OllamaError(
-            f"Cannot reach Humanizer server at {SERVER_BASE_URL}. "
+            f"Cannot reach Thoth server at {SERVER_BASE_URL}. "
             f"Start it with: python server.py ({reason})"
         ) from exc
     except json.JSONDecodeError as exc:
-        raise OllamaError("Humanizer server returned invalid JSON") from exc
+        raise OllamaError("Thoth server returned invalid JSON") from exc
 
 
 def is_ollama_running() -> bool:
@@ -886,7 +886,7 @@ def is_ollama_running() -> bool:
 
 def humanize_via_ollama(text: str) -> str:
     """
-    Rewrite text via the local Humanizer server (Ollama / qwen2.5:7b).
+    Rewrite text via the local Thoth server (Ollama / qwen2.5:7b).
 
     Raises OllamaError if the server or Ollama is unavailable.
     """
@@ -896,7 +896,7 @@ def humanize_via_ollama(text: str) -> str:
     data = _server_request("POST", "/humanize", {"text": text.strip()})
     result = (data.get("result") or "").strip()
     if not result:
-        raise OllamaError("Humanizer server returned an empty result")
+        raise OllamaError("Thoth server returned an empty result")
     return result
 
 
@@ -911,7 +911,7 @@ def humanize(text: str, intensity: Intensity = "moderate") -> str:
     """
     Transform AI-style text into more natural, human-sounding writing.
 
-    Uses the local Humanizer server (Ollama / qwen2.5:7b) when available.
+    Uses the local Thoth server (Ollama / qwen2.5:7b) when available.
     falls back to the rule-based pipeline controlled by ``intensity``:
 
     - mild: clichés + simpler words + contractions

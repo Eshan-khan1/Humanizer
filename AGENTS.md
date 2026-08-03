@@ -1,4 +1,4 @@
-# Agent instructions (Humanizer)
+# Agent instructions (Thoth)
 
 ## Keep code in sync (required)
 

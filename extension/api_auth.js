@@ -1,6 +1,6 @@
 /**
- * Shared API auth + cloud AI config for Humanizer extension requests.
- * - humanizerApiToken: local server Bearer token (chrome.storage.local)
+ * Shared API auth + cloud AI config for Thoth extension requests.
+ * - thothApiToken: local server Bearer token (chrome.storage.local)
  * - aiProvider / aiApiKey / aiBaseUrl / aiModel: cloud LLM (never synced)
  */
 
@@ -26,14 +26,14 @@ function normalizeStoredAiProvider(provider) {
   return ALLOWED_AI_PROVIDERS.has(value) ? value : "local";
 }
 
-async function humanizerApiHeaders(extraHeaders = {}) {
+async function thothApiHeaders(extraHeaders = {}) {
   const headers = {
     "Content-Type": "application/json",
     ...extraHeaders,
   };
   try {
-    const stored = await chrome.storage.local.get("humanizerApiToken");
-    const token = String(stored?.humanizerApiToken || "").trim();
+    const stored = await chrome.storage.local.get("thothApiToken");
+    const token = String(stored?.thothApiToken || "").trim();
     if (token) {
       if (token.includes("\0") || token.length > MAX_API_TOKEN_CHARS) {
         throw new Error("Stored API token is invalid");
@@ -46,7 +46,7 @@ async function humanizerApiHeaders(extraHeaders = {}) {
   return headers;
 }
 
-async function humanizerAiPayload() {
+async function thothAiPayload() {
   try {
     const stored = await chrome.storage.local.get({
       aiProvider: "local",

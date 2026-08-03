@@ -21,8 +21,8 @@ Optional for GGUF export (Qwen2.5 is not supported by mlx_lm --export-gguf):
 
 After export:
   cd models/thoth-grammar/gguf
-  ollama create humanizer-grammar -f ../Modelfile
-  OLLAMA_MODEL=humanizer-grammar ./start_server.sh
+  ollama create thoth-grammar -f ../Modelfile
+  OLLAMA_MODEL=thoth-grammar ./start_server.sh
 """
 
 from __future__ import annotations
@@ -46,8 +46,8 @@ FINETUNE_DATA_PATH = TEST_DATA / "finetune_pairs.json"
 TRAIN_DATA_PATH = ROOT / "train_data.jsonl"
 VAL_DATA_PATH = ROOT / "val_data.jsonl"
 MLX_DATA_DIR = TEST_DATA / "mlx_lora"
-OLLAMA_MODEL_NAME = "humanizer-grammar"
-OLLAMA_WRITING_MODEL_NAME = "humanizer-writing"
+OLLAMA_MODEL_NAME = "thoth-grammar"
+OLLAMA_WRITING_MODEL_NAME = "thoth-writing"
 
 MODEL_PRESETS: dict[str, dict[str, Any]] = {
     "7b": {
@@ -816,7 +816,7 @@ def export_for_ollama(quantization: str = "q4_k_m") -> None:
 
 
 def _build_modelfile(gguf_filename: str) -> str:
-    return f"""# Humanizer grammar fine-tune ({MODEL_LABEL} + MLX LoRA)
+    return f"""# Thoth grammar fine-tune ({MODEL_LABEL} + MLX LoRA)
 # Build: ollama create {OLLAMA_MODEL_NAME} -f Modelfile
 # Run from: models/thoth-grammar/gguf/
 
@@ -840,7 +840,7 @@ PARAMETER stop "<|endoftext|>"
 
 
 def _build_writing_modelfile(gguf_filename: str) -> str:
-    return f"""# Humanizer Writing Agent — Rewrite + Generate ({MODEL_LABEL} + MLX LoRA)
+    return f"""# Thoth Writing Agent — Rewrite + Generate ({MODEL_LABEL} + MLX LoRA)
 # Build: ollama create {OLLAMA_WRITING_MODEL_NAME} -f Modelfile.writing
 # Run from: models/thoth-grammar/gguf/
 
@@ -854,7 +854,7 @@ TEMPLATE \"\"\"{{{{- if .System }}}}<|im_start|>system
 {{{{ end }}}}{{{{ .Response }}}}
 \"\"\"
 
-SYSTEM \"\"\"You are the Humanizer Writing Agent. You only do two jobs:
+SYSTEM \"\"\"You are the Thoth Writing Agent. You only do two jobs:
 1. REWRITE — change tone/style of selected text with bold edits to word choice, structure, and length.
 2. GENERATE — expand short notes, bullets, or prompts into complete emails or essays.
 For emails: produce a full send-ready message with subject, greeting, body, and sign-off as appropriate. Decide structure from context and user notes — not a rigid template.

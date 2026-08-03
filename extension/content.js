@@ -160,7 +160,7 @@
   init();
 
   function init() {
-    document.querySelectorAll(".humanizer-side-panel").forEach((el) => el.remove());
+    document.querySelectorAll(".thoth-side-panel").forEach((el) => el.remove());
 
     waitForBody(() => startGrammarChecker());
 
@@ -361,7 +361,7 @@
   }
 
   function syncGeneratePanelSummary() {
-    const row = generatePanelEl?.querySelector(".humanizer-generate-presets");
+    const row = generatePanelEl?.querySelector(".thoth-generate-presets");
     if (!row) return;
     const tone = row.querySelector('[data-preset="tone"]');
     const length = row.querySelector('[data-preset="length"]');
@@ -446,7 +446,7 @@
 
   function createGeneratePresetSelect(kind, options, selectedId, ariaLabel) {
     const select = document.createElement("select");
-    select.className = "humanizer-generate-preset";
+    select.className = "thoth-generate-preset";
     select.dataset.preset = kind;
     select.setAttribute("aria-label", ariaLabel);
     fillPresetSelect(select, options, selectedId);
@@ -466,7 +466,7 @@
 
   function createGeneratePresetsRow() {
     const row = document.createElement("div");
-    row.className = "humanizer-generate-presets";
+    row.className = "thoth-generate-presets";
     row.setAttribute("role", "group");
     row.setAttribute("aria-label", "Generate presets");
 
@@ -490,10 +490,10 @@
     );
 
     const dot1 = document.createElement("span");
-    dot1.className = "humanizer-generate-preset-sep";
+    dot1.className = "thoth-generate-preset-sep";
     dot1.textContent = "·";
     const dot2 = document.createElement("span");
-    dot2.className = "humanizer-generate-preset-sep";
+    dot2.className = "thoth-generate-preset-sep";
     dot2.textContent = "·";
 
     row.appendChild(tone);
@@ -1863,18 +1863,18 @@
   }
 
   function ensureHighlightStyles() {
-    const id = "humanizer-highlight-styles";
+    const id = "thoth-highlight-styles";
     if (document.getElementById(id)) return;
     const style = document.createElement("style");
     style.id = id;
     style.textContent = `
-      ::highlight(humanizer-grammar) {
+      ::highlight(thoth-grammar) {
         text-decoration: underline solid #ff4d8d;
         text-decoration-thickness: 2px;
         text-underline-offset: 2px;
         background-color: transparent;
       }
-      ::highlight(humanizer-grammar-active) {
+      ::highlight(thoth-grammar-active) {
         text-decoration: underline solid #ff4d8d;
         text-decoration-thickness: 2px;
         text-underline-offset: 2px;
@@ -1887,8 +1887,8 @@
   function clearGrammarHighlights() {
     if (!usesNativeHighlights()) return;
     try {
-      CSS.highlights.delete("humanizer-grammar");
-      CSS.highlights.delete("humanizer-grammar-active");
+      CSS.highlights.delete("thoth-grammar");
+      CSS.highlights.delete("thoth-grammar-active");
     } catch {
       /* ignore */
     }
@@ -1931,15 +1931,15 @@
 
     if (ranges.length) {
       try {
-        CSS.highlights.set("humanizer-grammar", new Highlight(...ranges));
+        CSS.highlights.set("thoth-grammar", new Highlight(...ranges));
       } catch {
         for (const range of ranges) {
           try {
-            const existing = CSS.highlights.get("humanizer-grammar");
+            const existing = CSS.highlights.get("thoth-grammar");
             if (existing) {
               existing.add(range);
             } else {
-              CSS.highlights.set("humanizer-grammar", new Highlight(range));
+              CSS.highlights.set("thoth-grammar", new Highlight(range));
             }
           } catch {
             /* skip invalid range */
@@ -2836,7 +2836,7 @@
   function setActiveHighlight(offset) {
     if (activeField && canUseNativeHighlights(activeField)) {
       try {
-        CSS.highlights.delete("humanizer-grammar-active");
+        CSS.highlights.delete("thoth-grammar-active");
       } catch {
         /* ignore */
       }
@@ -2846,7 +2846,7 @@
       if (!match) return;
       const range = matchToDomRange(activeField, match, text);
       if (range) {
-        CSS.highlights.set("humanizer-grammar-active", new Highlight(range));
+        CSS.highlights.set("thoth-grammar-active", new Highlight(range));
       }
       return;
     }
@@ -2865,7 +2865,7 @@
   function clearActiveHighlight() {
     if (activeField && canUseNativeHighlights(activeField)) {
       try {
-        CSS.highlights.delete("humanizer-grammar-active");
+        CSS.highlights.delete("thoth-grammar-active");
       } catch {
         /* ignore */
       }
@@ -3399,7 +3399,7 @@
   function clearRewriteHighlight() {
     if (!usesNativeHighlights()) return;
     try {
-      CSS.highlights.delete("humanizer-rewrite-selection");
+      CSS.highlights.delete("thoth-rewrite-selection");
     } catch {
       /* ignore */
     }
@@ -3408,14 +3408,14 @@
   function applyRewriteHighlight(range) {
     if (!usesNativeHighlights()) return;
     try {
-      CSS.highlights.set("humanizer-rewrite-selection", new Highlight(range));
+      CSS.highlights.set("thoth-rewrite-selection", new Highlight(range));
     } catch {
       /* ignore */
     }
   }
 
-  function ensureHumanizerRippleFilter() {
-    if (document.getElementById("humanizer-ripple-filter")) return;
+  function ensureThothRippleFilter() {
+    if (document.getElementById("thoth-ripple-filter")) return;
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("width", "0");
@@ -3423,18 +3423,18 @@
     svg.style.position = "absolute";
     svg.style.overflow = "hidden";
     svg.innerHTML =
-      '<filter id="humanizer-ripple-filter" x="-20%" y="-20%" width="140%" height="140%">' +
-      '<feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="6" result="humanizer-noise">' +
+      '<filter id="thoth-ripple-filter" x="-20%" y="-20%" width="140%" height="140%">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.015 0.05" numOctaves="2" seed="6" result="thoth-noise">' +
       '<animate attributeName="baseFrequency" dur="4s" values="0.015 0.05;0.025 0.06;0.015 0.05" repeatCount="indefinite" />' +
       "</feTurbulence>" +
-      '<feDisplacementMap in="SourceGraphic" in2="humanizer-noise" scale="7" xChannelSelector="R" yChannelSelector="G" />' +
+      '<feDisplacementMap in="SourceGraphic" in2="thoth-noise" scale="7" xChannelSelector="R" yChannelSelector="G" />' +
       "</filter>";
     document.body.appendChild(svg);
   }
 
   function wrapRangeForWateryEffect(range) {
     const span = document.createElement("span");
-    span.className = "humanizer-watery-wrap";
+    span.className = "thoth-watery-wrap";
     try {
       range.surroundContents(span);
     } catch {
@@ -3448,9 +3448,9 @@
 
   function startWateryEffect(el) {
     if (!(el instanceof HTMLElement)) return;
-    ensureHumanizerRippleFilter();
-    el.classList.remove("humanizer-watery-settle");
-    el.classList.add("humanizer-watery");
+    ensureThothRippleFilter();
+    el.classList.remove("thoth-watery-settle");
+    el.classList.add("thoth-watery");
   }
 
   function restoreRewriteDomSnapshot(wrapEl) {
@@ -3468,7 +3468,7 @@
 
   function cancelWateryEffect(el, originalText) {
     if (!(el instanceof HTMLElement) || !el.isConnected) return;
-    el.classList.remove("humanizer-watery", "humanizer-watery-settle");
+    el.classList.remove("thoth-watery", "thoth-watery-settle");
     if (restoreRewriteDomSnapshot(el)) return;
     replaceElementWithPlainText(el, originalText, {
       useBlocks: rewriteUseBlocks,
@@ -3481,13 +3481,13 @@
       return false;
     }
 
-    el.classList.remove("humanizer-watery");
-    el.classList.add("humanizer-watery-settle");
+    el.classList.remove("thoth-watery");
+    el.classList.add("thoth-watery-settle");
 
     const normalized = normalizeRewrittenText(newText);
     setTimeout(() => {
       if (!(el instanceof HTMLElement) || !el.isConnected) return;
-      el.classList.remove("humanizer-watery-settle");
+      el.classList.remove("thoth-watery-settle");
 
       const parent = el.parentNode;
       const useBlocks = rewriteUseBlocks || normalized.includes("\n");
@@ -3543,7 +3543,7 @@
   function createCancelButton(className, label = "Cancel") {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `humanizer-action-cancel ${className}`.trim();
+    button.className = `thoth-action-cancel ${className}`.trim();
     button.setAttribute("aria-label", label);
     button.textContent = "×";
     return wireCancelButton(button);
@@ -3570,26 +3570,26 @@
   function eventHitsRewriteUi(target) {
     if (!(target instanceof Element)) return false;
     return !!target.closest(
-      ".humanizer-rewrite-btn, .humanizer-rewrite-box, .humanizer-rewrite-menu, .humanizer-generate-panel, .humanizer-action-cancel"
+      ".thoth-rewrite-btn, .thoth-rewrite-box, .thoth-rewrite-menu, .thoth-generate-panel, .thoth-action-cancel"
     );
   }
 
   function getActiveRewritePanel() {
     if (
       rewriteBoxEl &&
-      !rewriteBoxEl.classList.contains("humanizer-rewrite-box--hidden")
+      !rewriteBoxEl.classList.contains("thoth-rewrite-box--hidden")
     ) {
       return rewriteBoxEl;
     }
     if (
       generatePanelEl &&
-      !generatePanelEl.classList.contains("humanizer-generate-panel--hidden")
+      !generatePanelEl.classList.contains("thoth-generate-panel--hidden")
     ) {
       return generatePanelEl;
     }
     if (
       rewriteMenuEl &&
-      !rewriteMenuEl.classList.contains("humanizer-rewrite-menu--hidden")
+      !rewriteMenuEl.classList.contains("thoth-rewrite-menu--hidden")
     ) {
       return rewriteMenuEl;
     }
@@ -3603,32 +3603,32 @@
     rewriteInputOpen = false;
 
     if (rewriteMenuEl) {
-      rewriteMenuEl.classList.add("humanizer-rewrite-menu--hidden");
+      rewriteMenuEl.classList.add("thoth-rewrite-menu--hidden");
       rewriteMenuEl.classList.remove(
-        "humanizer-rewrite-menu--visible",
-        "humanizer-rewrite-menu--hiding"
+        "thoth-rewrite-menu--visible",
+        "thoth-rewrite-menu--hiding"
       );
     }
     if (generatePanelEl) {
-      generatePanelEl.classList.add("humanizer-generate-panel--hidden");
+      generatePanelEl.classList.add("thoth-generate-panel--hidden");
       generatePanelEl.classList.remove(
-        "humanizer-generate-panel--visible",
-        "humanizer-generate-panel--hiding",
-        "humanizer-generate-panel--error"
+        "thoth-generate-panel--visible",
+        "thoth-generate-panel--hiding",
+        "thoth-generate-panel--error"
       );
-      const formatStep = generatePanelEl.querySelector(".humanizer-generate-formats");
-      const notesStep = generatePanelEl.querySelector(".humanizer-generate-notes");
-      formatStep?.classList.remove("humanizer-generate-formats--hidden");
-      notesStep?.classList.add("humanizer-generate-notes--hidden");
+      const formatStep = generatePanelEl.querySelector(".thoth-generate-formats");
+      const notesStep = generatePanelEl.querySelector(".thoth-generate-notes");
+      formatStep?.classList.remove("thoth-generate-formats--hidden");
+      notesStep?.classList.add("thoth-generate-notes--hidden");
       const notesInput = generatePanelEl.querySelector("textarea");
       if (notesInput) notesInput.value = "";
     }
     if (rewriteBoxEl) {
-      rewriteBoxEl.classList.add("humanizer-rewrite-box--hidden");
+      rewriteBoxEl.classList.add("thoth-rewrite-box--hidden");
       rewriteBoxEl.classList.remove(
-        "humanizer-rewrite-box--visible",
-        "humanizer-rewrite-box--hiding",
-        "humanizer-rewrite-box--error"
+        "thoth-rewrite-box--visible",
+        "thoth-rewrite-box--hiding",
+        "thoth-rewrite-box--error"
       );
       const rewriteInput = rewriteBoxEl.querySelector("input");
       if (rewriteInput) rewriteInput.value = "";
@@ -3683,8 +3683,8 @@
   function setRewriteLoading(loading) {
     rewriteSubmitting = loading;
     const input = rewriteBoxEl?.querySelector("input");
-    const sendButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-send");
-    const cancelButton = rewriteBoxEl?.querySelector(".humanizer-rewrite-cancel");
+    const sendButton = rewriteBoxEl?.querySelector(".thoth-rewrite-send");
+    const cancelButton = rewriteBoxEl?.querySelector(".thoth-rewrite-cancel");
     const notesInput = generatePanelEl?.querySelector("textarea");
     if (input) input.disabled = loading;
     if (sendButton) sendButton.disabled = loading;
@@ -3694,16 +3694,16 @@
     if (!rewriteCircleEl || !rewriteBoxEl) return;
 
     if (loading) {
-      rewriteBoxEl.classList.add("humanizer-rewrite-box--hidden");
-      rewriteCircleEl.classList.remove("humanizer-rewrite-btn--hidden");
-      rewriteCircleEl.classList.add("humanizer-rewrite-btn--loading");
+      rewriteBoxEl.classList.add("thoth-rewrite-box--hidden");
+      rewriteCircleEl.classList.remove("thoth-rewrite-btn--hidden");
+      rewriteCircleEl.classList.add("thoth-rewrite-btn--loading");
       if (savedRewriteRange || rewriteAnchorRect) {
         positionAtSelectionCorner(rewriteCircleEl, getRewritePositionRange());
       }
       return;
     }
 
-    rewriteCircleEl.classList.remove("humanizer-rewrite-btn--loading");
+    rewriteCircleEl.classList.remove("thoth-rewrite-btn--loading");
   }
 
   function cancelRewrite() {
@@ -3764,19 +3764,19 @@
     }
 
     fading.classList.remove(
-      "humanizer-rewrite-box--visible",
-      "humanizer-rewrite-btn--visible",
-      "humanizer-rewrite-menu--visible",
-      "humanizer-generate-panel--visible"
+      "thoth-rewrite-box--visible",
+      "thoth-rewrite-btn--visible",
+      "thoth-rewrite-menu--visible",
+      "thoth-generate-panel--visible"
     );
     const hidingClass =
       fading === rewriteBoxEl
-        ? "humanizer-rewrite-box--hiding"
+        ? "thoth-rewrite-box--hiding"
         : fading === rewriteMenuEl
-          ? "humanizer-rewrite-menu--hiding"
+          ? "thoth-rewrite-menu--hiding"
           : fading === generatePanelEl
-            ? "humanizer-generate-panel--hiding"
-            : "humanizer-rewrite-btn--hiding";
+            ? "thoth-generate-panel--hiding"
+            : "thoth-rewrite-btn--hiding";
     fading.classList.add(hidingClass);
     const onDone = () => finish();
     fading.addEventListener("transitionend", onDone, { once: true });
@@ -3788,11 +3788,11 @@
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "humanizer-rewrite-btn humanizer-rewrite-btn--hidden";
+    btn.className = "thoth-rewrite-btn thoth-rewrite-btn--hidden";
     btn.setAttribute("aria-label", "Writing tools");
     btn.innerHTML =
-      '<span class="humanizer-rewrite-btn-icon" aria-hidden="true">↗</span>' +
-      '<span class="humanizer-rewrite-btn-spinner" aria-hidden="true"></span>';
+      '<span class="thoth-rewrite-btn-icon" aria-hidden="true">↗</span>' +
+      '<span class="thoth-rewrite-btn-spinner" aria-hidden="true"></span>';
 
     btn.addEventListener("mousedown", (event) => {
       event.preventDefault();
@@ -3815,12 +3815,12 @@
     if (rewriteBoxEl) return rewriteBoxEl;
 
     const box = document.createElement("div");
-    box.className = "humanizer-rewrite-box humanizer-rewrite-box--hidden";
+    box.className = "thoth-rewrite-box thoth-rewrite-box--hidden";
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-label", "Rewrite tone");
 
     const inputRow = document.createElement("div");
-    inputRow.className = "humanizer-rewrite-input-row";
+    inputRow.className = "thoth-rewrite-input-row";
 
     const input = document.createElement("input");
     input.type = "text";
@@ -3841,12 +3841,12 @@
 
     const sendButton = document.createElement("button");
     sendButton.type = "button";
-    sendButton.className = "humanizer-rewrite-send";
+    sendButton.className = "thoth-rewrite-send";
     sendButton.setAttribute("aria-label", "Submit rewrite");
     sendButton.textContent = "→";
 
     const cancelButton = createCancelButton(
-      "humanizer-rewrite-cancel",
+      "thoth-rewrite-cancel",
       "Cancel rewrite"
     );
 
@@ -3867,14 +3867,14 @@
     inputRow.appendChild(sendButton);
 
     const presetRow = document.createElement("div");
-    presetRow.className = "humanizer-rewrite-presets";
+    presetRow.className = "thoth-rewrite-presets";
     presetRow.setAttribute("role", "group");
     presetRow.setAttribute("aria-label", "Rewrite tone presets");
 
     for (const preset of REWRITE_TONE_PRESETS) {
       const chip = document.createElement("button");
       chip.type = "button";
-      chip.className = "humanizer-rewrite-preset";
+      chip.className = "thoth-rewrite-preset";
       chip.textContent = preset.label;
       chip.title = preset.prompt;
       chip.addEventListener("mousedown", (event) => {
@@ -3906,21 +3906,21 @@
     if (rewriteMenuEl) return rewriteMenuEl;
 
     const menu = document.createElement("div");
-    menu.className = "humanizer-rewrite-menu humanizer-rewrite-menu--hidden";
+    menu.className = "thoth-rewrite-menu thoth-rewrite-menu--hidden";
     menu.setAttribute("role", "menu");
     menu.setAttribute("aria-label", "Writing actions");
 
     const rewriteBtn = document.createElement("button");
     rewriteBtn.type = "button";
     rewriteBtn.className =
-      "humanizer-rewrite-menu-item humanizer-rewrite-menu-item--icon-only";
+      "thoth-rewrite-menu-item thoth-rewrite-menu-item--icon-only";
     rewriteBtn.setAttribute("role", "menuitem");
     rewriteBtn.setAttribute("aria-label", "Rewrite");
     rewriteBtn.innerHTML =
-      '<img class="humanizer-rewrite-menu-item-icon" src="' +
+      '<img class="thoth-rewrite-menu-item-icon" src="' +
       rewriteIconUrl() +
       '" alt="" width="18" height="18" draggable="false">' +
-      '<span class="humanizer-rewrite-menu-item-label">Rewrite</span>';
+      '<span class="thoth-rewrite-menu-item-label">Rewrite</span>';
     rewriteBtn.addEventListener("mousedown", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -3934,14 +3934,14 @@
     const generateBtn = document.createElement("button");
     generateBtn.type = "button";
     generateBtn.className =
-      "humanizer-rewrite-menu-item humanizer-rewrite-menu-item--icon-only";
+      "thoth-rewrite-menu-item thoth-rewrite-menu-item--icon-only";
     generateBtn.setAttribute("role", "menuitem");
     generateBtn.setAttribute("aria-label", "Generate");
     generateBtn.innerHTML =
-      '<img class="humanizer-rewrite-menu-item-icon" src="' +
+      '<img class="thoth-rewrite-menu-item-icon" src="' +
       generateIconUrl() +
       '" alt="" width="18" height="18" draggable="false">' +
-      '<span class="humanizer-rewrite-menu-item-label">Generate</span>';
+      '<span class="thoth-rewrite-menu-item-label">Generate</span>';
     generateBtn.addEventListener("mousedown", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -3973,19 +3973,19 @@
     if (generatePanelEl) return generatePanelEl;
 
     const panel = document.createElement("div");
-    panel.className = "humanizer-generate-panel humanizer-generate-panel--hidden";
+    panel.className = "thoth-generate-panel thoth-generate-panel--hidden";
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", "Generate writing");
 
     const formatStep = document.createElement("div");
-    formatStep.className = "humanizer-generate-formats";
+    formatStep.className = "thoth-generate-formats";
 
     const formatLabel = document.createElement("p");
-    formatLabel.className = "humanizer-generate-label";
+    formatLabel.className = "thoth-generate-label";
     formatLabel.textContent = "Generate as";
 
     const formatActions = document.createElement("div");
-    formatActions.className = "humanizer-generate-format-actions";
+    formatActions.className = "thoth-generate-format-actions";
 
     for (const [format, label] of [
       ["email", "Email"],
@@ -3993,7 +3993,7 @@
     ]) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "humanizer-generate-format-btn";
+      button.className = "thoth-generate-format-btn";
       button.dataset.format = format;
       button.textContent = label;
       button.addEventListener("mousedown", (event) => {
@@ -4012,12 +4012,12 @@
     formatStep.appendChild(formatActions);
 
     const notesStep = document.createElement("div");
-    notesStep.className = "humanizer-generate-notes humanizer-generate-notes--hidden";
+    notesStep.className = "thoth-generate-notes thoth-generate-notes--hidden";
 
     const settingsSummary = createGeneratePresetsRow();
 
     const notesBody = document.createElement("div");
-    notesBody.className = "humanizer-generate-notes-row";
+    notesBody.className = "thoth-generate-notes-row";
 
     const notesInput = document.createElement("textarea");
     notesInput.rows = 1;
@@ -4062,12 +4062,12 @@
     if (typeof menu._syncFeatureButtons === "function") {
       menu._syncFeatureButtons();
     }
-    circle.classList.add("humanizer-rewrite-btn--hidden");
-    circle.classList.remove("humanizer-rewrite-btn--visible");
-    menu.classList.remove("humanizer-rewrite-menu--hidden", "humanizer-rewrite-menu--hiding");
+    circle.classList.add("thoth-rewrite-btn--hidden");
+    circle.classList.remove("thoth-rewrite-btn--visible");
+    menu.classList.remove("thoth-rewrite-menu--hidden", "thoth-rewrite-menu--hiding");
     const anchor = getRewritePositionRange();
     positionAtSelectionCorner(menu, anchor);
-    menu.classList.add("humanizer-rewrite-menu--visible");
+    menu.classList.add("thoth-rewrite-menu--visible");
     requestAnimationFrame(() => {
       positionAtSelectionCorner(menu, anchor);
     });
@@ -4081,39 +4081,39 @@
     generateFormat = null;
     const menu = ensureRewriteMenu();
     const panel = ensureGeneratePanel();
-    menu.classList.add("humanizer-rewrite-menu--hidden");
-    menu.classList.remove("humanizer-rewrite-menu--visible");
+    menu.classList.add("thoth-rewrite-menu--hidden");
+    menu.classList.remove("thoth-rewrite-menu--visible");
     panel.classList.remove(
-      "humanizer-generate-panel--hidden",
-      "humanizer-generate-panel--hiding",
-      "humanizer-generate-panel--error"
+      "thoth-generate-panel--hidden",
+      "thoth-generate-panel--hiding",
+      "thoth-generate-panel--error"
     );
-    panel.querySelector(".humanizer-generate-formats")?.classList.remove(
-      "humanizer-generate-formats--hidden"
+    panel.querySelector(".thoth-generate-formats")?.classList.remove(
+      "thoth-generate-formats--hidden"
     );
-    panel.querySelector(".humanizer-generate-notes")?.classList.add(
-      "humanizer-generate-notes--hidden"
+    panel.querySelector(".thoth-generate-notes")?.classList.add(
+      "thoth-generate-notes--hidden"
     );
     syncGeneratePanelSummary();
     const anchor = getRewritePositionRange();
     positionAtSelectionCorner(panel, anchor);
-    panel.classList.add("humanizer-generate-panel--visible");
+    panel.classList.add("thoth-generate-panel--visible");
   }
 
   function openGenerateNotesStep(format) {
     generateStep = "notes";
     generateFormat = format;
     const panel = ensureGeneratePanel();
-    panel.querySelector(".humanizer-generate-formats")?.classList.add(
-      "humanizer-generate-formats--hidden"
+    panel.querySelector(".thoth-generate-formats")?.classList.add(
+      "thoth-generate-formats--hidden"
     );
-    const notesStep = panel.querySelector(".humanizer-generate-notes");
-    notesStep?.classList.remove("humanizer-generate-notes--hidden");
+    const notesStep = panel.querySelector(".thoth-generate-notes");
+    notesStep?.classList.remove("thoth-generate-notes--hidden");
     syncGeneratePanelSummary();
     const notesInput = panel.querySelector("textarea");
     const anchor = getRewritePositionRange();
     positionAtSelectionCorner(panel, anchor);
-    panel.classList.add("humanizer-generate-panel--visible");
+    panel.classList.add("thoth-generate-panel--visible");
     notesInput?.focus();
     requestAnimationFrame(() => {
       positionAtSelectionCorner(panel, anchor);
@@ -4125,26 +4125,26 @@
     hideRewriteSubpanels();
     const circle = ensureRewriteCircle();
     const box = ensureRewriteBox();
-    box.classList.add("humanizer-rewrite-box--hidden");
+    box.classList.add("thoth-rewrite-box--hidden");
     box.classList.remove(
-      "humanizer-rewrite-box--visible",
-      "humanizer-rewrite-box--hiding",
-      "humanizer-rewrite-box--error"
+      "thoth-rewrite-box--visible",
+      "thoth-rewrite-box--hiding",
+      "thoth-rewrite-box--error"
     );
     const input = box.querySelector("input");
     if (input && document.activeElement !== input) {
       input.value = "";
     }
     circle.classList.remove(
-      "humanizer-rewrite-btn--hidden",
-      "humanizer-rewrite-btn--hiding",
-      "humanizer-rewrite-btn--loading"
+      "thoth-rewrite-btn--hidden",
+      "thoth-rewrite-btn--hiding",
+      "thoth-rewrite-btn--loading"
     );
     const anchor = range || getRewritePositionRange();
     positionAtSelectionCorner(circle, anchor);
     requestAnimationFrame(() => {
       positionAtSelectionCorner(circle, anchor);
-      circle.classList.add("humanizer-rewrite-btn--visible");
+      circle.classList.add("thoth-rewrite-btn--visible");
     });
   }
 
@@ -4159,16 +4159,16 @@
     const box = ensureRewriteBox();
     const menu = ensureRewriteMenu();
     const panel = ensureGeneratePanel();
-    circle.classList.add("humanizer-rewrite-btn--hidden");
-    circle.classList.remove("humanizer-rewrite-btn--visible");
-    menu.classList.add("humanizer-rewrite-menu--hidden");
-    menu.classList.remove("humanizer-rewrite-menu--visible");
-    panel.classList.add("humanizer-generate-panel--hidden");
-    panel.classList.remove("humanizer-generate-panel--visible");
-    box.classList.remove("humanizer-rewrite-box--hidden", "humanizer-rewrite-box--hiding");
+    circle.classList.add("thoth-rewrite-btn--hidden");
+    circle.classList.remove("thoth-rewrite-btn--visible");
+    menu.classList.add("thoth-rewrite-menu--hidden");
+    menu.classList.remove("thoth-rewrite-menu--visible");
+    panel.classList.add("thoth-generate-panel--hidden");
+    panel.classList.remove("thoth-generate-panel--visible");
+    box.classList.remove("thoth-rewrite-box--hidden", "thoth-rewrite-box--hiding");
     const anchor = getRewritePositionRange();
     positionAtSelectionCorner(box, anchor);
-    box.classList.add("humanizer-rewrite-box--visible");
+    box.classList.add("thoth-rewrite-box--visible");
     box.querySelector("input")?.focus();
     requestAnimationFrame(() => {
       positionAtSelectionCorner(box, anchor);
@@ -4277,11 +4277,11 @@
       clearRewriteWateryState();
     }
     reopenFn();
-    generatePanelEl?.classList.add("humanizer-generate-panel--error");
-    rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
+    generatePanelEl?.classList.add("thoth-generate-panel--error");
+    rewriteBoxEl?.classList.add("thoth-rewrite-box--error");
     setTimeout(() => {
-      generatePanelEl?.classList.remove("humanizer-generate-panel--error");
-      rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
+      generatePanelEl?.classList.remove("thoth-generate-panel--error");
+      rewriteBoxEl?.classList.remove("thoth-rewrite-box--error");
     }, 1200);
   }
   function callRewriteApi(text, prompt, context) {
@@ -4351,9 +4351,9 @@
 
     if (!prompt) {
       input?.focus();
-      rewriteBoxEl?.classList.add("humanizer-rewrite-box--error");
+      rewriteBoxEl?.classList.add("thoth-rewrite-box--error");
       setTimeout(() => {
-        rewriteBoxEl?.classList.remove("humanizer-rewrite-box--error");
+        rewriteBoxEl?.classList.remove("thoth-rewrite-box--error");
       }, 1200);
       return;
     }

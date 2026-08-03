@@ -12,11 +12,11 @@ CloudProvider = Literal["groq", "openai", "api"]
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
-DEFAULT_GROQ_MODEL = os.environ.get("HUMANIZER_GROQ_MODEL", "llama-3.3-70b-versatile")
-DEFAULT_OPENAI_MODEL = os.environ.get("HUMANIZER_OPENAI_MODEL", "gpt-4o-mini")
-DEFAULT_API_MODEL = os.environ.get("HUMANIZER_API_MODEL", DEFAULT_OPENAI_MODEL)
-CLOUD_REQUEST_TIMEOUT_SEC = float(os.environ.get("HUMANIZER_CLOUD_TIMEOUT_SEC", "120"))
-AI_TEST_TIMEOUT_SEC = float(os.environ.get("HUMANIZER_AI_TEST_TIMEOUT_SEC", "20"))
+DEFAULT_GROQ_MODEL = os.environ.get("THOTH_GROQ_MODEL", "llama-3.3-70b-versatile")
+DEFAULT_OPENAI_MODEL = os.environ.get("THOTH_OPENAI_MODEL", "gpt-4o-mini")
+DEFAULT_API_MODEL = os.environ.get("THOTH_API_MODEL", DEFAULT_OPENAI_MODEL)
+CLOUD_REQUEST_TIMEOUT_SEC = float(os.environ.get("THOTH_CLOUD_TIMEOUT_SEC", "120"))
+AI_TEST_TIMEOUT_SEC = float(os.environ.get("THOTH_AI_TEST_TIMEOUT_SEC", "20"))
 
 _SUPPORTED_PROVIDERS = frozenset({"groq", "openai", "api"})
 _ALLOWED_URL_SCHEMES = frozenset({"https", "http"})

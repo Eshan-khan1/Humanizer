@@ -1,4 +1,4 @@
-"""Security helpers for the local Humanizer API."""
+"""Security helpers for the local Thoth API."""
 
 from __future__ import annotations
 
@@ -17,17 +17,17 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 # --- Limits (override via env) ---
 
-MAX_TEXT_CHARS = int(os.environ.get("HUMANIZER_MAX_TEXT_CHARS", "50000"))
-MAX_PROMPT_CHARS = int(os.environ.get("HUMANIZER_MAX_PROMPT_CHARS", "2000"))
-MAX_NOTES_CHARS = int(os.environ.get("HUMANIZER_MAX_NOTES_CHARS", "5000"))
-MAX_PROFILE_FIELD_CHARS = int(os.environ.get("HUMANIZER_MAX_PROFILE_FIELD_CHARS", "500"))
-MAX_CONTEXT_JSON_BYTES = int(os.environ.get("HUMANIZER_MAX_CONTEXT_JSON_BYTES", "32768"))
-MAX_CONTEXT_DEPTH = int(os.environ.get("HUMANIZER_MAX_CONTEXT_DEPTH", "6"))
-MAX_CONTEXT_STRING_CHARS = int(os.environ.get("HUMANIZER_MAX_CONTEXT_STRING_CHARS", "4000"))
-MAX_REQUEST_BODY_BYTES = int(os.environ.get("HUMANIZER_MAX_REQUEST_BODY_BYTES", "262144"))
-MAX_AI_API_KEY_CHARS = int(os.environ.get("HUMANIZER_MAX_AI_API_KEY_CHARS", "512"))
-RATE_LIMIT_REQUESTS = int(os.environ.get("HUMANIZER_RATE_LIMIT_REQUESTS", "120"))
-RATE_LIMIT_WINDOW_SEC = int(os.environ.get("HUMANIZER_RATE_LIMIT_WINDOW_SEC", "60"))
+MAX_TEXT_CHARS = int(os.environ.get("THOTH_MAX_TEXT_CHARS", "50000"))
+MAX_PROMPT_CHARS = int(os.environ.get("THOTH_MAX_PROMPT_CHARS", "2000"))
+MAX_NOTES_CHARS = int(os.environ.get("THOTH_MAX_NOTES_CHARS", "5000"))
+MAX_PROFILE_FIELD_CHARS = int(os.environ.get("THOTH_MAX_PROFILE_FIELD_CHARS", "500"))
+MAX_CONTEXT_JSON_BYTES = int(os.environ.get("THOTH_MAX_CONTEXT_JSON_BYTES", "32768"))
+MAX_CONTEXT_DEPTH = int(os.environ.get("THOTH_MAX_CONTEXT_DEPTH", "6"))
+MAX_CONTEXT_STRING_CHARS = int(os.environ.get("THOTH_MAX_CONTEXT_STRING_CHARS", "4000"))
+MAX_REQUEST_BODY_BYTES = int(os.environ.get("THOTH_MAX_REQUEST_BODY_BYTES", "262144"))
+MAX_AI_API_KEY_CHARS = int(os.environ.get("THOTH_MAX_AI_API_KEY_CHARS", "512"))
+RATE_LIMIT_REQUESTS = int(os.environ.get("THOTH_RATE_LIMIT_REQUESTS", "120"))
+RATE_LIMIT_WINDOW_SEC = int(os.environ.get("THOTH_RATE_LIMIT_WINDOW_SEC", "60"))
 
 LOCAL_API_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
 DEFAULT_CORS_ORIGINS = (
@@ -60,16 +60,16 @@ _SECRET_LOG_KEYS = frozenset({
     "secret",
 })
 
-API_TOKEN = os.environ.get("HUMANIZER_API_TOKEN", "").strip()
-REQUIRE_AUTH = os.environ.get("HUMANIZER_REQUIRE_AUTH", "").lower() in ("1", "true", "yes")
+API_TOKEN = os.environ.get("THOTH_API_TOKEN", "").strip()
+REQUIRE_AUTH = os.environ.get("THOTH_REQUIRE_AUTH", "").lower() in ("1", "true", "yes")
 if REQUIRE_AUTH and not API_TOKEN:
     API_TOKEN = secrets.token_urlsafe(32)
 
-EXPOSE_INTERNAL_ERRORS = os.environ.get("HUMANIZER_DEBUG", "").lower() in ("1", "true", "yes")
+EXPOSE_INTERNAL_ERRORS = os.environ.get("THOTH_DEBUG", "").lower() in ("1", "true", "yes")
 
 
 def cors_allowed_origins() -> list[str]:
-    raw = os.environ.get("HUMANIZER_CORS_ORIGINS", "").strip()
+    raw = os.environ.get("THOTH_CORS_ORIGINS", "").strip()
     if not raw:
         return list(DEFAULT_CORS_ORIGINS)
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
@@ -231,7 +231,7 @@ def require_local_client(request: Request) -> None:
 
 
 def resolve_debug_log_path(default_relative: str = ".cursor/debug.log") -> Path:
-    raw = os.environ.get("HUMANIZER_DEBUG_LOG", "").strip()
+    raw = os.environ.get("THOTH_DEBUG_LOG", "").strip()
     if raw:
         candidate = Path(raw).expanduser()
     else:

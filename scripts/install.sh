@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# One-time Humanizer setup — Python env, dependencies, Ollama models.
+# One-time Thoth setup — Python env, dependencies, Ollama models.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> Humanizer installer"
+echo "==> Thoth installer"
 echo ""
 
 # --- Python ---

@@ -1,4 +1,4 @@
-"""CLI for Humanizer server control (no GUI). Used by the native Mac app."""
+"""CLI for Thoth server control (no GUI). Used by the native Mac app."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from macos.menubar import autostart, extension_bridge, manager, settings  # noqa
 
 
 def bootstrap_root() -> Path:
-    resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
+    resources = Path(os.environ.get("THOTH_BUNDLE_RESOURCES", "")).expanduser()
     if resources.is_dir() and (resources / "ThothHome" / "server.py").is_file():
         return manager.ensure_home_payload(resources)
     return manager.resolve_project_root()
@@ -39,7 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     if cmd == "connect-extension":
         try:
             # Refresh Home first so bundled extension/ lands under Application Support.
-            resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
+            resources = Path(os.environ.get("THOTH_BUNDLE_RESOURCES", "")).expanduser()
             if resources.is_dir():
                 root = manager.ensure_home_payload(resources)
             result = extension_bridge.prepare_extension_connection(root)

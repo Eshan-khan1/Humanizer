@@ -1,6 +1,6 @@
 const DEFAULT_API_BASE = "http://127.0.0.1:8000";
-const NATIVE_HOST = "com.humanizer.app";
-const CONNECT_ALARM = "humanizer-auto-connect";
+const NATIVE_HOST = "com.thoth.app";
+const CONNECT_ALARM = "thoth-auto-connect";
 const MAX_TEXT_CHARS = 50000;
 const MAX_PROMPT_CHARS = 2000;
 const MAX_NOTES_CHARS = 5000;
@@ -8,11 +8,48 @@ const MAX_NOTES_CHARS = 5000;
 importScripts("api_auth.js");
 
 let API_BASE = DEFAULT_API_BASE;
+let storageMigrated = false;
+
+async function migrateLegacyStorage() {
+  if (storageMigrated) return;
+  storageMigrated = true;
+  try {
+    const legacy = await chrome.storage.local.get([
+      "humanizerApiToken",
+      "humanizerApiBase",
+      "humanizerAppConnected",
+      "humanizerAppConnectedAt",
+      "thothApiToken",
+      "thothApiBase",
+      "thothAppConnected",
+      "thothAppConnectedAt",
+    ]);
+    const patch = {};
+    if (!legacy.thothApiToken && legacy.humanizerApiToken) {
+      patch.thothApiToken = legacy.humanizerApiToken;
+    }
+    if (!legacy.thothApiBase && legacy.humanizerApiBase) {
+      patch.thothApiBase = legacy.humanizerApiBase;
+    }
+    if (legacy.thothAppConnected == null && legacy.humanizerAppConnected != null) {
+      patch.thothAppConnected = legacy.humanizerAppConnected;
+    }
+    if (legacy.thothAppConnectedAt == null && legacy.humanizerAppConnectedAt != null) {
+      patch.thothAppConnectedAt = legacy.humanizerAppConnectedAt;
+    }
+    if (Object.keys(patch).length) {
+      await chrome.storage.local.set(patch);
+    }
+  } catch {
+    // Ignore migration errors.
+  }
+}
 
 async function loadApiBase() {
   try {
-    const stored = await chrome.storage.local.get({ humanizerApiBase: DEFAULT_API_BASE });
-    const base = String(stored.humanizerApiBase || DEFAULT_API_BASE).trim().replace(/\/$/, "");
+    await migrateLegacyStorage();
+    const stored = await chrome.storage.local.get({ thothApiBase: DEFAULT_API_BASE });
+    const base = String(stored.thothApiBase || DEFAULT_API_BASE).trim().replace(/\/$/, "");
     if (base.startsWith("http://127.0.0.1")) {
       API_BASE = base;
     }
@@ -28,15 +65,15 @@ async function applyConnectInfo(info) {
   }
   const base = String(info.base_url || "").trim().replace(/\/$/, "");
   const patch = {
-    humanizerAppConnected: true,
-    humanizerAppConnectedAt: Date.now(),
+    thothAppConnected: true,
+    thothAppConnectedAt: Date.now(),
   };
   if (base.startsWith("http://127.0.0.1")) {
     API_BASE = base;
-    patch.humanizerApiBase = base;
+    patch.thothApiBase = base;
   }
   if (info.auth_required && info.token) {
-    patch.humanizerApiToken = String(info.token);
+    patch.thothApiToken = String(info.token);
   }
   const features = info.features && typeof info.features === "object" ? info.features : null;
   if (features) {
@@ -85,7 +122,7 @@ async function connectViaHttp() {
       // Try next base.
     }
   }
-  await chrome.storage.local.set({ humanizerAppConnected: false });
+  await chrome.storage.local.set({ thothAppConnected: false });
   return { ok: false };
 }
 
@@ -233,15 +270,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     (async () => {
       await loadApiBase();
       const stored = await chrome.storage.local.get({
-        humanizerAppConnected: false,
-        humanizerAppConnectedAt: 0,
-        humanizerApiBase: DEFAULT_API_BASE,
+        thothAppConnected: false,
+        thothAppConnectedAt: 0,
+        thothApiBase: DEFAULT_API_BASE,
       });
       sendResponse({
         ok: true,
-        connected: Boolean(stored.humanizerAppConnected),
-        connectedAt: stored.humanizerAppConnectedAt || 0,
-        base: stored.humanizerApiBase || API_BASE,
+        connected: Boolean(stored.thothAppConnected),
+        connectedAt: stored.thothAppConnectedAt || 0,
+        base: stored.thothApiBase || API_BASE,
       });
     })();
     return true;
@@ -265,7 +302,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     (async () => {
       let lastError = null;
-      const headers = await humanizerApiHeaders();
+      const headers = await thothApiHeaders();
       for (const url of urls) {
         try {
           const response = await fetch(url, { method: "POST", headers, body });
@@ -299,8 +336,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     (async () => {
       try {
-        const headers = await humanizerApiHeaders();
-        const ai = await humanizerAiPayload();
+        const headers = await thothApiHeaders();
+        const ai = await thothAiPayload();
         const response = await fetch(`${API_BASE}/humanize`, {
           method: "POST",
           headers,
@@ -324,7 +361,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "testAiConnection") {
     (async () => {
       try {
-        const headers = await humanizerApiHeaders();
+        const headers = await thothApiHeaders();
         const provider = String(message.provider || "api").trim().toLowerCase();
         const apiKey = String(message.apiKey || "").trim();
         const baseUrl = String(message.baseUrl || "").trim();
@@ -392,8 +429,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     (async () => {
       try {
-        const headers = await humanizerApiHeaders();
-        const ai = await humanizerAiPayload();
+        const headers = await thothApiHeaders();
+        const ai = await thothAiPayload();
         const response = await fetch(`${API_BASE}/rewrite`, {
           method: "POST",
           headers,
@@ -447,8 +484,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     (async () => {
       try {
-        const headers = await humanizerApiHeaders();
-        const ai = await humanizerAiPayload();
+        const headers = await thothApiHeaders();
+        const ai = await thothAiPayload();
         const response = await fetch(`${API_BASE}/generate`, {
           method: "POST",
           headers,

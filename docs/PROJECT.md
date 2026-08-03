@@ -1,6 +1,6 @@
-# Humanizer — Project Documentation
+# Thoth — Project Documentation
 
-**Repository:** https://github.com/Eshan-khan1/Humanizer  
+**Repository:** https://github.com/Eshan-khan1/Thoth  
 **Extension version:** 1.8.0  
 **API:** FastAPI on `http://127.0.0.1:8000`
 
@@ -28,7 +28,7 @@
 
 ## 1. Overview
 
-Humanizer is a **local-first writing assistant** made of two parts:
+Thoth is a **local-first writing assistant** made of two parts:
 
 1. **Chrome extension** — grammar underlines, rewrite, and generate on any website (Gmail, Google Docs, search bars, etc.)
 2. **Local API server** (`server.py`) — runs on `http://127.0.0.1:8000` and processes all text on your machine
@@ -95,7 +95,7 @@ Two-agent pipeline:
 | Agent | Engine | Role |
 |-------|--------|------|
 | **Agent 1** | LanguageTool (`language-tool-python` 2.8.1) | High-confidence spelling/grammar matches |
-| **Agent 2** | Ollama `humanizer-grammar` | Full-sentence rewrite for hard sentences LT misses |
+| **Agent 2** | Ollama `thoth-grammar` | Full-sentence rewrite for hard sentences LT misses |
 
 **Flow:**
 
@@ -137,7 +137,7 @@ When enabled in the popup, the extension applies fixes chunk-by-chunk across mul
 3. `content.js` → `background.js` → `POST /rewrite`
 4. `writing_agent.py`:
    - Builds prompt (direct mode when `prompt` is sent from the extension)
-   - Calls Ollama `humanizer-writing` or cloud AI
+   - Calls Ollama `thoth-writing` or cloud AI
    - Applies **hard filters**: no extra greetings, similar length, no added filler
 5. Rewritten text replaces **only** the selection
 
@@ -295,8 +295,8 @@ Defined in `Thoth ui theme.json`:
   "ok": true,
   "ollama_available": true,
   "grammar_available": true,
-  "grammar_model": "humanizer-grammar",
-  "writing_model": "humanizer-writing",
+  "grammar_model": "thoth-grammar",
+  "writing_model": "thoth-writing",
   "writing_agent": "rewrite, generate",
   "cloud_ai_providers": ["groq", "openai"]
 }
@@ -326,7 +326,7 @@ Defined in `Thoth ui theme.json`:
 ### Auth (optional)
 
 ```bash
-HUMANIZER_REQUIRE_AUTH=1 HUMANIZER_API_TOKEN=your-token ./start_server.sh
+THOTH_REQUIRE_AUTH=1 THOTH_API_TOKEN=your-token ./start_server.sh
 ```
 
 Paste the token in the extension → Settings → AI & API keys → Local server token.
@@ -361,8 +361,8 @@ Authorization: Bearer <token>
 ### Quick start
 
 ```bash
-git clone https://github.com/Eshan-khan1/Humanizer.git
-cd Humanizer
+git clone https://github.com/Eshan-khan1/Thoth.git
+cd Thoth
 chmod +x scripts/install.sh
 ./scripts/install.sh          # venv + deps + NLTK + models
 ./start_server.sh             # API on :8000
@@ -398,8 +398,8 @@ Created by `scripts/setup_models.sh`:
 
 | Model | Used for |
 |-------|----------|
-| `humanizer-grammar` | Deep grammar fixes (Agent 2) |
-| `humanizer-writing` | Rewrite & Generate |
+| `thoth-grammar` | Deep grammar fixes (Agent 2) |
+| `thoth-writing` | Rewrite & Generate |
 
 Custom Modelfiles can live under `models/` (not committed to GitHub — too large). Users pull base models via Ollama.
 
@@ -407,8 +407,8 @@ Custom Modelfiles can live under `models/` (not committed to GitHub — too larg
 
 | Variable | Default | Effect |
 |----------|---------|--------|
-| `OLLAMA_GRAMMAR_MODEL` | `humanizer-grammar` | Grammar deep fixer model |
-| `OLLAMA_WRITING_MODEL` | `humanizer-writing` | Rewrite/Generate model |
+| `OLLAMA_GRAMMAR_MODEL` | `thoth-grammar` | Grammar deep fixer model |
+| `OLLAMA_WRITING_MODEL` | `thoth-writing` | Rewrite/Generate model |
 | `OLLAMA_GRAMMAR_NUM_PREDICT` | `768` | Max tokens (grammar) |
 | `OLLAMA_GRAMMAR_NUM_CTX` | `4096` | Context window (grammar) |
 | `OLLAMA_REWRITE_TEMPERATURE` | `0.55` | Rewrite sampling |
@@ -419,7 +419,7 @@ Custom Modelfiles can live under `models/` (not committed to GitHub — too larg
 ## 10. Project structure
 
 ```
-Humanizer/
+Thoth/
 ├── extension/                  # Chrome extension (Manifest V3)
 │   ├── manifest.json
 │   ├── content.js              # In-page UI: grammar, rewrite, generate
@@ -473,16 +473,16 @@ Humanizer/
 
 | Variable | Effect |
 |----------|--------|
-| `HUMANIZER_HOST` | Bind host (default `127.0.0.1`) |
-| `HUMANIZER_PORT` | Port (default `8000`) |
-| `HUMANIZER_REQUIRE_AUTH` | Require Bearer token on all endpoints |
-| `HUMANIZER_API_TOKEN` | Token value (auto-generated if unset when auth required) |
-| `HUMANIZER_DEBUG` | Verbose server error messages |
-| `HUMANIZER_DEBUG_OLLAMA` | Ollama debug logging |
-| `HUMANIZER_CORS_ORIGINS` | Extra CORS origins (comma-separated) |
-| `HUMANIZER_RATE_LIMIT_REQUESTS` | Rate limit per window |
-| `HUMANIZER_GROQ_MODEL` | Default Groq model |
-| `HUMANIZER_OPENAI_MODEL` | Default OpenAI model |
+| `THOTH_HOST` | Bind host (default `127.0.0.1`) |
+| `THOTH_PORT` | Port (default `8000`) |
+| `THOTH_REQUIRE_AUTH` | Require Bearer token on all endpoints |
+| `THOTH_API_TOKEN` | Token value (auto-generated if unset when auth required) |
+| `THOTH_DEBUG` | Verbose server error messages |
+| `THOTH_DEBUG_OLLAMA` | Ollama debug logging |
+| `THOTH_CORS_ORIGINS` | Extra CORS origins (comma-separated) |
+| `THOTH_RATE_LIMIT_REQUESTS` | Rate limit per window |
+| `THOTH_GROQ_MODEL` | Default Groq model |
+| `THOTH_OPENAI_MODEL` | Default OpenAI model |
 
 ### Extension storage keys
 
@@ -495,7 +495,7 @@ Humanizer/
 | `generateLength` | sync | Default generate length |
 | `generateTonePreset` | sync | Default generate tone |
 | `generateComplexity` | sync | Default generate complexity |
-| `humanizerApiToken` | local | Server auth token |
+| `thothApiToken` | local | Server auth token |
 | `aiProvider` | local | `local`, `groq`, or `openai` |
 | `aiApiKey` | local | Cloud API key (never synced) |
 
@@ -527,7 +527,7 @@ Test cases are defined in `benchmark_tests.json` (tone/length/complexity separat
 
 ```bash
 ./scripts/package_extension.sh
-# → dist/humanizer-extension-v1.8.0.zip
+# → dist/thoth-extension-v1.8.0.zip
 ```
 
 ### Publish a GitHub Release
@@ -556,7 +556,7 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 - **Grammar** uses LanguageTool locally (Java)
 - **Rewrite/Generate** use local Ollama unless you opt into Groq/OpenAI in settings
 - API keys live in **Chrome local storage** and are only sent to `127.0.0.1:8000`
-- No Humanizer account, telemetry, or central server
+- No Thoth account, telemetry, or central server
 
 ---
 
@@ -567,7 +567,7 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 | Server offline in popup | Run `./start_server.sh`; check http://127.0.0.1:8000/health |
 | No underlines | Enable “Check writing while I type”; ensure Java is installed |
 | Rewrite/Generate error | Start Ollama; run `./scripts/setup_models.sh` |
-| `humanizer-grammar` missing | `ollama list` then `./scripts/setup_models.sh` |
+| `thoth-grammar` missing | `ollama list` then `./scripts/setup_models.sh` |
 | `OPTIONS /rewrite 400` | Reload extension — API must go through background script |
 | Extension not updating | `chrome://extensions` → Reload |
 | Port 8000 in use | `start_server.sh` kills the old process automatically |
@@ -592,7 +592,7 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 
 ## Contributing
 
-1. Fork https://github.com/Eshan-khan1/Humanizer
+1. Fork https://github.com/Eshan-khan1/Thoth
 2. Create a branch (`git checkout -b feature/my-change`)
 3. Commit with a clear message
 4. Open a Pull Request

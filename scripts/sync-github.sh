@@ -43,7 +43,7 @@ stage_project_paths() {
     AGENTS.md
     README.md
     Features.txt
-    "Humanizer design system.json"
+    "Thoth design system.json"
     "Start Thoth.bat"
     "Start Thoth.command"
     benchmark_tests.json

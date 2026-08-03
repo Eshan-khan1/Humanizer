@@ -397,7 +397,7 @@ def run_file(
         )
 
     lines = [
-        f"Humanizer Generate/Rewrite Test Results — {source.name}",
+        f"Thoth Generate/Rewrite Test Results — {source.name}",
         f"Writing model: {model}",
         f"Run: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         f"Repeats per case: {repeats}",

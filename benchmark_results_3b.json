@@ -16,8 +16,8 @@
         "ok": true,
         "ollama_available": true,
         "grammar_available": true,
-        "grammar_model": "humanizer-grammar",
-        "writing_model": "humanizer-writing",
+        "grammar_model": "thoth-grammar",
+        "writing_model": "thoth-writing",
         "writing_agent": "rewrite, generate",
         "cloud_ai_providers": [
           "groq",

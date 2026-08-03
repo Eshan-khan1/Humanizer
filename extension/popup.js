@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const lengthOptionsEl = document.getElementById("generate-length-options");
   const tonePresetsEl = document.getElementById("generate-tone-presets");
   const complexityOptionsEl = document.getElementById("generate-complexity-options");
-  const apiTokenEl = document.getElementById("humanizer-api-token");
+  const apiTokenEl = document.getElementById("thoth-api-token");
   const aiProviderOptionsEl = document.getElementById("ai-provider-options");
   const aiKeySectionEl = document.getElementById("ai-key-section");
   const aiKeyHintEl = document.getElementById("ai-key-hint");
@@ -834,12 +834,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (apiTokenEl) {
-    chrome.storage.local.get({ humanizerApiToken: "" }, (result) => {
-      apiTokenEl.value = String(result.humanizerApiToken || "");
+    chrome.storage.local.get({ thothApiToken: "" }, (result) => {
+      apiTokenEl.value = String(result.thothApiToken || "");
     });
     apiTokenEl.addEventListener("change", () => {
       chrome.storage.local.set({
-        humanizerApiToken: apiTokenEl.value.trim(),
+        thothApiToken: apiTokenEl.value.trim(),
       });
     });
   }
@@ -939,20 +939,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const headers = {};
       try {
         const stored = await chrome.storage.local.get({
-          humanizerApiToken: "",
-          humanizerApiBase: "http://127.0.0.1:8000",
-          humanizerAppConnected: false,
+          thothApiToken: "",
+          thothApiBase: "http://127.0.0.1:8000",
+          thothAppConnected: false,
         });
-        const token = String(stored.humanizerApiToken || "").trim();
+        const token = String(stored.thothApiToken || "").trim();
         if (token) headers.Authorization = `Bearer ${token}`;
-        const base = String(stored.humanizerApiBase || "http://127.0.0.1:8000").replace(
+        const base = String(stored.thothApiBase || "http://127.0.0.1:8000").replace(
           /\/$/,
           ""
         );
         const response = await fetch(`${base}/health`, { headers });
         if (!response.ok) throw new Error("Server unavailable");
         await response.json();
-        const linked = Boolean(stored.humanizerAppConnected);
+        const linked = Boolean(stored.thothAppConnected);
         setStatus(
           linked ? "Connected to app" : "Server online",
           "online",
@@ -1005,9 +1005,9 @@ document.addEventListener("DOMContentLoaded", () => {
             await new Promise((r) => setTimeout(r, 400));
             try {
               const stored = await chrome.storage.local.get({
-                humanizerApiBase: "http://127.0.0.1:8000",
+                thothApiBase: "http://127.0.0.1:8000",
               });
-              const base = String(stored.humanizerApiBase || "http://127.0.0.1:8000").replace(
+              const base = String(stored.thothApiBase || "http://127.0.0.1:8000").replace(
                 /\/$/,
                 ""
               );
@@ -1026,9 +1026,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           try {
             const stored = await chrome.storage.local.get({
-              humanizerApiBase: "http://127.0.0.1:8000",
+              thothApiBase: "http://127.0.0.1:8000",
             });
-            const base = String(stored.humanizerApiBase || "http://127.0.0.1:8000").replace(
+            const base = String(stored.thothApiBase || "http://127.0.0.1:8000").replace(
               /\/$/,
               ""
             );

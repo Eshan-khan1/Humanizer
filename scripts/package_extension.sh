@@ -47,7 +47,7 @@ Thoth for Windows
 5. Chrome → chrome://extensions → Developer mode → Load unpacked → select the unzipped folder.
 
 Full guide: docs/INSTALL_WINDOWS.md in the repo
-https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_WINDOWS.md
+https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_WINDOWS.md
 EOF
 
 cat > "$DIST/README-MAC.txt" <<EOF
@@ -56,7 +56,7 @@ Thoth for macOS
 
 1. Install Python 3.10+, Ollama, and Java 11+ (e.g. brew install openjdk@17).
 2. From the GitHub release, download Thoth-macOS.zip and thoth-extension-mac-….zip:
-   https://github.com/Eshan-khan1/Humanizer/releases/latest
+   https://github.com/Eshan-khan1/Thoth/releases/latest
 3. Unzip Thoth-macOS.zip, drag Thoth.app into Applications, and open it once.
 4. Unzip the extension zip.
 5. Chrome → chrome://extensions → Developer mode → Load unpacked → select the unzipped folder.
@@ -64,7 +64,7 @@ Thoth for macOS
 The menu bar app starts the local server and relaunches after login.
 
 Full guide: docs/INSTALL_MAC.md in the repo
-https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_MAC.md
+https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_MAC.md
 EOF
 
 echo ""

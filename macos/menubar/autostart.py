@@ -7,12 +7,12 @@ import os
 import subprocess
 from pathlib import Path
 
-logger = logging.getLogger("humanizer.menubar")
+logger = logging.getLogger("thoth.menubar")
 
 LEGACY_LAUNCH_AGENT_LABELS = (
-    "com.humanizer.app",
-    "com.humanizer.macos",
-    "com.humanizer.menubar",
+    "com.thoth.app",
+    "com.thoth.macos",
+    "com.thoth.menubar",
 )
 
 
@@ -20,7 +20,7 @@ def ensure_login_item(program_arguments: list[str] | None = None) -> None:
     """Remove old silent LaunchAgents.
 
     macOS System Settings → Login Items & Background Activity only lists apps
-    registered with SMAppService (handled by the native Humanizer host).
+    registered with SMAppService (handled by the native Thoth host).
     """
     del program_arguments  # unused; kept for call-site compatibility
     agents = Path.home() / "Library" / "LaunchAgents"

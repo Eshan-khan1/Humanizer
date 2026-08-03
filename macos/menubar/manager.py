@@ -1,4 +1,4 @@
-"""Background process helpers for the Humanizer menu-bar app."""
+"""Background process helpers for the Thoth menu-bar app."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-logger = logging.getLogger("humanizer.menubar")
+logger = logging.getLogger("thoth.menubar")
 
 DEFAULT_PORT = 8000
 HEALTH_URL = f"http://127.0.0.1:{DEFAULT_PORT}/health"
@@ -31,13 +31,25 @@ class HealthSnapshot:
 
 
 def support_dir() -> Path:
-    path = Path.home() / "Library" / "Application Support" / "Humanizer"
+    path = Path.home() / "Library" / "Application Support" / "Thoth"
+    legacy = Path.home() / "Library" / "Application Support" / "Humanizer"
+    if not path.exists() and legacy.is_dir():
+        try:
+            legacy.rename(path)
+        except OSError:
+            pass
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
 def logs_dir() -> Path:
-    path = Path.home() / "Library" / "Logs" / "Humanizer"
+    path = Path.home() / "Library" / "Logs" / "Thoth"
+    legacy = Path.home() / "Library" / "Logs" / "Humanizer"
+    if not path.exists() and legacy.is_dir():
+        try:
+            legacy.rename(path)
+        except OSError:
+            pass
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -50,7 +62,7 @@ def resolve_project_root(explicit: str | None = None) -> Path:
     if explicit:
         return Path(explicit).expanduser().resolve()
 
-    env = os.environ.get("HUMANIZER_ROOT", "").strip()
+    env = os.environ.get("THOTH_ROOT", "").strip()
     if env:
         return Path(env).expanduser().resolve()
 
@@ -60,7 +72,7 @@ def resolve_project_root(explicit: str | None = None) -> Path:
     if (repo_candidate / "server.py").is_file():
         return repo_candidate
 
-    bundled = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")) / "ThothHome"
+    bundled = Path(os.environ.get("THOTH_BUNDLE_RESOURCES", "")) / "ThothHome"
     if (bundled / "server.py").is_file():
         return bundled.resolve()
 
@@ -432,7 +444,7 @@ def ensure_venv(root: Path) -> Path:
 def ensure_home_payload(resources: Path) -> Path:
     """Copy bundled server home into Application Support on first run."""
     dest = support_dir() / "Home"
-    marker = dest / ".humanizer_home_ready"
+    marker = dest / ".thoth_home_ready"
     src = resources / "ThothHome"
     if not src.is_dir():
         return resolve_project_root()

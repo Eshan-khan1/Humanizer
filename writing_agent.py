@@ -2,7 +2,7 @@
 Writing Agent — handles Rewrite and Generate only.
 
 Separate from the grammar pipeline (Agent 1 LanguageTool + Agent 2 deep fixer).
-Uses OLLAMA_WRITING_MODEL (default: humanizer-writing).
+Uses OLLAMA_WRITING_MODEL (default: thoth-writing).
 """
 
 from __future__ import annotations
@@ -12,9 +12,9 @@ import os
 import re
 from typing import Any, Literal
 
-logger = logging.getLogger("humanizer.writing_agent")
+logger = logging.getLogger("thoth.writing_agent")
 
-OLLAMA_WRITING_MODEL = os.environ.get("OLLAMA_WRITING_MODEL", "humanizer-writing")
+OLLAMA_WRITING_MODEL = os.environ.get("OLLAMA_WRITING_MODEL", "thoth-writing")
 OLLAMA_REWRITE_TEMPERATURE = float(os.environ.get("OLLAMA_REWRITE_TEMPERATURE", "0.45"))
 OLLAMA_REWRITE_NUM_PREDICT = int(os.environ.get("OLLAMA_REWRITE_NUM_PREDICT", "1024"))
 OLLAMA_GENERATE_TEMPERATURE = float(os.environ.get("OLLAMA_GENERATE_TEMPERATURE", "0.6"))
@@ -32,7 +32,7 @@ OLLAMA_GENERATE_NUM_PREDICT_LONG = int(
 EMAIL_SIGNATURE_PLACEHOLDER = "[Your Name]"
 
 WRITING_AGENT_SYSTEM_PROMPT = (
-    "You are the Humanizer Writing Agent. You only do two jobs:\n"
+    "You are the Thoth Writing Agent. You only do two jobs:\n"
     "1. REWRITE — change tone/style of selected text by editing word choice and sentence "
     "structure only. Keep the same information, structure, and roughly the same length.\n"
     "2. GENERATE — expand short notes, bullets, or prompts into complete emails or essays. "

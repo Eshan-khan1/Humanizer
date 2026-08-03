@@ -1,5 +1,5 @@
 #!/bin/bash
-# Launch Chrome with the Humanizer extension loaded (dev profile).
+# Launch Chrome with the Thoth extension loaded (dev profile).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

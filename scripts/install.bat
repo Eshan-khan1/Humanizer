@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions
-title Humanizer — Install
+title Thoth — Install
 cd /d "%~dp0.."
 
 echo ============================================
-echo   Humanizer installer ^(Windows^)
+echo   Thoth installer ^(Windows^)
 echo ============================================
 echo.
 

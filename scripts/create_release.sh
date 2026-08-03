@@ -48,18 +48,18 @@ Chrome extension + local writing server for **Windows** and **macOS**.
 
 ## macOS — menu bar app (recommended)
 
-1. Download **[Thoth-macOS.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Thoth-macOS.zip)**
-2. Download **[thoth-extension-mac-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/thoth-extension-mac-v${VERSION}.zip)**
+1. Download **[Thoth-macOS.zip](https://github.com/Eshan-khan1/Thoth/releases/download/${TAG}/Thoth-macOS.zip)**
+2. Download **[thoth-extension-mac-v${VERSION}.zip](https://github.com/Eshan-khan1/Thoth/releases/download/${TAG}/thoth-extension-mac-v${VERSION}.zip)**
 3. Unzip the app zip → drag **Thoth.app** into **Applications** → open it once
 4. Unzip the extension → Chrome → \`chrome://extensions\` → **Developer mode** → **Load unpacked**
 5. Leave the menu bar icon running; it starts the server and relaunches after login
 
-Full guide: **[Install on Mac](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_MAC.md)**
+Full guide: **[Install on Mac](https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_MAC.md)**
 
 ## Windows
 
-1. Download **[thoth-extension-windows-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/thoth-extension-windows-v${VERSION}.zip)**
-2. Follow **[Install on Windows](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_WINDOWS.md)** (clone the repo, run \`scripts\\install.bat\`, then \`Start Thoth.bat\`)
+1. Download **[thoth-extension-windows-v${VERSION}.zip](https://github.com/Eshan-khan1/Thoth/releases/download/${TAG}/thoth-extension-windows-v${VERSION}.zip)**
+2. Follow **[Install on Windows](https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_WINDOWS.md)** (clone the repo, run \`scripts\\install.bat\`, then \`Start Thoth.bat\`)
 
 ## Health check
 
@@ -84,9 +84,9 @@ if gh release view "$TAG" >/dev/null 2>&1; then
 else
   echo "==> Creating release $TAG..."
   gh release create "$TAG" "${ASSETS[@]}" \
-    --title "Humanizer ${TAG}" \
+    --title "Thoth ${TAG}" \
     --notes "$NOTES"
 fi
 
-echo "Release: https://github.com/Eshan-khan1/Humanizer/releases/tag/${TAG}"
-echo "Mac app: https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Thoth-macOS.zip"
+echo "Release: https://github.com/Eshan-khan1/Thoth/releases/tag/${TAG}"
+echo "Mac app: https://github.com/Eshan-khan1/Thoth/releases/download/${TAG}/Thoth-macOS.zip"

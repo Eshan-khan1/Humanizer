@@ -1,4 +1,4 @@
-"""Persistent Humanizer settings (local LLM model choices, cloud API key, etc.)."""
+"""Persistent Thoth settings (local LLM model choices, cloud API key, etc.)."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from typing import Any
 
 from macos.menubar.manager import OLLAMA_TAGS_URL, _http_json, support_dir
 
-logger = logging.getLogger("humanizer.menubar")
+logger = logging.getLogger("thoth.menubar")
 
-DEFAULT_GRAMMAR_MODEL = "humanizer-grammar"
-DEFAULT_WRITING_MODEL = "humanizer-writing"
+DEFAULT_GRAMMAR_MODEL = "thoth-grammar"
+DEFAULT_WRITING_MODEL = "thoth-writing"
 DEFAULT_AI_PROVIDER = "local"
 DEFAULT_HARDWARE_GPU_PERCENT = 75
 DEFAULT_HARDWARE_RAM_GB = 8
@@ -20,9 +20,9 @@ DEFAULT_HARDWARE_RAM_GB = 8
 # Friendly labels in the Mac app Settings → Local LLM pickers.
 # Keys may be bare names or full Ollama tags (name:tag).
 MODEL_LABELS: dict[str, str] = {
-    "humanizer-writing": "Qwen 7B / trained",
+    "thoth-writing": "Qwen 7B / trained",
     "qwen-7b-trained": "Qwen 7B / trained",
-    "humanizer-grammar": "Qwen grammar / trained",
+    "thoth-grammar": "Qwen grammar / trained",
     "qwen2.5:7b": "Qwen 7B",
     "qwen2.5:3b-instruct": "Qwen 3B",
     "qwen2.5:0.5b": "Qwen 0.5B",
@@ -153,9 +153,15 @@ def load_settings() -> dict[str, Any]:
         raw = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(raw, dict):
             if isinstance(raw.get("grammar_model"), str) and raw["grammar_model"].strip():
-                data["grammar_model"] = raw["grammar_model"].strip()
+                grammar = raw["grammar_model"].strip()
+                data["grammar_model"] = (
+                    "thoth-grammar" if grammar in {"humanizer-grammar", "thoth-grammar"} else grammar
+                )
             if isinstance(raw.get("writing_model"), str) and raw["writing_model"].strip():
-                data["writing_model"] = raw["writing_model"].strip()
+                writing = raw["writing_model"].strip()
+                data["writing_model"] = (
+                    "thoth-writing" if writing in {"humanizer-writing", "thoth-writing"} else writing
+                )
             data["ai_provider"] = _normalize_ai_provider(raw.get("ai_provider"))
             if isinstance(raw.get("ai_api_key"), str):
                 data["ai_api_key"] = raw["ai_api_key"].strip()

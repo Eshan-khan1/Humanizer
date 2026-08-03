@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run Humanizer feature benchmarks and write benchmark_results.json."""
+"""Run Thoth feature benchmarks and write benchmark_results.json."""
 
 from __future__ import annotations
 
@@ -498,7 +498,7 @@ def run_matrix(base: str, tests: list[dict]) -> list[dict]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run Humanizer benchmarks")
+    parser = argparse.ArgumentParser(description="Run Thoth benchmarks")
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--tests", type=Path, default=DEFAULT_TESTS)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)

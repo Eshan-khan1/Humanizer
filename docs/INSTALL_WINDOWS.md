@@ -1,4 +1,4 @@
-# Install Humanizer on Windows
+# Install Thoth on Windows
 
 Follow these steps in order.
 
@@ -13,14 +13,14 @@ Install each one before you continue:
    Open the Ollama app once after installing
 4. [Java 11+](https://adoptium.net/) (Temurin JRE is fine)
 
-## Step 2: Download Humanizer
+## Step 2: Download Thoth
 
 **Option A: Download ZIP (easiest)**
 
-1. Open https://github.com/Eshan-khan1/Humanizer
+1. Open https://github.com/Eshan-khan1/Thoth
 2. Click **Code**, then **Download ZIP**
 3. Unzip it to a simple folder, for example:
-   `C:\Users\YourName\Humanizer`
+   `C:\Users\YourName\Thoth`
 4. Open that folder in File Explorer
 
 **Option B: Git**
@@ -28,22 +28,22 @@ Install each one before you continue:
 Open **Command Prompt** or **PowerShell**, then paste this and press Enter:
 
 ```bat
-git clone https://github.com/Eshan-khan1/Humanizer.git
+git clone https://github.com/Eshan-khan1/Thoth.git
 ```
 
 Then paste this and press Enter:
 
 ```bat
-cd Humanizer
+cd Thoth
 ```
 
 ## Step 3: Paste this into Command Prompt (one-time setup)
 
 1. Open **Command Prompt**
-2. Go into your Humanizer folder. Example: paste this and press Enter (change the path if yours is different):
+2. Go into your Thoth folder. Example: paste this and press Enter (change the path if yours is different):
 
 ```bat
-cd C:\Users\YourName\Humanizer
+cd C:\Users\YourName\Thoth
 ```
 
 3. Paste this and press Enter:
@@ -64,7 +64,7 @@ scripts\setup_models.bat
 
 ## Step 4: Start the server
 
-In your Humanizer folder, double-click:
+In your Thoth folder, double-click:
 
 `Start Thoth.bat`
 
@@ -74,7 +74,7 @@ Or in Command Prompt, paste this and press Enter:
 start_server.bat
 ```
 
-Keep that window open while you use Humanizer.
+Keep that window open while you use Thoth.
 
 Check that it worked: open http://127.0.0.1:8000/health  
 You should see `"ok": true`.
@@ -84,16 +84,16 @@ You should see `"ok": true`.
 1. Open Chrome and go to `chrome://extensions`
 2. Turn on **Developer mode** (top right)
 3. Click **Load unpacked**
-4. Select the `extension` folder inside your Humanizer folder
+4. Select the `extension` folder inside your Thoth folder
 
-You can also download the Windows extension zip from [Releases](https://github.com/Eshan-khan1/Humanizer/releases), unzip it, and load that folder.
+You can also download the Windows extension zip from [Releases](https://github.com/Eshan-khan1/Thoth/releases), unzip it, and load that folder.
 
 ## Step 6: Try it
 
 1. Type in Gmail, Docs, or any text box
 2. Mistakes should get underlines
 3. Select text to Rewrite or Generate
-4. Click the Humanizer icon in Chrome for Settings
+4. Click the Thoth icon in Chrome for Settings
 
 ## Troubleshooting
 
