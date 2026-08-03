@@ -8,76 +8,6 @@
 
 ---
 
-## What is Thoth?
-
-Thoth is an open-source alternative to cloud writing tools like Grammarly. It runs a **small API server on your computer** and pairs it with a **Chrome extension** that works on Gmail, Google Docs, search bars, and most editable fields on the web.
-
-| Feature | What it does |
-|---------|----------------|
-| **Grammar & spelling** | Pink underlines on mistakes; click to accept a fix |
-| **Auto-fix** | Optionally correct all issues as you type |
-| **Rewrite** | Select text → change tone (friendly, formal, simpler, etc.) |
-| **Generate** | Turn short notes into emails, messages, or essays |
-
-Everything can run **fully offline** if you use local Ollama models. Cloud AI (Groq / OpenAI) is optional for faster Rewrite and Generate.
-
----
-
-## How it works
-
-Thoth is two parts that talk over `localhost`:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Chrome (any website)                                             │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  extension/content.js                                      │  │
-│  │  • Mirrors text fields, draws grammar underlines           │  │
-│  │  • Rewrite / Generate UI on text selection               │  │
-│  └───────────────────────────┬───────────────────────────────┘  │
-│                              │ chrome.runtime.sendMessage        │
-│  ┌───────────────────────────▼───────────────────────────────┐  │
-│  │  extension/background.js  →  fetch(127.0.0.1:8000)        │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ HTTP (localhost only)
-┌──────────────────────────────▼──────────────────────────────────┐
-│  server.py  (FastAPI + uvicorn, port 8000)                        │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────────┐ │
-│  │ LanguageTool│  │ Ollama       │  │ writing_agent.py        │ │
-│  │ (Java)      │  │ :11434       │  │ prompts + hard filters  │ │
-│  │ grammar     │  │ local LLMs   │  │ rewrite / generate      │ │
-│  └─────────────┘  └──────────────┘  └─────────────────────────┘ │
-│  Optional: cloud_ai.py → Groq / OpenAI (keys from extension only) │
-└───────────────────────────────────────────────────────────────────┘
-```
-
-### Grammar flow
-
-1. You type in a text field (Gmail compose, Docs, etc.).
-2. `content.js` debounces input and sends text to `POST /grammar`.
-3. The server runs **LanguageTool** (and optionally a local grammar model).
-4. Matches return as offsets; the extension draws **terracotta underlines** (Claude-inspired theme).
-5. Click an underline → suggestion card → accept replaces the text in-place.
-
-### Rewrite flow
-
-1. Select text → floating **↗** button → pick **Rewrite**.
-2. Enter a tone (e.g. “more formal”) → `POST /rewrite`.
-3. `writing_agent.py` builds a prompt, calls Ollama or cloud AI, applies **hard filters** (no extra greetings, same length, etc.).
-4. Selection is replaced with the rewritten text.
-
-### Generate flow
-
-1. Select seed text → **Generate** icon
-2. Chooses format (email / essay), optional one-time note
-3. Settings from popup: **length**, **tone**, **complexity**, **profile** (auto-applied every time)
-4. `POST /generate` expands the note using saved defaults from the extension popup
-
-**Full Generate rules:** [docs/GENERATE_RULES.md](docs/GENERATE_RULES.md)
-
----
-
 ## Download & install
 
 Follow the guide for your computer. Each guide is written as simple numbered steps.
@@ -191,6 +121,82 @@ You should see `"ok": true`.
 
 ---
 
+---
+
+## What is Thoth?
+
+Thoth is an open-source alternative to cloud writing tools like Grammarly. It runs a **small API server on your computer** and pairs it with a **Chrome extension** that works on Gmail, Google Docs, search bars, and most editable fields on the web.
+
+| Feature | What it does |
+|---------|----------------|
+| **Grammar & spelling** | Pink underlines on mistakes; click to accept a fix |
+| **Auto-fix** | Optionally correct all issues as you type |
+| **Rewrite** | Select text → change tone (friendly, formal, simpler, etc.) |
+| **Generate** | Turn short notes into emails, messages, or essays |
+
+Everything can run **fully offline** if you use local Ollama models. Cloud AI (Groq / OpenAI) is optional for faster Rewrite and Generate.
+
+---
+
+---
+
+## How it works
+
+Thoth is two parts that talk over `localhost`:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Chrome (any website)                                             │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │  extension/content.js                                      │  │
+│  │  • Mirrors text fields, draws grammar underlines           │  │
+│  │  • Rewrite / Generate UI on text selection               │  │
+│  └───────────────────────────┬───────────────────────────────┘  │
+│                              │ chrome.runtime.sendMessage        │
+│  ┌───────────────────────────▼───────────────────────────────┐  │
+│  │  extension/background.js  →  fetch(127.0.0.1:8000)        │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ HTTP (localhost only)
+┌──────────────────────────────▼──────────────────────────────────┐
+│  server.py  (FastAPI + uvicorn, port 8000)                        │
+│  ┌─────────────┐  ┌──────────────┐  ┌─────────────────────────┐ │
+│  │ LanguageTool│  │ Ollama       │  │ writing_agent.py        │ │
+│  │ (Java)      │  │ :11434       │  │ prompts + hard filters  │ │
+│  │ grammar     │  │ local LLMs   │  │ rewrite / generate      │ │
+│  └─────────────┘  └──────────────┘  └─────────────────────────┘ │
+│  Optional: cloud_ai.py → Groq / OpenAI (keys from extension only) │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+### Grammar flow
+
+1. You type in a text field (Gmail compose, Docs, etc.).
+2. `content.js` debounces input and sends text to `POST /grammar`.
+3. The server runs **LanguageTool** (and optionally a local grammar model).
+4. Matches return as offsets; the extension draws **terracotta underlines** (Claude-inspired theme).
+5. Click an underline → suggestion card → accept replaces the text in-place.
+
+### Rewrite flow
+
+1. Select text → floating **↗** button → pick **Rewrite**.
+2. Enter a tone (e.g. “more formal”) → `POST /rewrite`.
+3. `writing_agent.py` builds a prompt, calls Ollama or cloud AI, applies **hard filters** (no extra greetings, same length, etc.).
+4. Selection is replaced with the rewritten text.
+
+### Generate flow
+
+1. Select seed text → **Generate** icon
+2. Chooses format (email / essay), optional one-time note
+3. Settings from popup: **length**, **tone**, **complexity**, **profile** (auto-applied every time)
+4. `POST /generate` expands the note using saved defaults from the extension popup
+
+**Full Generate rules:** [docs/GENERATE_RULES.md](docs/GENERATE_RULES.md)
+
+---
+
+---
+
 ## Project structure
 
 ```
@@ -237,6 +243,8 @@ Thoth/
 
 ---
 
+---
+
 ## API reference (local server)
 
 Base URL: `http://127.0.0.1:8000`
@@ -270,6 +278,8 @@ Keys are sent from the extension to **your** local server only; they are not sto
 
 ---
 
+---
+
 ## Configuration
 
 ### Extension settings (popup)
@@ -295,6 +305,8 @@ THOTH_REQUIRE_AUTH=1 ./start_server.sh
 ```
 
 Paste the printed token into the extension → Settings → AI & API keys → Local server token.
+
+---
 
 ---
 
@@ -339,6 +351,8 @@ python scripts/benchmark_rewrite.py   # if present
 
 ---
 
+---
+
 ## Models
 
 Thoth expects these **Ollama** models (created by `scripts/setup_models.sh`):
@@ -354,6 +368,8 @@ Model weights are **not** committed to git (too large). Each user downloads via 
 
 ---
 
+---
+
 ## Design system
 
 UI colors, typography, and components are defined in [`Thoth ui theme.json`](Thoth%20ui%20theme.json):
@@ -365,6 +381,8 @@ UI colors, typography, and components are defined in [`Thoth ui theme.json`](Tho
 
 ---
 
+---
+
 ## Privacy
 
 - **Default:** text is processed on your machine via localhost.
@@ -372,6 +390,8 @@ UI colors, typography, and components are defined in [`Thoth ui theme.json`](Tho
 - **Rewrite/Generate** use local Ollama unless you opt into Groq/OpenAI in settings.
 - API keys live in **Chrome storage** on your device and are only sent to `127.0.0.1:8000`.
 - No Thoth account, telemetry, or central server.
+
+---
 
 ---
 
@@ -386,6 +406,8 @@ UI colors, typography, and components are defined in [`Thoth ui theme.json`](Tho
 | Extension not updating | `chrome://extensions` → Reload |
 | Port 8000 in use | Starter scripts free the port; or close the other process |
 | Windows: `python` not found | Reinstall Python with **Add to PATH**, open a new terminal |
+
+---
 
 ---
 
@@ -407,9 +429,13 @@ Ideas for contributors:
 
 ---
 
+---
+
 ## License
 
 Open source — use, study, and modify on your own machine. See the repository for license details.
+
+---
 
 ---
 
