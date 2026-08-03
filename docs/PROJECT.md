@@ -1,8 +1,9 @@
 # Thoth — Project Documentation
 
 **Repository:** https://github.com/Eshan-khan1/Thoth  
-**Extension version:** 1.8.0  
-**API:** FastAPI on `http://127.0.0.1:8000`
+**Extension version:** 1.10.47  
+**API:** FastAPI on `http://127.0.0.1:8000`  
+**macOS app:** `Thoth.app` (menu bar host, bundle id `com.thoth.macos`)
 
 ---
 
@@ -28,10 +29,11 @@
 
 ## 1. Overview
 
-Thoth is a **local-first writing assistant** made of two parts:
+Thoth is a **local-first writing assistant** made of three parts:
 
 1. **Chrome extension** — grammar underlines, rewrite, and generate on any website (Gmail, Google Docs, search bars, etc.)
 2. **Local API server** (`server.py`) — runs on `http://127.0.0.1:8000` and processes all text on your machine
+3. **macOS menu bar app** (`Thoth.app`) — starts the server, Login Items, Settings, and Chrome native-messaging connect (recommended on Mac)
 
 By default, nothing is sent to the cloud. Optional Groq/OpenAI can be enabled in extension settings for faster rewrite/generate.
 
@@ -66,9 +68,15 @@ By default, nothing is sent to the cloud. Optional Groq/OpenAI can be enabled in
 │  ├─ writing_agent.py        — prompts + hard output filters  │
 │  └─ cloud_ai.py (optional)  — Groq / OpenAI                  │
 └─────────────────────────────────────────────────────────────┘
+           ▲
+           │ managed by Thoth.app (macOS) / Start Thoth.bat (Windows)
+┌──────────┴──────────────────────────────────────────────────┐
+│  Thoth.app — menu bar, Settings, Launch at Login,           │
+│  Application Support Home + Chrome native host              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Important:** API calls go through the **background script** (extension origin), not directly from the page. That avoids CORS failures on sites like Gmail.
+**Important:** API calls go through the **background script** (extension origin), not directly from the page. That avoids CORS failures on sites like Gmail. On macOS, the extension can also reconnect via native messaging (`com.thoth.app`).
 
 ### Data flow summary
 
@@ -246,8 +254,8 @@ These must not bleed into each other. Post-generation filters enforce structure,
 
 ### Permissions
 
-- `activeTab`, `scripting`, `storage`
-- `host_permissions`: `http://127.0.0.1:8000/*`
+- `activeTab`, `scripting`, `storage`, `alarms`, `nativeMessaging`
+- `host_permissions`: `http://127.0.0.1:8000/*` and `http://127.0.0.1:*/`
 
 ### Default settings (popup)
 
@@ -261,16 +269,11 @@ These must not bleed into each other. Post-generation filters enforce structure,
 | Generate complexity | `standard` |
 | Include subject line | `true` |
 
-Settings sync via `chrome.storage.sync` (profile and API keys use `chrome.storage.local`).
+Settings sync via `chrome.storage.sync` (profile and API keys use `chrome.storage.local`). Storage keys use the `thoth*` prefix (legacy `humanizer*` keys are migrated once on load).
 
 ### UI / design system
 
-Defined in `Thoth ui theme.json`:
-
-- Warm cream / charcoal Claude-inspired palette (light + dark)
-- Orange accent `#c96442` only
-- Source Serif 4 editorial type
-- Terracotta grammar underlines
+Product UI tokens live in [`ui.json`](../ui.json) (Uber-inspired dark theme). The extension popup and content styles use those dark surfaces with white primary actions. An older Claude-style palette remains in [`Thoth ui theme.json`](../Thoth%20ui%20theme.json) for reference.
 
 ---
 
@@ -349,6 +352,11 @@ Authorization: Bearer <token>
 
 ## 8. Installation
 
+Full end-user guides:
+
+- [Install on Mac](INSTALL_MAC.md) — **Thoth.app** + extension (recommended)
+- [Install on Windows](INSTALL_WINDOWS.md) — scripts + extension
+
 ### Requirements
 
 | Tool | Purpose |
@@ -358,7 +366,7 @@ Authorization: Bearer <token>
 | [Java 11+](https://adoptium.net/) | LanguageTool grammar engine |
 | [Ollama](https://ollama.com) | Local LLM (rewrite, generate, deep grammar) |
 
-### Quick start
+### Quick start (from source)
 
 ```bash
 git clone https://github.com/Eshan-khan1/Thoth.git
@@ -368,14 +376,16 @@ chmod +x scripts/install.sh
 ./start_server.sh             # API on :8000
 ```
 
-**macOS shortcut:** double-click `Start Thoth.command`
+**macOS (recommended):** download **Thoth.app** from [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest), or build with `./scripts/build_macos_app.sh` and open `dist/Thoth.app`.
+
+**Windows shortcut:** double-click `Start Thoth.bat`
 
 **Chrome:**
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select the `extension/` folder
+4. Select the `extension/` folder (or the Application Support ChromeExtension folder on Mac)
 
 **Verify:** open http://127.0.0.1:8000/health
 
@@ -425,32 +435,38 @@ Thoth/
 │   ├── content.js              # In-page UI: grammar, rewrite, generate
 │   ├── content.css
 │   ├── design-tokens.css
-│   ├── background.js           # API calls to local server
+│   ├── background.js           # API + native messaging connect
 │   ├── api_auth.js
 │   ├── popup.html / popup.js / popup.css
 │   ├── generate_tones.json
 │   └── icons/
 │
+├── macos/
+│   ├── launcher/ThothApp.swift # Native menu-bar host (compiled into Thoth.app)
+│   └── menubar/                # Python helpers: server, settings, native host
+│
 ├── server.py                   # FastAPI app — all HTTP endpoints
 ├── writing_agent.py            # Rewrite/Generate prompts & filters
 ├── security.py                 # Localhost-only, rate limits, auth
 ├── cloud_ai.py                 # Optional Groq / OpenAI routing
-├── thoth.py                # Standalone humanization library
+├── thoth.py                    # Standalone humanization library
 ├── rag.py                      # RAG utilities (training/tuning only)
 ├── grammar_rules.json          # Rule database for fine-tuning
 ├── auto_tune.py                # Grammar rule learning
+├── ui.json                     # Active Uber-dark UI tokens
 │
 ├── start_server.sh             # Start API on :8000
-├── Start Thoth.command     # macOS double-click launcher
-├── Start Thoth.bat         # Windows launcher
+├── Start Thoth.command         # macOS double-click launcher
+├── Start Thoth.bat             # Windows launcher
 ├── run.sh                      # Desktop app entry (pywebview)
 ├── requirements.txt
 ├── requirements-finetune.txt
 │
 ├── scripts/
 │   ├── install.sh              # One-command setup
-│   ├── setup_models.sh         # Ollama model registration
-│   ├── package_extension.sh    # Build dist/*.zip
+│   ├── setup_models.sh         # Ollama model registration (thoth-*)
+│   ├── build_macos_app.sh      # Build dist/Thoth.app
+│   ├── package_extension.sh    # Build dist/thoth-extension-*.zip
 │   ├── create_release.sh       # Publish GitHub Release
 │   ├── finetune_grammar_lora.py
 │   ├── benchmark_rewrite.py
@@ -496,6 +512,8 @@ Thoth/
 | `generateTonePreset` | sync | Default generate tone |
 | `generateComplexity` | sync | Default generate complexity |
 | `thothApiToken` | local | Server auth token |
+| `thothApiBase` | local | Local API base URL (`http://127.0.0.1:8000`) |
+| `thothAppConnected` | local | Native/app connect state |
 | `aiProvider` | local | `local`, `groq`, or `openai` |
 | `aiApiKey` | local | Cloud API key (never synced) |
 
@@ -527,7 +545,8 @@ Test cases are defined in `benchmark_tests.json` (tone/length/complexity separat
 
 ```bash
 ./scripts/package_extension.sh
-# → dist/thoth-extension-v1.8.0.zip
+# → dist/thoth-extension-mac-v1.10.47.zip
+# → dist/thoth-extension-windows-v1.10.47.zip
 ```
 
 ### Publish a GitHub Release
@@ -564,13 +583,14 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 
 | Problem | Solution |
 |---------|----------|
-| Server offline in popup | Run `./start_server.sh`; check http://127.0.0.1:8000/health |
+| Server offline in popup | Open **Thoth.app** (Mac) or `Start Thoth.bat` / `./start_server.sh`; check http://127.0.0.1:8000/health |
 | No underlines | Enable “Check writing while I type”; ensure Java is installed |
 | Rewrite/Generate error | Start Ollama; run `./scripts/setup_models.sh` |
-| `thoth-grammar` missing | `ollama list` then `./scripts/setup_models.sh` |
+| `thoth-grammar` missing | `ollama list` then `./scripts/setup_models.sh` (copies from old `humanizer-*` names if present) |
 | `OPTIONS /rewrite 400` | Reload extension — API must go through background script |
 | Extension not updating | `chrome://extensions` → Reload |
-| Port 8000 in use | `start_server.sh` kills the old process automatically |
+| Extension can’t find Mac app | Use **Connect Chrome Extension…** in Thoth; native host is `com.thoth.app` |
+| Port 8000 in use | `start_server.sh` / Restart server kills the old process automatically |
 | Ollama generate fails | Run `./scripts/fix_ollama.sh` |
 | Grammar only, no deep fixes | Ollama not running — LT-only mode still works |
 
@@ -580,8 +600,11 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 
 | File | Description |
 |------|-------------|
-| [README.md](../README.md) | GitHub-facing install guide and quick reference |
-| [Thoth ui theme.json](../Thoth%20ui%20theme.json) | Claude-inspired UI tokens (light/dark) |
+| [README.md](../README.md) | GitHub-facing download/install first, then product details |
+| [INSTALL_MAC.md](INSTALL_MAC.md) | macOS Thoth.app + extension |
+| [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md) | Windows install |
+| [ui.json](../ui.json) | Active Uber-dark UI tokens |
+| [Thoth ui theme.json](../Thoth%20ui%20theme.json) | Legacy Claude-inspired UI tokens |
 | [Features.txt](../Features.txt) | Product feature notes |
 | [benchmark_tests.json](../benchmark_tests.json) | Automated test cases |
 | [GENERATE_RULES.md](GENERATE_RULES.md) | Generate feature rules (length/tone/complexity independence) |

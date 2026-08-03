@@ -21,35 +21,45 @@ Open the latest release page:
 2. Also download `thoth-extension-mac-….zip` for the Chrome extension
 3. Unzip both downloads
 
-Direct app download (latest release):
-
-https://github.com/Eshan-khan1/Thoth/releases/latest
-
 ## Step 3: Install the menu bar app
 
 1. Drag **Thoth.app** into your **Applications** folder
 2. Open it once (double-click)
    - If macOS says the app can’t be opened, right-click **Thoth.app** → **Open** → **Open**
-3. You should see the Thoth window and an **H** icon near the clock
+3. Look for the **Thoth diamond icon** near the clock (menu bar). There is no Dock icon by default.
 4. If the icon is missing: System Settings → **Menu Bar** → turn **Thoth** ON  
    (or click **Add to Menu Bar…** in the app window)
-5. The first time it opens, it also sets itself to relaunch after restart or login
-
+5. Allow Thoth in **Login Items & Background Activity** if macOS asks — so it can restart the server after login
+6. The first time it opens, it starts the local server and can relaunch after restart
 
 Menu bar actions:
 
 - **Status** shows whether the server is healthy
 - **Restart server** if something looks stuck
+- **Settings** for local models, features, hardware, and Chrome connect
+- **Connect Chrome Extension…** copies the extension into a stable folder and registers the native host
 - **Quit Thoth** leaves the Chrome extension for later (the local server may stay running)
 
 The icon changes when the server is online vs offline.
 
 ## Step 4: Load the Chrome extension
 
-1. Open Chrome and go to `chrome://extensions`
-2. Turn on **Developer mode**
-3. Click **Load unpacked**
-4. Select the unzipped extension folder (from `thoth-extension-mac-….zip`), or the `extension` folder if you cloned the repo
+**Recommended (from the app):**
+
+1. In Thoth, open **Connect Chrome Extension…** (or follow the one-time setup sheet)
+2. Open Chrome → `chrome://extensions`
+3. Turn on **Developer mode**
+4. Click **Load unpacked**
+5. Select the folder the app opened/copied (usually  
+   `~/Library/Application Support/Thoth/ChromeExtension`)
+
+**Or from the release zip:**
+
+1. Unzip `thoth-extension-mac-….zip`
+2. Chrome → `chrome://extensions` → **Developer mode** → **Load unpacked**
+3. Select that unzipped folder
+
+After the first connect, the extension can talk to Thoth via native messaging whenever the app is running. Reload the extension after updating Thoth.
 
 ## Step 5: Try it
 
@@ -57,6 +67,7 @@ The icon changes when the server is online vs offline.
 2. Type in Gmail, Docs, or any text box
 3. Mistakes should get underlines
 4. Select text to Rewrite or Generate
+5. Click the Thoth toolbar icon in Chrome for Settings
 
 Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 
@@ -64,12 +75,14 @@ Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 
 | Problem | Fix |
 |---------|-----|
-| No menu bar icon | Look for **Hz** top-right. Open `Thoth.app` again. Soften Focus / check Control Center › Menu Bar. Logs: `~/Library/Logs/Thoth/` |
+| No menu bar icon | Look for the diamond near the clock. Open `Thoth.app` again. Soften Focus / check Control Center › Menu Bar. Logs: `~/Library/Logs/Thoth/` |
 | “App can’t be opened” | Right-click the app → **Open** → **Open**. Or drag a fresh copy from the zip into Applications. |
 | Server stays offline | Open the Ollama app, then choose **Restart server** from the menu |
-| Extension cannot connect | Confirm the menu bar status is online, then reload the extension |
+| Extension cannot connect | Confirm menu bar status is online, use **Connect Chrome Extension…**, then reload the extension |
+| Native host / reconnect fails | Quit and reopen Thoth, reload the extension at `chrome://extensions` |
 | Python missing | Install Python 3 from python.org, reopen the app |
 | Port 8000 busy | Use **Restart server** from the menu |
+| Old Humanizer settings | First launch migrates `~/Library/Application Support/Humanizer` → `…/Thoth` automatically |
 
 ## Optional: build from source
 
@@ -87,5 +100,6 @@ Older terminal-only server flow (no menu bar app):
 
 ```bash
 ./scripts/install.sh
+./scripts/setup_models.sh
 ./start_server.sh
 ```

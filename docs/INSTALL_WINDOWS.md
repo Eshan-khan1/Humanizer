@@ -86,7 +86,7 @@ You should see `"ok": true`.
 3. Click **Load unpacked**
 4. Select the `extension` folder inside your Thoth folder
 
-You can also download the Windows extension zip from [Releases](https://github.com/Eshan-khan1/Thoth/releases), unzip it, and load that folder.
+You can also download **`thoth-extension-windows-….zip`** from [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest), unzip it, and load that folder.
 
 ## Step 6: Try it
 
@@ -105,7 +105,17 @@ You can also download the Windows extension zip from [Releases](https://github.c
 | Ollama errors | Open the Ollama app, then run `scripts\setup_models.bat` |
 | No underlines | Install Java, restart the server, reload the extension |
 | Extension cannot connect | Confirm http://127.0.0.1:8000/health works, then reload the extension |
+| `thoth-grammar` / `thoth-writing` missing | Keep Ollama open and run `scripts\setup_models.bat` |
 
 ## Optional: use a cloud API key
 
 In the extension popup, open **Settings**, then **AI & API keys**, choose **API**, paste your key, and click **Connect**.
+
+## Models (Ollama)
+
+`scripts\setup_models.bat` registers:
+
+| Model | Used for |
+|-------|----------|
+| `thoth-grammar` | Optional deep grammar fixes |
+| `thoth-writing` | Rewrite & Generate (local) |

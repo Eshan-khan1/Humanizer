@@ -94,15 +94,16 @@ Open the latest GitHub release and download the Mac app:
 
 1. Drag **Thoth.app** into **Applications**
 2. Open it once (if macOS blocks it: right-click → **Open** → **Open**)
-3. Look for **Hz** in the menu bar (top-right) — there is no Dock icon
+3. Look for the **Thoth diamond icon** in the menu bar (top-right) — there is no Dock icon
 4. It quietly starts the server and sets itself to reopen after login or restart
 
 **Step 4: Load the extension in Chrome**
 
-1. Go to `chrome://extensions`
-2. Turn on **Developer mode**
-3. Click **Load unpacked**
-4. Select the unzipped extension folder
+1. In Thoth, use **Connect Chrome Extension…** (recommended), or unzip `thoth-extension-mac-….zip`
+2. Go to `chrome://extensions`
+3. Turn on **Developer mode**
+4. Click **Load unpacked**
+5. Select the extension folder the app provided (or the unzipped release folder)
 
 More detail: **[docs/INSTALL_MAC.md](docs/INSTALL_MAC.md)**
 
@@ -121,8 +122,6 @@ You should see `"ok": true`.
 
 ---
 
----
-
 ## What is Thoth?
 
 Thoth is an open-source alternative to cloud writing tools like Grammarly. It runs a **small API server on your computer** and pairs it with a **Chrome extension** that works on Gmail, Google Docs, search bars, and most editable fields on the web.
@@ -135,8 +134,6 @@ Thoth is an open-source alternative to cloud writing tools like Grammarly. It ru
 | **Generate** | Turn short notes into emails, messages, or essays |
 
 Everything can run **fully offline** if you use local Ollama models. Cloud AI (Groq / OpenAI) is optional for faster Rewrite and Generate.
-
----
 
 ---
 
@@ -174,7 +171,7 @@ Thoth is two parts that talk over `localhost`:
 1. You type in a text field (Gmail compose, Docs, etc.).
 2. `content.js` debounces input and sends text to `POST /grammar`.
 3. The server runs **LanguageTool** (and optionally a local grammar model).
-4. Matches return as offsets; the extension draws **terracotta underlines** (Claude-inspired theme).
+4. Matches return as offsets; the extension draws **underlines** on mistakes.
 5. Click an underline → suggestion card → accept replaces the text in-place.
 
 ### Rewrite flow
@@ -195,53 +192,26 @@ Thoth is two parts that talk over `localhost`:
 
 ---
 
----
-
 ## Project structure
 
 ```
 Thoth/
 ├── extension/                 # Chrome extension (Manifest V3)
-│   ├── manifest.json
-│   ├── content.js             # In-page UI: grammar, rewrite, generate
-│   ├── content.css            # Design system styles
-│   ├── design-tokens.css      # Brand colors & tokens
-│   ├── background.js          # API calls to local server
-│   ├── popup.html / popup.js  # Settings UI
-│   └── icons/                 # Rewrite & Generate menu icons
-│
+├── macos/                     # Thoth.app launcher + menu-bar helpers
 ├── server.py                  # FastAPI app — all HTTP endpoints
 ├── writing_agent.py           # Rewrite/Generate prompts & filters
-├── security.py                # Localhost-only, rate limits, auth
-├── cloud_ai.py                # Optional Groq / OpenAI routing
-├── rag.py                     # RAG utilities for training/tuning
-│
-├── start_server.sh            # Start API on :8000 (macOS/Linux)
-├── start_server.bat           # Start API on :8000 (Windows)
-├── Start Thoth.command    # macOS double-click launcher
-├── Start Thoth.bat        # Windows double-click launcher
-├── run.sh                     # Desktop app entry (pywebview)
-├── requirements.txt           # Python dependencies
-│
+├── thoth.py                   # Standalone humanization library
+├── ui.json                    # Active Uber-dark UI tokens
+├── Start Thoth.command/.bat   # Double-click launchers
 ├── scripts/
-│   ├── install.sh             # One-command setup (macOS/Linux)
-│   ├── install.bat            # One-command setup (Windows)
-│   ├── setup_models.sh        # Ollama model registration (Unix)
-│   ├── setup_models.bat       # Ollama model registration (Windows)
-│   ├── package_extension.sh   # Build dist/*.zip
-│   └── create_release.sh      # Publish GitHub Release
-│
-├── docs/
-│   ├── INSTALL_WINDOWS.md     # Windows install guide
-│   ├── INSTALL_MAC.md         # macOS install guide
-│   └── PROJECT.md             # Architecture notes
-│
-├── test_data/                 # Pairs, benchmarks, training samples
-├── benchmark_tests.json       # Rewrite/Generate test cases
-└── Thoth ui theme.json       # Claude-inspired UI tokens (light/dark)
+│   ├── build_macos_app.sh     # Build dist/Thoth.app
+│   ├── setup_models.sh/.bat   # Register thoth-grammar / thoth-writing
+│   └── package_extension.sh   # Build thoth-extension-*.zip
+└── docs/
+    ├── INSTALL_MAC.md
+    ├── INSTALL_WINDOWS.md
+    └── PROJECT.md
 ```
-
----
 
 ---
 
@@ -278,8 +248,6 @@ Keys are sent from the extension to **your** local server only; they are not sto
 
 ---
 
----
-
 ## Configuration
 
 ### Extension settings (popup)
@@ -308,8 +276,6 @@ Paste the printed token into the extension → Settings → AI & API keys → Lo
 
 ---
 
----
-
 ## Development
 
 ### Run in dev mode
@@ -325,7 +291,7 @@ Paste the printed token into the extension → Settings → AI & API keys → Lo
 
 ```bash
 ./scripts/package_extension.sh
-# → dist/thoth-extension-v1.8.0.zip
+# → dist/thoth-extension-mac-v1.10.47.zip
 ```
 
 ### Publish a GitHub Release
@@ -351,8 +317,6 @@ python scripts/benchmark_rewrite.py   # if present
 
 ---
 
----
-
 ## Models
 
 Thoth expects these **Ollama** models (created by `scripts/setup_models.sh`):
@@ -368,18 +332,13 @@ Model weights are **not** committed to git (too large). Each user downloads via 
 
 ---
 
----
-
 ## Design system
 
-UI colors, typography, and components are defined in [`Thoth ui theme.json`](Thoth%20ui%20theme.json):
+Active UI tokens are in [`ui.json`](ui.json) (Uber-inspired dark theme used by the extension and Mac settings).
 
-- Warm cream / charcoal Claude-inspired palette with light and dark modes
-- Orange accent `#c96442` for primary actions only
-- Source Serif 4 editorial type
-- Terracotta grammar underlines
-
----
+- Near-black surfaces (`#000` / `#141414`) with white primary actions
+- Green / gold accents for status and highlights
+- Legacy Claude-style palette kept in [`Thoth ui theme.json`](Thoth%20ui%20theme.json) for reference
 
 ---
 
@@ -390,8 +349,6 @@ UI colors, typography, and components are defined in [`Thoth ui theme.json`](Tho
 - **Rewrite/Generate** use local Ollama unless you opt into Groq/OpenAI in settings.
 - API keys live in **Chrome storage** on your device and are only sent to `127.0.0.1:8000`.
 - No Thoth account, telemetry, or central server.
-
----
 
 ---
 
@@ -406,8 +363,6 @@ UI colors, typography, and components are defined in [`Thoth ui theme.json`](Tho
 | Extension not updating | `chrome://extensions` → Reload |
 | Port 8000 in use | Starter scripts free the port; or close the other process |
 | Windows: `python` not found | Reinstall Python with **Add to PATH**, open a new terminal |
-
----
 
 ---
 
@@ -429,13 +384,9 @@ Ideas for contributors:
 
 ---
 
----
-
 ## License
 
 Open source — use, study, and modify on your own machine. See the repository for license details.
-
----
 
 ---
 
