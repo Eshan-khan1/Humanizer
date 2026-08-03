@@ -2200,7 +2200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func resourceURL() -> URL? {
-        Bundle.main.resourceURL?.appendingPathComponent("HumanizerHome")
+        Bundle.main.resourceURL?.appendingPathComponent("ThothHome")
     }
 
     private func supportHome() -> URL {
@@ -2285,7 +2285,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func loadBrandMark() -> NSImage? {
         guard let dir = iconsDirectory() else { return nil }
-        return NSImage(contentsOf: dir.appendingPathComponent("humanizer-mark.png"))
+        return NSImage(contentsOf: dir.appendingPathComponent("thoth-mark.png"))
     }
 }
 
@@ -2295,7 +2295,7 @@ enum HumanizerMain {
     static func runServiceCLI(arguments: [String]) -> Never {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let support = home.appendingPathComponent("Library/Application Support/Humanizer/Home")
-        let resources = Bundle.main.resourceURL?.appendingPathComponent("HumanizerHome")
+        let resources = Bundle.main.resourceURL?.appendingPathComponent("ThothHome")
         var python = "/usr/bin/python3"
         let venvPython = support.appendingPathComponent(".venv/bin/python")
         if FileManager.default.isExecutableFile(atPath: venvPython.path) {

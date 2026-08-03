@@ -11,7 +11,7 @@ Install each one:
 3. [Ollama](https://ollama.com) (open the Ollama app once after installing)
 4. Java 11+ ([Adoptium](https://adoptium.net/) or `brew install openjdk@17`)
 
-## Step 2: Download Humanizer.app
+## Step 2: Download Thoth.app
 
 Open the latest release page:
 
@@ -27,9 +27,9 @@ https://github.com/Eshan-khan1/Humanizer/releases/latest
 
 ## Step 3: Install the menu bar app
 
-1. Drag **Humanizer.app** into your **Applications** folder
+1. Drag **Thoth.app** into your **Applications** folder
 2. Open it once (double-click)
-   - If macOS says the app can’t be opened, right-click **Humanizer.app** → **Open** → **Open**
+   - If macOS says the app can’t be opened, right-click **Thoth.app** → **Open** → **Open**
 3. You should see the Humanizer window and an **H** icon near the clock
 4. If the icon is missing: System Settings → **Menu Bar** → turn **Humanizer** ON  
    (or click **Add to Menu Bar…** in the app window)
@@ -64,7 +64,7 @@ Optional check: http://127.0.0.1:8000/health should show `"ok": true`.
 
 | Problem | Fix |
 |---------|-----|
-| No menu bar icon | Look for **Hz** top-right. Open `Humanizer.app` again. Soften Focus / check Control Center › Menu Bar. Logs: `~/Library/Logs/Humanizer/` |
+| No menu bar icon | Look for **Hz** top-right. Open `Thoth.app` again. Soften Focus / check Control Center › Menu Bar. Logs: `~/Library/Logs/Humanizer/` |
 | “App can’t be opened” | Right-click the app → **Open** → **Open**. Or drag a fresh copy from the zip into Applications. |
 | Server stays offline | Open the Ollama app, then choose **Restart server** from the menu |
 | Extension cannot connect | Confirm the menu bar status is online, then reload the extension |
@@ -80,7 +80,7 @@ git clone https://github.com/Eshan-khan1/Humanizer.git
 cd Humanizer
 chmod +x scripts/build_macos_app.sh
 ./scripts/build_macos_app.sh
-open dist/Humanizer.app
+open dist/Thoth.app
 ```
 
 Older terminal-only server flow (no menu bar app):

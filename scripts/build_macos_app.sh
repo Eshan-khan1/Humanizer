@@ -11,7 +11,7 @@ APP="$DIST/${APP_NAME}.app"
 CONTENTS="$APP/Contents"
 MACOS="$CONTENTS/MacOS"
 RESOURCES="$CONTENTS/Resources"
-HOME_PAYLOAD="$RESOURCES/HumanizerHome"
+HOME_PAYLOAD="$RESOURCES/ThothHome"
 MENUBAR_SRC="$ROOT/macos/menubar"
 
 echo "==> Building ${APP_NAME}.app"
@@ -196,7 +196,7 @@ codesign --force --sign - "$LOGIN_ITEM_APP" >/dev/null 2>&1 || true
 
 # Native AppKit host (Swift). Required on macOS 26 so Thoth appears in
 # System Settings → Menu Bar / Background Activity.
-LAUNCHER_SRC="$ROOT/macos/launcher/HumanizerApp.swift"
+LAUNCHER_SRC="$ROOT/macos/launcher/ThothApp.swift"
 echo "  compiling native menu-bar host (Swift/AppKit + ServiceManagement)"
 swiftc -O \
   -target arm64-apple-macos13.0 \

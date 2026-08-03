@@ -44,8 +44,8 @@ stage_project_paths() {
     README.md
     Features.txt
     "Humanizer design system.json"
-    "Start Humanizer.bat"
-    "Start Humanizer.command"
+    "Start Thoth.bat"
+    "Start Thoth.command"
     benchmark_tests.json
     grammar_rules.json
     requirements.txt

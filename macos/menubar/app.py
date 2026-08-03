@@ -48,7 +48,7 @@ _reexec_native_if_needed()
 
 def bootstrap_root() -> Path:
     resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
-    if resources.is_dir() and (resources / "HumanizerHome" / "server.py").is_file():
+    if resources.is_dir() and (resources / "ThothHome" / "server.py").is_file():
         return manager.ensure_home_payload(resources)
     return manager.resolve_project_root()
 
@@ -87,7 +87,7 @@ def main() -> None:
     icon_dir = _icon_dir()
     online_icon_path = str(icon_dir / "status-online.png")
     offline_icon_path = str(icon_dir / "status-offline.png")
-    mark_path = str(icon_dir / "humanizer-mark.png")
+    mark_path = str(icon_dir / "thoth-mark.png")
 
     def color(rgba):
         r, g, b, a = rgba

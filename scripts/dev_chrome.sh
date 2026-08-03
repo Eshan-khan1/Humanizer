@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-PROFILE="${HOME}/.humanizer-chrome-dev"
+PROFILE="${HOME}/.thoth-chrome-dev"
 EXT="${ROOT}/extension"
 TEST_PAGE="file://${ROOT}/test_data/rewrite_test.html"
 

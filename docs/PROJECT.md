@@ -265,7 +265,7 @@ Settings sync via `chrome.storage.sync` (profile and API keys use `chrome.storag
 
 ### UI / design system
 
-Defined in `Humanizer ui theme.json`:
+Defined in `Thoth ui theme.json`:
 
 - Warm cream / charcoal Claude-inspired palette (light + dark)
 - Orange accent `#c96442` only
@@ -368,7 +368,7 @@ chmod +x scripts/install.sh
 ./start_server.sh             # API on :8000
 ```
 
-**macOS shortcut:** double-click `Start Humanizer.command`
+**macOS shortcut:** double-click `Start Thoth.command`
 
 **Chrome:**
 
@@ -435,14 +435,14 @@ Humanizer/
 ├── writing_agent.py            # Rewrite/Generate prompts & filters
 ├── security.py                 # Localhost-only, rate limits, auth
 ├── cloud_ai.py                 # Optional Groq / OpenAI routing
-├── humanizer.py                # Standalone humanization library
+├── thoth.py                # Standalone humanization library
 ├── rag.py                      # RAG utilities (training/tuning only)
 ├── grammar_rules.json          # Rule database for fine-tuning
 ├── auto_tune.py                # Grammar rule learning
 │
 ├── start_server.sh             # Start API on :8000
-├── Start Humanizer.command     # macOS double-click launcher
-├── Start Humanizer.bat         # Windows launcher
+├── Start Thoth.command     # macOS double-click launcher
+├── Start Thoth.bat         # Windows launcher
 ├── run.sh                      # Desktop app entry (pywebview)
 ├── requirements.txt
 ├── requirements-finetune.txt
@@ -581,7 +581,7 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 | File | Description |
 |------|-------------|
 | [README.md](../README.md) | GitHub-facing install guide and quick reference |
-| [Humanizer ui theme.json](../Humanizer%20ui%20theme.json) | Claude-inspired UI tokens (light/dark) |
+| [Thoth ui theme.json](../Thoth%20ui%20theme.json) | Claude-inspired UI tokens (light/dark) |
 | [Features.txt](../Features.txt) | Product feature notes |
 | [benchmark_tests.json](../benchmark_tests.json) | Automated test cases |
 | [GENERATE_RULES.md](GENERATE_RULES.md) | Generate feature rules (length/tone/complexity independence) |

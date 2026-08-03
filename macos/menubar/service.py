@@ -16,7 +16,7 @@ from macos.menubar import autostart, extension_bridge, manager, settings  # noqa
 
 def bootstrap_root() -> Path:
     resources = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")).expanduser()
-    if resources.is_dir() and (resources / "HumanizerHome" / "server.py").is_file():
+    if resources.is_dir() and (resources / "ThothHome" / "server.py").is_file():
         return manager.ensure_home_payload(resources)
     return manager.resolve_project_root()
 

@@ -2,13 +2,13 @@
 # Double-click this in Finder. Prefers the menu-bar app (no Terminal).
 cd "$(dirname "$0")"
 
-if [[ -d "dist/Humanizer.app" ]]; then
-  open "dist/Humanizer.app"
+if [[ -d "dist/Thoth.app" ]]; then
+  open "dist/Thoth.app"
   exit 0
 fi
 
-if [[ -d "/Applications/Humanizer.app" ]]; then
-  open "/Applications/Humanizer.app"
+if [[ -d "/Applications/Thoth.app" ]]; then
+  open "/Applications/Thoth.app"
   exit 0
 fi
 

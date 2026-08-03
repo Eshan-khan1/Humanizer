@@ -1710,7 +1710,7 @@ def connect_restart() -> dict[str, Any]:
         extension_bridge.record_extension_ping({"via": "http", "type": "restart"})
 
         home = manager.support_dir() / "Home"
-        # Prefer the app-managed Home payload so restart matches Humanizer.app.
+        # Prefer the app-managed Home payload so restart matches Thoth.app.
         root = home if (home / "server.py").is_file() else manager.resolve_project_root()
         python = sys.executable
         venv_py = home / ".venv" / "bin" / "python"

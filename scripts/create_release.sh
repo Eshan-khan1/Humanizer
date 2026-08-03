@@ -15,9 +15,9 @@ bash "$ROOT/scripts/build_macos_app.sh"
 
 VERSION="$(python3 -c "import json; print(json.load(open('extension/manifest.json'))['version'])")"
 TAG="v${VERSION}"
-MAC_ZIP="$ROOT/dist/humanizer-extension-mac-v${VERSION}.zip"
-WIN_ZIP="$ROOT/dist/humanizer-extension-windows-v${VERSION}.zip"
-GENERIC_ZIP="$ROOT/dist/humanizer-extension-v${VERSION}.zip"
+MAC_ZIP="$ROOT/dist/thoth-extension-mac-v${VERSION}.zip"
+WIN_ZIP="$ROOT/dist/thoth-extension-windows-v${VERSION}.zip"
+GENERIC_ZIP="$ROOT/dist/thoth-extension-v${VERSION}.zip"
 APP_ZIP="$ROOT/dist/Thoth-macOS-v${VERSION}.zip"
 APP_ZIP_STABLE="$ROOT/dist/Thoth-macOS.zip"
 
@@ -49,7 +49,7 @@ Chrome extension + local writing server for **Windows** and **macOS**.
 ## macOS — menu bar app (recommended)
 
 1. Download **[Thoth-macOS.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Thoth-macOS.zip)**
-2. Download **[humanizer-extension-mac-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/humanizer-extension-mac-v${VERSION}.zip)**
+2. Download **[thoth-extension-mac-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/thoth-extension-mac-v${VERSION}.zip)**
 3. Unzip the app zip → drag **Thoth.app** into **Applications** → open it once
 4. Unzip the extension → Chrome → \`chrome://extensions\` → **Developer mode** → **Load unpacked**
 5. Leave the menu bar icon running; it starts the server and relaunches after login
@@ -58,8 +58,8 @@ Full guide: **[Install on Mac](https://github.com/Eshan-khan1/Humanizer/blob/mai
 
 ## Windows
 
-1. Download **[humanizer-extension-windows-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/humanizer-extension-windows-v${VERSION}.zip)**
-2. Follow **[Install on Windows](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_WINDOWS.md)** (clone the repo, run \`scripts\\install.bat\`, then \`Start Humanizer.bat\`)
+1. Download **[thoth-extension-windows-v${VERSION}.zip](https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/thoth-extension-windows-v${VERSION}.zip)**
+2. Follow **[Install on Windows](https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_WINDOWS.md)** (clone the repo, run \`scripts\\install.bat\`, then \`Start Thoth.bat\`)
 
 ## Health check
 
@@ -89,4 +89,4 @@ else
 fi
 
 echo "Release: https://github.com/Eshan-khan1/Humanizer/releases/tag/${TAG}"
-echo "Mac app: https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Humanizer-macOS.zip"
+echo "Mac app: https://github.com/Eshan-khan1/Humanizer/releases/download/${TAG}/Thoth-macOS.zip"

@@ -1,4 +1,4 @@
-"""Bridge between Humanizer.app and the Chrome extension.
+"""Bridge between Thoth.app and the Chrome extension.
 
 Keeps a stable unpacked-extension folder in Application Support, registers a
 Chrome Native Messaging host so the extension can auto-discover the local app,
@@ -34,7 +34,7 @@ def extension_ping_file() -> Path:
 def _extension_source(root: Path) -> Path | None:
     candidates = [
         root / "extension",
-        Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")) / "HumanizerHome" / "extension",
+        Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")) / "ThothHome" / "extension",
         manager.support_dir() / "Home" / "extension",
     ]
     for path in candidates:

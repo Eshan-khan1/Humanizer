@@ -16,8 +16,8 @@ mkdir -p "$DIST"
 
 package_one() {
   local label="$1"
-  local out="$DIST/humanizer-extension-${label}-v${VERSION}.zip"
-  echo "==> Packaging Humanizer extension v${VERSION} (${label})..."
+  local out="$DIST/thoth-extension-${label}-v${VERSION}.zip"
+  echo "==> Packaging Thoth extension v${VERSION} (${label})..."
   (
     cd "$EXT"
     zip -r "$out" . \
@@ -32,17 +32,17 @@ package_one "mac"
 package_one "windows"
 
 # Generic latest alias (same bytes as mac/windows — extension is cross-platform)
-cp "$DIST/humanizer-extension-mac-v${VERSION}.zip" "$DIST/humanizer-extension.zip"
-cp "$DIST/humanizer-extension-mac-v${VERSION}.zip" "$DIST/humanizer-extension-v${VERSION}.zip"
+cp "$DIST/thoth-extension-mac-v${VERSION}.zip" "$DIST/thoth-extension.zip"
+cp "$DIST/thoth-extension-mac-v${VERSION}.zip" "$DIST/thoth-extension-v${VERSION}.zip"
 
 # Starter note files bundled beside zips for release clarity
 cat > "$DIST/README-WINDOWS.txt" <<EOF
-Humanizer for Windows
+Thoth for Windows
 =====================
 
 1. Install Python 3.10+ (Add to PATH), Ollama, and Java 11+.
-2. Clone or download the full Humanizer repo from GitHub.
-3. Run scripts\\install.bat then Start Humanizer.bat
+2. Clone or download the full Thoth repo from GitHub.
+3. Run scripts\\install.bat then Start Thoth.bat
 4. Unzip this extension zip (or use the repo's extension\\ folder).
 5. Chrome → chrome://extensions → Developer mode → Load unpacked → select the unzipped folder.
 
@@ -51,11 +51,11 @@ https://github.com/Eshan-khan1/Humanizer/blob/main/docs/INSTALL_WINDOWS.md
 EOF
 
 cat > "$DIST/README-MAC.txt" <<EOF
-Humanizer for macOS
+Thoth for macOS
 ===================
 
 1. Install Python 3.10+, Ollama, and Java 11+ (e.g. brew install openjdk@17).
-2. From the GitHub release, download Humanizer-macOS.zip and humanizer-extension-mac-….zip:
+2. From the GitHub release, download Thoth-macOS.zip and thoth-extension-mac-….zip:
    https://github.com/Eshan-khan1/Humanizer/releases/latest
 3. Unzip Thoth-macOS.zip, drag Thoth.app into Applications, and open it once.
 4. Unzip the extension zip.

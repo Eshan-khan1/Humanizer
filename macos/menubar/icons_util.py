@@ -38,7 +38,7 @@ def write_status_icons(directory: Path) -> tuple[Path, Path, Path]:
     directory.mkdir(parents=True, exist_ok=True)
     online = directory / "status-online.png"
     offline = directory / "status-offline.png"
-    mark = directory / "humanizer-mark.png"
+    mark = directory / "thoth-mark.png"
     logo = logo_source()
     mask = Path(__file__).resolve().parents[2] / "assets" / "menubar-mask.png"
     menubar = menubar_logo_source()

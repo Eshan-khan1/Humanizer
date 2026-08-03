@@ -60,7 +60,7 @@ def resolve_project_root(explicit: str | None = None) -> Path:
     if (repo_candidate / "server.py").is_file():
         return repo_candidate
 
-    bundled = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")) / "HumanizerHome"
+    bundled = Path(os.environ.get("HUMANIZER_BUNDLE_RESOURCES", "")) / "ThothHome"
     if (bundled / "server.py").is_file():
         return bundled.resolve()
 
@@ -373,7 +373,7 @@ def restart_server(root: Path) -> bool:
 def ensure_venv(root: Path) -> Path:
     venv = root / ".venv"
     python = venv / "bin" / "python"
-    marker = venv / ".humanizer_deps_ready"
+    marker = venv / ".thoth_deps_ready"
     host = preferred_host_python()
 
     # Recreate when missing, or when prior installs left broken/arch-mismatched wheels.
@@ -433,7 +433,7 @@ def ensure_home_payload(resources: Path) -> Path:
     """Copy bundled server home into Application Support on first run."""
     dest = support_dir() / "Home"
     marker = dest / ".humanizer_home_ready"
-    src = resources / "HumanizerHome"
+    src = resources / "ThothHome"
     if not src.is_dir():
         return resolve_project_root()
 

@@ -71,7 +71,7 @@ echo ============================================
 echo   Install complete!
 echo.
 echo   Next steps:
-echo     1. Double-click "Start Humanizer.bat"  OR  run start_server.bat
+echo     1. Double-click "Start Thoth.bat"  OR  run start_server.bat
 echo     2. Chrome -^> chrome://extensions -^> Developer mode
 echo        Load unpacked -^> select the extension folder
 echo     3. Full Windows guide: docs\INSTALL_WINDOWS.md

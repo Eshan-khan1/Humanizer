@@ -20,12 +20,12 @@ has_model() {
 }
 
 # Grammar model — prefer fine-tuned 3B, then 7B, then pull a small base model
-GRAMMAR_3B_MODEFILE="$ROOT/models/humanizer-3b/gguf/Modelfile"
-GRAMMAR_MODEFILE="$ROOT/models/humanizer-grammar/gguf/Modelfile"
+GRAMMAR_3B_MODEFILE="$ROOT/models/thoth-3b/gguf/Modelfile"
+GRAMMAR_MODEFILE="$ROOT/models/thoth-grammar/gguf/Modelfile"
 if [[ -f "$GRAMMAR_3B_MODEFILE" ]]; then
   echo "==> Creating humanizer-grammar from fine-tuned 3B Modelfile..."
-  (cd "$ROOT/models/humanizer-3b/gguf" && ollama create humanizer-grammar -f Modelfile)
-  (cd "$ROOT/models/humanizer-3b/gguf" && ollama create humanizer-writing -f Modelfile.writing)
+  (cd "$ROOT/models/thoth-3b/gguf" && ollama create humanizer-grammar -f Modelfile)
+  (cd "$ROOT/models/thoth-3b/gguf" && ollama create humanizer-writing -f Modelfile.writing)
 elif [[ -f "$GRAMMAR_MODEFILE" ]]; then
   echo "==> Creating humanizer-grammar from local Modelfile..."
   ollama create humanizer-grammar -f "$GRAMMAR_MODEFILE" 2>/dev/null || ollama create humanizer-grammar -f "$GRAMMAR_MODEFILE"
@@ -38,7 +38,7 @@ else
 fi
 
 # Writing model — for rewrite/generate
-WRITING_MODEFILE="$ROOT/models/humanizer-writing/Modelfile"
+WRITING_MODEFILE="$ROOT/models/thoth-writing/Modelfile"
 if [[ -f "$WRITING_MODEFILE" ]]; then
   echo "==> Creating humanizer-writing from local Modelfile..."
   ollama create humanizer-writing -f "$WRITING_MODEFILE"

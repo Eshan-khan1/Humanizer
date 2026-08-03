@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from humanizer import (
+from thoth import (
     calculate_ai_score,
     count_pipeline_edits,
     humanize,

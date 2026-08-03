@@ -66,7 +66,7 @@ scripts\setup_models.bat
 
 In your Humanizer folder, double-click:
 
-`Start Humanizer.bat`
+`Start Thoth.bat`
 
 Or in Command Prompt, paste this and press Enter:
 

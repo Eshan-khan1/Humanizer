@@ -15,9 +15,9 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if exist "models\humanizer-3b\gguf\Modelfile" (
+if exist "models\thoth-3b\gguf\Modelfile" (
   echo Creating humanizer-grammar / humanizer-writing from fine-tuned 3B Modelfile...
-  pushd "models\humanizer-3b\gguf"
+  pushd "models\thoth-3b\gguf"
   ollama create humanizer-grammar -f Modelfile
   if exist Modelfile.writing (
     ollama create humanizer-writing -f Modelfile.writing
@@ -25,11 +25,11 @@ if exist "models\humanizer-3b\gguf\Modelfile" (
     ollama create humanizer-writing -f Modelfile
   )
   popd
-) else if exist "models\humanizer-grammar\gguf\Modelfile" (
+) else if exist "models\thoth-grammar\gguf\Modelfile" (
   echo Creating humanizer-grammar from local Modelfile...
-  ollama create humanizer-grammar -f "models\humanizer-grammar\gguf\Modelfile"
-  if exist "models\humanizer-grammar\gguf\Modelfile.writing" (
-    ollama create humanizer-writing -f "models\humanizer-grammar\gguf\Modelfile.writing"
+  ollama create humanizer-grammar -f "models\thoth-grammar\gguf\Modelfile"
+  if exist "models\thoth-grammar\gguf\Modelfile.writing" (
+    ollama create humanizer-writing -f "models\thoth-grammar\gguf\Modelfile.writing"
   )
 ) else (
   echo Pulling base models from Ollama Hub...

@@ -20,7 +20,7 @@ Optional for GGUF export (Qwen2.5 is not supported by mlx_lm --export-gguf):
   export LLAMA_CPP_PATH=/path/to/llama.cpp
 
 After export:
-  cd models/humanizer-grammar/gguf
+  cd models/thoth-grammar/gguf
   ollama create humanizer-grammar -f ../Modelfile
   OLLAMA_MODEL=humanizer-grammar ./start_server.sh
 """
@@ -52,13 +52,13 @@ OLLAMA_WRITING_MODEL_NAME = "humanizer-writing"
 MODEL_PRESETS: dict[str, dict[str, Any]] = {
     "7b": {
         "base_model": "mlx-community/Qwen2.5-7B-Instruct-4bit",
-        "output_dir": ROOT / "models" / "humanizer-grammar",
+        "output_dir": ROOT / "models" / "thoth-grammar",
         "label": "Qwen2.5-7B-Instruct",
         "num_layers": 8,
     },
     "3b": {
         "base_model": "mlx-community/Qwen2.5-3B-Instruct-4bit",
-        "output_dir": ROOT / "models" / "humanizer-3b",
+        "output_dir": ROOT / "models" / "thoth-3b",
         "label": "Qwen2.5-3B-Instruct",
         "num_layers": 8,
     },
@@ -750,7 +750,7 @@ def convert_to_gguf(quantization: str) -> Path:
         raise SystemExit(1)
 
     GGUF_DIR.mkdir(parents=True, exist_ok=True)
-    f16_path = GGUF_DIR / "humanizer-grammar-f16.gguf"
+    f16_path = GGUF_DIR / "thoth-grammar-f16.gguf"
 
     convert_script = llama_cpp / "convert_hf_to_gguf.py"
     log(f"Converting fused model to GGUF (f16) via {convert_script} …")
@@ -778,7 +778,7 @@ def convert_to_gguf(quantization: str) -> Path:
         )
         return f16_path
 
-    out_path = GGUF_DIR / f"humanizer-grammar-{quantization}.gguf"
+    out_path = GGUF_DIR / f"thoth-grammar-{quantization}.gguf"
     log(f"Quantizing → {out_path} ({quantization}) …")
     subprocess.run(
         [str(quantize_bin), str(f16_path), str(out_path), quantization],
@@ -818,7 +818,7 @@ def export_for_ollama(quantization: str = "q4_k_m") -> None:
 def _build_modelfile(gguf_filename: str) -> str:
     return f"""# Humanizer grammar fine-tune ({MODEL_LABEL} + MLX LoRA)
 # Build: ollama create {OLLAMA_MODEL_NAME} -f Modelfile
-# Run from: models/humanizer-grammar/gguf/
+# Run from: models/thoth-grammar/gguf/
 
 FROM ./{gguf_filename}
 
@@ -842,7 +842,7 @@ PARAMETER stop "<|endoftext|>"
 def _build_writing_modelfile(gguf_filename: str) -> str:
     return f"""# Humanizer Writing Agent — Rewrite + Generate ({MODEL_LABEL} + MLX LoRA)
 # Build: ollama create {OLLAMA_WRITING_MODEL_NAME} -f Modelfile.writing
-# Run from: models/humanizer-grammar/gguf/
+# Run from: models/thoth-grammar/gguf/
 
 FROM ./{gguf_filename}
 

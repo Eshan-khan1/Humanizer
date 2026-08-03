@@ -85,9 +85,9 @@ Follow the guide for your computer. Each guide is written as simple numbered ste
 | Platform | Full step-by-step guide | Download |
 |----------|-------------------------|----------|
 | **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Humanizer/releases/latest) (extension zip) |
-| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Humanizer.app**](https://github.com/Eshan-khan1/Humanizer/releases/latest) (menu bar app + extension) |
+| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Humanizer/releases/latest) (menu bar app + extension) |
 
-Mac users: download **`Humanizer-macOS.zip`** from the latest release, drag **Humanizer.app** into Applications, and open it once. No Terminal required.
+Mac users: download **`Humanizer-macOS.zip`** from the latest release, drag **Thoth.app** into Applications, and open it once. No Terminal required.
 
 ---
 
@@ -122,7 +122,7 @@ scripts\setup_models.bat
 
 **Step 4: Start the server**
 
-Double-click `Start Humanizer.bat`, or paste:
+Double-click `Start Thoth.bat`, or paste:
 
 ```bat
 start_server.bat
@@ -150,7 +150,7 @@ More detail: **[docs/INSTALL_WINDOWS.md](docs/INSTALL_WINDOWS.md)**
 - [Ollama](https://ollama.com) (open it once after install)
 - Java 11+ ([Adoptium](https://adoptium.net/) or `brew install openjdk@17`)
 
-**Step 2: Download Humanizer.app**
+**Step 2: Download Thoth.app**
 
 Open the latest GitHub release and download the Mac app:
 
@@ -162,7 +162,7 @@ Open the latest GitHub release and download the Mac app:
 
 **Step 3: Install the app (no Terminal)**
 
-1. Drag **Humanizer.app** into **Applications**
+1. Drag **Thoth.app** into **Applications**
 2. Open it once (if macOS blocks it: right-click → **Open** → **Open**)
 3. Look for **Hz** in the menu bar (top-right) — there is no Dock icon
 4. It quietly starts the server and sets itself to reopen after login or restart
@@ -212,8 +212,8 @@ Humanizer/
 │
 ├── start_server.sh            # Start API on :8000 (macOS/Linux)
 ├── start_server.bat           # Start API on :8000 (Windows)
-├── Start Humanizer.command    # macOS double-click launcher
-├── Start Humanizer.bat        # Windows double-click launcher
+├── Start Thoth.command    # macOS double-click launcher
+├── Start Thoth.bat        # Windows double-click launcher
 ├── run.sh                     # Desktop app entry (pywebview)
 ├── requirements.txt           # Python dependencies
 │
@@ -232,7 +232,7 @@ Humanizer/
 │
 ├── test_data/                 # Pairs, benchmarks, training samples
 ├── benchmark_tests.json       # Rewrite/Generate test cases
-└── Humanizer ui theme.json       # Claude-inspired UI tokens (light/dark)
+└── Thoth ui theme.json       # Claude-inspired UI tokens (light/dark)
 ```
 
 ---
@@ -356,7 +356,7 @@ Model weights are **not** committed to git (too large). Each user downloads via 
 
 ## Design system
 
-UI colors, typography, and components are defined in [`Humanizer ui theme.json`](Humanizer%20ui%20theme.json):
+UI colors, typography, and components are defined in [`Thoth ui theme.json`](Thoth%20ui%20theme.json):
 
 - Warm cream / charcoal Claude-inspired palette with light and dark modes
 - Orange accent `#c96442` for primary actions only
