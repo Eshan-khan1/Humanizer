@@ -130,6 +130,7 @@ def call_cloud_chat(
     max_tokens: int,
     base_url: str = "",
     url: str | None = None,
+    top_p: float | None = None,
 ) -> str:
     endpoint = url
     if not endpoint:
@@ -146,7 +147,7 @@ def call_cloud_chat(
         endpoint = config["url"]
         model = config["model"]
 
-    payload = {
+    payload: dict[str, Any] = {
         "model": model,
         "messages": [
             {"role": "system", "content": system},
@@ -155,6 +156,8 @@ def call_cloud_chat(
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
+    if top_p is not None:
+        payload["top_p"] = top_p
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",

@@ -18,6 +18,9 @@ OLLAMA_WRITING_MODEL = os.environ.get("OLLAMA_WRITING_MODEL", "thoth-writing")
 OLLAMA_REWRITE_TEMPERATURE = float(os.environ.get("OLLAMA_REWRITE_TEMPERATURE", "0.45"))
 OLLAMA_REWRITE_NUM_PREDICT = int(os.environ.get("OLLAMA_REWRITE_NUM_PREDICT", "1024"))
 OLLAMA_GENERATE_TEMPERATURE = float(os.environ.get("OLLAMA_GENERATE_TEMPERATURE", "0.6"))
+# Shared for local Ollama and cloud API so Generate behaves the same either way.
+GENERATE_TOP_P = float(os.environ.get("THOTH_GENERATE_TOP_P", "0.9"))
+REWRITE_TOP_P = float(os.environ.get("THOTH_REWRITE_TOP_P", "0.9"))
 OLLAMA_GENERATE_NUM_PREDICT_SHORT = int(
     os.environ.get("OLLAMA_GENERATE_NUM_PREDICT_SHORT", "512")
 )
@@ -5511,9 +5514,31 @@ def _build_generate_settings_block(
     )
 
 
-def build_generate_user_message(text: str) -> str:
-    """User message is only the short idea / seed text."""
-    return (text or "").strip()
+def build_generate_user_message(
+    text: str,
+    *,
+    settings: dict[str, Any] | None = None,
+    format_type: str = "essay",
+) -> str:
+    """User message: seed idea, plus a compact settings reminder (API + local)."""
+    idea = (text or "").strip()
+    if not settings:
+        return idea
+    length = str(settings.get("length") or "medium").strip().lower()
+    tone = str(
+        settings.get("tone_preset") or settings.get("tone") or "friendly"
+    ).strip().lower()
+    complexity = str(settings.get("complexity") or "standard").strip().lower()
+    fmt = (format_type or "essay").strip().lower()
+    return (
+        "GENERATE SETTINGS (follow exactly — same rules for local and API models):\n"
+        f"- FORMAT: {fmt}\n"
+        f"- LENGTH: {length} (structure/amount only)\n"
+        f"- TONE: {tone} (voice only)\n"
+        f"- COMPLEXITY: {complexity} (vocabulary only)\n"
+        "Do not mix these. Changing one must not change the others.\n\n"
+        f"IDEA TO EXPAND:\n{idea}"
+    )
 
 
 def build_generate_prompt(
@@ -5530,7 +5555,10 @@ def build_generate_prompt(
     system = build_generate_system_instruction(
         format_type, notes=notes, context=context, settings=settings
     )
-    user = build_generate_user_message(text)
+    effective = resolve_effective_generate_settings(settings, notes)
+    user = build_generate_user_message(
+        text, settings=effective, format_type=format_type
+    )
     return f"{system}\n\n---USER MESSAGE---\n\n{user}"
 
 
@@ -5546,9 +5574,11 @@ def _call_llm(
     if task == "rewrite":
         temperature = OLLAMA_REWRITE_TEMPERATURE
         effective_predict = num_predict or OLLAMA_REWRITE_NUM_PREDICT
+        top_p = REWRITE_TOP_P
     else:
         temperature = OLLAMA_GENERATE_TEMPERATURE
         effective_predict = num_predict or OLLAMA_GENERATE_NUM_PREDICT
+        top_p = GENERATE_TOP_P
 
     if ai_config:
         from cloud_ai import CloudAIError, call_cloud_chat  # noqa: PLC0415
@@ -5561,6 +5591,7 @@ def _call_llm(
                 system=effective_system,
                 prompt=prompt,
                 temperature=temperature,
+                top_p=top_p,
                 base_url=str(ai_config.get("base_url") or ""),
                 url=ai_config.get("url"),
                 max_tokens=effective_predict,
@@ -5579,6 +5610,7 @@ def _call_llm(
     return _ollama_generate(
         prompt,
         temperature=temperature,
+        top_p=top_p,
         system=effective_system,
         model=OLLAMA_WRITING_MODEL,
         num_predict=effective_predict,
@@ -5906,12 +5938,18 @@ class WritingAgent:
             context=context,
             settings=settings,
         )
-        user_message = build_generate_user_message(text)
+        # Same settings reminder for cloud API and local Ollama — some API models
+        # attend more to the user turn than a long system prompt.
+        user_message = build_generate_user_message(
+            text, settings=effective_settings, format_type=format_type
+        )
         num_predict = _generate_num_predict_for_length(length)
         candidates: list[str] = []
         rejection_history: list[list[str]] = []
         attempt_system = system_prompt
         for attempt in range(3):
+            # Provider only swaps the LLM backend. Prompts, retries, and hard
+            # filters below are identical for API and local.
             raw = _call_llm(
                 user_message,
                 task="generate",

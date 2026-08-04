@@ -839,11 +839,14 @@ def _ollama_generate(
     model: str | None = None,
     num_predict: int | None = None,
     num_ctx: int | None = None,
+    top_p: float | None = None,
 ) -> str:
     """Send a prompt to Ollama and return the model response text."""
     ensure_ollama_running()
 
     options: dict[str, Any] = {"temperature": temperature}
+    if top_p is not None:
+        options["top_p"] = top_p
     if num_predict is not None:
         options["num_predict"] = num_predict
     elif grammar:
