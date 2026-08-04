@@ -470,7 +470,7 @@ def main() -> None:
         def startServerAsync(self):
             def work():
                 try:
-                    manager.ensure_ollama_running()
+                    manager.ensure_local_runtime()
                     manager.start_server(self.root_path)
                 except Exception as exc:  # noqa: BLE001
                     logger.exception("Startup failed: %s", exc)

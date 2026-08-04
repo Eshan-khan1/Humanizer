@@ -210,6 +210,24 @@ def ensure_ollama_running() -> bool:
     return False
 
 
+def needs_local_ollama() -> bool:
+    """True when Generate/Rewrite still need a local Ollama process."""
+    try:
+        from macos.menubar.settings import cloud_ai_config
+
+        return cloud_ai_config() is None
+    except Exception:  # noqa: BLE001
+        return True
+
+
+def ensure_local_runtime() -> bool:
+    """Start Ollama only when the app is in local mode."""
+    if not needs_local_ollama():
+        logger.info("API mode configured — skipping Ollama launch")
+        return True
+    return ensure_ollama_running()
+
+
 def _read_pid() -> int | None:
     path = pid_file()
     if not path.is_file():
@@ -326,27 +344,11 @@ def start_server(root: Path, *, force: bool = False) -> bool:
                 return True
 
     stop_server()
-    # Local models need Ollama; cloud API mode can serve rewrite/generate without it.
-    try:
-        from macos.menubar.settings import cloud_ai_config
-
-        needs_ollama = cloud_ai_config() is None
-    except Exception:  # noqa: BLE001
-        needs_ollama = True
-    if needs_ollama:
+    # Local models need Ollama; cloud API mode must not launch the Ollama app.
+    if needs_local_ollama():
         ensure_ollama_running()
     else:
-        # Best-effort: open Ollama if present, but don't block restart on it.
-        try:
-            if Path("/Applications/Ollama.app").is_dir():
-                subprocess.Popen(
-                    ["open", "-a", "Ollama"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    start_new_session=True,
-                )
-        except Exception:  # noqa: BLE001
-            pass
+        logger.info("API mode configured — not opening Ollama on server restart")
     python = ensure_venv(root)
     log_path = logs_dir() / "server.log"
     log_file = open(log_path, "a", encoding="utf-8")  # noqa: SIM115

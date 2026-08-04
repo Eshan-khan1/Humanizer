@@ -59,7 +59,9 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
     if cmd == "models":
-        manager.ensure_ollama_running()
+        # Only wake Ollama when local mode needs a model list.
+        if manager.needs_local_ollama():
+            manager.ensure_ollama_running()
         cfg = settings.load_settings()
         models = settings.list_ollama_models()
         print(
@@ -297,7 +299,7 @@ def main(argv: list[str] | None = None) -> int:
             extension_bridge.register_native_messaging_host()
         except Exception:  # noqa: BLE001
             pass
-        manager.ensure_ollama_running()
+        manager.ensure_local_runtime()
         ok = manager.start_server(root)
         cfg = settings.load_settings()
         link = extension_bridge.extension_link_status()
