@@ -176,31 +176,37 @@ def main(argv: list[str] | None = None) -> int:
             ai_base_url=base_url,
             ai_model=model,
         )
+        # Key is persisted first. Verification is best-effort so a flaky network
+        # or temporary provider outage does not look like "save failed".
         test: dict = {"ok": True, "detail": "Using local models"}
-        if settings.cloud_ai_config() is not None:
+        cloud = settings.cloud_ai_config()
+        if cloud is not None:
             try:
-                import urllib.request
+                from cloud_ai import CloudAIError, test_ai_connection
 
-                payload = json.dumps(
-                    {
-                        "ai": {
-                            "provider": cfg.get("ai_provider"),
-                            "apiKey": cfg.get("ai_api_key") or "",
-                            "baseUrl": cfg.get("ai_base_url") or "",
-                            "model": cfg.get("ai_model") or "",
-                        }
-                    }
-                ).encode("utf-8")
-                req = urllib.request.Request(
-                    "http://127.0.0.1:8000/ai/test",
-                    data=payload,
-                    headers={"Content-Type": "application/json"},
-                    method="POST",
-                )
-                with urllib.request.urlopen(req, timeout=25) as resp:
-                    test = json.loads(resp.read().decode("utf-8"))
+                result = test_ai_connection(cloud)
+                test = {
+                    "ok": True,
+                    "detail": "API key saved and verified",
+                    "provider": result.get("provider") or cfg.get("ai_provider"),
+                    "model": result.get("model") or cfg.get("ai_model") or "",
+                }
+            except CloudAIError as exc:
+                test = {
+                    "ok": True,
+                    "detail": f"API key saved, but verification failed: {exc}",
+                    "provider": cfg.get("ai_provider"),
+                    "model": cfg.get("ai_model") or "",
+                    "verified": False,
+                }
             except Exception as exc:  # noqa: BLE001
-                test = {"ok": False, "detail": str(exc)}
+                test = {
+                    "ok": True,
+                    "detail": f"API key saved (could not verify: {exc})",
+                    "provider": cfg.get("ai_provider"),
+                    "model": cfg.get("ai_model") or "",
+                    "verified": False,
+                }
         print(
             json.dumps(
                 {
@@ -213,11 +219,12 @@ def main(argv: list[str] | None = None) -> int:
                     ),
                     "provider": test.get("provider") or cfg.get("ai_provider"),
                     "model": test.get("model") or cfg.get("ai_model") or "",
+                    "verified": test.get("verified", True),
                     **settings.ai_status_summary(),
                 }
             )
         )
-        return 0 if test.get("ok", True) else 1
+        return 0
 
     if cmd == "set-models":
         if len(args) < 3:

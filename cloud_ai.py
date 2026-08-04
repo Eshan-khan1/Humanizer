@@ -84,7 +84,9 @@ def normalize_ai_config(raw: dict[str, Any] | None) -> dict[str, Any] | None:
 
     model = str(raw.get("model") or "").strip()
     if not model:
-        model = _default_model_for_provider(resolved if provider != "api" else "api")
+        # Infer from the resolved backend (Groq key → Groq model), not the
+        # generic "api" label — otherwise Groq gets gpt-4o-mini and fails.
+        model = _default_model_for_provider(resolved)
 
     if provider == "api" and base_url:
         url = _normalize_chat_completions_url(base_url)
@@ -105,12 +107,15 @@ def normalize_ai_config(raw: dict[str, Any] | None) -> dict[str, Any] | None:
 
 def _sanitize_provider_error(status_code: int, body: str) -> str:
     if status_code == 401:
-        return "AI API key was rejected. Check your key in extension Settings."
+        return "AI API key was rejected. Check your key in Settings."
     if status_code == 429:
         return "AI provider rate limit reached. Wait a moment and try again."
     if status_code >= 500:
         return "AI provider is temporarily unavailable. Try again later."
     snippet = body.strip().replace("\n", " ")[:160]
+    lower = snippet.lower()
+    if "model" in lower and ("not found" in lower or "does not exist" in lower):
+        return "AI model is not available for this key. Leave model blank or set a valid model."
     return snippet or f"AI provider request failed ({status_code})"
 
 
