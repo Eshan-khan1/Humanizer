@@ -55,6 +55,7 @@ from writing_agent import (  # noqa: E402
     _seed_list_plan,
     _seed_states_a_reason,
     _parse_signoff_permanent_note,
+    _strip_generate_instruction_leakage,
 )
 
 
@@ -1238,6 +1239,26 @@ class FabricationHardeningTests(unittest.TestCase):
             ),
             "",
         )
+
+        # Style notes override tone and never become body text.
+        friendly = _parse_generation_note("make more friendly")
+        self.assertEqual(friendly["tone_preset_override"], "friendly")
+        self.assertIsNone(friendly["informational_content"])
+        mixed = _parse_generation_note(
+            "make more friendly. I was sick for 2 days"
+        )
+        self.assertEqual(mixed["tone_preset_override"], "friendly")
+        self.assertEqual(mixed["informational_content"], "I was sick for 2 days")
+        warmer = _parse_generation_note("be warmer and more friendly")
+        self.assertEqual(warmer["tone_preset_override"], "friendly")
+        self.assertIsNone(warmer["informational_content"])
+
+        leaked = _strip_generate_instruction_leakage(
+            "Subject: Hi\n\nHey there,\n\n"
+            "Need Friday off. Make more friendly.\n\nThanks,\nEshan"
+        )
+        self.assertNotIn("make more friendly", leaked.lower())
+        self.assertIn("friday", leaked.lower())
 
     def test_seeded_reason_still_strips_unforeseen_filler(self) -> None:
         seed = (

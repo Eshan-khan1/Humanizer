@@ -728,10 +728,18 @@ def _strip_generate_instruction_leakage(text: str) -> str:
             re.I,
         ):
             continue
+        # Whole-line echoed style notes ("Make more friendly.")
+        if _looks_like_tone_style_instruction(stripped) and not _looks_like_factual_note(
+            stripped
+        ):
+            continue
         lines.append(line)
 
     cleaned = "\n".join(lines)
     cleaned = _GENERATE_LEAK_INLINE_RE.sub("", cleaned)
+    cleaned = _STYLE_NOTE_LEAK_RE.sub("", cleaned)
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r" +([,.!?])", r"\1", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned.strip()
 
@@ -2702,12 +2710,30 @@ def _inject_informational_content(
     format_type: str,
     length: str,
 ) -> str:
-    """Ensure one-time factual notes survive model generation."""
+    """Ensure one-time factual notes survive model generation.
+
+    Style / tone instructions must never be pasted into the body.
+    Facts are woven as a natural sentence, not a raw instruction dump.
+    """
     sentence = (content or "").strip()
     if not sentence or not text.strip():
         return text
+    # Guard: style leftovers must never appear as body text.
+    if _looks_like_tone_style_instruction(sentence) and not _looks_like_factual_note(
+        sentence
+    ):
+        return text
+    sentence = re.sub(
+        r"(?i)^(?:factual|fact|note|info(?:rmation)?|also)\s*:\s*",
+        "",
+        sentence,
+    ).strip()
+    sentence = _STYLE_NOTE_LEAK_RE.sub("", sentence).strip(" ,;")
+    if not sentence:
+        return text
     if not sentence.endswith((".", "!", "?")):
         sentence += "."
+    sentence = sentence[0].upper() + sentence[1:]
     note_tokens = {
         token
         for token in re.findall(r"[a-z0-9']+", sentence.lower())
@@ -2720,9 +2746,23 @@ def _inject_informational_content(
 
     sections = _parse_email_sections(text)
     body = sections.get("body", "").strip()
+    short_fact = len(sentence.split()) <= 14
     if length == "short":
         sentences = _split_sentences(body)
-        sections["body"] = _join_sentences((sentences[:1] + [sentence])[:2])
+        if sentences and short_fact:
+            sections["body"] = _splice_clause_into_first_sentence(
+                _join_sentences(sentences[:2]), sentence.rstrip(".!?")
+            )
+            sections["body"] = _join_sentences(_split_sentences(sections["body"])[:2])
+        else:
+            sections["body"] = _join_sentences((sentences[:1] + [sentence])[:2])
+    elif body and short_fact:
+        # Weave into the last body paragraph instead of dumping a raw note block.
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+        paragraphs[-1] = _splice_clause_into_first_sentence(
+            paragraphs[-1], sentence.rstrip(".!?")
+        )
+        sections["body"] = "\n\n".join(paragraphs)
     else:
         sections["body"] = f"{body}\n\n{sentence}" if body else sentence
     return _reassemble_email_sections(sections)
@@ -3505,7 +3545,11 @@ def _splice_clause_into_first_sentence(body: str, clause: str) -> str:
         core, end = first, "."
     if clause.lower() in core.lower():
         return body
-    join = clause[0].lower() + clause[1:] if clause[:1].isupper() else clause
+    # Keep pronoun "I" capitalized when splicing mid-sentence.
+    if re.match(r"^I\b", clause):
+        join = clause
+    else:
+        join = clause[0].lower() + clause[1:] if clause[:1].isupper() else clause
     sentences[0] = f"{core}, {join}{end}"
     paragraphs[0] = _join_sentences(sentences)
     return "\n\n".join(paragraphs)
@@ -5087,14 +5131,19 @@ ONE-TIME TONE OVERRIDE — this generation only (saved popup tone is unchanged f
 
 _TONE_INSTRUCTION_MAPPINGS: tuple[tuple[re.Pattern[str], str, str | None], ...] = (
     (re.compile(r"\bmake it (?:more )?formal(?:\s+than\s+usual)?\b", re.IGNORECASE), "formal", None),
+    (re.compile(r"\b(?:just\s+)?make (?:it )?(?:more )?formal(?:\s+than\s+usual)?\b", re.IGNORECASE), "formal", None),
     (re.compile(r"\b(?:sound|be) more formal(?:\s+than\s+usual)?\b", re.IGNORECASE), "formal", None),
     (re.compile(r"\bmake it (?:more )?professional\b", re.IGNORECASE), "formal", "professional and respectful"),
+    (re.compile(r"\b(?:just\s+)?make (?:it )?(?:more )?professional\b", re.IGNORECASE), "formal", "professional and respectful"),
     (re.compile(r"\b(?:sound|be) more professional\b", re.IGNORECASE), "formal", "professional and respectful"),
     (re.compile(r"\bkeep it professional\b", re.IGNORECASE), "formal", "professional and respectful"),
     (re.compile(r"\bmake it (?:more )?friendly\b", re.IGNORECASE), "friendly", None),
+    (re.compile(r"\b(?:just\s+)?make (?:it )?(?:more )?friendly\b", re.IGNORECASE), "friendly", None),
     (re.compile(r"\b(?:sound|be) more friendly\b", re.IGNORECASE), "friendly", None),
     (re.compile(r"\bsound more friendly\b", re.IGNORECASE), "friendly", None),
+    (re.compile(r"\bbe warmer(?:\s+and\s+more\s+friendly)?\b", re.IGNORECASE), "friendly", "warm and approachable"),
     (re.compile(r"\bmake it (?:more )?casual\b", re.IGNORECASE), "casual", None),
+    (re.compile(r"\b(?:just\s+)?make (?:it )?(?:more )?casual\b", re.IGNORECASE), "casual", None),
     (re.compile(r"\b(?:sound|be) more casual\b", re.IGNORECASE), "casual", None),
     (re.compile(r"\bkeep it (?:casual|conversational)\b", re.IGNORECASE), "casual", None),
     (re.compile(r"\bkeep it conversational\b", re.IGNORECASE), "casual", "relaxed and conversational"),
@@ -5114,13 +5163,36 @@ _TONE_INSTRUCTION_MAPPINGS: tuple[tuple[re.Pattern[str], str, str | None], ...] 
 
 _GENERIC_TONE_INSTRUCTION_RE = re.compile(
     r"\b(?:"
-    r"(?:make|keep) it (?:more |less )?[a-z]+(?:\s+[a-z]+)?"
-    r"|(?:sound|be) more [a-z]+"
+    r"(?:just\s+)?(?:make|keep)(?: it)? (?:more |less )?[a-z]+(?:\s+[a-z]+)?"
+    r"|(?:sound|be) more [a-z]+(?:\s+and\s+more\s+[a-z]+)?"
     r"|use a (?:more )?[a-z]+ tone"
     r"|write (?:this |it )?(?:in a )?(?:more )?[a-z]+ (?:tone|way)"
     r"|(?:tone|style)\s*:\s*[^\n.]+"
     r")\b",
     re.IGNORECASE,
+)
+
+# Phrases that must never appear as email body text (echoed style notes).
+# Do not consume the preceding sentence's terminator.
+_STYLE_NOTE_LEAK_RE = re.compile(
+    r"(?i)(?<![A-Za-z0-9])(?:^|(?<=[.!?])\s+|,\s*)(?:"
+    r"(?:just\s+)?make(?: it)?(?: more)? (?:friendly|formal|casual|professional|warm|blunt|direct)|"
+    r"(?:sound|be) more (?:friendly|formal|casual|professional|warm)|"
+    r"be warmer(?: and more friendly)?|"
+    r"(?:tone|style)\s*:\s*[^.!\n]+|"
+    r"more friendly|more formal|more casual|more professional"
+    r")\.?",
+)
+
+_FACTUAL_NOTE_HINT_RE = re.compile(
+    r"(?i)\b(?:"
+    r"i (?:was|am|have|need|prefer|want)|we (?:were|are|have|need)|"
+    r"sick|ill|deadline|meeting|lease|order|invoice|referral|number|"
+    r"because|friday|monday|tuesday|wednesday|thursday|saturday|sunday|"
+    r"yesterday|today|tomorrow|week|month|shift|assignment|extension|"
+    r"mention|include|note that|my .+ is|arrived|ordered|june|july|august|"
+    r"september|october|november|december|january|february|march|april|may"
+    r")\b|\d"
 )
 
 _TONE_STYLE_KEYWORDS = frozenset(
@@ -5172,26 +5244,55 @@ def _cleanup_note_remainder(text: str) -> str:
     cleaned = re.sub(r"^(?:and|but|also)\s+", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\s+(?:and|but|also)$", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"^than\s+(?:usual|normal)\.?$", "", cleaned, flags=re.IGNORECASE)
+    # Orphan conjunctions left after stripping a tone phrase.
+    if re.fullmatch(r"(?i)(?:and|but|also|just|please|please make)", cleaned or ""):
+        return ""
     return cleaned.strip()
 
 
+def _looks_like_factual_note(phrase: str) -> bool:
+    """True when a note fragment carries concrete content (not just style)."""
+    text = (phrase or "").strip()
+    if not text:
+        return False
+    if _FACTUAL_NOTE_HINT_RE.search(text):
+        return True
+    # Multi-word content without tone keywords is treated as factual.
+    tokens = [t for t in re.findall(r"[a-z0-9']+", text.lower()) if len(t) > 2]
+    toneish = sum(1 for t in tokens if t in _TONE_STYLE_KEYWORDS)
+    return len(tokens) >= 4 and toneish == 0
+
+
 def _looks_like_tone_style_instruction(phrase: str) -> bool:
-    lower = phrase.lower()
+    lower = phrase.lower().strip()
+    if not lower:
+        return False
+    # Pure style remnants left after partial matches ("more friendly").
+    if re.fullmatch(
+        r"(?:just\s+)?(?:more\s+)?(?:blunt|direct|formal|professional|casual|"
+        r"friendly|conversational|warm(?:er)?|informal|relaxed|humorous)",
+        lower,
+    ):
+        return True
     style_directive = bool(
         re.search(
-            r"^(?:always\s+)?(?:keep|make|write|format|use|avoid|do not|don't|never)\b",
+            r"^(?:always\s+)?(?:just\s+)?(?:keep|make|write|format|use|avoid|do not|don't|never|be|sound)\b",
             lower,
         )
     )
     style_phrase = bool(
         re.search(
             r"\b(?:blunt|direct|concise|brief|to the point|tone|style|"
-            r"formal|professional|casual|friendly|conversational)\b",
+            r"formal|professional|casual|friendly|conversational|warm(?:er)?)\b",
             lower,
         )
     )
     if style_directive and style_phrase:
         return True
+    if _looks_like_factual_note(phrase) and not (
+        style_directive and style_phrase
+    ):
+        return False
     if any(word in lower for word in _NON_TONE_STYLE_WORDS):
         if not any(word in lower for word in _TONE_STYLE_KEYWORDS):
             return False
@@ -5208,12 +5309,82 @@ def _infer_tone_from_instruction(phrase: str) -> tuple[str, str | None]:
     if any(word in lower for word in ("casual", "conversational", "informal", "relaxed")):
         voice = "relaxed and conversational" if "conversational" in lower else None
         return "casual", voice
-    if any(word in lower for word in ("friendly", "warm", "approachable")):
+    if any(word in lower for word in ("friendly", "warm", "warmer", "approachable")):
         voice = "warm and approachable" if "warm" in lower else None
         return "friendly", voice
     if any(word in lower for word in ("funny", "funnier", "humorous", "playful")):
         return "casual", "humorous and conversational"
     return "friendly", phrase.strip()
+
+
+def _extract_tone_from_note_text(
+    text: str,
+) -> tuple[str | None, str | None, str | None, str]:
+    """Pull a tone instruction out of note text; return leftover factual content."""
+    remaining = (text or "").strip()
+    if not remaining:
+        return None, None, None, ""
+
+    tone_instruction: str | None = None
+    tone_preset_override: str | None = None
+    tone_voice_override: str | None = None
+
+    if re.match(r"(?i)^(?:style|tone)\s*:", remaining):
+        # Style:/Tone: labels are never body facts — even when mixed with tips.
+        tone_instruction = remaining
+        tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+            tone_instruction
+        )
+        return tone_instruction, tone_preset_override, tone_voice_override, ""
+
+    for pattern, preset, voice in _TONE_INSTRUCTION_MAPPINGS:
+        match = pattern.search(remaining)
+        if not match:
+            continue
+        tone_instruction = match.group(0).strip()
+        tone_preset_override = preset
+        tone_voice_override = voice
+        remaining = _cleanup_note_remainder(
+            remaining[: match.start()] + remaining[match.end() :]
+        )
+        break
+
+    if tone_instruction is None:
+        match = _GENERIC_TONE_INSTRUCTION_RE.search(remaining)
+        if match and _looks_like_tone_style_instruction(match.group(0)):
+            tone_instruction = match.group(0).strip()
+            tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+                tone_instruction
+            )
+            remaining = _cleanup_note_remainder(
+                remaining[: match.start()] + remaining[match.end() :]
+            )
+
+    # Whole-note style only when there is no factual content left to preserve.
+    if tone_instruction is None and _looks_like_tone_style_instruction(remaining):
+        if not _looks_like_factual_note(remaining):
+            tone_instruction = remaining.strip()
+            tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+                tone_instruction
+            )
+            remaining = ""
+
+    # Style leftovers after a partial match must never become body facts.
+    if remaining and _looks_like_tone_style_instruction(remaining):
+        if not _looks_like_factual_note(remaining):
+            if tone_instruction is None:
+                tone_instruction = remaining.strip()
+                tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+                    tone_instruction
+                )
+            remaining = ""
+        else:
+            # Mixed remnant: strip known style leak phrases, keep facts.
+            cleaned = _STYLE_NOTE_LEAK_RE.sub(" ", remaining)
+            cleaned = _cleanup_note_remainder(cleaned)
+            remaining = cleaned
+
+    return tone_instruction, tone_preset_override, tone_voice_override, remaining
 
 
 def _parse_generation_note(notes: str) -> dict[str, Any]:
@@ -5227,49 +5398,12 @@ def _parse_generation_note(notes: str) -> dict[str, Any]:
             "has_tone_instruction": False,
         }
 
-    remaining = raw
-    tone_instruction: str | None = None
-    tone_preset_override: str | None = None
-    tone_voice_override: str | None = None
-
-    # Whole-note Style:/Tone: directives are never body facts.
-    if re.match(r"(?i)^(?:style|tone)\s*:", remaining):
-        tone_instruction = remaining
-        tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
-            tone_instruction
-        )
-        remaining = ""
-    else:
-        for pattern, preset, voice in _TONE_INSTRUCTION_MAPPINGS:
-            match = pattern.search(remaining)
-            if not match:
-                continue
-            tone_instruction = match.group(0).strip()
-            tone_preset_override = preset
-            tone_voice_override = voice
-            remaining = _cleanup_note_remainder(
-                remaining[: match.start()] + remaining[match.end() :]
-            )
-            break
-
-        if tone_instruction is None:
-            match = _GENERIC_TONE_INSTRUCTION_RE.search(remaining)
-            if match and _looks_like_tone_style_instruction(match.group(0)):
-                tone_instruction = match.group(0).strip()
-                tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
-                    tone_instruction
-                )
-                remaining = _cleanup_note_remainder(
-                    remaining[: match.start()] + remaining[match.end() :]
-                )
-
-        if tone_instruction is None and _looks_like_tone_style_instruction(remaining):
-            # A permanent writing directive is an instruction, never body content.
-            tone_instruction = remaining.strip()
-            tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
-                tone_instruction
-            )
-            remaining = ""
+    (
+        tone_instruction,
+        tone_preset_override,
+        tone_voice_override,
+        remaining,
+    ) = _extract_tone_from_note_text(raw)
 
     informational_content = remaining.strip() or None
     if informational_content:
@@ -5281,6 +5415,15 @@ def _parse_generation_note(notes: str) -> dict[str, Any]:
     # Orphan punctuation left after a truncated style match is not a fact.
     if informational_content and re.fullmatch(r"['\"`]+", informational_content):
         informational_content = None
+    # Never treat a style directive as informational body content.
+    if informational_content and _looks_like_tone_style_instruction(informational_content):
+        if not _looks_like_factual_note(informational_content):
+            if tone_instruction is None:
+                tone_instruction = informational_content
+                tone_preset_override, tone_voice_override = _infer_tone_from_instruction(
+                    tone_instruction
+                )
+            informational_content = None
     return {
         "tone_instruction": tone_instruction,
         "tone_preset_override": tone_preset_override,
