@@ -1520,6 +1520,9 @@ _SIMPLE_COMPLEXITY_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bI hope this finds you well[.!,]?\s*", re.IGNORECASE), ""),
     (re.compile(r"\bPlease be advised that\b", re.IGNORECASE), ""),
     (re.compile(r"\bI am reaching out to\b", re.IGNORECASE), "I wanted to"),
+    (re.compile(r"\bI(?:'m| am) reaching out because\b", re.IGNORECASE), ""),
+    (re.compile(r"\bI(?:'m| am) reaching out\b", re.IGNORECASE), "I wanted to ask"),
+    (re.compile(r"\bI(?:'m| am) needing\b", re.IGNORECASE), "I need"),
     (re.compile(r"\bin order to\b", re.IGNORECASE), "to"),
     (re.compile(r"\butilize\b", re.IGNORECASE), "use"),
     (re.compile(r"\bcommence\b", re.IGNORECASE), "start"),
@@ -1609,6 +1612,82 @@ def _strip_friendly_casual_hope_phrases(text: str, *, allow_good_one: bool) -> s
         if kept:
             filtered_paragraphs.append(_join_sentences(kept))
     return "\n\n".join(filtered_paragraphs)
+
+
+# Stock LLM email padding — strip for Generate on every backend (local + API).
+_GENERATE_STOCK_FILLER_SENTENCE_RE = re.compile(
+    r"(?is)^\s*(?:"
+    r"i(?:'m| am) reaching out\b.*|"
+    r"i(?:'m| am) hoping (?:we|you|to)\b.*|"
+    r"i(?:'m| am) looking forward to (?:hearing from you|your response)\b.*|"
+    r"looking forward to hearing from you\b.*|"
+    r"(?:please )?don'?t hesitate to (?:ask|reach out|contact|let me know)\b.*|"
+    r"(?:please )?(?:do not|don't) hesitate to (?:ask|reach out|contact)\b.*|"
+    r"if there(?:'s| is) any(?:thing| more information) you need(?: from me)?\b.*|"
+    r"if there(?:'s| is) anything else you need(?: from me)?\b.*|"
+    r"feel free to (?:share|reach out|ask|let me know)\b.*|"
+    r"please let me know if (?:this is something we can work out|you have any questions)\b.*|"
+    r"i(?:'m| am) looking forward to (?:hearing|working|finding)\b.*"
+    r")\s*$"
+)
+
+_GENERATE_STOCK_FILLER_PHRASE_SUBS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\bI(?:'m| am) reaching out because\s+", re.IGNORECASE), ""),
+    (re.compile(r"\bI(?:'m| am) reaching out to\s+", re.IGNORECASE), "I wanted to "),
+    (re.compile(r"\bI(?:'m| am) reaching out\b[,.]?\s*", re.IGNORECASE), ""),
+    (re.compile(r"\bI(?:'m| am) needing\b", re.IGNORECASE), "I need"),
+    (
+        re.compile(
+            r"[^.?!]*\blooking forward to hearing from you[^.?!]*[.?!]\s*",
+            re.IGNORECASE,
+        ),
+        "",
+    ),
+    (
+        re.compile(
+            r"[^.?!]*\b(?:please )?don'?t hesitate to (?:ask|reach out|contact|let me know)[^.?!]*[.?!]\s*",
+            re.IGNORECASE,
+        ),
+        "",
+    ),
+    (
+        re.compile(
+            r"[^.?!]*\bif there(?:'s| is) any(?:thing| more information) you need(?: from me)?[^.?!]*[.?!]\s*",
+            re.IGNORECASE,
+        ),
+        "",
+    ),
+)
+
+
+def _strip_generate_stock_filler(text: str) -> str:
+    """Remove generic LLM email padding that survived tone filters."""
+    if not text or not text.strip():
+        return text
+    result = text
+    for pattern, replacement in _GENERATE_STOCK_FILLER_PHRASE_SUBS:
+        result = pattern.sub(replacement, result)
+
+    paragraphs = re.split(r"\n\s*\n", result)
+    kept_paragraphs: list[str] = []
+    for paragraph in paragraphs:
+        kept_sentences: list[str] = []
+        for sentence in _split_sentences(paragraph):
+            cleaned = sentence.strip()
+            if not cleaned:
+                continue
+            if _GENERATE_STOCK_FILLER_SENTENCE_RE.match(cleaned):
+                continue
+            # Drop hollow "hoping we can discuss" closers with no seed facts.
+            if re.match(r"(?i)^i(?:'m| am) hoping we can discuss\b", cleaned):
+                continue
+            kept_sentences.append(cleaned)
+        if kept_sentences:
+            kept_paragraphs.append(_join_sentences(kept_sentences))
+    cleaned = "\n\n".join(kept_paragraphs)
+    cleaned = re.sub(r"  +", " ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
 
 def _strip_leading_warmup_sentences(
@@ -3540,24 +3619,39 @@ def _ensure_seed_key_details(
             _refresh()
         else:
             body = _append_natural_sentence(
-                body, f"I'm reaching out about {org}."
+                body, f"This is about {org}."
             )
             _refresh()
 
     # Relative timing — full sentences, not ", next week" comma tacks.
+    # Keep these on-topic; gratitude seeds should not become "This happened yesterday."
     timing_sentences = {
         "next week": "I need this next week.",
         "this week": "I need this done this week.",
         "last week": "This was for last week.",
         "next month": "I need this next month.",
         "this weekend": "I need this done this weekend.",
-        "yesterday": "This happened yesterday.",
+        "yesterday": "This was about yesterday.",
         "today": "I need this today.",
         "tomorrow": "I need this tomorrow.",
         "tonight": "I need this tonight.",
     }
+    seed_is_thanks = bool(
+        re.search(r"(?i)\b(?:thanks|thank you)\b", seed_lower)
+    )
     for phrase, sentence in timing_sentences.items():
         if phrase in seed_lower_flex and not _already(phrase):
+            if seed_is_thanks and phrase in {"yesterday", "today", "tonight"}:
+                # Prefer restating the thanks idea over a hollow timing line.
+                thanks_clause = re.sub(
+                    r"(?i)^\s*(?:thanks|thank you)\s+",
+                    "",
+                    seed_baseline.strip(),
+                ).strip(" .")
+                if thanks_clause:
+                    sentence = f"Thanks {thanks_clause}."
+                else:
+                    sentence = "Thanks again."
             body = _append_natural_sentence(body, sentence)
             _refresh()
 
@@ -3588,13 +3682,17 @@ def _ensure_seed_key_details(
                 rf"\b{month}\s+(\d{{1,2}})(?:st|nd|rd|th)?\b", seed_lower
             )
             if day_match:
-                body = _append_natural_sentence(
-                    body,
-                    f"Please use {month.title()} {int(day_match.group(1))}.",
-                )
+                dated = f"{month.title()} {int(day_match.group(1))}"
+                if re.search(r"(?i)\blease\b", seed_lower):
+                    sentence = f"My current lease ends {dated}."
+                elif re.search(r"(?i)\b(deadline|due)\b", seed_lower):
+                    sentence = f"The deadline is {dated}."
+                else:
+                    sentence = f"The date that matters is {dated}."
+                body = _append_natural_sentence(body, sentence)
             else:
                 body = _append_natural_sentence(
-                    body, f"We already covered this in {month.title()}."
+                    body, f"This is for {month.title()}."
                 )
             _refresh()
 
@@ -4231,6 +4329,7 @@ def apply_generate_hard_filters(
 
     filtered = text
     filtered = _strip_meta_instruction_commentary(filtered, format_type)
+    filtered = _strip_generate_stock_filler(filtered)
     filtered = _strip_invented_reasons_if_absent(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
@@ -4406,6 +4505,7 @@ def finalize_generate_output(
         )
     # Length pads / model text can reintroduce bad filler — strip again.
     filtered = _strip_meta_instruction_commentary(filtered, format_type)
+    filtered = _strip_generate_stock_filler(filtered)
     filtered = _strip_invented_reasons_if_absent(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
@@ -4559,8 +4659,12 @@ _GREETING_WITH_NAME_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Inline "Thanks, Name" / "Best, Name" only — never "Thanks for covering…".
+# Require a comma after the sign-off word, and a real capitalized name (IGNORECASE
+# must not make [A-Z] match "for").
 _SIGNOFF_INLINE_NAME_RE = re.compile(
-    r"^((?:Best|Thanks|Thank you|Sincerely|Regards),?)\s+([A-Z][^\n]+)$",
+    r"^((?:Best|Thanks|Thank you|Sincerely|Regards),)\s+"
+    r"((?-i:[A-Z][a-zA-Z.'-]+)(?:\s+(?-i:[A-Z][a-zA-Z.'-]+))?)\s*$",
     re.IGNORECASE,
 )
 
@@ -5520,25 +5624,13 @@ def build_generate_user_message(
     settings: dict[str, Any] | None = None,
     format_type: str = "essay",
 ) -> str:
-    """User message: seed idea, plus a compact settings reminder (API + local)."""
-    idea = (text or "").strip()
-    if not settings:
-        return idea
-    length = str(settings.get("length") or "medium").strip().lower()
-    tone = str(
-        settings.get("tone_preset") or settings.get("tone") or "friendly"
-    ).strip().lower()
-    complexity = str(settings.get("complexity") or "standard").strip().lower()
-    fmt = (format_type or "essay").strip().lower()
-    return (
-        "GENERATE SETTINGS (follow exactly — same rules for local and API models):\n"
-        f"- FORMAT: {fmt}\n"
-        f"- LENGTH: {length} (structure/amount only)\n"
-        f"- TONE: {tone} (voice only)\n"
-        f"- COMPLEXITY: {complexity} (vocabulary only)\n"
-        "Do not mix these. Changing one must not change the others.\n\n"
-        f"IDEA TO EXPAND:\n{idea}"
-    )
+    """User message is only the short idea / seed text.
+
+    Length/tone/complexity live in the system prompt for both local and API.
+    Putting settings in the user turn made cloud models write filler-heavy emails.
+    """
+    del settings, format_type  # kept for call-site compatibility
+    return (text or "").strip()
 
 
 def build_generate_prompt(
@@ -5555,10 +5647,7 @@ def build_generate_prompt(
     system = build_generate_system_instruction(
         format_type, notes=notes, context=context, settings=settings
     )
-    effective = resolve_effective_generate_settings(settings, notes)
-    user = build_generate_user_message(
-        text, settings=effective, format_type=format_type
-    )
+    user = build_generate_user_message(text)
     return f"{system}\n\n---USER MESSAGE---\n\n{user}"
 
 
@@ -5938,11 +6027,9 @@ class WritingAgent:
             context=context,
             settings=settings,
         )
-        # Same settings reminder for cloud API and local Ollama — some API models
-        # attend more to the user turn than a long system prompt.
-        user_message = build_generate_user_message(
-            text, settings=effective_settings, format_type=format_type
-        )
+        # Same system rules for cloud API and local Ollama. User turn is the idea
+        # only — settings reminders in the user message made API models pad emails.
+        user_message = build_generate_user_message(text)
         num_predict = _generate_num_predict_for_length(length)
         candidates: list[str] = []
         rejection_history: list[list[str]] = []

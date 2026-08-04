@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Any, Literal
 from urllib.parse import urlparse
 
@@ -162,30 +163,44 @@ def call_cloud_chat(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
-    try:
-        response = requests.post(
-            endpoint,
-            headers=headers,
-            json=payload,
-            timeout=CLOUD_REQUEST_TIMEOUT_SEC,
-        )
-    except requests.RequestException as exc:
-        raise CloudAIError("Could not reach AI API") from exc
+    last_error: Exception | None = None
+    for attempt in range(4):
+        try:
+            response = requests.post(
+                endpoint,
+                headers=headers,
+                json=payload,
+                timeout=CLOUD_REQUEST_TIMEOUT_SEC,
+            )
+        except requests.RequestException as exc:
+            raise CloudAIError("Could not reach AI API") from exc
 
-    if not response.ok:
-        raise CloudAIError(_sanitize_provider_error(response.status_code, response.text))
+        if response.status_code == 429 and attempt < 3:
+            delay = min(8.0, 1.5 * (2**attempt))
+            time.sleep(delay)
+            last_error = CloudAIError(
+                _sanitize_provider_error(response.status_code, response.text)
+            )
+            continue
 
-    try:
-        body = response.json()
-        choices = body.get("choices") or []
-        message = choices[0].get("message") if choices else {}
-        text = str((message or {}).get("content") or "").strip()
-    except (AttributeError, IndexError, TypeError, ValueError) as exc:
-        raise CloudAIError("AI provider returned an invalid response") from exc
+        if not response.ok:
+            raise CloudAIError(_sanitize_provider_error(response.status_code, response.text))
 
-    if not text:
-        raise CloudAIError("AI provider returned an empty response")
-    return text
+        try:
+            body = response.json()
+            choices = body.get("choices") or []
+            message = choices[0].get("message") if choices else {}
+            text = str((message or {}).get("content") or "").strip()
+        except (AttributeError, IndexError, TypeError, ValueError) as exc:
+            raise CloudAIError("AI provider returned an invalid response") from exc
+
+        if not text:
+            raise CloudAIError("AI provider returned an empty response")
+        return text
+
+    if last_error:
+        raise last_error
+    raise CloudAIError("AI provider rate limit reached. Wait a moment and try again.")
 
 
 def test_ai_connection(raw: dict[str, Any] | None) -> dict[str, Any]:

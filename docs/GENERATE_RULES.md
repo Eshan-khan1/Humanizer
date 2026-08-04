@@ -92,9 +92,9 @@ Implementation:
 
 Generate uses **one pipeline** for both backends:
 
-1. Same system prompt (`build_generate_system_instruction`)
-2. Same user message with length/tone/complexity reminder
+1. Same system prompt (`build_generate_system_instruction`) — length / tone / complexity
+2. Same user message (idea/seed only)
 3. Same temperature / top_p / max tokens
-4. Same retries, hard filters, length enforcement, and claim check
+4. Same retries, hard filters (including stock LLM filler strip), length enforcement, and claim check
 
 Only the LLM call differs (Ollama vs Groq/OpenAI-compatible). Switching Thoth to API mode must not change Generate rules.
