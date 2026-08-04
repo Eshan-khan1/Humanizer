@@ -1238,7 +1238,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         stepsCard.layer?.cornerRadius = 12
         content.addSubview(stepsCard)
 
-        let steps = NSTextField(wrappingLabelWithString: "1. Click Open Chrome Extensions\n2. Turn on Developer mode (top right)\n3. Click Load unpacked\n4. Paste the folder path (⌘V) and Open")
+        let steps = NSTextField(wrappingLabelWithString: "1. Click Open Chrome Extensions\n2. Turn on Developer mode (top right) and leave it ON\n3. Click Load unpacked\n4. Paste the folder path (⌘V) and Open\n5. If Chrome asks to disable developer extensions, click Cancel — otherwise Thoth is removed next quit")
         steps.font = .systemFont(ofSize: 12)
         steps.textColor = textColor
         steps.frame = NSRect(x: 16, y: 12, width: 356, height: 76)

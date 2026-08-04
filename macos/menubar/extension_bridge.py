@@ -44,7 +44,11 @@ def _extension_source(root: Path) -> Path | None:
 
 
 def sync_chrome_extension(root: Path | None = None) -> Path:
-    """Copy extension files into the stable Application Support install path."""
+    """Copy extension files into the stable Application Support install path.
+
+    Updates files in place (no full-folder wipe) so Chrome's unpacked install
+    keeps working across Chrome restarts.
+    """
     root = root or manager.resolve_project_root()
     src = _extension_source(root)
     dest = extension_install_dir()
@@ -63,9 +67,27 @@ def sync_chrome_extension(root: Path | None = None) -> Path:
             continue
         target = dest / item.name
         if item.is_dir():
-            if target.exists():
-                shutil.rmtree(target, ignore_errors=True)
-            shutil.copytree(item, target, ignore=ignore)
+            # Merge/update instead of delete+recreate — wiping icons/ while Chrome
+            # is closed can make Chrome drop the unpacked extension on next launch.
+            if target.exists() and target.is_dir():
+                for child in item.rglob("*"):
+                    if child.is_dir():
+                        continue
+                    rel = child.relative_to(item)
+                    if any(part.startswith(".") for part in rel.parts):
+                        continue
+                    if child.suffix in {".pyc"} or child.name == ".DS_Store":
+                        continue
+                    out = target / rel
+                    out.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(child, out)
+            else:
+                if target.exists():
+                    if target.is_dir():
+                        shutil.rmtree(target, ignore_errors=True)
+                    else:
+                        target.unlink(missing_ok=True)
+                shutil.copytree(item, target, ignore=ignore)
         else:
             shutil.copy2(item, target)
     return dest

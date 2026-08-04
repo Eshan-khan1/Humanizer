@@ -61,6 +61,15 @@ The icon changes when the server is online vs offline.
 
 After the first connect, the extension can talk to Thoth via native messaging whenever the app is running. Reload the extension after updating Thoth.
 
+**Keep it installed across Chrome quits**
+
+- Always load from  
+  `~/Library/Application Support/Thoth/ChromeExtension`  
+  (not a temporary unzip, and not the repo folder if you can avoid it)
+- Leave **Developer mode** ON
+- When Chrome shows **“Disable developer mode extensions”** after opening, click **Cancel** — choosing Disable removes Thoth until you Load unpacked again
+- Do not rely on `scripts/dev_chrome.sh` for daily use — that `--load-extension` profile only lasts for that Chrome session
+
 ## Step 5: Try it
 
 1. Confirm the menu bar icon shows the server as online
