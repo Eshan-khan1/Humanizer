@@ -309,23 +309,44 @@ def _kill_orphaned_languagetool() -> None:
             pass
 
 
-def start_server(root: Path) -> bool:
-    if check_health().server_ok:
+def start_server(root: Path, *, force: bool = False) -> bool:
+    if not force and check_health().server_ok:
         return True
 
     # Another copy of the menu-bar app may already be starting the server.
-    pid = _read_pid()
-    if pid and _pid_alive(pid):
-        deadline = time.time() + 20
-        while time.time() < deadline:
+    if not force:
+        pid = _read_pid()
+        if pid and _pid_alive(pid):
+            deadline = time.time() + 20
+            while time.time() < deadline:
+                if check_health().server_ok:
+                    return True
+                time.sleep(0.4)
             if check_health().server_ok:
                 return True
-            time.sleep(0.4)
-        if check_health().server_ok:
-            return True
 
     stop_server()
-    ensure_ollama_running()
+    # Local models need Ollama; cloud API mode can serve rewrite/generate without it.
+    try:
+        from macos.menubar.settings import cloud_ai_config
+
+        needs_ollama = cloud_ai_config() is None
+    except Exception:  # noqa: BLE001
+        needs_ollama = True
+    if needs_ollama:
+        ensure_ollama_running()
+    else:
+        # Best-effort: open Ollama if present, but don't block restart on it.
+        try:
+            if Path("/Applications/Ollama.app").is_dir():
+                subprocess.Popen(
+                    ["open", "-a", "Ollama"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                )
+        except Exception:  # noqa: BLE001
+            pass
     python = ensure_venv(root)
     log_path = logs_dir() / "server.log"
     log_file = open(log_path, "a", encoding="utf-8")  # noqa: SIM115
@@ -378,8 +399,13 @@ def start_server(root: Path) -> bool:
 
 def restart_server(root: Path) -> bool:
     stop_server()
-    time.sleep(0.6)
-    return start_server(root)
+    # Wait until the old process is actually gone so we don't early-return
+    # from start_server() while the dying server still answers /health.
+    deadline = time.time() + 6
+    while time.time() < deadline and check_health().server_ok:
+        time.sleep(0.15)
+    time.sleep(0.2)
+    return start_server(root, force=True)
 
 
 def ensure_venv(root: Path) -> Path:

@@ -2041,7 +2041,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         setApiConnectedTag(visible: false)
         aiHelpLabel?.stringValue = useApi ? "Saving and testing key…" : "Switching to local models…"
-        busy = true
+        // Don't set global `busy` — that blocked Restart while Groq verify ran.
+        saveApiButton?.isEnabled = false
         let payload: [String: Any] = [
             "provider": provider,
             "apiKey": apiKey,
@@ -2050,14 +2051,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         ]
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: data, encoding: .utf8) else {
-            busy = false
+            saveApiButton?.isEnabled = true
             aiHelpLabel?.stringValue = "Could not encode settings"
             return
         }
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let result = self?.runService(["set-ai", json]) ?? ["ok": false, "detail": "Save failed"]
             DispatchQueue.main.async {
-                self?.busy = false
+                self?.saveApiButton?.isEnabled = true
                 let ok = (result["ok"] as? Bool) ?? false
                 let detail = (result["detail"] as? String) ?? ""
                 if ok {
@@ -2344,8 +2345,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             return obj
         }
-        let text = String(data: data, encoding: .utf8) ?? ""
-        return ["ok": proc.terminationStatus == 0, "detail": text.isEmpty ? "Server offline" : text]
+        // Helpers sometimes print warnings before the JSON line — parse the last object.
+        if let text = String(data: data, encoding: .utf8) {
+            for line in text.split(whereSeparator: \.isNewline).reversed() {
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard trimmed.hasPrefix("{"),
+                      let lineData = trimmed.data(using: .utf8),
+                      let obj = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any]
+                else { continue }
+                return obj
+            }
+            return ["ok": proc.terminationStatus == 0, "detail": text.isEmpty ? "Server offline" : text]
+        }
+        return ["ok": proc.terminationStatus == 0, "detail": "Server offline"]
     }
 
     private func iconsDirectory() -> URL? {
