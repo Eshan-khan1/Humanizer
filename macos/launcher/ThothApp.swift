@@ -1238,10 +1238,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         stepsCard.layer?.cornerRadius = 12
         content.addSubview(stepsCard)
 
-        let steps = NSTextField(wrappingLabelWithString: "1. Click Open Chrome Extensions\n2. Turn on Developer mode (top right) and leave it ON\n3. Click Load unpacked\n4. Paste the folder path (⌘V) and Open\n5. If Chrome asks to disable developer extensions, click Cancel — otherwise Thoth is removed next quit")
+        let steps = NSTextField(wrappingLabelWithString: "1. Remove any old Thoth card (trash icon)\n2. Developer mode ON (top right) — leave it on\n3. Load unpacked → paste path (⌘V) → Open\n4. Must use Application Support/Thoth/ChromeExtension — not the repo folder\n5. On reopen, if Chrome says disable developer extensions → Cancel")
         steps.font = .systemFont(ofSize: 12)
         steps.textColor = textColor
-        steps.frame = NSRect(x: 16, y: 12, width: 356, height: 76)
+        steps.frame = NSRect(x: 16, y: 8, width: 356, height: 84)
         stepsCard.addSubview(steps)
 
         let path = NSTextField(labelWithString: "Path: preparing…")
@@ -1275,7 +1275,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             DispatchQueue.main.async {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(path, forType: .string)
-                self?.chromeConnectPathLabel?.stringValue = "Path copied: \(path)"
+                var label = "Path copied: \(path)"
+                if let diagnosis = result["diagnosis"] as? [String: Any],
+                   (diagnosis["wrong_path"] as? Bool) == true {
+                    label = "Wrong folder detected — path copied (use this, not the repo): \(path)"
+                }
+                self?.chromeConnectPathLabel?.stringValue = label
                 self?.chromeConnectSheet.makeKeyAndOrderFront(nil)
                 NSApp.activate(ignoringOtherApps: true)
             }
@@ -1291,7 +1296,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             DispatchQueue.main.async {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(path, forType: .string)
-                self?.chromeConnectPathLabel?.stringValue = "Path copied: \(path)"
+                var label = "Path copied: \(path)"
+                if let diagnosis = result["diagnosis"] as? [String: Any],
+                   (diagnosis["wrong_path"] as? Bool) == true {
+                    label = "Wrong folder detected — path copied (use this, not the repo): \(path)"
+                }
+                self?.chromeConnectPathLabel?.stringValue = label
             }
             let proc = Process()
             proc.executableURL = URL(fileURLWithPath: "/usr/bin/open")

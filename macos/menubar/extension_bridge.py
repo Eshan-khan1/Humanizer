@@ -12,6 +12,7 @@ import os
 import shutil
 import time
 from pathlib import Path
+from typing import Any
 
 from macos.menubar import manager
 
@@ -209,16 +210,96 @@ def prepare_extension_connection(root: Path | None = None) -> dict:
     root = root or manager.resolve_project_root()
     path = sync_chrome_extension(root)
     nm = register_native_messaging_host()
+    diagnosis = diagnose_chrome_extension_install()
+    instructions = [
+        "Chrome opened to chrome://extensions",
+        "Remove any old Thoth / Humanizer cards (trash icon)",
+        "Turn on Developer mode (top right) and leave it ON",
+        "Click Load unpacked",
+        "Paste the folder path from the clipboard (⌘V) — must be Application Support/Thoth/ChromeExtension, not the repo",
+        "If Chrome asks to disable developer extensions when you reopen, click Cancel",
+    ]
+    if diagnosis.get("wrong_path"):
+        instructions.insert(
+            1,
+            "WARNING: Chrome currently points at a temporary/repo folder — that is why Thoth disappears after quit. Reload from the path below.",
+        )
     return {
         "ok": True,
         "extension_path": str(path),
         "extension_id": EXTENSION_ID,
         "native_messaging": nm,
         "chrome_extensions_url": "chrome://extensions",
-        "instructions": [
-            "Chrome opened to chrome://extensions",
-            "Turn on Developer mode (top right)",
-            "Click Load unpacked",
-            "Paste the folder path from the clipboard (⌘V) and Open",
-        ],
+        "instructions": instructions,
+        "diagnosis": diagnosis,
+    }
+
+
+def diagnose_chrome_extension_install() -> dict:
+    """Detect unpacked Thoth installs that use an unstable folder path."""
+    stable = str(extension_install_dir().resolve())
+    chrome_root = Path.home() / "Library" / "Application Support" / "Google" / "Chrome"
+    installs: list[dict[str, Any]] = []
+    wrong: list[dict[str, Any]] = []
+    if not chrome_root.is_dir():
+        return {
+            "stable_path": stable,
+            "wrong_path": False,
+            "installs": [],
+            "developer_mode": None,
+        }
+
+    developer_mode: bool | None = None
+    for secure in chrome_root.glob("*/Secure Preferences"):
+        try:
+            data = json.loads(secure.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        ext = data.get("extensions") or {}
+        ui = ext.get("ui") or {}
+        if "developer_mode" in ui and developer_mode is None:
+            developer_mode = bool(ui.get("developer_mode"))
+        settings = ext.get("settings") or {}
+        for eid, info in settings.items():
+            if not isinstance(info, dict):
+                continue
+            path = str(info.get("path") or "").strip()
+            if not path:
+                continue
+            name = str((info.get("manifest") or {}).get("name") or "")
+            is_thoth = (
+                eid == EXTENSION_ID
+                or "thoth" in name.lower()
+                or "humanizer" in name.lower()
+                or "chromeextension" in path.lower()
+                or (
+                    "/extension" in path.lower()
+                    and ("thoth" in path.lower() or "humanizer" in path.lower())
+                )
+            )
+            if not is_thoth and info.get("location") != 4:
+                continue
+            if not is_thoth:
+                continue
+            try:
+                resolved = str(Path(path).expanduser().resolve())
+            except OSError:
+                resolved = path
+            entry = {
+                "profile": secure.parent.name,
+                "extension_id": eid,
+                "path": resolved,
+                "location": info.get("location"),
+                "state": info.get("state"),
+            }
+            installs.append(entry)
+            if resolved != stable:
+                wrong.append(entry)
+
+    return {
+        "stable_path": stable,
+        "wrong_path": bool(wrong),
+        "wrong_installs": wrong,
+        "installs": installs,
+        "developer_mode": developer_mode,
     }

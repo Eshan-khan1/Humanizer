@@ -103,7 +103,9 @@ Open the latest GitHub release and download the Mac app:
 2. Go to `chrome://extensions`
 3. Turn on **Developer mode**
 4. Click **Load unpacked**
-5. Select the extension folder the app provided (or the unzipped release folder)
+5. Select this folder (paste with ⌘V after Connect Chrome Extension…):  
+   `~/Library/Application Support/Thoth/ChromeExtension`  
+   Do **not** load `Documents/…/Humanizer/extension` or a random unzip — Chrome drops those after quit.
 
 More detail: **[docs/INSTALL_MAC.md](docs/INSTALL_MAC.md)**
 
