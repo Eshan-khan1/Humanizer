@@ -1624,18 +1624,19 @@ def _strip_friendly_casual_hope_phrases(text: str, *, allow_good_one: bool) -> s
 
 # Stock LLM email padding — strip for Generate on every backend (local + API).
 _GENERATE_STOCK_FILLER_SENTENCE_RE = re.compile(
-    r"(?is)^\s*(?:"
+    r"(?i)^\s*(?:"
     r"i(?:'m| am) reaching out\b.*|"
     r"i(?:'m| am) hoping (?:we|you|to)\b.*|"
-    r"i(?:'m| am) looking forward to (?:hearing from you|your response)\b.*|"
-    r"looking forward to hearing from you\b.*|"
+    r"i(?:'m| am) looking forward to\b.*|"
+    r"looking forward to\b.*|"
     r"(?:please )?don'?t hesitate to (?:ask|reach out|contact|let me know)\b.*|"
     r"(?:please )?(?:do not|don't) hesitate to (?:ask|reach out|contact)\b.*|"
     r"if there(?:'s| is) any(?:thing| more information) you need(?: from me)?\b.*|"
     r"if there(?:'s| is) anything else you need(?: from me)?\b.*|"
+    r"if you need any(?:thing| more information| information)(?: from me)?\b.*|"
     r"feel free to (?:share|reach out|ask|let me know)\b.*|"
     r"please let me know if (?:this is something we can work out|you have any questions)\b.*|"
-    r"i(?:'m| am) looking forward to (?:hearing|working|finding)\b.*"
+    r"i appreciate your understanding(?: and flexibility)?(?: in this matter)?\b.*"
     r")\s*$"
 )
 
@@ -1646,21 +1647,28 @@ _GENERATE_STOCK_FILLER_PHRASE_SUBS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bI(?:'m| am) needing\b", re.IGNORECASE), "I need"),
     (
         re.compile(
-            r"[^.?!]*\blooking forward to hearing from you[^.?!]*[.?!]\s*",
+            r"[^\n.?!]*\blooking forward to\b[^\n.?!]*[.?!][ \t]*",
             re.IGNORECASE,
         ),
         "",
     ),
     (
         re.compile(
-            r"[^.?!]*\b(?:please )?don'?t hesitate to (?:ask|reach out|contact|let me know)[^.?!]*[.?!]\s*",
+            r"[^\n.?!]*\b(?:please )?don'?t hesitate to (?:ask|reach out|contact|let me know)[^\n.?!]*[.?!][ \t]*",
             re.IGNORECASE,
         ),
         "",
     ),
     (
         re.compile(
-            r"[^.?!]*\bif there(?:'s| is) any(?:thing| more information) you need(?: from me)?[^.?!]*[.?!]\s*",
+            r"[^\n.?!]*\bif there(?:'s| is) any(?:thing| more information) you need(?: from me)?[^\n.?!]*[.?!][ \t]*",
+            re.IGNORECASE,
+        ),
+        "",
+    ),
+    (
+        re.compile(
+            r"[^\n.?!]*\bif you need any(?:thing| more information| information)(?: from me)?[^\n.?!]*[.?!][ \t]*",
             re.IGNORECASE,
         ),
         "",
@@ -1679,6 +1687,15 @@ def _strip_generate_stock_filler(text: str) -> str:
     paragraphs = re.split(r"\n\s*\n", result)
     kept_paragraphs: list[str] = []
     for paragraph in paragraphs:
+        # Keep greeting / sign-off blocks intact (don't sentence-join them).
+        first_line = paragraph.strip().split("\n", 1)[0].strip()
+        if re.match(
+            r"(?i)^(?:subject:|dear\b|hi\b|hey\b|hello\b|best\b|thanks\b|"
+            r"thank you\b|sincerely\b|regards\b|cheers\b)",
+            first_line,
+        ):
+            kept_paragraphs.append(paragraph.strip())
+            continue
         kept_sentences: list[str] = []
         for sentence in _split_sentences(paragraph):
             cleaned = sentence.strip()
