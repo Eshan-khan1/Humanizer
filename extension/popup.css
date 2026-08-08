@@ -6,13 +6,24 @@
   box-sizing: border-box;
 }
 
+html {
+  margin: 0;
+  padding: 0;
+  width: 320px;
+  max-width: 320px;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans);
   margin: 0;
   padding: 0;
   width: 320px;
+  min-width: 320px;
+  max-width: 320px;
   max-height: 540px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: var(--hz-text);
   background: var(--hz-bg);
   font-size: 0.875rem;
@@ -131,6 +142,8 @@ html[data-theme="light"] .theme-icon--sun {
 #ai-view,
 #generate-view {
   padding: 16px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .settings-top {
@@ -448,10 +461,12 @@ h1 {
 
 .toggle-label {
   flex: 1;
+  min-width: 0;
   font-size: 0.875rem;
   color: var(--hz-text);
   line-height: 1.35;
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .toggle {
@@ -591,6 +606,7 @@ h1 {
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  max-width: 100%;
   margin: 0 0 10px;
   padding: 14px;
   border: 1px solid var(--hz-border);
@@ -632,6 +648,8 @@ h1 {
   font-size: 0.75rem;
   color: var(--hz-text-muted);
   line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .settings-nav-chevron {
