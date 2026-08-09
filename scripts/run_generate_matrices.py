@@ -79,21 +79,34 @@ def post(path: str, payload: dict) -> tuple[int, dict, float]:
         method="POST",
     )
     started = time.time()
-    try:
-        with urllib.request.urlopen(req, timeout=300) as resp:
-            return (
-                resp.status,
-                json.loads(resp.read().decode()),
-                round((time.time() - started) * 1000, 1),
-            )
-    except urllib.error.HTTPError as exc:
+    last_body: dict = {}
+    last_code = 0
+    for attempt in range(5):
         try:
-            body = json.loads(exc.read().decode())
-        except Exception:
-            body = {"detail": str(exc)}
-        return exc.code, body, round((time.time() - started) * 1000, 1)
-    except Exception as exc:
-        return 0, {"detail": str(exc)}, round((time.time() - started) * 1000, 1)
+            with urllib.request.urlopen(req, timeout=300) as resp:
+                return (
+                    resp.status,
+                    json.loads(resp.read().decode()),
+                    round((time.time() - started) * 1000, 1),
+                )
+        except urllib.error.HTTPError as exc:
+            try:
+                body = json.loads(exc.read().decode())
+            except Exception:
+                body = {"detail": str(exc)}
+            last_body, last_code = body, exc.code
+            detail = str(body.get("detail") or "").lower()
+            if exc.code in {429, 502} and "rate limit" in detail and attempt < 4:
+                time.sleep(min(20.0, 2.5 * (2**attempt)))
+                continue
+            return exc.code, body, round((time.time() - started) * 1000, 1)
+        except Exception as exc:
+            last_body, last_code = {"detail": str(exc)}, 0
+            if attempt < 4:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            return 0, last_body, round((time.time() - started) * 1000, 1)
+    return last_code, last_body, round((time.time() - started) * 1000, 1)
 
 
 def greeting_line(text: str) -> str:
@@ -371,8 +384,12 @@ def run_file(
     stability = {"clean": 0, "flaky": 0, "always": 0}
 
     for index, case in enumerate(cases, 1):
+        if index > 1:
+            time.sleep(1.25)
         runs: list[dict] = []
         for run_index in range(1, repeats + 1):
+            if run_index > 1:
+                time.sleep(1.0)
             run = _run_case_once(case)
             runs.append(run)
             warn_bit = f" CLAIM {run['warnings'][0]}" if run["warnings"] else ""
