@@ -219,7 +219,8 @@ class GenerateProfile(BaseModel):
     permanent_note: str = Field("", alias="permanentNote", max_length=MAX_NOTES_CHARS)
     permanent_notes: str = Field("", alias="permanentNotes", max_length=MAX_NOTES_CHARS)
 
-    model_config = {"populate_by_name": True}
+    # Keep member ID / account / unit / policy / etc. for generate fidelity.
+    model_config = {"populate_by_name": True, "extra": "allow"}
 
 
 class GenerateSettings(BaseModel):

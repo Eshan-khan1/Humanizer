@@ -1661,6 +1661,13 @@ _GENERATE_STOCK_FILLER_PHRASE_SUBS: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
+            r"[^\n.?!]*\b(?:please )?do not hesitate to (?:ask|reach out|contact|let me know)[^\n.?!]*[.?!][ \t]*",
+            re.IGNORECASE,
+        ),
+        "",
+    ),
+    (
+        re.compile(
             r"[^\n.?!]*\bif there(?:'s| is) any(?:thing| more information) you need(?: from me)?[^\n.?!]*[.?!][ \t]*",
             re.IGNORECASE,
         ),
@@ -3522,8 +3529,9 @@ def _strip_seed_ensure_scaffolds(body: str) -> str:
     if not body.strip():
         return body
     # Standalone scaffold sentences / paragraphs.
+    # Do NOT strip "This is for …" — seed-ensure uses that for dates/people/facts.
     body = re.sub(
-        r"(?i)(?:\n\s*)*(?:This concerns|This relates to|This involves|This is for|"
+        r"(?i)(?:\n\s*)*(?:This concerns|This relates to|This involves|"
         r"The timing is|The amount is)[^.!?\n]*[.!]?\s*",
         "\n\n",
         body,
@@ -3531,7 +3539,7 @@ def _strip_seed_ensure_scaffolds(body: str) -> str:
     # Comma-tacked scaffolds mid-sentence (…, this concerns the buyer, …).
     body = re.sub(
         r"(?i)(?:,\s*)?(?:this concerns(?:\s+the)?|this relates to|this involves|"
-        r"this is for|the timing is|the amount is)\s+[^,.!?]+",
+        r"the timing is|the amount is)\s+[^,.!?]+",
         "",
         body,
     )
@@ -3817,6 +3825,8 @@ def _ensure_seed_key_details(
         "end of the month", "overcharged twice", "standups", "standup",
         "dentist", "gift", "shifts", "boundaries", "cracked", "refund",
         "sick", "heater", "blender", "family emergency", "investor call",
+        "grad school", "father", "warehouse flooded", "loading dock flooded",
+        "side dish",
     ):
         if token in seed_lower_flex and not _already(token):
             if token == "plumber":
@@ -3847,6 +3857,14 @@ def _ensure_seed_key_details(
                 body = _append_natural_sentence(
                     body, "This is about the flooded basement."
                 )
+            elif token == "warehouse flooded":
+                body = _append_natural_sentence(
+                    body, "The warehouse flooded."
+                )
+            elif token == "loading dock flooded":
+                body = _append_natural_sentence(
+                    body, "The loading dock flooded."
+                )
             elif token == "three reminders":
                 body = _append_natural_sentence(
                     body, "This is after three reminders."
@@ -3865,7 +3883,7 @@ def _ensure_seed_key_details(
                 )
             elif token == "dentist":
                 body = _append_natural_sentence(
-                    body, "This is for a dentist procedure."
+                    body, "Nora has a dentist procedure."
                 )
             elif token == "gift":
                 body = _append_natural_sentence(
@@ -3900,6 +3918,18 @@ def _ensure_seed_key_details(
             elif token == "investor call":
                 body = _append_natural_sentence(
                     body, "I missed the investor call."
+                )
+            elif token == "grad school":
+                body = _append_natural_sentence(
+                    body, "This is about grad school."
+                )
+            elif token == "father":
+                body = _append_natural_sentence(
+                    body, "I am sorry about your father."
+                )
+            elif token == "side dish":
+                body = _append_natural_sentence(
+                    body, "Please bring a side dish."
                 )
             else:
                 body = _append_natural_sentence(body, f"This is about the {token}.")
