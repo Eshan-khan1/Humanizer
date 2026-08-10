@@ -44,6 +44,14 @@ FAB = [
     "wedding cake",
     "this concerns a three",
     "this concerns a this",
+    "looking forward to",
+    "don't hesitate",
+    "do not hesitate",
+    "reaching out",
+    "hope this finds you",
+    "please use august",
+    "this happened yesterday",
+    "make more friendly",
 ]
 SCAFFOLD = re.compile(
     r"(?i)\b(this concerns|the timing is|this relates to|this involves|the amount is)\b"
@@ -81,7 +89,7 @@ def post(path: str, payload: dict) -> tuple[int, dict, float]:
     started = time.time()
     last_body: dict = {}
     last_code = 0
-    for attempt in range(5):
+    for attempt in range(8):
         try:
             with urllib.request.urlopen(req, timeout=300) as resp:
                 return (
@@ -96,14 +104,21 @@ def post(path: str, payload: dict) -> tuple[int, dict, float]:
                 body = {"detail": str(exc)}
             last_body, last_code = body, exc.code
             detail = str(body.get("detail") or "").lower()
-            if exc.code in {429, 502} and "rate limit" in detail and attempt < 4:
-                time.sleep(min(20.0, 2.5 * (2**attempt)))
+            rate_limited = exc.code in {429, 413, 500, 502, 503} and (
+                "rate limit" in detail
+                or "try again" in detail
+                or "tokens per" in detail
+                or "request too large" in detail
+                or exc.code == 429
+            )
+            if rate_limited and attempt < 7:
+                time.sleep(min(120.0, 15.0 * (2**attempt)))
                 continue
             return exc.code, body, round((time.time() - started) * 1000, 1)
         except Exception as exc:
             last_body, last_code = {"detail": str(exc)}, 0
-            if attempt < 4:
-                time.sleep(1.5 * (attempt + 1))
+            if attempt < 7:
+                time.sleep(2.0 * (attempt + 1))
                 continue
             return 0, last_body, round((time.time() - started) * 1000, 1)
     return last_code, last_body, round((time.time() - started) * 1000, 1)
@@ -191,6 +206,27 @@ def flatten_cases(raw: dict | list, version: int) -> list[dict]:
     return flat
 
 
+def _entity_present(entity: str, text_lower: str) -> bool:
+    """Loose match for entities that commonly change formatting (times, am/pm)."""
+    needle = (entity or "").lower().strip()
+    if not needle:
+        return True
+    if needle in text_lower:
+        return True
+    # 8am ↔ 8 am ↔ 8:00 am ↔ 8 AM
+    time_match = re.fullmatch(r"(\d{1,2})\s*([ap]m)", needle)
+    if time_match:
+        hour, meridiem = time_match.group(1), time_match.group(2)
+        if re.search(rf"\b{hour}(?::00)?\s*{meridiem}\b", text_lower):
+            return True
+    # Collapse punctuation/spacing: "214 Willow" vs "214, Willow"
+    compact_needle = re.sub(r"[\s,]+", " ", needle)
+    compact_text = re.sub(r"[\s,]+", " ", text_lower)
+    if compact_needle in compact_text:
+        return True
+    return False
+
+
 def evaluate(
     case: dict, status: int, payload: dict, output: str
 ) -> tuple[list[str], list[str], list[str]]:
@@ -219,19 +255,19 @@ def evaluate(
             len([part for part in re.split(r"\n\s*\n", text) if part.strip()]),
         )
     for entity in checks.get("must_include_entities") or []:
-        if entity.lower() not in lower:
+        if not _entity_present(entity, lower):
             issues.append(f"missing entity: {entity}")
     for group in checks.get("must_include_any") or []:
-        if not any(option.lower() in lower for option in group):
+        if not any(_entity_present(option, lower) for option in group):
             issues.append(f"missing any of: {group}")
     for phrase in checks.get("forbid_phrases") or []:
         if phrase.lower() in lower:
             issues.append(f"forbidden phrase: {phrase}")
     for fact in checks.get("must_preserve_facts") or []:
-        if fact.lower() not in lower:
+        if not _entity_present(fact, lower):
             issues.append(f"missing preserved fact: {fact}")
     for actor in checks.get("must_preserve_actors") or []:
-        if actor.lower() not in lower:
+        if not _entity_present(actor, lower):
             issues.append(f"missing preserved actor: {actor}")
     if SCAFFOLD.search(text):
         issues.append(f"scaffold leak: {SCAFFOLD.search(text).group(0)!r}")
@@ -271,10 +307,25 @@ def evaluate(
 
     # Known catastrophic bleed phrases still surface as warnings if somehow missed.
     note = (settings.get("permanent_note") or "").lower()
+    stock_filler = {
+        "looking forward to",
+        "don't hesitate",
+        "do not hesitate",
+        "reaching out",
+        "hope this finds you",
+        "please use august",
+        "this happened yesterday",
+        "make more friendly",
+        "factual:",
+        "style:",
+    }
     for marker in FAB:
         if marker in lower and marker not in seed and marker not in note:
             msg = f"known bleed phrase: {marker}"
-            if msg not in warnings and f"forbidden phrase: {marker}" not in issues:
+            if marker in stock_filler:
+                if f"forbidden phrase: {marker}" not in issues and msg not in issues:
+                    issues.append(msg)
+            elif msg not in warnings and f"forbidden phrase: {marker}" not in issues:
                 warnings.append(msg)
     return issues, warnings, claim_lines
 
@@ -304,10 +355,16 @@ def _run_case_once(case: dict) -> dict:
     }
     feature = case.get("feature") or "generate"
     idea = case.get("idea") or case.get("original_text") or ""
+    notes = str(case.get("notes") or "").strip()
     if feature == "generate":
         status, body, ms = post(
             "/generate",
-            {"text": idea, "format": "email", "settings": settings},
+            {
+                "text": idea,
+                "format": "email",
+                "notes": notes,
+                "settings": settings,
+            },
         )
         out = body.get("generated") if status == 200 else ""
     else:
@@ -385,11 +442,11 @@ def run_file(
 
     for index, case in enumerate(cases, 1):
         if index > 1:
-            time.sleep(1.25)
+            time.sleep(12.0)
         runs: list[dict] = []
         for run_index in range(1, repeats + 1):
             if run_index > 1:
-                time.sleep(1.0)
+                time.sleep(2.0)
             run = _run_case_once(case)
             runs.append(run)
             warn_bit = f" CLAIM {run['warnings'][0]}" if run["warnings"] else ""

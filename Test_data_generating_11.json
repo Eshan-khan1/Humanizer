@@ -1,0 +1,159 @@
+{
+  "description": "Generate regression set 11 — entity retention stress (addresses, clock times, org ampersands, babysitter names, profile member IDs, multi-fact seeds). API-focused; no idea overlap with sets 2–10.",
+  "version": "11",
+  "cases": [
+    {
+      "id": "11.1",
+      "feature": "generate",
+      "scenario": "Street address + early morning construction",
+      "idea": "Tell the HOA that the crew at 88 Cedar keeps jackhammering before 7am on Sundays.",
+      "settings": {
+        "length": "medium",
+        "tone": "blunt",
+        "complexity": "standard",
+        "profile": "name: Lex Ortega, address: 90 Cedar",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["88 Cedar", "7am", "Sundays"],
+        "forbid_phrases": ["looking forward", "don't hesitate", "reaching out", "I hope this finds"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "11.2",
+      "feature": "generate",
+      "scenario": "Ampersand org + cracked item refund",
+      "idea": "complain to customer service at Pine & Needle about a cracked picture frame, order #PN-4410, want a refund",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Casey Bloom",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Pine & Needle", "#PN-4410", "cracked", "refund"],
+        "forbid_phrases": ["looking forward", "don't hesitate", "Style:"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "11.3",
+      "feature": "generate",
+      "scenario": "Babysitter cancel keeps name + sick reason",
+      "idea": "cancel Tuesday evening babysitting with Harper, the kids are sick, ask to try again next week",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Morgan Lee",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Harper", "Tuesday", "sick", "next week"],
+        "forbid_phrases": ["looking forward", "don't hesitate", "reaching out"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "11.4",
+      "feature": "generate",
+      "scenario": "Profile member ID must appear on cancel",
+      "idea": "cancel my membership at Peak Motion Gym, relocating end of the month",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "simple",
+        "profile": "name: Drew Kim, member ID: PM-22018",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Peak Motion Gym", "PM-22018", "end of the month"],
+        "forbid_phrases": ["looking forward", "don't hesitate", "Please use"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "11.5",
+      "feature": "generate",
+      "scenario": "Thanks covering retains yesterday without filler",
+      "idea": "Thanks for covering the late desk shift yesterday.",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Eshan",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["covering", "shift", "yesterday"],
+        "forbid_phrases": ["This happened yesterday", "looking forward", "don't hesitate", "reaching out"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "11.6",
+      "feature": "generate",
+      "scenario": "Style note + fact note mixed without labels",
+      "idea": "need two more days on the lab writeup",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "simple",
+        "profile": "name: Eshan Khan",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["migraine", "two more days"],
+        "forbid_phrases": ["make more friendly", "Style:", "Factual:", "looking forward", "don't hesitate"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      },
+      "notes": "make more friendly. I had a migraine for two days"
+    },
+    {
+      "id": "11.7",
+      "feature": "generate",
+      "scenario": "Three reminders + dollar amount retained",
+      "idea": "tell roommate Nico he still owes $215 for groceries and this is after three reminders",
+      "settings": {
+        "length": "short",
+        "tone": "blunt",
+        "complexity": "simple",
+        "profile": "name: Quinn Adler",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Nico", "$215", "three reminders"],
+        "forbid_phrases": ["looking forward", "don't hesitate", "no worries"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "11.8",
+      "feature": "generate",
+      "scenario": "Permanent date weave without Please use",
+      "idea": "Email building management about renewing my parking permit.",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Eshan Khan",
+        "permanent_note": "Factual: my current permit expires September 15."
+      },
+      "checks": {
+        "must_include_entities": ["parking", "September 15"],
+        "forbid_phrases": ["Please use September", "looking forward", "don't hesitate", "Factual:"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    }
+  ]
+}

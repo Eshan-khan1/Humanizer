@@ -112,9 +112,14 @@ def _sanitize_provider_error(status_code: int, body: str) -> str:
     if status_code == 429:
         return "AI provider rate limit reached. Wait a moment and try again."
     if status_code >= 500:
+        lower_body = (body or "").lower()
+        if "rate limit" in lower_body or "tokens per" in lower_body or "request too large" in lower_body:
+            return "AI provider rate limit reached. Wait a moment and try again."
         return "AI provider is temporarily unavailable. Try again later."
     snippet = body.strip().replace("\n", " ")[:160]
     lower = snippet.lower()
+    if "rate limit" in lower or "tokens per" in lower or "request too large" in lower:
+        return "AI provider rate limit reached. Wait a moment and try again."
     if "model" in lower and ("not found" in lower or "does not exist" in lower):
         return "AI model is not available for this key. Leave model blank or set a valid model."
     return snippet or f"AI provider request failed ({status_code})"
@@ -176,12 +181,23 @@ def call_cloud_chat(
             raise CloudAIError("Could not reach AI API") from exc
 
         if response.status_code == 429 and attempt < 3:
-            delay = min(8.0, 1.5 * (2**attempt))
+            delay = min(75.0, 15.0 * (2**attempt))
             time.sleep(delay)
             last_error = CloudAIError(
                 _sanitize_provider_error(response.status_code, response.text)
             )
             continue
+
+        # Groq often returns 413/500 with "tokens per minute" / "Request too large".
+        if response.status_code in {413, 500, 502, 503} and attempt < 3:
+            lower = (response.text or "").lower()
+            if "tokens per" in lower or "request too large" in lower or "rate limit" in lower:
+                delay = min(75.0, 15.0 * (2**attempt))
+                time.sleep(delay)
+                last_error = CloudAIError(
+                    _sanitize_provider_error(429, response.text)
+                )
+                continue
 
         if not response.ok:
             raise CloudAIError(_sanitize_provider_error(response.status_code, response.text))

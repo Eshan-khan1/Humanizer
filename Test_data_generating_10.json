@@ -1,0 +1,300 @@
+{
+  "description": "Generate regression set 10 — API-focused. New scenarios targeting stock filler, thanks-email retention, style-note non-leak, permanent-note weave, short seed fidelity, and mixed tone+fact notes. No overlap with sets 2–9 ideas.",
+  "version": "10",
+  "cases": [
+    {
+      "id": "10.1",
+      "feature": "generate",
+      "scenario": "Short thanks must keep covering/shift/yesterday",
+      "idea": "Thanks for covering my shift yesterday.",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Eshan",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["covering", "shift", "yesterday"],
+        "forbid_phrases": [
+          "This happened yesterday",
+          "looking forward",
+          "don't hesitate",
+          "reaching out"
+        ],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.2",
+      "feature": "generate",
+      "scenario": "Style note make more friendly must not appear in body",
+      "idea": "Need to move Friday's deadline to Monday.",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Eshan Khan",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Friday", "Monday"],
+        "forbid_phrases": [
+          "make more friendly",
+          "looking forward",
+          "don't hesitate",
+          "reaching out"
+        ],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      },
+      "notes": "make more friendly"
+    },
+    {
+      "id": "10.3",
+      "feature": "generate",
+      "scenario": "Mixed tone+fact note: friendly voice + sick fact",
+      "idea": "need an extension on the assignment",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "simple",
+        "profile": "name: Eshan Khan",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["sick", "extension"],
+        "forbid_phrases": [
+          "make more friendly",
+          "looking forward",
+          "don't hesitate",
+          "Style:",
+          "Factual:"
+        ],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      },
+      "notes": "make more friendly. I was sick for 2 days"
+    },
+    {
+      "id": "10.4",
+      "feature": "generate",
+      "scenario": "Lease renewal with permanent date August 31",
+      "idea": "Email my landlord about renewing my lease.",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Eshan Khan",
+        "permanent_note": "My current lease ends August 31st."
+      },
+      "checks": {
+        "must_include_entities": ["lease", "August 31"],
+        "forbid_phrases": [
+          "Please use August",
+          "looking forward",
+          "don't hesitate",
+          "reaching out"
+        ],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.5",
+      "feature": "generate",
+      "scenario": "No stock filler on friendly sick extension",
+      "idea": "I was sick for 2 days and need an extension on the assignment.",
+      "settings": {
+        "length": "medium",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Eshan Khan",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["sick", "2 days", "extension"],
+        "forbid_phrases": [
+          "looking forward",
+          "don't hesitate",
+          "reaching out",
+          "hope this finds",
+          "I appreciate your understanding and flexibility"
+        ],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.6",
+      "feature": "generate",
+      "scenario": "Casual meeting reschedule keeps 3pm and Thursday",
+      "idea": "Can we push our 3pm sync to Thursday?",
+      "settings": {
+        "length": "medium",
+        "tone": "casual",
+        "complexity": "standard",
+        "profile": "name: Eshan",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["3pm", "Thursday"],
+        "forbid_phrases": [
+          "looking forward",
+          "don't hesitate",
+          "feel free to share",
+          "anything else you need from me"
+        ],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.7",
+      "feature": "generate",
+      "scenario": "Blunt permanent style must not print Style label",
+      "idea": "tell vendor Skye at Redline Print that proof RP-88 is late and I need it by noon tomorrow",
+      "settings": {
+        "length": "short",
+        "tone": "friendly",
+        "complexity": "simple",
+        "profile": "name: Avery Chen",
+        "permanent_note": "Style: blunt, no softening language, get to the point immediately"
+      },
+      "checks": {
+        "must_include_entities": ["Skye", "Redline Print", "RP-88", "noon", "tomorrow"],
+        "must_greeting_name": "Skye",
+        "forbid_phrases": [
+          "Style:",
+          "I hope this finds you well",
+          "looking forward",
+          "don't hesitate",
+          "I understand this may be"
+        ],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.8",
+      "feature": "generate",
+      "scenario": "Referral number fact note woven, not dumped as label",
+      "idea": "ask HR lead Jordan for a copy of my benefits summary",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Riley Quinn",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Jordan", "benefits", "REF-88291"],
+        "must_greeting_name": "Jordan",
+        "forbid_phrases": ["Factual:", "Note:", "looking forward", "don't hesitate"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      },
+      "notes": "My referral number is REF-88291"
+    },
+    {
+      "id": "10.9",
+      "feature": "generate",
+      "scenario": "Short formal keeps Friday Monday without Sir/Madam invention of reason",
+      "idea": "Need to move Friday's deadline to Monday.",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Eshan Khan, title: Product Designer",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Friday", "Monday"],
+        "forbid_phrases": [
+          "unforeseen circumstances",
+          "looking forward",
+          "don't hesitate",
+          "reaching out",
+          "This happened"
+        ],
+        "must_not_invent": ["family emergency", "medical leave"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.10",
+      "feature": "generate",
+      "scenario": "Named recipient professor + reason only from seed",
+      "idea": "ask Professor Lang for an extension because I was in the hospital for two days",
+      "settings": {
+        "length": "medium",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Sam Okonkwo",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Lang", "extension", "hospital", "two days"],
+        "must_greeting_name": "Lang",
+        "forbid_phrases": [
+          "Dear Sir or Madam",
+          "unforeseen circumstances",
+          "looking forward",
+          "don't hesitate",
+          "workload"
+        ],
+        "must_not_invent": ["family emergency", "funeral"],
+        "min_paragraphs": 2,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.11",
+      "feature": "generate",
+      "scenario": "Invoice amount and ID must survive short formal",
+      "idea": "remind accounting contact Mira that invoice INV-4402 for $875 is unpaid since March 3",
+      "settings": {
+        "length": "short",
+        "tone": "formal",
+        "complexity": "standard",
+        "profile": "name: Theo Barr",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["Mira", "INV-4402", "$875", "March 3"],
+        "must_greeting_name": "Mira",
+        "forbid_phrases": ["looking forward", "don't hesitate", "reaching out"],
+        "must_not_invent": ["late fee", "collections"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    },
+    {
+      "id": "10.12",
+      "feature": "generate",
+      "scenario": "Casual no Dear Sir or Madam; keep bakery and Saturday",
+      "idea": "tell the bakery on Oak Street I need the birthday cake ready by Saturday noon",
+      "settings": {
+        "length": "short",
+        "tone": "casual",
+        "complexity": "simple",
+        "profile": "name: Jess Park",
+        "permanent_note": ""
+      },
+      "checks": {
+        "must_include_entities": ["bakery", "Oak Street", "cake", "Saturday", "noon"],
+        "forbid_phrases": [
+          "Dear Sir or Madam",
+          "looking forward",
+          "don't hesitate",
+          "Sincerely"
+        ],
+        "must_not_invent": ["chocolate", "vanilla", "tier"],
+        "min_paragraphs": 1,
+        "signature_placeholder_only": true
+      }
+    }
+  ]
+}

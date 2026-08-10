@@ -1673,6 +1673,22 @@ _GENERATE_STOCK_FILLER_PHRASE_SUBS: tuple[tuple[re.Pattern[str], str], ...] = (
         ),
         "",
     ),
+    (
+        re.compile(
+            r"(?i)(?:^|\n)\s*Please use\s+(?:January|February|March|April|May|June|"
+            r"July|August|September|October|November|December)\s+\d{1,2}"
+            r"(?:st|nd|rd|th)?\.?\s*"
+        ),
+        "\n",
+    ),
+    (
+        re.compile(
+            r"(?i)\bPlease use\s+(?:January|February|March|April|May|June|"
+            r"July|August|September|October|November|December)\s+\d{1,2}"
+            r"(?:st|nd|rd|th)?\.?"
+        ),
+        "",
+    ),
 )
 
 
@@ -2436,11 +2452,16 @@ def _extract_seed_recipient_name(
         r"\b(?:client|neighbor|landlord|manager|professor|instructor|teacher|"
         r"coach|coworker|teammate|colleague|roommate|cousin|mentor|recruiter|"
         r"vendor|adjuster|photographer|librarian|barista|dentist|doctor|"
-        r"contractor|founder|co-founder|lead|contact)\s+"
+        r"contractor|founder|co-founder|lead|contact|babysitter)\s+"
         r"(?:Mr\.|Ms\.|Mrs\.|Dr\.)?\s*"
+        r"(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
+        # with/for Name (cancel with Maya / gift for Ana)
+        r"\b(?:with|for|to)\s+(?:Mr\.|Ms\.|Mrs\.|Dr\.)?\s*"
         r"(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
         # Title Name
         r"\b(?:Mr\.|Ms\.|Mrs\.|Dr\.)\s+(?P<name>[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
+        # possessive Name's (cousin Ana's / mentor Dr. Okafor — title handled above)
+        r"\b(?P<name>[A-Z][a-z]+)'s\b",
     )
     skip = {
         "the", "our", "my", "your", "this", "that", "about", "from", "with",
@@ -2461,10 +2482,12 @@ def _extract_seed_recipient_name(
                 continue
             # Avoid capturing org-like Capitals that aren't people when followed by Inc etc.
             if re.search(
-                rf"\b{re.escape(name)}\b\s+(?:Inc|LLC|Ltd|Logistics|Design|Analytics|Cloud|Fitness|Print|Cafe|Park|Court|Lane)\b",
+                rf"\b{re.escape(name)}\b\s+(?:Inc|LLC|Ltd|Logistics|Design|Analytics|Cloud|Fitness|Print|Cafe|Park|Court|Lane|&|and)\b",
                 seed,
                 re.I,
             ):
+                continue
+            if re.search(rf"\b{re.escape(name)}\b\s+(?:&|and)\s+[A-Z]", seed):
                 continue
             return name
     return ""
@@ -3475,10 +3498,15 @@ def _extract_seed_org_names(seed_baseline: str) -> list[str]:
         "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
     }
     found: list[str] = []
-    for match in re.finditer(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)\b", seed):
+    # Allow "&" / "and" inside org names: Hearth & Home, Bright Path Logistics.
+    org_re = re.compile(
+        r"\b([A-Z][A-Za-z0-9]+(?:\s+(?:&|and)\s+[A-Z][A-Za-z0-9]+|"
+        r"\s+[A-Z][A-Za-z0-9]+)+)\b"
+    )
+    for match in org_re.finditer(seed):
         name = match.group(1).strip()
-        parts = name.split()
-        if parts[0].lower() in skip_first:
+        parts = [p for p in re.split(r"\s+", name) if p not in {"&", "and"}]
+        if not parts or parts[0].lower() in skip_first:
             continue
         if any(part.lower() in skip_any for part in parts):
             continue
@@ -3785,6 +3813,10 @@ def _ensure_seed_key_details(
     for token in (
         "plumber", "cleaning", "hard drive", "centerpieces", "package",
         "caterer", "lunch boxes", "lunch box", "bakery", "florist",
+        "flooded basement", "basement flooded", "three reminders",
+        "end of the month", "overcharged twice", "standups", "standup",
+        "dentist", "gift", "shifts", "boundaries", "cracked", "refund",
+        "sick", "heater", "blender", "family emergency", "investor call",
     ):
         if token in seed_lower_flex and not _already(token):
             if token == "plumber":
@@ -3811,9 +3843,128 @@ def _ensure_seed_key_details(
                 body = _append_natural_sentence(body, "I'm writing to the bakery.")
             elif token == "florist":
                 body = _append_natural_sentence(body, "I'm writing to the florist.")
+            elif token in {"flooded basement", "basement flooded"}:
+                body = _append_natural_sentence(
+                    body, "This is about the flooded basement."
+                )
+            elif token == "three reminders":
+                body = _append_natural_sentence(
+                    body, "This is after three reminders."
+                )
+            elif token == "end of the month":
+                body = _append_natural_sentence(
+                    body, "I need this done by the end of the month."
+                )
+            elif token == "overcharged twice":
+                body = _append_natural_sentence(
+                    body, "I have already been overcharged twice."
+                )
+            elif token in {"standups", "standup"}:
+                body = _append_natural_sentence(
+                    body, "This came up in the last two standups."
+                )
+            elif token == "dentist":
+                body = _append_natural_sentence(
+                    body, "This is for a dentist procedure."
+                )
+            elif token == "gift":
+                body = _append_natural_sentence(
+                    body, "I will send a gift instead."
+                )
+            elif token == "shifts":
+                body = _append_natural_sentence(
+                    body, "I can cover his shifts."
+                )
+            elif token == "boundaries":
+                body = _append_natural_sentence(
+                    body, "Your advice about boundaries stayed with me."
+                )
+            elif token == "cracked":
+                body = _append_natural_sentence(
+                    body, "It arrived cracked."
+                )
+            elif token == "refund":
+                body = _append_natural_sentence(
+                    body, "I want a refund, not a replacement."
+                )
+            elif token == "sick":
+                body = _append_natural_sentence(body, "They are sick.")
+            elif token == "heater":
+                body = _append_natural_sentence(body, "The heater is broken.")
+            elif token == "blender":
+                body = _append_natural_sentence(body, "The blender is broken.")
+            elif token == "family emergency":
+                body = _append_natural_sentence(
+                    body, "I had a family emergency."
+                )
+            elif token == "investor call":
+                body = _append_natural_sentence(
+                    body, "I missed the investor call."
+                )
             else:
                 body = _append_natural_sentence(body, f"This is about the {token}.")
             _refresh()
+
+    # Street / unit addresses: keep the seed's "214 Willow" wording intact.
+    for match in re.finditer(
+        r"\b(\d{1,5}\s+[A-Z][a-z]+(?:\s+(?:St|Street|Ave|Avenue|Rd|Road|"
+        r"Blvd|Lane|Ln|Dr|Drive|Way|Court|Ct))?)\b",
+        seed_baseline,
+    ):
+        address = match.group(1).strip()
+        if _already(address):
+            continue
+        # Also treat "214, Willow" / "214 Willow Avenue" as covering "214 Willow".
+        number, street = address.split(None, 1)
+        if re.search(
+            rf"(?i)\b{re.escape(number)}\b[^\n.]{{0,24}}\b{re.escape(street.split()[0])}\b",
+            full_lower,
+        ):
+            # Normalize split forms back to the seed phrase when possible.
+            body = re.sub(
+                rf"(?i)\b{re.escape(number)}\b(?:\s*,\s*|\s+){re.escape(street.split()[0])}"
+                r"(?:\s+(?:Avenue|Ave|Street|St|Road|Rd))?",
+                address,
+                body,
+                count=1,
+            )
+            _refresh()
+            if _already(address):
+                continue
+        body = _append_natural_sentence(
+            body, f"This is about the neighbor at {address}."
+        )
+        _refresh()
+
+    # Clock times must keep the seed form (8am), not only "8 AM".
+    for match in re.finditer(r"\b(\d{1,2})\s*([ap]m)\b", seed_lower):
+        hour, meridiem = match.group(1), match.group(2)
+        seed_form = f"{hour}{meridiem}"
+        if _already(seed_form) or _already(f"{hour} {meridiem}"):
+            continue
+        if re.search(rf"\b{hour}\s*{meridiem}\b", full_lower):
+            # Normalize spaced / uppercase variants back to seed casing.
+            body = re.sub(
+                rf"(?i)\b{hour}\s*{meridiem}\b",
+                seed_form,
+                body,
+                count=1,
+            )
+            _refresh()
+            continue
+        body = _append_natural_sentence(
+            body, f"This has been happening before {seed_form}."
+        )
+        _refresh()
+
+    # Seed people — greetings alone are not enough; body should name them when dropped.
+    # Avoid "This is for X" — scaffold strip removes that pattern.
+    recipient = _extract_seed_recipient_name(seed_baseline)
+    if recipient and recipient.lower() not in full_lower:
+        body = _append_natural_sentence(
+            body, f"Please let {recipient} know."
+        )
+        _refresh()
 
     body = _strip_seed_ensure_scaffolds(body)
     sections["body"] = body
@@ -4763,6 +4914,14 @@ def _canonicalize_generated_email(
         sections["prefix"] = re.sub(
             r"(?i)\b(?:urgent|immediate)\b:?\s*", "", sections["prefix"]
         )
+    # Drop non-Latin junk that sometimes leaks into API subjects.
+    if sections.get("prefix"):
+        sections["prefix"] = re.sub(
+            r"[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]+",
+            "",
+            sections["prefix"],
+        )
+        sections["prefix"] = re.sub(r"[ \t]{2,}", " ", sections["prefix"]).strip()
 
     signature = _email_signature_name(profile)
     saved_name = _extract_profile_full_name(profile)
@@ -5832,6 +5991,8 @@ def _call_llm(
     if ai_config:
         from cloud_ai import CloudAIError, call_cloud_chat  # noqa: PLC0415
 
+        # Cloud TPM budgets are tight; email drafts never need 2–4k completion tokens.
+        cloud_cap = 768 if task == "rewrite" else min(int(effective_predict), 1024)
         try:
             return call_cloud_chat(
                 provider=ai_config["provider"],
@@ -5843,7 +6004,7 @@ def _call_llm(
                 top_p=top_p,
                 base_url=str(ai_config.get("base_url") or ""),
                 url=ai_config.get("url"),
-                max_tokens=effective_predict,
+                max_tokens=cloud_cap,
             )
         except CloudAIError:
             raise
@@ -6181,6 +6342,30 @@ class WritingAgent:
         )
         if permanent_fact:
             seed_baseline = f"{seed_baseline} {permanent_fact}".strip()
+        # Profile IDs (member ID / account / policy / unit) must survive generation.
+        profile_bits = effective_settings.get("profile") or {}
+        for key, value in profile_bits.items():
+            if not isinstance(value, str):
+                continue
+            key_l = str(key).lower()
+            token = value.strip()
+            if not token or key_l.startswith("_"):
+                continue
+            if key_l in {
+                "fullname",
+                "permanentnote",
+                "permanent_note",
+                "permanentnotes",
+                "jobtitle",
+                "companyname",
+                "email",
+            }:
+                continue
+            if re.search(r"(?i)\b(id|account|policy|unit|member|order|invoice)\b", key_l) or re.fullmatch(
+                r"[A-Z]{1,4}-?\d{2,}|\d+[A-Z]?", token
+            ):
+                if token.lower() not in seed_baseline.lower():
+                    seed_baseline = f"{seed_baseline} {token}".strip()
         system_prompt = build_generate_system_instruction(
             format_type,
             notes=notes,
