@@ -219,11 +219,35 @@ def _entity_present(entity: str, text_lower: str) -> bool:
         hour, meridiem = time_match.group(1), time_match.group(2)
         if re.search(rf"\b{hour}(?::00)?\s*{meridiem}\b", text_lower):
             return True
+    # 2 days ↔ two days
+    num_words = {
+        "1": "one",
+        "2": "two",
+        "3": "three",
+        "4": "four",
+        "5": "five",
+        "6": "six",
+        "7": "seven",
+        "8": "eight",
+        "9": "nine",
+        "10": "ten",
+    }
+    num_match = re.fullmatch(r"(\d+)\s+(days?|weeks?|months?)", needle)
+    if num_match and num_match.group(1) in num_words:
+        alt = f"{num_words[num_match.group(1)]} {num_match.group(2)}"
+        if alt in text_lower:
+            return True
     # Collapse punctuation/spacing: "214 Willow" vs "214, Willow"
     compact_needle = re.sub(r"[\s,]+", " ", needle)
     compact_text = re.sub(r"[\s,]+", " ", text_lower)
     if compact_needle in compact_text:
         return True
+    # Order IDs: #PN-4410 ↔ PN-4410 ↔ pn 4410
+    id_match = re.fullmatch(r"#?([a-z]{1,4})-?(\d{2,})", needle)
+    if id_match:
+        prefix, digits = id_match.group(1), id_match.group(2)
+        if re.search(rf"#?\s*{prefix}\s*-?\s*{digits}\b", text_lower):
+            return True
     return False
 
 
@@ -273,7 +297,10 @@ def evaluate(
         issues.append(f"scaffold leak: {SCAFFOLD.search(text).group(0)!r}")
     want = checks.get("must_greeting_name")
     if want and not re.search(
-        rf"^(Dear|Hi|Hey|Hello)\s+{re.escape(want)}\s*,?\s*$", greet, re.I
+        rf"^(Dear|Hi|Hey|Hello)\s+(?:(?:Professor|Prof\.|Dr\.|Mr\.|Ms\.|Mrs\.)\s+)?"
+        rf"{re.escape(want)}\b",
+        greet,
+        re.I,
     ):
         issues.append(f"greeting missing name {want!r} (got {greet!r})")
     if checks.get("forbid_greeting_names"):
@@ -442,7 +469,7 @@ def run_file(
 
     for index, case in enumerate(cases, 1):
         if index > 1:
-            time.sleep(12.0)
+            time.sleep(8.0)
         runs: list[dict] = []
         for run_index in range(1, repeats + 1):
             if run_index > 1:

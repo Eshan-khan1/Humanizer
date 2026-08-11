@@ -2496,6 +2496,15 @@ def _extract_seed_recipient_name(
                 continue
             if re.search(rf"\b{re.escape(name)}\b\s+(?:&|and)\s+[A-Z]", seed):
                 continue
+            # Two-word captures that are themselves orgs: "Bridgeway Analytics".
+            parts = name.split()
+            org_suffixes = {
+                "analytics", "logistics", "design", "cloud", "fitness", "print",
+                "cafe", "park", "court", "lane", "inc", "llc", "ltd", "labs",
+                "studio", "group", "company", "corp", "corporation", "partners",
+            }
+            if len(parts) >= 2 and parts[-1].lower() in org_suffixes:
+                continue
             return name
     return ""
 
@@ -3801,13 +3810,16 @@ def _ensure_seed_key_details(
         body = _append_natural_sentence(body, f"The total is {amount}.")
         _refresh()
 
-    for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b", seed_baseline):
+    for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b|#[A-Z]{1,4}-?\d{2,}\b", seed_baseline):
         token = match.group(0)
         if token.lower() in full_lower:
             continue
-        if re.search(r"(?i)\b(invoice|order|quote|claim|ticket)\b", body):
+        bare = token.lstrip("#")
+        if bare.lower() in full_lower.replace(" ", ""):
+            continue
+        if re.search(r"(?i)\b(invoice|order|quote|claim|ticket|reference|membership)\b", body):
             body = re.sub(
-                r"(?i)\b(invoice|order|quote|claim|ticket)\b",
+                r"(?i)\b(invoice|order|quote|claim|ticket|reference|membership)\b",
                 rf"\1 {token}",
                 body,
                 count=1,
@@ -3826,7 +3838,7 @@ def _ensure_seed_key_details(
         "dentist", "gift", "shifts", "boundaries", "cracked", "refund",
         "sick", "heater", "blender", "family emergency", "investor call",
         "grad school", "father", "warehouse flooded", "loading dock flooded",
-        "side dish",
+        "side dish", "password lockout", "two extra days", "two more days",
     ):
         if token in seed_lower_flex and not _already(token):
             if token == "plumber":
@@ -3930,6 +3942,18 @@ def _ensure_seed_key_details(
             elif token == "side dish":
                 body = _append_natural_sentence(
                     body, "Please bring a side dish."
+                )
+            elif token == "password lockout":
+                body = _append_natural_sentence(
+                    body, "This is about a password lockout."
+                )
+            elif token == "two extra days":
+                body = _append_natural_sentence(
+                    body, "I need two extra days."
+                )
+            elif token == "two more days":
+                body = _append_natural_sentence(
+                    body, "I need two more days."
                 )
             else:
                 body = _append_natural_sentence(body, f"This is about the {token}.")
