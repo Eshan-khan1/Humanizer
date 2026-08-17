@@ -2042,6 +2042,131 @@ def _body_word_count(text: str, format_type: str) -> int:
     return len(re.findall(r"[A-Za-z0-9']+", body))
 
 
+def _count_generate_content_blocks(text: str, format_type: str) -> int:
+    """Count prose paragraphs + one list block (matches run_benchmarks harness)."""
+    if format_type == "email":
+        body = _parse_email_sections(text).get("body", "")
+    else:
+        body = text or ""
+    if not body.strip():
+        return 0
+    paragraphs = [p for p in re.split(r"\n\s*\n", body) if p.strip()]
+    prose = 0
+    has_list = False
+    for paragraph in paragraphs:
+        lines = [line for line in paragraph.splitlines() if line.strip()]
+        if any(re.match(r"^\s*(?:\d{1,2}[.)]|[-•])\s+", line) for line in lines):
+            has_list = True
+        if any(
+            not re.match(r"^\s*(?:\d{1,2}[.)]|[-•])\s+", line)
+            for line in lines
+        ):
+            prose += 1
+    return prose + int(has_list)
+
+
+def _clamp_short_body_words(
+    text: str,
+    *,
+    format_type: str,
+    seed_baseline: str = "",
+    max_words: int = 45,
+) -> str:
+    """Trim trailing sentences so short tone variants stay within a tight word band."""
+    if not text.strip():
+        return text
+    seed_words = len(re.findall(r"[A-Za-z0-9']+", seed_baseline or ""))
+    budget = max(max_words, seed_words + 18)
+    words = _body_word_count(text, format_type)
+    if words <= budget:
+        return text
+    if format_type == "email":
+        sections = _parse_email_sections(text)
+        body = sections.get("body", "")
+    else:
+        sections = None
+        body = text
+    sentences = _split_sentences(body)
+    if len(sentences) <= 1:
+        return text
+    while len(sentences) > 1:
+        candidate = _join_sentences(sentences)
+        if len(re.findall(r"[A-Za-z0-9']+", candidate)) <= budget:
+            body = candidate
+            break
+        sentences = sentences[:-1]
+    else:
+        body = _join_sentences(sentences[:1])
+    if sections is not None:
+        sections["body"] = body
+        return _reassemble_email_sections(sections)
+    return body
+
+
+def _lock_medium_content_blocks(
+    text: str,
+    *,
+    format_type: str,
+    target_min: int = 2,
+    target_max: int = 4,
+) -> str:
+    """Keep medium emails in a stable content-block band across complexity."""
+    if not text.strip() or format_type != "email":
+        return text
+    sections = _parse_email_sections(text)
+    body = sections.get("body", "")
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+    if not paragraphs:
+        return text
+
+    def _blocks(paras: list[str]) -> int:
+        return _count_generate_content_blocks(
+            _reassemble_email_sections({**sections, "body": "\n\n".join(paras)}),
+            "email",
+        )
+
+    # Merge trailing prose paragraphs when over the band.
+    while _blocks(paragraphs) > target_max and len(paragraphs) > 1:
+        paragraphs = paragraphs[:-2] + [f"{paragraphs[-2].rstrip()} {paragraphs[-1].lstrip()}"]
+    # Split a long first paragraph when under the band.
+    while _blocks(paragraphs) < target_min:
+        best_i = -1
+        best_sents: list[str] = []
+        for index, paragraph in enumerate(paragraphs):
+            if re.match(r"^\s*(?:\d{1,2}[.)]|[-•])\s+", paragraph):
+                continue
+            sentences = _split_sentences(paragraph)
+            if len(sentences) >= 2 and len(sentences) > len(best_sents):
+                best_i = index
+                best_sents = sentences
+        if best_i < 0:
+            break
+        mid = max(1, len(best_sents) // 2)
+        paragraphs[best_i : best_i + 1] = [
+            _join_sentences(best_sents[:mid]),
+            _join_sentences(best_sents[mid:]),
+        ]
+    sections["body"] = "\n\n".join(paragraphs)
+    return _reassemble_email_sections(sections)
+
+
+def _apply_complexity_lexical_only(text: str, complexity: str) -> str:
+    """Complexity swaps must not add/remove blank lines or list markers."""
+    if complexity not in {"simple", "advanced"} or not text.strip():
+        return text
+    paragraphs = re.split(r"(\n\s*\n)", text)
+    out: list[str] = []
+    for part in paragraphs:
+        if re.fullmatch(r"\n\s*\n", part or ""):
+            out.append(part)
+            continue
+        if complexity == "simple":
+            out.append(_apply_simple_complexity_replacements(part))
+        else:
+            out.append(_apply_advanced_complexity_replacements(part))
+    return "".join(out)
+
+
 def _generate_length_bounds(length: str, seed_baseline: str = "") -> tuple[int, int]:
     sparse = (
         not _seed_states_a_reason(seed_baseline)
@@ -2478,13 +2603,34 @@ def _extract_seed_recipient_name(
         "landlord", "vendor", "doctor", "dentist", "nurse", "chair",
         "finance", "building", "facilities", "former", "new",
         "brief", "quick", "standing", "remote", "full", "daily",
+        # Timing words must never become greetings ("Dear Thursday").
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+        "sunday", "mon", "tue", "tues", "wed", "thu", "thur", "thurs",
+        "fri", "sat", "sun",
+        "january", "february", "march", "april", "may", "june", "july",
+        "august", "september", "october", "november", "december",
     }
     skip.update(_RECIPIENT_ROLE_WORDS)
+    title_words = {
+        "professor", "prof", "instructor", "doctor", "dr", "mr", "ms", "mrs",
+        "miss", "sir", "madam", "coach", "dean",
+    }
     for pattern in patterns:
         for match in re.finditer(pattern, seed):
             name = (match.group("name") or "").strip()
+            if not name:
+                continue
+            # "Professor Lang" / "Dr. Quill" → bare personal name.
+            parts = name.replace(".", " ").split()
+            while parts and parts[0].lower().rstrip(".") in title_words:
+                parts = parts[1:]
+            name = " ".join(parts).strip()
             if not name or name.lower() in skip:
                 continue
+            if any(part.lower() in skip for part in name.split()):
+                # Reject "Thursday" or "Thursday's Meeting" style captures.
+                if name.lower().split()[0] in skip:
+                    continue
             if writer_l and name.lower() == writer_l:
                 continue
             # Avoid capturing org-like Capitals that aren't people when followed by Inc etc.
@@ -2497,13 +2643,13 @@ def _extract_seed_recipient_name(
             if re.search(rf"\b{re.escape(name)}\b\s+(?:&|and)\s+[A-Z]", seed):
                 continue
             # Two-word captures that are themselves orgs: "Bridgeway Analytics".
-            parts = name.split()
+            name_parts = name.split()
             org_suffixes = {
                 "analytics", "logistics", "design", "cloud", "fitness", "print",
                 "cafe", "park", "court", "lane", "inc", "llc", "ltd", "labs",
                 "studio", "group", "company", "corp", "corporation", "partners",
             }
-            if len(parts) >= 2 and parts[-1].lower() in org_suffixes:
+            if len(name_parts) >= 2 and name_parts[-1].lower() in org_suffixes:
                 continue
             return name
     return ""
@@ -3483,21 +3629,48 @@ def _ensure_seed_role_mentions(
     return text
 
 
-def _normalize_seed_duration_phrase(duration: str) -> str:
+def _normalize_seed_duration_phrase(duration: str, *, keep_modifier: bool = True) -> str:
     """Normalize 'three-day' / 'two extra days' into a grammatical phrase."""
     flex = (duration or "").lower().replace("-", " ").strip()
     flex = re.sub(r"\s+", " ", flex)
     match = re.match(
-        r"^(one|two|three|\d+)\s+(?:extra\s+)?(days?|weeks?|months?)$",
+        r"^(one|two|three|\d+)\s+(extra|more)?\s*(days?|weeks?|months?)$",
         flex,
     )
     if not match:
         return flex
-    count, unit = match.group(1), match.group(2)
+    count, modifier, unit = match.group(1), match.group(2), match.group(3)
     base = unit.rstrip("s")
-    if count in {"one", "1"}:
-        return f"{count} {base}"
-    return f"{count} {base}s"
+    unit_out = base if count in {"one", "1"} else f"{base}s"
+    if keep_modifier and modifier:
+        return f"{count} {modifier} {unit_out}"
+    return f"{count} {unit_out}"
+
+
+def _seed_duration_surface_forms(seed_baseline: str) -> list[str]:
+    """Exact duration phrases as written in the seed (preserve extra/more/digits)."""
+    seed = seed_baseline or ""
+    forms: list[str] = []
+    patterns = (
+        r"\b((?:one|two|three|\d+)\s+(?:extra|more)\s+days?)\b",
+        r"\b((?:one|two|three|\d+)\s+days?)\b",
+        r"\b((?:one|two|three|\d+)-\s*day(?:\s+)?(?:extension)?)\b",
+        r"\b((?:one|two|three|\d+)-\s*(?:week|month)s?)\b",
+        r"\b((?:one|two|three|\d+)\s+(?:extra|more)\s+(?:weeks?|months?))\b",
+        r"\b((?:six|one|two|three|\d+)-\s*month)\b",
+        r"\b((?:six|one|two|three|\d+)\s+months?)\b",
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, seed, flags=re.I):
+            phrase = match.group(1).strip()
+            # Prefer the raw seed casing from the original span.
+            start, end = match.span(1)
+            raw = seed[start:end].strip()
+            if raw and raw not in forms:
+                forms.append(raw)
+            elif phrase and phrase not in forms:
+                forms.append(phrase)
+    return forms
 
 
 def _extract_seed_org_names(seed_baseline: str) -> list[str]:
@@ -3637,6 +3810,7 @@ def _ensure_seed_key_details(
     *,
     format_type: str,
     seed_baseline: str,
+    prefer_splice: bool = False,
 ) -> str:
     """Re-attach concrete seed details the model omitted (never invent; no meta scaffolds)."""
     if not text.strip() or not (seed_baseline or "").strip() or format_type != "email":
@@ -3672,36 +3846,90 @@ def _ensure_seed_key_details(
                 return True
         return False
 
+    def _surface_present(fragment: str) -> bool:
+        """Exact-ish surface match — hyphen folds do NOT count."""
+        frag = (fragment or "").lower().strip()
+        if not frag:
+            return True
+        if frag in body_lower or frag in full_lower:
+            return True
+        compact = re.sub(r"[\s,]+", " ", frag)
+        compact_body = re.sub(r"[\s,]+", " ", body_lower)
+        compact_full = re.sub(r"[\s,]+", " ", full_lower)
+        return compact in compact_body or compact in compact_full
+
     def _refresh() -> None:
         nonlocal body_lower, full_lower
         body_lower = body.lower()
         full_lower = f"{header.lower()} {body_lower}"
 
-    # Duration: three-day → "a three-day extension" (natural rewrite of existing word).
-    for match in re.finditer(
-        r"\b((?:one|two|three|\d+)(?:-\s*|\s+)(?:extra\s+)?(?:days?|weeks?|months?))\b",
-        seed_lower,
-    ):
-        normalized = _normalize_seed_duration_phrase(match.group(1))
-        if not normalized or _already(normalized):
+    def _inject(sentence: str) -> None:
+        nonlocal body
+        if prefer_splice:
+            body = _splice_clause_into_first_sentence(body, sentence)
+        else:
+            body = _append_natural_sentence(body, sentence)
+        _refresh()
+
+    # Duration: prefer the seed's exact surface form over hyphen paraphrases.
+    for surface in _seed_duration_surface_forms(seed_baseline):
+        if _surface_present(surface):
             continue
-        parts = normalized.split()
-        unit = parts[-1]
-        unit_base = unit[:-1] if unit.endswith("s") else unit
-        adj = "-".join([*parts[:-1], unit_base])
-        if re.search(r"(?i)\bextension\b", body):
+        normalized = _normalize_seed_duration_phrase(surface, keep_modifier=True)
+        # Rewrite hyphen compounds (two-day / 2-day) back to the seed wording.
+        if re.search(r"(?i)\b\d+-?\s*days?\b|\b(?:one|two|three)-?\s*days?\b", body):
             body = re.sub(
-                r"(?i)\b((?:an?\s+)?)extension\b",
-                f"a {adj} extension",
+                r"(?i)\b(?:a\s+)?(?:one|two|three|\d+)-\s*day(?:\s+extension)?\b",
+                surface,
                 body,
                 count=1,
             )
             _refresh()
-        else:
-            body = _append_natural_sentence(
-                body, f"I am requesting {normalized}."
+            if _surface_present(surface):
+                continue
+        if re.search(r"(?i)\bextension\b", body) and not _surface_present(surface):
+            body = re.sub(
+                r"(?i)\b((?:an?\s+)?)(?:one|two|three|\d+)-?\s*day\s+extension\b",
+                rf"\1{surface} extension" if "extension" not in surface.lower() else surface,
+                body,
+                count=1,
             )
             _refresh()
+            if _surface_present(surface):
+                continue
+            body = re.sub(
+                r"(?i)\b((?:an?\s+)?)extension\b",
+                (
+                    f"a {surface} extension"
+                    if "extension" not in surface.lower()
+                    else surface
+                ),
+                body,
+                count=1,
+            )
+            _refresh()
+            if _surface_present(surface):
+                continue
+        if not _surface_present(surface):
+            _inject(f"I need {surface}")
+            continue
+
+    # Also catch bare six-month compounds from seed.
+    for match in re.finditer(
+        r"\b((?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s*-\s*month)\b",
+        seed_baseline,
+        flags=re.I,
+    ):
+        surface = match.group(1).replace(" ", "")
+        spaced = re.sub(r"\s*-\s*", "-", match.group(1).strip())
+        if _surface_present(spaced) or _surface_present(surface):
+            continue
+        # Replace "six months" with seed hyphen form when that was the seed.
+        if re.search(r"(?i)\bsix\s+months?\b", body):
+            body = re.sub(r"(?i)\bsix\s+months?\b", spaced, body, count=1)
+            _refresh()
+        elif not _surface_present(spaced):
+            _inject(f"This covers a {spaced} period")
 
     # Org names — never rewrite "writing to" (breaks "writing to inform/request").
     for org in _extract_seed_org_names(seed_baseline):
@@ -3764,6 +3992,9 @@ def _ensure_seed_key_details(
     for weekday in _WEEKDAY_ALIASES:
         if _seed_mentions_weekday(seed_lower, weekday) and weekday not in full_lower:
             titled = weekday.title()
+            # Don't invent a timing sentence when the deadline is already stated.
+            if re.search(r"(?i)\b(deadline|due|by|until|before)\b", body_lower):
+                continue
             if re.search(r"(?i)\b(reply|respond|confirm)\b", body):
                 body = re.sub(
                     r"(?i)\b(reply|respond|confirm)\b",
@@ -3772,9 +4003,7 @@ def _ensure_seed_key_details(
                     count=1,
                 )
             else:
-                body = _append_natural_sentence(
-                    body, f"Please confirm by {titled}."
-                )
+                _inject(f"Please confirm by {titled}")
             _refresh()
 
     for month in (
@@ -3812,9 +4041,20 @@ def _ensure_seed_key_details(
 
     for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b|#[A-Z]{1,4}-?\d{2,}\b", seed_baseline):
         token = match.group(0)
+        bare = token.lstrip("#")
+        # Prefer seed surface including "#": rewrite bare PN-4410 → #PN-4410.
+        if token.startswith("#") and bare.lower() in full_lower.replace(" ", ""):
+            if token.lower() not in full_lower:
+                body = re.sub(
+                    rf"(?i)\b{re.escape(bare)}\b",
+                    token,
+                    body,
+                    count=1,
+                )
+                _refresh()
+            continue
         if token.lower() in full_lower:
             continue
-        bare = token.lstrip("#")
         if bare.lower() in full_lower.replace(" ", ""):
             continue
         if re.search(r"(?i)\b(invoice|order|quote|claim|ticket|reference|membership)\b", body):
@@ -3826,8 +4066,7 @@ def _ensure_seed_key_details(
             )
             _refresh()
         else:
-            body = _append_natural_sentence(body, f"Reference {token}.")
-            _refresh()
+            _inject(f"Reference {token}")
 
     # Concrete seeded objects — short natural sentence, not "this concerns the X".
     for token in (
@@ -3944,19 +4183,22 @@ def _ensure_seed_key_details(
                     body, "Please bring a side dish."
                 )
             elif token == "password lockout":
-                body = _append_natural_sentence(
-                    body, "This is about a password lockout."
-                )
+                if re.search(r"(?i)\block(?:ed)?\s+out\b", body):
+                    body = re.sub(
+                        r"(?i)\b(?:password\s+)?(?:has\s+been\s+)?lock(?:ed)?\s+out\b",
+                        "password lockout",
+                        body,
+                        count=1,
+                    )
+                    _refresh()
+                if not _surface_present("password lockout"):
+                    _inject("after a password lockout")
             elif token == "two extra days":
-                body = _append_natural_sentence(
-                    body, "I need two extra days."
-                )
+                _inject("I need two extra days")
             elif token == "two more days":
-                body = _append_natural_sentence(
-                    body, "I need two more days."
-                )
+                _inject("I need two more days")
             else:
-                body = _append_natural_sentence(body, f"This is about the {token}.")
+                _inject(f"This is about the {token}")
             _refresh()
 
     # Street / unit addresses: keep the seed's "214 Willow" wording intact.
@@ -4012,13 +4254,10 @@ def _ensure_seed_key_details(
         _refresh()
 
     # Seed people — greetings alone are not enough; body should name them when dropped.
-    # Avoid "This is for X" — scaffold strip removes that pattern.
+    # Prefer splice on short emails so the fact survives the ≤2-sentence truncate.
     recipient = _extract_seed_recipient_name(seed_baseline)
     if recipient and recipient.lower() not in full_lower:
-        body = _append_natural_sentence(
-            body, f"Please let {recipient} know."
-        )
-        _refresh()
+        _inject(f"Please let {recipient} know")
 
     body = _strip_seed_ensure_scaffolds(body)
     sections["body"] = body
@@ -4658,11 +4897,8 @@ def apply_generate_hard_filters(
             )
             filtered = _apply_blunt_tone_voice(filtered)
 
-    # Complexity — vocabulary only
-    if complexity == "simple":
-        filtered = _apply_simple_complexity_replacements(filtered)
-    elif complexity == "advanced":
-        filtered = _apply_advanced_complexity_replacements(filtered)
+    # Complexity — vocabulary only (never change paragraph / list structure).
+    filtered = _apply_complexity_lexical_only(filtered, complexity)
 
     if length == "short" and seed_baseline.strip():
         filtered = _filter_short_to_seed_content(
@@ -4670,6 +4906,9 @@ def apply_generate_hard_filters(
             seed_baseline,
             format_type=format_type,
             max_sentences=2,
+        )
+        filtered = _clamp_short_body_words(
+            filtered, format_type=format_type, seed_baseline=seed_baseline
         )
     elif seed_baseline.strip():
         # Medium/long: strip only known foreign pasted scenarios, not paraphrases.
@@ -4686,6 +4925,8 @@ def apply_generate_hard_filters(
     filtered = _ensure_seed_key_details(
         filtered, format_type=format_type, seed_baseline=seed_baseline
     )
+    if length == "medium" and format_type == "email":
+        filtered = _lock_medium_content_blocks(filtered, format_type=format_type)
     filtered = _take_first_complete_draft(filtered)
     filtered = _ensure_nonempty_body(
         filtered,
@@ -6031,6 +6272,7 @@ def _call_llm(
     system: str | None = None,
     num_predict: int | None = None,
     ai_config: dict[str, Any] | None = None,
+    length: str | None = None,
 ) -> str:
     effective_system = system or WRITING_AGENT_SYSTEM_PROMPT
     if task == "rewrite":
@@ -6045,8 +6287,17 @@ def _call_llm(
     if ai_config:
         from cloud_ai import CloudAIError, call_cloud_chat  # noqa: PLC0415
 
-        # Cloud TPM budgets are tight; email drafts never need 2–4k completion tokens.
-        cloud_cap = 768 if task == "rewrite" else min(int(effective_predict), 1024)
+        # Length-aware caps: short drafts stay cheap; long/list emails need headroom.
+        if task == "rewrite":
+            cloud_cap = 768
+        elif length == "short":
+            cloud_cap = 384
+        elif length == "medium":
+            cloud_cap = 768
+        elif length == "long":
+            cloud_cap = 1536
+        else:
+            cloud_cap = min(int(effective_predict), 1024)
         try:
             return call_cloud_chat(
                 provider=ai_config["provider"],
@@ -6161,8 +6412,21 @@ def _process_generate_candidate(
         cleaned = _enforce_length_structure(
             cleaned, format_type, length, seed_baseline=seed_baseline
         )
+        # Splice missing facts into kept sentences (append would be truncated away).
         cleaned = _ensure_seed_key_details(
+            cleaned,
+            format_type=format_type,
+            seed_baseline=seed_baseline,
+            prefer_splice=True,
+        )
+        cleaned = _clamp_short_body_words(
             cleaned, format_type=format_type, seed_baseline=seed_baseline
+        )
+        cleaned = _canonicalize_generated_email(
+            cleaned,
+            tone_preset=settings["tone_preset"],
+            profile=settings.get("profile") or {},
+            seed_baseline=seed_baseline,
         )
     elif format_type == "email" and length == "medium":
         # Spliced ensure clauses can collapse medium back to one paragraph.
@@ -6182,7 +6446,8 @@ def _process_generate_candidate(
         if len(paragraphs) > 3:
             sections["body"] = "\n\n".join(paragraphs[:3])
             cleaned = _reassemble_email_sections(sections)
-    if format_type == "email":
+        cleaned = _lock_medium_content_blocks(cleaned, format_type=format_type)
+    if format_type == "email" and length != "short":
         cleaned = _canonicalize_generated_email(
             cleaned,
             tone_preset=settings["tone_preset"],
@@ -6192,12 +6457,159 @@ def _process_generate_candidate(
     return _clean_generate_typography(cleaned)
 
 
+def _is_hard_fidelity_detail(detail: str) -> bool:
+    """IDs, money, quantities, weekdays, durations — not soft unigram noise."""
+    text = (detail or "").strip()
+    if not text:
+        return False
+    qty_stop = {
+        "for", "to", "of", "in", "on", "at", "a", "an", "the", "and", "or",
+        "extra", "more", "less", "other", "same", "next", "last", "this",
+        "few", "many", "much", "some", "any", "all", "each", "every",
+    }
+    try:
+        from claim_check import (  # noqa: PLC0415
+            _DURATION_RE,
+            _WEEKDAY_RE,
+            _is_identifier_detail,
+            _is_quantity_noun_detail,
+        )
+    except Exception:
+        if re.fullmatch(r"\$[\d,]+(?:\.\d{2})?", text) or re.fullmatch(
+            r"#?[A-Za-z]{0,6}-?\d{2,8}", text
+        ):
+            return True
+        if re.fullmatch(
+            r"(?i)(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)",
+            text,
+        ):
+            return True
+        return bool(
+            re.fullmatch(
+                r"(?i)(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+                r"(?:-\s*|\s+)(?:day|days|week|weeks|month|months)",
+                text,
+            )
+        )
+    if _is_identifier_detail(text):
+        return True
+    if _WEEKDAY_RE.fullmatch(text):
+        return True
+    if _DURATION_RE.fullmatch(text):
+        return True
+    # "two extra days" / "2 more weeks" surface forms from seeds.
+    if re.fullmatch(
+        r"(?i)(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+        r"\s+(?:extra|more)\s+(?:day|days|week|weeks|month|months)",
+        text,
+    ):
+        return True
+    if _is_quantity_noun_detail(text):
+        noun = text.split()[-1].lower()
+        if noun in qty_stop:
+            return False
+        return True
+    return False
+
+
+def _hard_fidelity_issues(
+    candidate: str,
+    *,
+    seed_baseline: str,
+    source_text: str = "",
+    permanent_note: str = "",
+    profile: dict[str, Any] | None = None,
+) -> tuple[list[str], list[str], str | None]:
+    """Return (missing hard details, fabricated hard details, invented greeting)."""
+    missing: list[str] = []
+    fabricated: list[str] = []
+    invented_greeting: str | None = None
+    try:
+        from claim_check import claim_check_draft  # noqa: PLC0415
+
+        findings = claim_check_draft(
+            candidate,
+            seed=source_text or seed_baseline,
+            permanent_note=permanent_note or "",
+            profile=profile,
+        )
+        for finding in findings:
+            if not _is_hard_fidelity_detail(finding.detail):
+                continue
+            if finding.classification == "missing":
+                missing.append(finding.detail)
+            elif finding.classification == "fabricated":
+                fabricated.append(finding.detail)
+    except Exception:
+        logger.exception("hard_fidelity_claim_check_failed")
+
+    if candidate.strip():
+        sections = _parse_email_sections(candidate)
+        greeting = (sections.get("greeting") or "").strip()
+        match = re.match(
+            r"(?i)^(?:dear|hi|hello|hey)\s+(?:mr\.|ms\.|mrs\.|dr\.)?\s*"
+            r"([A-Za-z][A-Za-z'-]+)",
+            greeting,
+        )
+        if match:
+            name = match.group(1).strip()
+            seed_name = _extract_seed_recipient_name(seed_baseline)
+            seed_l = (seed_baseline or "").lower()
+            if name.lower() not in {"there", "team", "all", "everyone"} and (
+                (seed_name and name.lower() != seed_name.split()[0].lower()
+                 and name.lower() not in seed_l)
+                or (not seed_name and name.lower() not in seed_l)
+            ):
+                # Allow exact seed recipient first token.
+                if not seed_name or name.lower() != seed_name.split()[0].lower():
+                    if name.lower() not in seed_l:
+                        invented_greeting = name
+    return missing, fabricated, invented_greeting
+
+
+def _build_fidelity_retry_instruction(
+    *,
+    missing: list[str],
+    fabricated: list[str],
+    invented_greeting: str | None,
+    current_draft: str = "",
+) -> str:
+    parts: list[str] = ["FIDELITY RETRY — previous draft drifted from the idea."]
+    if missing:
+        parts.append(
+            "Restore these exact details from the idea (same wording when possible): "
+            + ", ".join(missing[:12])
+            + "."
+        )
+    if fabricated:
+        parts.append(
+            "Remove these invented details that were not in the idea: "
+            + ", ".join(fabricated[:12])
+            + "."
+        )
+    if invented_greeting:
+        parts.append(
+            f"Do not greet '{invented_greeting}'. Use the recipient named in the idea, "
+            "or a generic greeting if none is named."
+        )
+    parts.append(
+        "Keep every ID, dollar amount, quantity, weekday, and duration from the idea. "
+        "Do not invent new names, codes, or amounts."
+    )
+    if current_draft:
+        parts.append(f"\nCURRENT FILTERED DRAFT:\n{current_draft}")
+    return " ".join(parts) if len(parts) == 1 else "\n".join(parts)
+
+
 def _generate_candidate_score(
     text: str,
     *,
     format_type: str,
     length: str,
     seed_baseline: str,
+    source_text: str = "",
+    permanent_note: str = "",
+    profile: dict[str, Any] | None = None,
 ) -> tuple[int, int, int]:
     minimum, maximum = _generate_length_bounds(length, seed_baseline)
     words = _body_word_count(text, format_type)
@@ -6211,7 +6623,17 @@ def _generate_candidate_score(
         bool(text.strip())
         and not bool(re.search(r"\b(?:by|on|until|for)\s*[?.!,]\s*$", text, re.I))
     )
-    return valid, complete, -abs(words - midpoint)
+    missing, fabricated, invented = _hard_fidelity_issues(
+        text,
+        seed_baseline=seed_baseline,
+        source_text=source_text or seed_baseline,
+        permanent_note=permanent_note,
+        profile=profile,
+    )
+    fidelity_penalty = (
+        200 * len(missing) + 150 * len(fabricated) + (500 if invented else 0)
+    )
+    return valid, complete, -abs(words - midpoint) - fidelity_penalty
 
 
 def _normalized_comparison_text(text: str) -> str:
@@ -6251,6 +6673,7 @@ def _generate_candidate_rejection_reasons(
     source_text: str,
     notes: str = "",
     permanent_note: str = "",
+    profile: dict[str, Any] | None = None,
 ) -> list[str]:
     reasons: list[str] = []
     body = (
@@ -6283,6 +6706,36 @@ def _generate_candidate_rejection_reasons(
         re.I,
     ):
         reasons.append("incomplete_body")
+    missing, fabricated, invented = _hard_fidelity_issues(
+        candidate,
+        seed_baseline=seed_baseline,
+        source_text=source_text,
+        permanent_note=permanent_note,
+        profile=profile,
+    )
+    # Hard-reject only IDs/money misses and invented greetings. Other hard misses
+    # (weekdays/durations/quantities) are scored/retried via best-effort ranking so
+    # we do not burn three TPM-heavy attempts on every soft claim gap.
+    for detail in missing:
+        try:
+            from claim_check import _is_identifier_detail  # noqa: PLC0415
+
+            is_id = _is_identifier_detail(detail)
+        except Exception:
+            is_id = bool(re.search(r"\$|#|[A-Za-z]+-?\d", detail))
+        if is_id:
+            reasons.append(f"missing_id_or_money({detail})")
+    for detail in fabricated:
+        try:
+            from claim_check import _is_identifier_detail  # noqa: PLC0415
+
+            is_id = _is_identifier_detail(detail)
+        except Exception:
+            is_id = bool(re.search(r"\$|#|[A-Za-z]+-?\d", detail))
+        if is_id:
+            reasons.append(f"fabricated_hard_detail({detail})")
+    if invented:
+        reasons.append(f"invented_greeting({invented})")
     return reasons
 
 
@@ -6442,6 +6895,7 @@ class WritingAgent:
                 system=attempt_system,
                 num_predict=num_predict,
                 ai_config=ai_config,
+                length=length,
             )
             candidate = _process_generate_candidate(
                 raw,
@@ -6458,6 +6912,7 @@ class WritingAgent:
                 source_text=text,
                 notes=notes,
                 permanent_note=raw_permanent_note,
+                profile=effective_settings.get("profile") or {},
             )
             rejection_history.append(rejection_reasons)
             if not rejection_reasons:
@@ -6478,15 +6933,47 @@ class WritingAgent:
                     format_type=format_type,
                     length=length,
                     seed_baseline=seed_baseline,
+                    source_text=text,
+                    permanent_note=raw_permanent_note,
+                    profile=effective_settings.get("profile") or {},
                 ),
             )
-            retry_instruction = _build_length_retry_instruction(
-                length,
-                format_type,
-                current_draft=candidate,
+            missing, fabricated, invented = _hard_fidelity_issues(
+                candidate,
                 seed_baseline=seed_baseline,
+                source_text=text,
+                permanent_note=raw_permanent_note,
+                profile=effective_settings.get("profile") or {},
             )
-            attempt_system = f"{system_prompt}\n\n{retry_instruction}"
+            retry_parts: list[str] = []
+            if missing or fabricated or invented:
+                retry_parts.append(
+                    _build_fidelity_retry_instruction(
+                        missing=missing,
+                        fabricated=fabricated,
+                        invented_greeting=invented,
+                        current_draft=candidate,
+                    )
+                )
+            if any(r.startswith("length_or_structure") for r in rejection_reasons):
+                retry_parts.append(
+                    _build_length_retry_instruction(
+                        length,
+                        format_type,
+                        current_draft=candidate,
+                        seed_baseline=seed_baseline,
+                    )
+                )
+            elif not retry_parts:
+                retry_parts.append(
+                    _build_length_retry_instruction(
+                        length,
+                        format_type,
+                        current_draft=candidate,
+                        seed_baseline=seed_baseline,
+                    )
+                )
+            attempt_system = f"{system_prompt}\n\n" + "\n\n".join(retry_parts)
 
         logger.error(
             "generate_failed_no_valid_candidate case=%r attempts=%d reasons=%s",
@@ -6504,6 +6991,9 @@ class WritingAgent:
                     format_type=format_type,
                     length=length,
                     seed_baseline=seed_baseline,
+                    source_text=text,
+                    permanent_note=raw_permanent_note,
+                    profile=effective_settings.get("profile") or {},
                 ),
             )
             logger.warning(
@@ -6514,6 +7004,9 @@ class WritingAgent:
                     format_type=format_type,
                     length=length,
                     seed_baseline=seed_baseline,
+                    source_text=text,
+                    permanent_note=raw_permanent_note,
+                    profile=effective_settings.get("profile") or {},
                 ),
             )
             self._log_claim_check(
