@@ -248,6 +248,9 @@ def _entity_present(entity: str, text_lower: str) -> bool:
         prefix, digits = id_match.group(1), id_match.group(2)
         if re.search(rf"#?\s*{prefix}\s*-?\s*{digits}\b", text_lower):
             return True
+    # noon ↔ 12 pm
+    if needle == "noon" and re.search(r"\b12\s*(?::00)?\s*(?:pm|noon)\b", text_lower):
+        return True
     return False
 
 

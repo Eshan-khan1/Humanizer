@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
 from typing import Any, Literal
 from urllib.parse import urlparse
@@ -18,6 +19,10 @@ DEFAULT_OPENAI_MODEL = os.environ.get("THOTH_OPENAI_MODEL", "gpt-4o-mini")
 DEFAULT_API_MODEL = os.environ.get("THOTH_API_MODEL", DEFAULT_OPENAI_MODEL)
 CLOUD_REQUEST_TIMEOUT_SEC = float(os.environ.get("THOTH_CLOUD_TIMEOUT_SEC", "120"))
 AI_TEST_TIMEOUT_SEC = float(os.environ.get("THOTH_AI_TEST_TIMEOUT_SEC", "20"))
+# Pace cloud calls so long generate sweeps do not trip provider TPM limits.
+_CLOUD_MIN_GAP_SEC = float(os.environ.get("THOTH_CLOUD_MIN_GAP_SEC", "2.5"))
+_cloud_throttle_lock = threading.Lock()
+_last_cloud_request_at = 0.0
 
 _SUPPORTED_PROVIDERS = frozenset({"groq", "openai", "api"})
 _ALLOWED_URL_SCHEMES = frozenset({"https", "http"})
@@ -49,6 +54,23 @@ def _normalize_chat_completions_url(base_url: str) -> str:
     if raw.endswith("/v1"):
         return f"{raw}/chat/completions"
     return f"{raw}/v1/chat/completions"
+
+
+# Groq retires models periodically — map stale Settings values to a current default.
+_GROQ_MODEL_ALIASES: dict[str, str] = {
+    "llama-3.1-8b-instant": DEFAULT_GROQ_MODEL,
+    "llama3-8b-8192": DEFAULT_GROQ_MODEL,
+    "mixtral-8x7b-32768": DEFAULT_GROQ_MODEL,
+}
+
+
+def _resolve_cloud_model(model: str, resolved_provider: str) -> str:
+    cleaned = (model or "").strip()
+    if not cleaned:
+        return _default_model_for_provider(resolved_provider)
+    if resolved_provider == "groq":
+        return _GROQ_MODEL_ALIASES.get(cleaned, cleaned)
+    return cleaned
 
 
 def _default_model_for_provider(provider: str) -> str:
@@ -85,9 +107,9 @@ def normalize_ai_config(raw: dict[str, Any] | None) -> dict[str, Any] | None:
 
     model = str(raw.get("model") or "").strip()
     if not model:
-        # Infer from the resolved backend (Groq key → Groq model), not the
-        # generic "api" label — otherwise Groq gets gpt-4o-mini and fails.
         model = _default_model_for_provider(resolved)
+    else:
+        model = _resolve_cloud_model(model, resolved)
 
     if provider == "api" and base_url:
         url = _normalize_chat_completions_url(base_url)
@@ -125,6 +147,17 @@ def _sanitize_provider_error(status_code: int, body: str) -> str:
     return snippet or f"AI provider request failed ({status_code})"
 
 
+def _throttle_cloud_requests() -> None:
+    """Minimum spacing between cloud completions — avoids consumer-facing 429 storms."""
+    global _last_cloud_request_at
+    with _cloud_throttle_lock:
+        now = time.time()
+        wait = _CLOUD_MIN_GAP_SEC - (now - _last_cloud_request_at)
+        if wait > 0:
+            time.sleep(wait)
+        _last_cloud_request_at = time.time()
+
+
 def call_cloud_chat(
     *,
     provider: CloudProvider | str,
@@ -139,6 +172,7 @@ def call_cloud_chat(
     top_p: float | None = None,
 ) -> str:
     endpoint = url
+    config: dict[str, Any] | None = None
     if not endpoint:
         config = normalize_ai_config(
             {
@@ -152,6 +186,11 @@ def call_cloud_chat(
             raise CloudAIError("AI provider is not configured")
         endpoint = config["url"]
         model = config["model"]
+    else:
+        model = _resolve_cloud_model(
+            model,
+            _infer_provider_from_key(api_key, base_url),
+        )
 
     payload: dict[str, Any] = {
         "model": model,
@@ -170,6 +209,7 @@ def call_cloud_chat(
     }
     last_error: Exception | None = None
     for attempt in range(4):
+        _throttle_cloud_requests()
         try:
             response = requests.post(
                 endpoint,
@@ -200,6 +240,21 @@ def call_cloud_chat(
                 continue
 
         if not response.ok:
+            lower = (response.text or "").lower()
+            resolved = (
+                str(config.get("resolved_provider") or provider)
+                if config
+                else _infer_provider_from_key(api_key, base_url)
+            )
+            fallback_model = _default_model_for_provider(resolved)
+            if (
+                payload["model"] != fallback_model
+                and "model" in lower
+                and ("not found" in lower or "does not exist" in lower or "decommission" in lower)
+            ):
+                payload["model"] = fallback_model
+                model = fallback_model
+                continue
             raise CloudAIError(_sanitize_provider_error(response.status_code, response.text))
 
         try:

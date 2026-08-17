@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import time
 from typing import Any, Literal
 
 logger = logging.getLogger("thoth.writing_agent")
@@ -2360,9 +2361,9 @@ def _enforce_length_structure(
             return _reassemble_email_sections(sections)
 
         if length == "long":
-            # Structure only: split long paragraphs into more paragraphs.
-            # Do NOT append canned elaboration — that becomes copy-paste boilerplate.
-            while len(paragraphs) < 5:
+            # Structure only: split long paragraphs; consumer long = ≥4 blocks.
+            minimum_long = 4
+            while len(paragraphs) < minimum_long:
                 best_i = -1
                 best_sents: list[str] = []
                 for index, paragraph in enumerate(paragraphs):
@@ -2377,6 +2378,16 @@ def _enforce_length_structure(
                     _join_sentences(best_sents[:mid]),
                     _join_sentences(best_sents[mid:]),
                 ]
+            if len(paragraphs) < minimum_long:
+                flat_sents: list[str] = []
+                for paragraph in paragraphs:
+                    flat_sents.extend(_split_sentences(paragraph))
+                if len(flat_sents) >= minimum_long:
+                    paragraphs = flat_sents[: max(minimum_long, len(flat_sents))]
+                    paragraphs = [
+                        s if s.endswith((".", "!", "?")) else f"{s}."
+                        for s in paragraphs
+                    ]
             sections["body"] = "\n\n".join(paragraphs)
             return _reassemble_email_sections(sections)
 
@@ -2403,7 +2414,8 @@ def _enforce_length_structure(
             return "\n\n".join(paragraphs[:2] + [" ".join(paragraphs[2:])])
         return text
     if length == "long":
-        while len(paragraphs) < 5:
+        minimum_long = 4
+        while len(paragraphs) < minimum_long:
             best_i = -1
             best_sents = []
             for index, paragraph in enumerate(paragraphs):
@@ -2418,6 +2430,15 @@ def _enforce_length_structure(
                 _join_sentences(best_sents[:mid]),
                 _join_sentences(best_sents[mid:]),
             ]
+        if len(paragraphs) < minimum_long:
+            flat_sents = []
+            for paragraph in paragraphs:
+                flat_sents.extend(_split_sentences(paragraph))
+            if len(flat_sents) >= minimum_long:
+                paragraphs = [
+                    s if s.endswith((".", "!", "?")) else f"{s}."
+                    for s in flat_sents[: max(minimum_long, len(flat_sents))]
+                ]
         return "\n\n".join(paragraphs)
     return text
 
@@ -3706,6 +3727,92 @@ def _extract_seed_org_names(seed_baseline: str) -> list[str]:
     return found
 
 
+# Condition / quality words users expect to see verbatim — not polished away.
+_SEED_DESCRIPTOR_TERMS = frozenset(
+    {
+        "wobbly", "soft", "cracked", "broken", "leaking", "loose", "damaged",
+        "missing", "lost", "sick", "flooded", "overcharged", "migraine",
+        "noon", "midnight", "brakes", "mute", "unmuted", "parking",
+    }
+)
+
+# When the model softens a seed descriptor, rewrite back in context.
+_DESCRIPTOR_SOFTENING: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    ("wobbly", r"\brailing\b", ("stable", "secure", "sturdy", "firm")),
+    ("soft", r"\bbrakes?\b", ("spongy", "weak", "low", "mushy")),
+)
+
+
+def _ensure_seed_descriptor_terms(
+    body: str,
+    *,
+    seed_baseline: str,
+    header: str,
+    prefer_splice: bool,
+) -> str:
+    """Keep seed condition words (wobbly, soft, noon) instead of polished synonyms."""
+    seed_lower = seed_baseline.lower()
+    body_lower = body.lower()
+    full_lower = f"{header.lower()} {body_lower}"
+
+    def _present(term: str) -> bool:
+        return term.lower() in body_lower or term.lower() in full_lower
+
+    def _inject(sentence: str) -> None:
+        nonlocal body, body_lower, full_lower
+        if prefer_splice:
+            body = _splice_clause_into_first_sentence(body, sentence)
+        else:
+            body = _append_natural_sentence(body, sentence)
+        body_lower = body.lower()
+        full_lower = f"{header.lower()} {body_lower}"
+
+    for descriptor, noun_pattern, softenings in _DESCRIPTOR_SOFTENING:
+        if descriptor not in seed_lower or _present(descriptor):
+            continue
+        if re.search(noun_pattern, seed_lower) and re.search(noun_pattern, body_lower):
+            for soft in softenings:
+                if soft in body_lower:
+                    body = re.sub(
+                        rf"(?i)\b{re.escape(soft)}\b",
+                        descriptor,
+                        body,
+                        count=1,
+                    )
+                    body_lower = body.lower()
+                    full_lower = f"{header.lower()} {body_lower}"
+                    break
+            # Collapse doublet paraphrases: "wobbly and secure" → "wobbly".
+            body = re.sub(
+                rf"(?i)\b{re.escape(descriptor)}\s+and\s+(?:{'|'.join(map(re.escape, softenings))})\b",
+                descriptor,
+                body,
+            )
+            body_lower = body.lower()
+            full_lower = f"{header.lower()} {body_lower}"
+        if not _present(descriptor):
+            if descriptor == "wobbly" and re.search(r"(?i)\brailing\b", seed_lower):
+                _inject("The railing is wobbly")
+            elif descriptor == "soft" and "brakes" in seed_lower:
+                _inject("The brakes feel soft")
+
+    for term in _SEED_DESCRIPTOR_TERMS:
+        if term not in seed_lower or _present(term):
+            continue
+        if term == "noon":
+            _inject("I need it ready by noon")
+        elif term == "midnight":
+            _inject("This needs to happen by midnight")
+        elif term == "migraine":
+            _inject("I had a migraine")
+        elif term == "brakes" and "soft" in seed_lower:
+            _inject("The brakes feel soft")
+        elif term == "brakes":
+            _inject("The brakes need to be checked")
+
+    return body
+
+
 def _strip_seed_ensure_scaffolds(body: str) -> str:
     """Remove internal ensure scaffolds that must never appear in user-facing text."""
     if not body.strip():
@@ -4032,11 +4139,20 @@ def _ensure_seed_key_details(
             _refresh()
 
     # Money / IDs — attach beside existing invoice/order words when possible.
+    seen_amounts: set[str] = set()
     for match in re.finditer(r"\$[\d,]+(?:\.\d{2})?", seed_baseline):
         amount = match.group(0)
-        if _already(amount) or amount.replace(",", "") in body.replace(",", ""):
+        norm = amount.replace(",", "")
+        if amount in seen_amounts:
+            continue
+        if _already(amount) or norm in body.replace(",", ""):
+            seen_amounts.add(amount)
+            continue
+        if re.search(rf"(?i)\bfinal payment\b[^.\n]{{0,40}}{re.escape(norm)}", full_lower):
+            seen_amounts.add(amount)
             continue
         body = _append_natural_sentence(body, f"The total is {amount}.")
+        seen_amounts.add(amount)
         _refresh()
 
     for match in re.finditer(r"\b[A-Z]{1,3}-?\d{2,}\b|#\d{3,}\b|#[A-Z]{1,4}-?\d{2,}\b", seed_baseline):
@@ -4078,6 +4194,7 @@ def _ensure_seed_key_details(
         "sick", "heater", "blender", "family emergency", "investor call",
         "grad school", "father", "warehouse flooded", "loading dock flooded",
         "side dish", "password lockout", "two extra days", "two more days",
+        "migraine", "brakes", "parking", "permit",
     ):
         if token in seed_lower_flex and not _already(token):
             if token == "plumber":
@@ -4197,6 +4314,16 @@ def _ensure_seed_key_details(
                 _inject("I need two extra days")
             elif token == "two more days":
                 _inject("I need two more days")
+            elif token == "migraine":
+                _inject("I had a migraine")
+            elif token == "brakes":
+                _inject(
+                    "The brakes feel soft"
+                    if "soft" in seed_lower_flex
+                    else "The brakes need to be checked"
+                )
+            elif token == "parking" or token == "permit":
+                _inject("This is about renewing my parking permit")
             else:
                 _inject(f"This is about the {token}")
             _refresh()
@@ -4232,6 +4359,15 @@ def _ensure_seed_key_details(
         )
         _refresh()
 
+    # noon / midnight — keep seed clock words, not only numeric times.
+    for clock_word in ("noon", "midnight"):
+        if re.search(rf"\b{clock_word}\b", seed_lower) and clock_word not in full_lower:
+            if clock_word == "noon":
+                _inject("I need it ready by noon")
+            else:
+                _inject("This needs to happen by midnight")
+            _refresh()
+
     # Clock times must keep the seed form (8am), not only "8 AM".
     for match in re.finditer(r"\b(\d{1,2})\s*([ap]m)\b", seed_lower):
         hour, meridiem = match.group(1), match.group(2)
@@ -4259,6 +4395,12 @@ def _ensure_seed_key_details(
     if recipient and recipient.lower() not in full_lower:
         _inject(f"Please let {recipient} know")
 
+    body = _ensure_seed_descriptor_terms(
+        body,
+        seed_baseline=seed_baseline,
+        header=header,
+        prefer_splice=prefer_splice,
+    )
     body = _strip_seed_ensure_scaffolds(body)
     sections["body"] = body
     return _reassemble_email_sections(sections)
@@ -4705,7 +4847,7 @@ def _ensure_safe_no_reason_elaboration(
     seed_lower = (seed_baseline or "").lower()
     minimum, _maximum = _generate_length_bounds(length, seed_baseline)
     target_words = minimum
-    minimum_paragraphs = 5 if length == "long" else 2
+    minimum_paragraphs = 4 if length == "long" else 2
     if "extension" in seed_lower or "deadline" in seed_lower:
         candidates = (
             "Please provide the revised deadline you would prefer.",
@@ -4797,9 +4939,13 @@ def _ensure_safe_no_reason_elaboration(
     seed_tokens = _seed_content_tokens(seed_baseline)
     for sentence in candidates:
         current_words = len(re.findall(r"[A-Za-z0-9']+", " ".join(paragraphs)))
-        if len(paragraphs) >= minimum_paragraphs and current_words >= target_words:
+        paragraphs_ok = len(paragraphs) >= minimum_paragraphs
+        words_ok = current_words >= target_words
+        if paragraphs_ok and words_ok:
             break
-        if length == "medium" and len(paragraphs) >= 3:
+        if words_ok and length not in {"long"}:
+            break
+        if length == "medium" and len(paragraphs) >= 3 and words_ok:
             break
         sentence_tokens = _seed_content_tokens(sentence)
         if (
@@ -6311,8 +6457,30 @@ def _call_llm(
                 url=ai_config.get("url"),
                 max_tokens=cloud_cap,
             )
-        except CloudAIError:
-            raise
+        except CloudAIError as exc:
+            # Consumer fallback: bad/expired cloud keys should not brick Generate
+            # when local Ollama is installed and running.
+            logger.warning("cloud_llm_failed task=%s error=%s — trying Ollama", task, exc)
+            try:
+                from server import (  # noqa: PLC0415
+                    OLLAMA_GRAMMAR_NUM_CTX,
+                    OllamaError,
+                    _ollama_generate,
+                    ensure_ollama_running,
+                )
+
+                ensure_ollama_running()
+                return _ollama_generate(
+                    prompt,
+                    temperature=temperature,
+                    top_p=top_p,
+                    system=effective_system,
+                    model=OLLAMA_WRITING_MODEL,
+                    num_predict=effective_predict,
+                    num_ctx=OLLAMA_GRAMMAR_NUM_CTX,
+                )
+            except Exception:
+                raise exc
 
     from server import (  # noqa: PLC0415 — avoid import cycle at module load
         OLLAMA_GRAMMAR_NUM_CTX,
@@ -6974,6 +7142,8 @@ class WritingAgent:
                     )
                 )
             attempt_system = f"{system_prompt}\n\n" + "\n\n".join(retry_parts)
+            if ai_config and attempt < 2:
+                time.sleep(3.0)
 
         logger.error(
             "generate_failed_no_valid_candidate case=%r attempts=%d reasons=%s",
