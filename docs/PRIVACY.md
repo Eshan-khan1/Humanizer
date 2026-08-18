@@ -2,7 +2,7 @@
 
 Last updated: August 17, 2026
 
-Thoth is a **local-first writing assistant**. This policy describes how the Chrome extension and companion Thoth.app handle data.
+Thoth is a **local-first writing assistant**. This policy describes how the Chrome extension and companion Thoth.app handle data. Product rules are in [POLICY.md](POLICY.md). In the Mac app, open **Settings → Privacy & Policy**.
 
 ## What we collect
 
@@ -13,7 +13,8 @@ The extension may handle:
 - **Text you type or select** in editable fields (grammar, rewrite, generate)
 - **Settings** (theme, length, tone, complexity, feature toggles)
 - **Optional profile fields** you add (name, email, phone, sign-off, notes)
-- **Optional API keys** if you choose API mode
+- **Optional API keys** if you choose API mode (Chrome local storage or Thoth.app Settings)
+- **Thoth.app settings** on this Mac (model choices, feature toggles, hardware, API key)
 - **A local server token** if you enable Thoth.app authentication
 
 Password, payment, and similar sensitive fields are ignored.
@@ -50,6 +51,7 @@ We do not share your data with third parties except:
 - Drafts are not stored by Thoth after a request finishes, except settings and profile fields you save.
 - Remove profile fields, API keys, or the extension at any time to delete that stored data from Chrome.
 - Uninstalling the extension removes extension storage.
+- Uninstalling Thoth.app and deleting `~/Library/Application Support/Thoth` removes Mac app settings.
 
 ## Contact
 

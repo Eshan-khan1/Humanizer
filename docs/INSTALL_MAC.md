@@ -36,7 +36,7 @@ Menu bar actions:
 
 - **Status** shows whether the server is healthy
 - **Restart server** if something looks stuck
-- **Settings** for local models, features, hardware, and Chrome connect
+- **Settings** for local models, features, hardware, Chrome connect, and **Privacy & Policy**
 - **Connect Chrome Extension…** copies the extension into a stable folder and registers the native host
 - **Quit Thoth** leaves the Chrome extension for later (the local server may stay running)
 

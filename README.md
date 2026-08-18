@@ -346,7 +346,7 @@ Active UI tokens are in [`ui.json`](ui.json) (Uber-inspired dark theme used by t
 
 ## Privacy
 
-See **[docs/PRIVACY.md](docs/PRIVACY.md)** (Chrome Web Store listing should use this URL).
+See **[docs/PRIVACY.md](docs/PRIVACY.md)** and **[docs/POLICY.md](docs/POLICY.md)**. In Thoth.app: **Settings → Privacy & Policy**.
 
 - **Default:** text is processed on your machine via localhost.
 - **Grammar** uses LanguageTool locally (Java).

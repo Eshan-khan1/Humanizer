@@ -576,8 +576,9 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 - Text is processed on **your machine** via localhost
 - **Grammar** uses LanguageTool locally (Java)
 - **Rewrite/Generate** use local Ollama unless you opt into Groq/OpenAI in settings
-- API keys live in **Chrome local storage** and are only sent to `127.0.0.1:8000`
+- API keys live in **Chrome local storage** or Thoth.app Settings and are only sent to `127.0.0.1:8000`
 - No Thoth account, telemetry, or central server
+- Full copy: [PRIVACY.md](PRIVACY.md) and [POLICY.md](POLICY.md); Mac app **Settings → Privacy & Policy**
 
 ---
 
@@ -607,6 +608,8 @@ Open `test_data/rewrite_test.html` in Chrome with the extension loaded to test g
 | [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md) | Windows install |
 | [ui.json](../ui.json) | Active Uber-dark UI tokens |
 | [Thoth ui theme.json](../Thoth%20ui%20theme.json) | Legacy Claude-inspired UI tokens |
+| [PRIVACY.md](PRIVACY.md) | Privacy policy |
+| [POLICY.md](POLICY.md) | Product policy |
 | [Features.txt](../Features.txt) | Product feature notes |
 | [benchmark_tests.json](../benchmark_tests.json) | Automated test cases |
 | [GENERATE_RULES.md](GENERATE_RULES.md) | Generate feature rules (length/tone/complexity independence) |

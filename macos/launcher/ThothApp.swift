@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var settingsHardwareCard: NSView!
     private var settingsFeaturesCard: NSView!
     private var settingsChromeCard: NSView!
+    private var settingsPrivacyCard: NSView!
     private var ramSlider: NSSlider!
     private var gpuSlider: NSSlider!
     private var ramValueLabel: NSTextField!
@@ -64,6 +65,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var settingsRootView: NSView!
     private var settingsFeaturesView: NSView!
     private var settingsHardwareView: NSView!
+    private var settingsPrivacyView: NSView!
+    private var privacyBodyView: NSTextView!
+    private var privacySectionControl: NSSegmentedControl!
     private var menuBarBanner: NSView!
     private var menuBarConnectButton: NSButton!
     private var chromeConnectButton: NSButton!
@@ -156,6 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         appMenu.addItem(withTitle: "About Thoth", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        appMenu.addItem(withTitle: "Privacy & Policy…", action: #selector(showPrivacyPageFromMenu), keyEquivalent: "")
         appMenu.addItem(.separator())
         let hideItem = appMenu.addItem(withTitle: "Hide Thoth", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         hideItem.keyEquivalentModifierMask = .command
@@ -190,6 +195,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
         NSApp.windowsMenu = windowMenu
 
+        let helpItem = NSMenuItem()
+        mainMenu.addItem(helpItem)
+        let helpMenu = NSMenu(title: "Help")
+        helpItem.submenu = helpMenu
+        helpMenu.addItem(withTitle: "Privacy & Policy…", action: #selector(showPrivacyPageFromMenu), keyEquivalent: "")
+        NSApp.helpMenu = helpMenu
+
         NSApp.mainMenu = mainMenu
     }
 
@@ -208,6 +220,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Open Thoth", action: #selector(showWindow), keyEquivalent: "o"))
         menu.addItem(NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ","))
+        menu.addItem(NSMenuItem(title: "Privacy & Policy…", action: #selector(showPrivacyPageFromMenu), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Add to Menu Bar…", action: #selector(openMenuBarSettings), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Restart server", action: #selector(restartServer), keyEquivalent: "r"))
         menu.addItem(.separator())
@@ -878,6 +891,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         chromeCard.addSubview(chrome)
         chromeConnectButton = chrome
 
+        // Privacy & Policy nav row
+        let privacyCard = NSView(frame: NSRect(x: 28, y: 64, width: 424, height: 64))
+        privacyCard.wantsLayer = true
+        privacyCard.layer?.backgroundColor = surface.cgColor
+        privacyCard.layer?.cornerRadius = 14
+        root.addSubview(privacyCard)
+        settingsPrivacyCard = privacyCard
+
+        let privacySection = NSTextField(labelWithString: "Privacy & Policy")
+        privacySection.font = .systemFont(ofSize: 15, weight: .semibold)
+        privacySection.textColor = textColor
+        privacySection.frame = NSRect(x: 20, y: 32, width: 320, height: 20)
+        privacyCard.addSubview(privacySection)
+
+        let privacySummary = NSTextField(labelWithString: "How Thoth handles your writing")
+        privacySummary.font = .systemFont(ofSize: 12)
+        privacySummary.textColor = muted
+        privacySummary.frame = NSRect(x: 20, y: 10, width: 320, height: 16)
+        privacyCard.addSubview(privacySummary)
+
+        let privacyChevron = NSTextField(labelWithString: "›")
+        privacyChevron.font = .systemFont(ofSize: 22, weight: .regular)
+        privacyChevron.textColor = muted
+        privacyChevron.alignment = .right
+        privacyChevron.frame = NSRect(x: 370, y: 16, width: 30, height: 28)
+        privacyCard.addSubview(privacyChevron)
+
+        let privacyOpen = NSButton(frame: privacyCard.bounds)
+        privacyOpen.title = ""
+        privacyOpen.bezelStyle = .inline
+        privacyOpen.isBordered = false
+        privacyOpen.setButtonType(.momentaryChange)
+        privacyOpen.target = self
+        privacyOpen.action = #selector(showPrivacyPage)
+        privacyOpen.toolTip = "Open privacy and policy"
+        privacyOpen.setAccessibilityLabel("Privacy and Policy")
+        privacyCard.addSubview(privacyOpen)
+
         let refresh = NSButton(title: "Refresh models", target: self, action: #selector(refreshModels))
         refresh.bezelStyle = .rounded
         refresh.frame = NSRect(x: 28, y: 20, width: 130, height: 32)
@@ -905,6 +956,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         setupFeaturesPage(in: content)
         setupHardwarePage(in: content)
+        setupPrivacyPage(in: content)
         settingsWindow = win
         showSettingsRoot()
         updateSettingsModeUI()
@@ -1136,10 +1188,137 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         page.addSubview(done)
     }
 
+    private func setupPrivacyPage(in content: NSView) {
+        let page = NSView(frame: content.bounds)
+        page.autoresizingMask = [.width, .height]
+        page.isHidden = true
+        content.addSubview(page)
+        settingsPrivacyView = page
+
+        let back = NSButton(title: "Settings", target: self, action: #selector(showSettingsRoot))
+        back.bezelStyle = .inline
+        back.isBordered = false
+        back.font = .systemFont(ofSize: 16, weight: .semibold)
+        back.contentTintColor = muted
+        back.imagePosition = .imageLeading
+        if let chevron = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: "Back") {
+            let cfg = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            back.image = chevron.withSymbolConfiguration(cfg)
+        }
+        back.frame = NSRect(x: 16, y: 526, width: 140, height: 36)
+        back.setAccessibilityLabel("Back to Settings")
+        page.addSubview(back)
+
+        let heading = NSTextField(labelWithString: "Privacy & Policy")
+        heading.font = .systemFont(ofSize: 24, weight: .bold)
+        heading.textColor = textColor
+        heading.frame = NSRect(x: 28, y: 486, width: 424, height: 28)
+        page.addSubview(heading)
+
+        let tabs = NSSegmentedControl(
+            labels: ["Privacy", "Policy"],
+            trackingMode: .selectOne,
+            target: self,
+            action: #selector(privacySectionChanged(_:))
+        )
+        tabs.frame = NSRect(x: 28, y: 444, width: 192, height: 28)
+        tabs.selectedSegment = 0
+        tabs.setAccessibilityLabel("Privacy or Policy")
+        page.addSubview(tabs)
+        privacySectionControl = tabs
+
+        let card = NSView(frame: NSRect(x: 28, y: 64, width: 424, height: 364))
+        card.wantsLayer = true
+        card.layer?.backgroundColor = surface.cgColor
+        card.layer?.cornerRadius = 14
+        page.addSubview(card)
+
+        let scroll = NSScrollView(frame: NSRect(x: 12, y: 12, width: 400, height: 340))
+        scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
+        scroll.borderType = .noBorder
+        scroll.drawsBackground = false
+        scroll.backgroundColor = .clear
+        card.addSubview(scroll)
+
+        let body = NSTextView(frame: NSRect(x: 0, y: 0, width: 384, height: 340))
+        body.isEditable = false
+        body.isSelectable = true
+        body.drawsBackground = false
+        body.textColor = muted
+        body.font = .systemFont(ofSize: 13)
+        body.textContainerInset = NSSize(width: 8, height: 8)
+        body.isVerticallyResizable = true
+        body.isHorizontallyResizable = false
+        body.textContainer?.containerSize = NSSize(width: 384, height: CGFloat.greatestFiniteMagnitude)
+        body.textContainer?.widthTracksTextView = true
+        body.string = Self.privacyCopy
+        scroll.documentView = body
+        privacyBodyView = body
+
+        let github = NSButton(title: "View on GitHub", target: self, action: #selector(openPrivacyPolicyOnline))
+        github.bezelStyle = .rounded
+        github.frame = NSRect(x: 28, y: 20, width: 140, height: 32)
+        github.toolTip = "Open the full privacy and policy documents"
+        page.addSubview(github)
+
+        let done = NSButton(title: "Done", target: self, action: #selector(closeSettings))
+        done.bezelStyle = .rounded
+        done.frame = NSRect(x: 372, y: 20, width: 80, height: 32)
+        page.addSubview(done)
+    }
+
+    private static let privacyCopy = """
+Thoth is a local-first writing assistant. It does not create accounts, ads, or a central cloud of your writing.
+
+What we handle
+• Text you type or select for grammar, rewrite, and generate
+• Settings (models, features, hardware)
+• Optional API keys if you choose API mode
+• Optional profile fields in the Chrome extension
+
+Password, payment, and similar sensitive fields are ignored.
+
+How it is used
+Only to provide Thoth’s writing features. We do not sell data or use your drafts to train public models.
+
+Where it goes
+By default, text stays on this Mac: Thoth.app, the local server (127.0.0.1:8000), and Ollama.
+
+If you opt into API mode, rewrite and generate go through that local server to the provider you configured. Keys stay on this device.
+
+Control
+Change or delete settings, API keys, and profile fields at any time. Uninstall Thoth.app and the extension to remove stored data from this computer.
+"""
+
+    private static let policyCopy = """
+Thoth helps you write on this Mac and in Chrome. You own the text you enter. Suggestions are assistance only — review them before you send.
+
+You choose Local (Ollama on this machine) or API mode (your key, your provider). Thoth does not require an account.
+
+Use Thoth in line with the sites you write on, and with any school or workplace rules that apply to you. Do not use Thoth to break the law or to access accounts you are not allowed to use.
+
+Thoth is provided as-is. Writing suggestions can be wrong. You are responsible for the text you submit.
+
+We may update this policy when the product changes. Settings → Privacy & Policy and the GitHub copies are current.
+"""
+
+    @objc private func privacySectionChanged(_ sender: NSSegmentedControl) {
+        privacyBodyView?.string = sender.selectedSegment == 0 ? Self.privacyCopy : Self.policyCopy
+    }
+
+    @objc private func openPrivacyPolicyOnline() {
+        let path = (privacySectionControl?.selectedSegment == 1) ? "docs/POLICY.md" : "docs/PRIVACY.md"
+        if let url = URL(string: "https://github.com/Eshan-khan1/Thoth/blob/main/\(path)") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     @objc private func showSettingsRoot() {
         settingsRootView?.isHidden = false
         settingsFeaturesView?.isHidden = true
         settingsHardwareView?.isHidden = true
+        settingsPrivacyView?.isHidden = true
         settingsWindow?.title = "Thoth Settings"
         updateFeaturesSummaryLabel()
         updateHardwareSummaryLabel()
@@ -1149,13 +1328,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         loadFeatureSettings()
         settingsRootView?.isHidden = true
         settingsHardwareView?.isHidden = true
+        settingsPrivacyView?.isHidden = true
         settingsFeaturesView?.isHidden = false
         settingsWindow?.title = "Features"
+    }
+
+    @objc private func showPrivacyPage() {
+        settingsRootView?.isHidden = true
+        settingsFeaturesView?.isHidden = true
+        settingsHardwareView?.isHidden = true
+        settingsPrivacyView?.isHidden = false
+        settingsWindow?.title = "Privacy & Policy"
+    }
+
+    @objc private func showPrivacyPageFromMenu() {
+        showSettings()
+        showPrivacyPage()
     }
 
     @objc private func showHardwarePage() {
         settingsRootView?.isHidden = true
         settingsFeaturesView?.isHidden = true
+        settingsPrivacyView?.isHidden = true
         settingsHardwareView?.isHidden = false
         settingsWindow?.title = "Hardware"
         updateHardwareEstimate()
