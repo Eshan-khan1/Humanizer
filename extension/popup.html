@@ -34,7 +34,26 @@
       </div>
     </header>
 
-    <div id="main-view" class="view">
+    <div id="consent-view" class="view">
+      <h1 class="consent-heading">Before Thoth can help</h1>
+      <p class="consent-copy">
+        Thoth reads text in the field you are editing so it can check grammar, rewrite, or
+        generate. Drafts go to the Thoth app on this computer. Password and payment fields
+        are skipped.
+      </p>
+      <p class="consent-copy">
+        If you later connect an API key, rewrite and generate also go through that provider.
+        Profile details and API keys stay on this device.
+      </p>
+      <p class="consent-copy">
+        <a id="privacy-link" href="privacy.html" target="_blank" rel="noopener">Read the privacy policy</a>
+      </p>
+      <button type="button" id="privacy-consent-accept" class="primary-btn">
+        I understand — continue
+      </button>
+    </div>
+
+    <div id="main-view" class="view view--hidden" hidden>
       <p class="server-caption">Server</p>
       <div
         id="status-card"

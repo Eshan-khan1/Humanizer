@@ -1,5 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
+  const consentViewEl = document.getElementById("consent-view");
+  const consentAcceptEl = document.getElementById("privacy-consent-accept");
+  const privacyLinkEl = document.getElementById("privacy-link");
   const mainViewEl = document.getElementById("main-view");
   const settingsViewEl = document.getElementById("settings-view");
   const generateViewEl = document.getElementById("generate-view");
@@ -288,16 +291,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function hideView(viewEl) {
+    if (!viewEl) return;
     viewEl.hidden = true;
     viewEl.classList.add("view--hidden");
   }
 
   function showView(viewEl) {
+    if (!viewEl) return;
     viewEl.hidden = false;
     viewEl.classList.remove("view--hidden");
   }
 
+  function showConsentView() {
+    showView(consentViewEl);
+    hideView(mainViewEl);
+    hideView(settingsViewEl);
+    hideView(generateViewEl);
+    hideView(aiViewEl);
+  }
+
   function showMainView() {
+    hideView(consentViewEl);
     showView(mainViewEl);
     hideView(settingsViewEl);
     hideView(generateViewEl);
@@ -305,6 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showSettingsView() {
+    hideView(consentViewEl);
     hideView(mainViewEl);
     showView(settingsViewEl);
     hideView(generateViewEl);
@@ -312,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showGenerateView() {
+    hideView(consentViewEl);
     hideView(mainViewEl);
     hideView(settingsViewEl);
     hideView(aiViewEl);
@@ -319,11 +335,37 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showAiView() {
+    hideView(consentViewEl);
     hideView(mainViewEl);
     hideView(settingsViewEl);
     hideView(generateViewEl);
     showView(aiViewEl);
   }
+
+  if (privacyLinkEl) {
+    privacyLinkEl.href = chrome.runtime.getURL("privacy.html");
+  }
+
+  function applyConsentState(accepted) {
+    if (settingsOpenEl) {
+      settingsOpenEl.hidden = !accepted;
+    }
+    if (accepted) {
+      showMainView();
+    } else {
+      showConsentView();
+    }
+  }
+
+  chrome.storage.local.get({ thothPrivacyConsent: false }, (result) => {
+    applyConsentState(result.thothPrivacyConsent === true);
+  });
+
+  consentAcceptEl?.addEventListener("click", () => {
+    chrome.storage.local.set({ thothPrivacyConsent: true }, () => {
+      applyConsentState(true);
+    });
+  });
 
   settingsOpenEl.addEventListener("click", showSettingsView);
   settingsBackEl.addEventListener("click", showMainView);
@@ -342,9 +384,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveSettings(values) {
-    chrome.storage.sync.set(values, () => {
+    const localOnly = {};
+    const syncable = { ...values };
+    if ("generateProfile" in syncable) {
+      localOnly.generateProfile = syncable.generateProfile;
+      delete syncable.generateProfile;
+    }
+    if ("generateProfileFields" in syncable) {
+      localOnly.generateProfileFields = syncable.generateProfileFields;
+      delete syncable.generateProfileFields;
+    }
+    if (Object.keys(localOnly).length) {
+      chrome.storage.local.set(localOnly);
+    }
+    if (!Object.keys(syncable).length) return;
+    chrome.storage.sync.set(syncable, () => {
       if (chrome.runtime.lastError) {
-        chrome.storage.local.set(values);
+        chrome.storage.local.set(syncable);
       }
     });
   }
@@ -611,11 +667,27 @@ document.addEventListener("DOMContentLoaded", () => {
     wireGenerateControls();
 
     chrome.storage.sync.get(DEFAULTS, (syncResult) => {
+      const finish = (result) => applySettings(result);
       if (chrome.runtime.lastError) {
-        chrome.storage.local.get(DEFAULTS, applySettings);
+        chrome.storage.local.get(DEFAULTS, finish);
         return;
       }
-      applySettings(syncResult);
+      chrome.storage.local.get(
+        {
+          generateProfile: DEFAULTS.generateProfile,
+          generateProfileFields: DEFAULTS.generateProfileFields,
+        },
+        (localResult) => {
+          finish({
+            ...syncResult,
+            generateProfile:
+              localResult.generateProfile || syncResult.generateProfile,
+            generateProfileFields:
+              localResult.generateProfileFields ||
+              syncResult.generateProfileFields,
+          });
+        }
+      );
     });
   }
 

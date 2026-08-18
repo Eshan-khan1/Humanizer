@@ -149,7 +149,7 @@ chrome.runtime.onStartup.addListener(() => {
   autoConnectToApp();
 });
 
-chrome.alarms.create(CONNECT_ALARM, { periodInMinutes: 1 });
+chrome.alarms.create(CONNECT_ALARM, { periodInMinutes: 5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === CONNECT_ALARM) {
     autoConnectToApp();

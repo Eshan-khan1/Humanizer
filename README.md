@@ -346,11 +346,14 @@ Active UI tokens are in [`ui.json`](ui.json) (Uber-inspired dark theme used by t
 
 ## Privacy
 
+See **[docs/PRIVACY.md](docs/PRIVACY.md)** (Chrome Web Store listing should use this URL).
+
 - **Default:** text is processed on your machine via localhost.
 - **Grammar** uses LanguageTool locally (Java).
 - **Rewrite/Generate** use local Ollama unless you opt into Groq/OpenAI in settings.
-- API keys live in **Chrome storage** on your device and are only sent to `127.0.0.1:8000`.
+- API keys and profile fields live in **Chrome local storage** on your device and are only sent to `127.0.0.1:8000`.
 - No Thoth account, telemetry, or central server.
+- The popup asks for consent before the extension reads text in page fields.
 
 ---
 

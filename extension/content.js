@@ -21,6 +21,8 @@
     "week",
     "number",
   ]);
+  const SENSITIVE_FIELD_RE =
+    /password|passwd|\bpwd\b|new-password|current-password|one-time|otp\b|ssn|social.?security|cvv|cvc|cc-number|cc-csc|cardnumber|credit.?card|card.?exp/i;
 
   let activeField = null;
   let activeMirror = null;
@@ -36,6 +38,7 @@
   let scanDebounceTimer = null;
   let floatingPositionHandler = null;
   let enabled = true;
+  let privacyConsent = false;
   let autoFixAll = true;
   let rewriteInSearchBars = true;
   let featureGrammar = true;
@@ -186,7 +189,7 @@
   }
 
   function startGrammarChecker() {
-    if (!isValid() || !enabled || checkerStarted) return;
+    if (!isValid() || !privacyConsent || !enabled || checkerStarted) return;
     checkerStarted = true;
 
     scanForEditableFields();
@@ -212,6 +215,17 @@
   }
 
   function applyStoredSettings(changes) {
+    if (changes.thothPrivacyConsent) {
+      privacyConsent = changes.thothPrivacyConsent.newValue === true;
+      if (!privacyConsent) {
+        stopAutoFixLoop();
+        deactivateField();
+        hideRewriteUI();
+      } else if (enabled) {
+        startGrammarChecker();
+        scanForEditableFields();
+      }
+    }
     if (changes.enabled) {
       enabled = changes.enabled.newValue !== false;
       if (!enabled) {
@@ -535,6 +549,7 @@
     };
     const applyLoadedSettings = (result) => {
       enabled = result.enabled !== false;
+      privacyConsent = result.thothPrivacyConsent === true;
       autoFixAll = result.autoFixAll !== false;
       rewriteInSearchBars = result.rewriteInSearchBars !== false;
       featureGrammar = result.featureGrammar !== false;
@@ -553,8 +568,9 @@
         generateProfile: result.generateProfile || defaults.generateProfile,
       });
       syncGeneratePanelSummary();
-      if (!enabled) {
+      if (!privacyConsent || !enabled) {
         deactivateField();
+        hideRewriteUI();
         return;
       }
       waitForBody(() => {
@@ -567,6 +583,9 @@
       featureGrammar: true,
       featureRewrite: true,
       featureGenerate: true,
+      thothPrivacyConsent: false,
+      generateProfile: { ...generateSettings.profile },
+      generateProfileFields: [],
     };
 
     chrome.storage.sync.get(defaults, (syncResult) => {
@@ -989,8 +1008,24 @@
     return root instanceof HTMLElement ? root : field;
   }
 
+  function isSensitiveField(el) {
+    if (!(el instanceof HTMLElement)) return false;
+    if (el instanceof HTMLInputElement) {
+      const type = (el.getAttribute("type") || "text").toLowerCase();
+      if (type === "password") return true;
+    }
+    const haystack = [
+      el.getAttribute("autocomplete") || "",
+      el.getAttribute("name") || "",
+      el.getAttribute("id") || "",
+      el.getAttribute("aria-label") || "",
+    ].join(" ");
+    return SENSITIVE_FIELD_RE.test(haystack);
+  }
+
   function isEditableElement(el) {
     if (!(el instanceof HTMLElement)) return false;
+    if (isSensitiveField(el)) return false;
     if (el.classList?.contains("grammar-overlay-floating")) return false;
     if (el.closest?.(".grammar-overlay-floating, .grm-suggestion-popup")) return false;
     if (el === document.body || el === document.documentElement) return false;
@@ -1051,7 +1086,7 @@
   }
 
   function onDocumentFocusIn(event) {
-    if (!isValid() || !enabled) return;
+    if (!isValid() || !privacyConsent || !enabled) return;
     const field = resolveEditableField(event.target);
     if (!field) return;
     if (!attachedFields.has(field)) {
@@ -1061,7 +1096,7 @@
   }
 
   function onDocumentInput(event) {
-    if (!isValid() || !enabled || suppressGrammarEvents) return;
+    if (!isValid() || !privacyConsent || !enabled || suppressGrammarEvents) return;
     const field = resolveEditableField(event.target);
     if (!field) return;
     if (!attachedFields.has(field)) {
@@ -4459,10 +4494,10 @@
   let rewriteSelectionChangeTimer = null;
 
   function onDocumentSelectionChange() {
-    if (!isValid() || !enabled || rewriteUiBlockingSelection()) return;
+    if (!isValid() || !privacyConsent || !enabled || rewriteUiBlockingSelection()) return;
     clearTimeout(rewriteSelectionChangeTimer);
     rewriteSelectionChangeTimer = setTimeout(() => {
-      if (!isValid() || !enabled || rewriteUiBlockingSelection()) return;
+      if (!isValid() || !privacyConsent || !enabled || rewriteUiBlockingSelection()) return;
       const rewriteSel = getRewriteSelectionFromPage();
       if (!rewriteSel || !rewriteAllowedForField(rewriteSel.field)) return;
       if (
@@ -4477,13 +4512,13 @@
   }
 
   function onDocumentMouseUp(event) {
-    if (!isValid() || !enabled) return;
+    if (!isValid() || !privacyConsent || !enabled) return;
     if (eventHitsRewriteUi(event.target)) {
       return;
     }
 
     requestAnimationFrame(() => {
-      if (!isValid() || !enabled) return;
+      if (!isValid() || !privacyConsent || !enabled) return;
       if (eventHitsRewriteUi(event.target)) {
         return;
       }

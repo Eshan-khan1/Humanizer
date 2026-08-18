@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Thoth privacy</title>
+    <link rel="stylesheet" href="design-tokens.css" />
+    <style>
+      body {
+        font-family: var(--font-sans, system-ui, sans-serif);
+        max-width: 42rem;
+        margin: 0 auto;
+        padding: 24px 20px 48px;
+        color: #111;
+        line-height: 1.5;
+      }
+      h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.1rem; margin-top: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Thoth privacy policy</h1>
+    <p>Last updated: August 17, 2026</p>
+    <p>
+      Thoth is a local-first writing assistant. It does not create accounts, ads, or a
+      central cloud of your writing.
+    </p>
+    <h2>What we handle</h2>
+    <ul>
+      <li>Text you type or select in editable fields</li>
+      <li>Settings (theme, length, tone, complexity)</li>
+      <li>Optional profile fields you add</li>
+      <li>Optional API keys if you choose API mode</li>
+    </ul>
+    <p>Password, payment, and similar sensitive fields are ignored.</p>
+    <h2>How it is used</h2>
+    <p>
+      Only to provide grammar, rewrite, and generate. We do not sell data or use your
+      drafts to train public models.
+    </p>
+    <h2>Where it goes</h2>
+    <p>
+      By default, text is sent only to Thoth on your computer
+      (<code>http://127.0.0.1:8000</code>) and local Ollama. If you opt into API mode,
+      rewrite/generate go through that local server to the provider you configured.
+      API keys and profile fields stay in Chrome storage on this device.
+    </p>
+    <h2>Control</h2>
+    <p>
+      Remove saved profile fields, API keys, or the extension at any time. Uninstalling
+      removes extension storage.
+    </p>
+    <p>
+      Full policy:
+      <a href="https://github.com/Eshan-khan1/Thoth/blob/main/docs/PRIVACY.md"
+        >docs/PRIVACY.md</a>
+    </p>
+  </body>
+</html>

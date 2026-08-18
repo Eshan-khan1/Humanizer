@@ -254,8 +254,10 @@ These must not bleed into each other. Post-generation filters enforce structure,
 
 ### Permissions
 
-- `activeTab`, `scripting`, `storage`, `alarms`, `nativeMessaging`
-- `host_permissions`: `http://127.0.0.1:8000/*` and `http://127.0.0.1:*/`
+- `storage`, `alarms`, `nativeMessaging` (no unused `scripting` / `activeTab`)
+- `host_permissions`: `http://127.0.0.1:8000/*` only
+- Content scripts: `http(s)://*/*`, excluding the Chrome Web Store
+- Privacy consent is required before the extension reads page text
 
 ### Default settings (popup)
 

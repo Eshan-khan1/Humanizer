@@ -133,6 +133,45 @@ html[data-theme="light"] .theme-icon--sun {
   display: none;
 }
 
+.consent-heading {
+  font-size: 1.15rem;
+  margin: 16px 16px 8px;
+}
+
+.consent-copy {
+  margin: 0 16px 10px;
+  font-size: 0.8125rem;
+  color: var(--hz-text-muted, var(--hz-text));
+  opacity: 0.88;
+}
+
+.consent-copy a {
+  color: inherit;
+}
+
+#consent-view .primary-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 12px 16px 20px;
+}
+
+.primary-btn {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  font-weight: 650;
+  font-size: 0.875rem;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+[data-theme="light"] .primary-btn {
+  background: #111;
+  color: #fff;
+}
+
 .view--hidden {
   display: none;
 }
