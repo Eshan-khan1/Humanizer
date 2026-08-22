@@ -141,6 +141,35 @@ def require_feature(name: str) -> None:
     try:
         from macos.menubar import settings as app_settings
 
+        # #region agent log
+        try:
+            _feats = app_settings.features_summary()
+            _enabled = app_settings.feature_enabled(name)
+            with open(
+                "/Users/eshankhan/Documents/code/Humanizer/.cursor/debug-2bb802.log",
+                "a",
+                encoding="utf-8",
+            ) as _df:
+                _df.write(
+                    json.dumps(
+                        {
+                            "sessionId": "2bb802",
+                            "hypothesisId": "A",
+                            "location": "server.py:require_feature",
+                            "message": "feature gate",
+                            "data": {
+                                "name": name,
+                                "enabled": _enabled,
+                                "features": _feats,
+                            },
+                            "timestamp": int(time.time() * 1000),
+                        }
+                    )
+                    + "\n"
+                )
+        except OSError:
+            pass
+        # #endregion
         if not app_settings.feature_enabled(name):
             raise HTTPException(
                 status_code=403,

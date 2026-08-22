@@ -1334,6 +1334,32 @@ We may update this policy when the product changes. Settings → Privacy & Polic
     }
 
     @objc private func showPrivacyPage() {
+        // #region agent log
+        let debugURL = URL(fileURLWithPath: "/Users/eshankhan/Documents/code/Humanizer/.cursor/debug-2bb802.log")
+        let payload: [String: Any] = [
+            "sessionId": "2bb802",
+            "hypothesisId": "D",
+            "location": "ThothApp.swift:showPrivacyPage",
+            "message": "privacy page opened",
+            "data": [
+                "privacyViewNil": settingsPrivacyView == nil,
+                "rootHidden": settingsRootView?.isHidden ?? true,
+            ] as [String: Any],
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: payload),
+           var lineData = String(data: data, encoding: .utf8)?.data(using: .utf8) {
+            lineData.append(contentsOf: "\n".utf8)
+            if FileManager.default.fileExists(atPath: debugURL.path),
+               let handle = try? FileHandle(forWritingTo: debugURL) {
+                defer { try? handle.close() }
+                handle.seekToEndOfFile()
+                handle.write(lineData)
+            } else {
+                try? lineData.write(to: debugURL)
+            }
+        }
+        // #endregion
         settingsRootView?.isHidden = true
         settingsFeaturesView?.isHidden = true
         settingsHardwareView?.isHidden = true
@@ -1758,17 +1784,56 @@ We may update this policy when the product changes. Settings → Privacy & Polic
 
     private func logMenuBarGeometry(_ reason: String) {
         var line = reason
+        var frameX: Double = 0
+        var frameY: Double = 0
+        var screenName = "nil"
+        var hasWindow = false
         if let button = statusItem?.button, let win = button.window {
             let f = win.frame
+            hasWindow = true
+            frameX = f.origin.x
+            frameY = f.origin.y
+            screenName = win.screen?.localizedName ?? "nil"
             line += String(
                 format: " visible=%@ frame=(%.0f,%.0f %.0fx%.0f) screen=%@",
                 statusItem.isVisible ? "true" : "false",
                 f.origin.x, f.origin.y, f.size.width, f.size.height,
-                win.screen?.localizedName ?? "nil"
+                screenName
             )
         } else {
             line += " button/window=nil visible=\(statusItem?.isVisible == true)"
         }
+        // #region agent log
+        let debugURL = URL(fileURLWithPath: "/Users/eshankhan/Documents/code/Humanizer/.cursor/debug-2bb802.log")
+        let payload: [String: Any] = [
+            "sessionId": "2bb802",
+            "hypothesisId": "C",
+            "location": "ThothApp.swift:logMenuBarGeometry",
+            "message": "menu bar geometry",
+            "data": [
+                "reason": reason,
+                "hasWindow": hasWindow,
+                "frameX": frameX,
+                "frameY": frameY,
+                "screen": screenName,
+                "showing": isMenuBarItemShowing(),
+                "isVisible": statusItem?.isVisible == true,
+            ] as [String: Any],
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: payload),
+           var lineData = String(data: data, encoding: .utf8)?.data(using: .utf8) {
+            lineData.append(contentsOf: "\n".utf8)
+            if FileManager.default.fileExists(atPath: debugURL.path),
+               let handle = try? FileHandle(forWritingTo: debugURL) {
+                defer { try? handle.close() }
+                handle.seekToEndOfFile()
+                handle.write(lineData)
+            } else {
+                try? lineData.write(to: debugURL)
+            }
+        }
+        // #endregion
         let dir = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs/Thoth")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
