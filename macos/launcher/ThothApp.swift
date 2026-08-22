@@ -123,14 +123,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self.updateMenuBarBanner()
             self.bgStatusLabel?.stringValue = "Background status: \(self.backgroundStatusSummary())"
             // Quiet reconnect if the icon slips off-screen — don't keep reopening Settings.
-            // Require sustained hidden (2 ticks ≈ 8s) + 20s recreate cooldown so StatusKit
-            // single-frame glitches don't thrash the icon into (0,0) / off-screen.
             // Never soft-reset immediately after recreate: frame is (0,0) while StatusKit
             // settles, and killall ControlCenter makes the off-screen park worse.
+            // Sidecar/AirPlay: recreating parks the icon on Sidecar (x≈-1100) — wait only.
             if self.isMenuBarItemShowing() {
                 self.menuBarHiddenTicks = 0
             } else if !self.menuBarAutoConnectRunning {
                 self.menuBarHiddenTicks += 1
+                if self.hasSidecarOrAirPlayDisplay() {
+                    return
+                }
                 let now = Date()
                 if self.menuBarHiddenTicks >= 2,
                    now.timeIntervalSince(self.lastStatusRecreate) >= 20 {
@@ -1677,6 +1679,18 @@ We may update this policy when the product changes. Settings → Privacy & Polic
                     self.autoConnectMenuBar(attempt: 99)
                     return
                 }
+                if self.hasSidecarOrAirPlayDisplay() {
+                    // Sidecar: never recreate — StatusKit returns the icon to Built-in alone.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                        guard let self else { return }
+                        self.menuBarAutoConnectRunning = false
+                        if self.isMenuBarItemShowing() {
+                            self.defaults.set(true, forKey: self.menuBarAckKey)
+                        }
+                        self.updateMenuBarBanner()
+                    }
+                    return
+                }
                 self.lastStatusRecreate = Date()
                 self.recreateStatusItem()
                 // Give StatusKit time to place the icon before considering soft-reset.
@@ -1687,6 +1701,11 @@ We may update this policy when the product changes. Settings → Privacy & Polic
         case 2:
             if isMenuBarItemShowing() {
                 autoConnectMenuBar(attempt: 99)
+                return
+            }
+            if hasSidecarOrAirPlayDisplay() {
+                menuBarAutoConnectRunning = false
+                updateMenuBarBanner()
                 return
             }
             softResetMenuBarPlacement()
@@ -1727,6 +1746,16 @@ We may update this policy when the product changes. Settings → Privacy & Polic
         updateMenuBarBanner()
     }
 
+    private func hasSidecarOrAirPlayDisplay() -> Bool {
+        for screen in NSScreen.screens {
+            let name = screen.localizedName.lowercased()
+            if name.contains("sidecar") || name.contains("airplay") {
+                return true
+            }
+        }
+        return false
+    }
+
     private func isMenuBarItemShowing() -> Bool {
         statusItem.isVisible = true
         guard let button = statusItem.button else { return false }
@@ -1734,8 +1763,15 @@ We may update this policy when the product changes. Settings → Privacy & Polic
         let frame = win.frame
         // On macOS 26, blocked / misplaced items are off-screen (y ≤ 0) or have no screen.
         if frame.origin.y <= 0 { return false }
-        if win.screen == nil { return false }
         if frame.width < 2 || frame.height < 2 { return false }
+        // Parked StatusKit frames use negative X (often left of the built-in display).
+        if frame.origin.x < 0 { return false }
+        guard let screen = win.screen else { return false }
+        // Sidecar / AirPlay look "attached" while the icon is not on the built-in bar.
+        let name = screen.localizedName.lowercased()
+        if name.contains("sidecar") || name.contains("airplay") {
+            return false
+        }
         return true
     }
 
@@ -1839,7 +1875,8 @@ We may update this policy when the product changes. Settings → Privacy & Polic
                 "showing": isMenuBarItemShowing(),
                 "isVisible": statusItem?.isVisible == true,
                 "hiddenTicks": menuBarHiddenTicks,
-                "runId": "post-fix",
+                "sidecarPresent": hasSidecarOrAirPlayDisplay(),
+                "runId": "post-fix-norecreate",
             ] as [String: Any],
             "timestamp": Int(Date().timeIntervalSince1970 * 1000),
         ]
@@ -1878,7 +1915,9 @@ We may update this policy when the product changes. Settings → Privacy & Polic
                 if let label = sub as? NSTextField {
                     label.stringValue = isMenuBarItemShowing()
                         ? "Menu bar icon is visible"
-                        : "Menu bar icon still hidden — recreating… Open Menu Bar settings if this persists."
+                        : (hasSidecarOrAirPlayDisplay()
+                            ? "Menu bar icon parked by Sidecar/AirPlay — disconnect it, or wait for it to return"
+                            : "Menu bar icon still hidden — recreating… Open Menu Bar settings if this persists.")
                 }
             }
         }
