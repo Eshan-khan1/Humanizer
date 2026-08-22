@@ -125,6 +125,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             // Quiet reconnect if the icon slips off-screen — don't keep reopening Settings.
             // Require sustained hidden (2 ticks ≈ 8s) + 20s recreate cooldown so StatusKit
             // single-frame glitches don't thrash the icon into (0,0) / off-screen.
+            // Never soft-reset immediately after recreate: frame is (0,0) while StatusKit
+            // settles, and killall ControlCenter makes the off-screen park worse.
             if self.isMenuBarItemShowing() {
                 self.menuBarHiddenTicks = 0
             } else if !self.menuBarAutoConnectRunning {
@@ -135,9 +137,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     self.lastStatusRecreate = now
                     self.menuBarHiddenTicks = 0
                     self.recreateStatusItem()
-                    if !self.isMenuBarItemShowing() {
-                        self.softResetMenuBarPlacement()
-                    }
+                } else if self.menuBarHiddenTicks >= 5,
+                          !self.didAutoResetControlCenter,
+                          now.timeIntervalSince(self.lastStatusRecreate) >= 12 {
+                    self.menuBarHiddenTicks = 0
+                    self.softResetMenuBarPlacement()
                 }
             }
         }
@@ -1675,11 +1679,16 @@ We may update this policy when the product changes. Settings → Privacy & Polic
                 }
                 self.lastStatusRecreate = Date()
                 self.recreateStatusItem()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                // Give StatusKit time to place the icon before considering soft-reset.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     self.autoConnectMenuBar(attempt: 2)
                 }
             }
         case 2:
+            if isMenuBarItemShowing() {
+                autoConnectMenuBar(attempt: 99)
+                return
+            }
             softResetMenuBarPlacement()
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { [weak self] in
                 self?.autoConnectMenuBar(attempt: 3)
