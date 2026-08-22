@@ -87,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var lastStatusRecreate = Date.distantPast
     private var didAutoResetControlCenter = false
     private var menuBarAutoConnectRunning = false
+    private var menuBarHiddenTicks = 0
 
     private let defaults = UserDefaults.standard
     private let menuBarAckKey = "thoth.menuBar.acknowledged"
@@ -122,11 +123,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self.updateMenuBarBanner()
             self.bgStatusLabel?.stringValue = "Background status: \(self.backgroundStatusSummary())"
             // Quiet reconnect if the icon slips off-screen — don't keep reopening Settings.
-            // Debounce: recreating every tick fights StatusKit and parks the icon off-screen.
-            if !self.isMenuBarItemShowing(), !self.menuBarAutoConnectRunning {
+            // Require sustained hidden (2 ticks ≈ 8s) + 20s recreate cooldown so StatusKit
+            // single-frame glitches don't thrash the icon into (0,0) / off-screen.
+            if self.isMenuBarItemShowing() {
+                self.menuBarHiddenTicks = 0
+            } else if !self.menuBarAutoConnectRunning {
+                self.menuBarHiddenTicks += 1
                 let now = Date()
-                if now.timeIntervalSince(self.lastStatusRecreate) >= 20 {
+                if self.menuBarHiddenTicks >= 2,
+                   now.timeIntervalSince(self.lastStatusRecreate) >= 20 {
                     self.lastStatusRecreate = now
+                    self.menuBarHiddenTicks = 0
                     self.recreateStatusItem()
                     if !self.isMenuBarItemShowing() {
                         self.softResetMenuBarPlacement()
@@ -1822,6 +1829,8 @@ We may update this policy when the product changes. Settings → Privacy & Polic
                 "screen": screenName,
                 "showing": isMenuBarItemShowing(),
                 "isVisible": statusItem?.isVisible == true,
+                "hiddenTicks": menuBarHiddenTicks,
+                "runId": "post-fix",
             ] as [String: Any],
             "timestamp": Int(Date().timeIntervalSince1970 * 1000),
         ]
