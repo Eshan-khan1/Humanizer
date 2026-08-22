@@ -122,11 +122,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self.updateMenuBarBanner()
             self.bgStatusLabel?.stringValue = "Background status: \(self.backgroundStatusSummary())"
             // Quiet reconnect if the icon slips off-screen — don't keep reopening Settings.
+            // Debounce: recreating every tick fights StatusKit and parks the icon off-screen.
             if !self.isMenuBarItemShowing(), !self.menuBarAutoConnectRunning {
-                self.lastStatusRecreate = Date()
-                self.recreateStatusItem()
-                if !self.isMenuBarItemShowing() {
-                    self.softResetMenuBarPlacement()
+                let now = Date()
+                if now.timeIntervalSince(self.lastStatusRecreate) >= 20 {
+                    self.lastStatusRecreate = now
+                    self.recreateStatusItem()
+                    if !self.isMenuBarItemShowing() {
+                        self.softResetMenuBarPlacement()
+                    }
                 }
             }
         }
