@@ -247,38 +247,6 @@ def call_cloud_chat(
                 else _infer_provider_from_key(api_key, base_url)
             )
             fallback_model = _default_model_for_provider(resolved)
-            # #region agent log
-            try:
-                import json as _json
-
-                with open(
-                    "/Users/eshankhan/Documents/code/Humanizer/.cursor/debug-2bb802.log",
-                    "a",
-                    encoding="utf-8",
-                ) as _df:
-                    _df.write(
-                        _json.dumps(
-                            {
-                                "sessionId": "2bb802",
-                                "hypothesisId": "B",
-                                "location": "cloud_ai.py:call_cloud_chat",
-                                "message": "cloud response not ok",
-                                "data": {
-                                    "status": response.status_code,
-                                    "model": payload.get("model"),
-                                    "fallback_model": fallback_model,
-                                    "resolved": resolved,
-                                    "attempt": attempt,
-                                    "body_preview": (response.text or "")[:180],
-                                },
-                                "timestamp": int(time.time() * 1000),
-                            }
-                        )
-                        + "\n"
-                    )
-            except OSError:
-                pass
-            # #endregion
             if (
                 payload["model"] != fallback_model
                 and "model" in lower

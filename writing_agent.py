@@ -6458,37 +6458,6 @@ def _call_llm(
                 max_tokens=cloud_cap,
             )
         except CloudAIError as exc:
-            # #region agent log
-            try:
-                import json as _json
-                import time as _time
-
-                with open(
-                    "/Users/eshankhan/Documents/code/Humanizer/.cursor/debug-2bb802.log",
-                    "a",
-                    encoding="utf-8",
-                ) as _df:
-                    _df.write(
-                        _json.dumps(
-                            {
-                                "sessionId": "2bb802",
-                                "hypothesisId": "B",
-                                "location": "writing_agent.py:cloud_fallback",
-                                "message": "cloud failed, trying Ollama",
-                                "data": {
-                                    "task": task,
-                                    "error": str(exc)[:200],
-                                    "provider": ai_config.get("provider"),
-                                    "model": ai_config.get("model"),
-                                },
-                                "timestamp": int(_time.time() * 1000),
-                            }
-                        )
-                        + "\n"
-                    )
-            except OSError:
-                pass
-            # #endregion
             # Consumer fallback: bad/expired cloud keys should not brick Generate
             # when local Ollama is installed and running.
             logger.warning("cloud_llm_failed task=%s error=%s — trying Ollama", task, exc)
