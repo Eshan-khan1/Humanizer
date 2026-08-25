@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Thoth</title>
+    <link rel="stylesheet" href="design-tokens.css" />
+    <link rel="stylesheet" href="popup.css" />
+    <script src="popup.js" defer></script>
+  </head>
+  <body>
+    <header class="popup-header">
+      <div class="popup-brand">
+        <img class="popup-logo" src="icons/icon-48.png" width="40" height="40" alt="" />
+        <div class="popup-brand-text">
+          <h1>Thoth</h1>
+          <p class="popup-subtitle">Local writing assistant</p>
+        </div>
+      </div>
+      <div class="popup-header-actions">
+        <button
+          type="button"
+          id="settings-open"
+          class="icon-btn"
+          aria-label="Open settings"
+          title="Settings"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.63c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.63c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="consent-view" class="view">
+      <h1 class="consent-heading">Before Thoth can help</h1>
+      <p class="consent-copy">
+        Thoth reads text in the field you are editing so it can check grammar, rewrite, or
+        generate. Drafts go to the Thoth app on this computer. Password and payment fields
+        are skipped.
+      </p>
+      <p class="consent-copy">
+        If you later connect an API key, rewrite and generate also go through that provider.
+        Profile details and API keys stay on this device.
+      </p>
+      <p class="consent-copy">
+        <a id="privacy-link" href="privacy.html" target="_blank" rel="noopener">Read the privacy policy</a>
+      </p>
+      <button type="button" id="privacy-consent-accept" class="primary-btn">
+        I understand — continue
+      </button>
+    </div>
+
+    <div id="main-view" class="view view--hidden" hidden>
+      <p class="server-caption">Server</p>
+      <div
+        id="status-card"
+        class="status-card status-card--checking"
+        role="status"
+        aria-live="polite"
+      >
+        <div id="status-fill" class="status-fill" aria-hidden="true"></div>
+        <span class="status-dot" aria-hidden="true"></span>
+        <div class="status-copy">
+          <p id="status" class="status-title">Checking…</p>
+          <p id="status-detail" class="status-detail">Looking for Thoth.app…</p>
+        </div>
+        <button type="button" id="reconnect-app" class="status-reconnect" hidden>
+          Reconnect
+        </button>
+        <button
+          type="button"
+          id="restart-server"
+          class="status-restart"
+          aria-label="Restart server"
+          title="Restart server"
+        >
+          <svg class="status-restart-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"
+            />
+          </svg>
+          <span class="status-restart-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+
+    <div id="settings-view" class="view view--hidden" hidden>
+      <div class="settings-top">
+        <button type="button" id="settings-back" class="icon-btn" aria-label="Back to main">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+          </svg>
+        </button>
+        <h2 class="settings-title">Settings</h2>
+      </div>
+
+      <p class="section-label">Generate</p>
+
+      <button type="button" id="generate-open" class="settings-nav-row">
+        <span class="settings-nav-text">
+          <span class="settings-nav-title">Generate</span>
+          <span class="settings-nav-subtitle">Profile, permanent note, length, tone, complexity</span>
+        </span>
+        <svg class="settings-nav-chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+        </svg>
+      </button>
+
+      <div class="row toggle-row" data-setting="enabled">
+        <span class="toggle-label">Check writing while I type</span>
+        <button type="button" class="toggle" role="switch" aria-checked="true">
+          <span class="toggle-bar" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <div class="row toggle-row" data-setting="autoFixAll">
+        <span class="toggle-label">Fix all mistakes automatically</span>
+        <button type="button" class="toggle" role="switch" aria-checked="true">
+          <span class="toggle-bar" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <p class="section-label">AI &amp; security</p>
+
+      <button type="button" id="ai-open" class="settings-nav-row">
+        <span class="settings-nav-text">
+          <span class="settings-nav-title">AI &amp; API keys</span>
+          <span id="ai-nav-subtitle" class="settings-nav-subtitle">Local · Ollama</span>
+        </span>
+        <svg class="settings-nav-chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+        </svg>
+      </button>
+
+      <p class="section-label">Appearance</p>
+
+      <div class="row theme-row">
+        <span class="toggle-label">Color mode</span>
+        <div class="theme-segment" role="group" aria-label="Color mode">
+          <button type="button" class="theme-segment-btn" data-theme-choice="light">Light</button>
+          <button type="button" class="theme-segment-btn" data-theme-choice="dark">Dark</button>
+        </div>
+      </div>
+
+      <p class="section-label">Rewrite</p>
+
+      <div class="row toggle-row" data-setting="rewriteInSearchBars">
+        <span class="toggle-label">Rewrite in search bars</span>
+        <button type="button" class="toggle" role="switch" aria-checked="true">
+          <span class="toggle-bar" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+
+    <div id="ai-view" class="view view--hidden" hidden>
+      <div class="settings-top">
+        <button type="button" id="ai-back" class="icon-btn" aria-label="Back to settings">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+          </svg>
+        </button>
+        <h2 class="settings-title">AI &amp; API keys</h2>
+      </div>
+
+      <div class="settings-scroll">
+        <p class="section-hint">
+          Choose Local (Ollama on your machine) or API (any OpenAI-compatible key). Keys stay on
+          this device and are sent only through your local Thoth server.
+        </p>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Server access</h3>
+          <p class="subsection-hint">Only needed if you started the server with auth enabled.</p>
+          <label class="field-row" for="thoth-api-token">
+            <span class="field-label">Local server token</span>
+            <input
+              id="thoth-api-token"
+              class="settings-input"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Bearer token from Thoth.app"
+            />
+          </label>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">AI backend</h3>
+          <p class="subsection-hint">
+            Used for Humanize, Rewrite, and Generate. Grammar underlines still run locally.
+          </p>
+          <div id="ai-provider-options" class="option-cards" role="radiogroup" aria-label="AI backend"></div>
+        </div>
+
+        <div id="ai-key-section" class="generate-subsection ai-key-section--hidden">
+          <label class="field-row" for="ai-api-key">
+            <span class="field-label">API key</span>
+            <span id="ai-key-hint" class="field-hint">
+              Works with OpenAI, Groq, OpenRouter, and other OpenAI-compatible APIs.
+            </span>
+            <input
+              id="ai-api-key"
+              class="settings-input"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Paste your API key"
+            />
+          </label>
+          <label class="field-row" for="ai-base-url">
+            <span class="field-label">Base URL <span class="field-optional">(optional)</span></span>
+            <span class="field-hint">Leave blank for OpenAI / Groq auto-detect.</span>
+            <input
+              id="ai-base-url"
+              class="settings-input"
+              type="url"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="https://api.openai.com/v1"
+            />
+          </label>
+          <div class="ai-connect-row">
+            <button type="button" id="ai-connect-btn" class="primary-btn">Connect</button>
+            <p id="ai-connect-status" class="ai-connect-status" aria-live="polite"></p>
+          </div>
+          <p class="hint hint--compact">
+            Click Connect to verify the key. A green key field means the API is connected.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="generate-view" class="view view--hidden" hidden>
+      <div class="settings-top">
+        <button type="button" id="generate-back" class="icon-btn" aria-label="Back to settings">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+          </svg>
+        </button>
+        <h2 class="settings-title">Generate</h2>
+      </div>
+
+      <div class="settings-scroll">
+        <p class="section-hint">
+          Saved profile details and defaults are applied every time you generate content.
+        </p>
+
+        <div class="generate-subsection">
+          <label class="field-row" for="generate-permanent-note">
+            <span class="field-label">Permanent note</span>
+            <span class="field-hint">
+              A standing instruction applied to every generation, like "always sound professional"
+              or "keep emails concise."
+            </span>
+            <textarea
+              id="generate-permanent-note"
+              class="settings-textarea"
+              rows="3"
+              placeholder="Always sound professional."
+            ></textarea>
+          </label>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Your profile</h3>
+          <p class="subsection-hint">Used automatically in emails and sign-offs.</p>
+          <label class="field-row" for="generate-profile-add">
+            <span class="field-label">Add profile field</span>
+            <select id="generate-profile-add" class="settings-select" aria-label="Add profile field">
+              <option value="">Choose what to add…</option>
+            </select>
+          </label>
+          <div id="generate-profile-fields" class="generate-profile-fields"></div>
+          <p id="generate-profile-empty" class="profile-empty-hint">No profile fields added yet.</p>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Length</h3>
+          <div id="generate-length-options" class="option-cards" role="radiogroup" aria-label="Length"></div>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Tone</h3>
+          <div id="generate-tone-presets" class="option-cards" role="radiogroup" aria-label="Tone"></div>
+        </div>
+
+        <div class="generate-subsection">
+          <h3 class="subsection-label">Complexity</h3>
+          <div id="generate-complexity-options" class="option-cards" role="radiogroup" aria-label="Complexity"></div>
+        </div>
+
+        <div class="row toggle-row" data-setting="generateIncludeSubject">
+          <span class="toggle-label">Include email subject line</span>
+          <button type="button" class="toggle" role="switch" aria-checked="true">
+            <span class="toggle-bar" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
