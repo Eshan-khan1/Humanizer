@@ -17,14 +17,21 @@ mkdir -p "$DIST"
 package_one() {
   local label="$1"
   local out="$DIST/thoth-extension-${label}-v${VERSION}.zip"
+  local stage="$DIST/.ext-stage-${label}"
   echo "==> Packaging Thoth extension v${VERSION} (${label})..."
+  rm -rf "$stage"
+  mkdir -p "$stage"
+  rsync -a --exclude '.DS_Store' --exclude '__MACOSX' --exclude '.git' "$EXT/" "$stage/"
+  # Chrome Web Store rejects "key" in manifest (keep key in repo for local unpacked ID).
+  python3 -c "import json,pathlib; p=pathlib.Path('$stage/manifest.json'); d=json.loads(p.read_text()); d.pop('key', None); p.write_text(json.dumps(d, indent=2)+'\n')"
   (
-    cd "$EXT"
+    cd "$stage"
     zip -r "$out" . \
       -x "*.DS_Store" \
       -x "__MACOSX/*" \
       -x "*.git/*"
   )
+  rm -rf "$stage"
   echo "  $out"
 }
 
