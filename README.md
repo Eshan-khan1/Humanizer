@@ -1,12 +1,18 @@
-# Thoth
+# Thoth — Local Grammar Checker & AI Writing Assistant (Chrome Extension)
 
-**A local-first writing assistant for Chrome.** Grammar checking, tone rewriting, and content generation — without sending your drafts to a cloud service by default.
+**Open-source Grammarly alternative:** grammar and spell checking, tone rewrite, paraphrasing, and AI text generation — **local-first** on your Mac or Windows PC. Works in Gmail, Google Docs, LinkedIn, Slack, and most text fields on the web.
+
+**Privacy-first writing assistant** — drafts stay on your machine by default (Ollama + LanguageTool). Optional Groq/OpenAI for faster rewrite and generate.
 
 **Chrome extension (public):** [Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Web%20Store-FF4D8D)](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB)](https://www.python.org/)
 [![Local First](https://img.shields.io/badge/Privacy-Local%20First-9B6BFF)](#privacy)
+[![Ollama](https://img.shields.io/badge/AI-Ollama%20local-000000)](https://ollama.com)
+[![Grammarly Alternative](https://img.shields.io/badge/Grammarly-Alternative-15C39A)](#why-thoth-open-source-grammarly-alternative)
+
+**Find this repo:** search GitHub for `grammar checker chrome extension`, `local grammarly alternative`, `ollama writing assistant`, `text humanizer open source`, or `offline AI writing tool`.
 
 ---
 
@@ -136,7 +142,9 @@ You should see `"ok": true`.
 
 ## What is Thoth?
 
-Thoth is an open-source alternative to cloud writing tools like Grammarly. It runs a **small API server on your computer** and pairs it with a **Chrome extension** that works on Gmail, Google Docs, search bars, and most editable fields on the web.
+Thoth is an **open-source Grammarly alternative** — a **local grammar checker** and **AI writing assistant** with a **Chrome extension** for real-time spell check, punctuation fixes, tone rewrite, paraphrasing, and content generation.
+
+It runs a **small API server on your computer** (`localhost`) and pairs it with a browser extension that works on Gmail, Google Docs, search bars, and most editable fields on the web.
 
 | Feature | What it does |
 |---------|----------------|
@@ -144,8 +152,24 @@ Thoth is an open-source alternative to cloud writing tools like Grammarly. It ru
 | **Auto-fix** | Optionally correct all issues as you type |
 | **Rewrite** | Select text → change tone (friendly, formal, simpler, etc.) |
 | **Generate** | Turn short notes into emails, messages, or essays |
+| **Humanize** | Make AI-generated text sound more natural (local Ollama pipeline) |
 
-Everything can run **fully offline** if you use local Ollama models. Cloud AI (Groq / OpenAI) is optional for faster Rewrite and Generate.
+Everything can run **fully offline** with local Ollama models. Cloud AI (Groq / OpenAI) is optional for faster rewrite and generate.
+
+---
+
+## Why Thoth? (open-source Grammarly alternative)
+
+| | Thoth | Typical cloud writing tools |
+|---|--------|------------------------------|
+| **Where text is processed** | Your machine (`127.0.0.1`) | Vendor cloud servers |
+| **Offline grammar check** | Yes (LanguageTool + Java) | Usually requires internet |
+| **Local LLM rewrite** | Ollama (`thoth-writing`) | Subscription cloud models |
+| **Chrome extension** | Gmail, Docs, LinkedIn, Slack, etc. | Similar coverage |
+| **Account required** | No | Often yes |
+| **Open source** | Yes — inspect and fork | Closed source |
+
+**Good fit if you search for:** grammar checker chrome extension, spell checker browser extension, local AI writing assistant, Ollama grammar tool, privacy-first Grammarly alternative, text humanizer offline, or open-source paraphrasing tool.
 
 ---
 
@@ -408,6 +432,11 @@ Open source — use, study, and modify on your own machine. See the repository f
 ## Links
 
 - **Repository:** https://github.com/Eshan-khan1/Thoth
+- **Chrome Web Store:** https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn
 - **Download Mac app + extension:** https://github.com/Eshan-khan1/Thoth/releases/latest
 - **Releases:** https://github.com/Eshan-khan1/Thoth/releases
 - **Issues:** https://github.com/Eshan-khan1/Thoth/issues
+
+### Related topics on GitHub
+
+`grammar-checker` · `chrome-extension` · `writing-assistant` · `grammarly-alternative` · `ollama` · `local-ai` · `humanizer` · `spell-checker` · `language-tool` · `fastapi` · `open-source` · `privacy` · `ai-writing` · `text-rewriter` · `offline-ai`
