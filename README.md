@@ -111,7 +111,7 @@ Open the latest GitHub release and download the Mac app:
 
 **Step 4: Install the Chrome extension**
 
-[Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) (click **Add to Chrome**). You do **not** need to download an extension zip from GitHub. Keep **Thoth.app** running so the local server stays online.
+[Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) (click **Add to Chrome**). Keep **Thoth.app** running so the local server stays online.
 
 **Developers only — load unpacked:**
 
@@ -241,7 +241,7 @@ Thoth/
 ├── scripts/
 │   ├── build_macos_app.sh     # Build dist/Thoth.app
 │   ├── setup_models.sh/.bat   # Register thoth-grammar / thoth-writing
-│   └── package_extension.sh   # Build thoth-extension-*.zip
+│   └── create_release.sh      # Publish Mac app to GitHub Releases
 └── docs/
     ├── INSTALL_MAC.md
     ├── INSTALL_WINDOWS.md
@@ -318,18 +318,12 @@ Paste the printed token into the extension → Settings → AI & API keys → Lo
 ```bash
 ./scripts/install.sh          # once
 ./start_server.sh             # terminal 1
-# Chrome → load unpacked extension/
+# Chrome extension: https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb
+# Developers: load unpacked from extension/
 # Optional: ./scripts/dev_chrome.sh  (macOS test profile)
 ```
 
-### Package extension for others
-
-```bash
-./scripts/package_extension.sh
-# → dist/thoth-extension-mac-v1.10.47.zip
-```
-
-### Publish a GitHub Release
+### Publish a GitHub Release (Mac app only)
 
 ```bash
 ./scripts/create_release.sh

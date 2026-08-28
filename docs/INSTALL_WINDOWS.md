@@ -87,8 +87,6 @@ You should see `"ok": true`.
 2. Click **Add to Chrome**
 3. Start the local server first (`Start Thoth.bat` or `start_server.bat`) and confirm http://127.0.0.1:8000/health shows `"ok": true`
 
-You do **not** need to download an extension zip from GitHub Releases.
-
 **Developers only — load unpacked:**
 
 1. Open Chrome and go to `chrome://extensions`

@@ -468,8 +468,8 @@ Thoth/
 │   ├── install.sh              # One-command setup
 │   ├── setup_models.sh         # Ollama model registration (thoth-*)
 │   ├── build_macos_app.sh      # Build dist/Thoth.app
-│   ├── package_extension.sh    # Build dist/thoth-extension-*.zip
-│   ├── create_release.sh       # Publish GitHub Release
+│   ├── package_extension.sh    # Chrome Web Store upload zip (dev only)
+│   ├── create_release.sh       # Publish Mac app GitHub Release
 │   ├── finetune_grammar_lora.py
 │   ├── benchmark_rewrite.py
 │   ├── run_benchmarks.py
@@ -543,15 +543,16 @@ With the server running:
 
 Test cases are defined in `benchmark_tests.json` (tone/length/complexity separation, rewrite length, note behavior).
 
-### Package extension
+### Package for Chrome Web Store (developers)
 
 ```bash
 ./scripts/package_extension.sh
-# → dist/thoth-extension-mac-v1.10.47.zip
-# → dist/thoth-extension-windows-v1.10.47.zip
+# → dist/thoth-chrome-store-v….zip (upload in Chrome Web Store dashboard)
 ```
 
-### Publish a GitHub Release
+Public install: [Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)
+
+### Publish a GitHub Release (Mac app)
 
 ```bash
 ./scripts/create_release.sh

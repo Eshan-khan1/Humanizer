@@ -20,7 +20,7 @@ Open the latest release page:
 1. Under **Assets**, download `Thoth-macOS.zip` (or `Thoth-macOS-v….zip`)
 2. Unzip the download
 
-The **Chrome extension** is published on the Chrome Web Store — you do **not** need an extension zip from GitHub.
+Install the Chrome extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb).
 
 ## Step 3: Install the menu bar app
 
