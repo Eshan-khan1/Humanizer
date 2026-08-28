@@ -79,7 +79,16 @@ Keep that window open while you use Thoth.
 Check that it worked: open http://127.0.0.1:8000/health  
 You should see `"ok": true`.
 
-## Step 5: Load the Chrome extension
+## Step 5: Install the Chrome extension
+
+**Recommended (public listing):**
+
+1. Open the Chrome Web Store listing:  
+   **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)**
+2. Click **Add to Chrome**
+3. Start the local server first (`Start Thoth.bat` or `start_server.bat`) and confirm http://127.0.0.1:8000/health shows `"ok": true`
+
+**Or load unpacked (developers):**
 
 1. Open Chrome and go to `chrome://extensions`
 2. Turn on **Developer mode** (top right)

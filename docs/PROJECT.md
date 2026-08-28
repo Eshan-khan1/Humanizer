@@ -239,6 +239,8 @@ These must not bleed into each other. Post-generation filters enforce structure,
 
 ## 6. Chrome extension
 
+**Public listing:** [Thoth on the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
+
 ### Files
 
 | File | Purpose |
@@ -384,10 +386,8 @@ chmod +x scripts/install.sh
 
 **Chrome:**
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked**
-4. Select the `extension/` folder (or the Application Support ChromeExtension folder on Mac)
+1. **Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
+2. **Developers:** open `chrome://extensions` → **Developer mode** → **Load unpacked** → select `extension/` (or Application Support `ChromeExtension` on Mac)
 
 **Verify:** open http://127.0.0.1:8000/health
 

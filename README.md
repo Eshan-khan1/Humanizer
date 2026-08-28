@@ -2,7 +2,9 @@
 
 **A local-first writing assistant for Chrome.** Grammar checking, tone rewriting, and content generation — without sending your drafts to a cloud service by default.
 
-[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-FF4D8D)](https://github.com/Eshan-khan1/Thoth)
+**Chrome extension (public):** [Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
+
+[![Chrome Extension](https://img.shields.io/badge/Chrome-Web%20Store-FF4D8D)](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB)](https://www.python.org/)
 [![Local First](https://img.shields.io/badge/Privacy-Local%20First-9B6BFF)](#privacy)
 
@@ -14,6 +16,7 @@ Follow the guide for your computer. Each guide is written as simple numbered ste
 
 | Platform | Full step-by-step guide | Download |
 |----------|-------------------------|----------|
+| **Chrome extension** | [Chrome Web Store listing](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn) | Install in Chrome (needs local Thoth server) |
 | **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) (extension zip) |
 | **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Thoth/releases/latest) (menu bar app + extension) |
 
@@ -60,7 +63,11 @@ start_server.bat
 
 Keep that window open.
 
-**Step 5: Load the extension in Chrome**
+**Step 5: Install the Chrome extension**
+
+**Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn) (click **Add to Chrome**).
+
+**Or load unpacked (developers):**
 
 1. Go to `chrome://extensions`
 2. Turn on **Developer mode**
@@ -97,15 +104,18 @@ Open the latest GitHub release and download the Mac app:
 3. Look for the **Thoth diamond icon** in the menu bar (top-right) — there is no Dock icon
 4. It quietly starts the server and sets itself to reopen after login or restart
 
-**Step 4: Load the extension in Chrome**
+**Step 4: Install the Chrome extension**
 
-1. In Thoth, use **Connect Chrome Extension…** (recommended), or unzip `thoth-extension-mac-….zip`
-2. Go to `chrome://extensions`
+**Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn) (click **Add to Chrome**). Then open Thoth.app so the local server is running.
+
+**Or load unpacked (Mac app connect / developers):**
+
+1. In Thoth, use **Connect Chrome Extension…** (or follow the one-time setup sheet)
+2. Open Chrome → `chrome://extensions`
 3. Turn on **Developer mode**
 4. Click **Load unpacked**
-5. Select this folder (paste with ⌘V after Connect Chrome Extension…):  
-   `~/Library/Application Support/Thoth/ChromeExtension`  
-   Do **not** load `Documents/…/Humanizer/extension` or a random unzip — Chrome drops those after quit.
+5. Select the folder the app opened/copied (usually  
+   `~/Library/Application Support/Thoth/ChromeExtension`)
 
 More detail: **[docs/INSTALL_MAC.md](docs/INSTALL_MAC.md)**
 

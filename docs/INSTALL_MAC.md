@@ -42,9 +42,16 @@ Menu bar actions:
 
 The icon changes when the server is online vs offline.
 
-## Step 4: Load the Chrome extension
+## Step 4: Install the Chrome extension
 
-**Recommended (from the app):**
+**Recommended (public listing):**
+
+1. Open the Chrome Web Store listing:  
+   **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)**
+2. Click **Add to Chrome**
+3. Keep **Thoth.app** running so the local server stays online
+
+**Or load unpacked (from the app):**
 
 1. In Thoth, open **Connect Chrome Extension…** (or follow the one-time setup sheet)
 2. Open Chrome → `chrome://extensions`
