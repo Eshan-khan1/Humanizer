@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import shutil
 import time
 from pathlib import Path
@@ -96,15 +97,32 @@ def sync_chrome_extension(root: Path | None = None) -> Path:
 
 def _native_host_launcher() -> Path:
     """Writable wrapper script Chrome invokes for native messaging."""
-    path = manager.support_dir() / "native_host.sh"
     home = manager.support_dir() / "Home"
-    venv_py = home / ".venv" / "bin" / "python"
+    venv_py = manager.venv_python_path(home)
+
+    if platform.system() == "Windows":
+        path = manager.support_dir() / "native_host.bat"
+        script = f"""@echo off
+set THOTH_ROOT={home}
+set PYTHONPATH={home}%PYTHONPATH%
+cd /d "{home}"
+if exist "{venv_py}" (
+  "{venv_py}" -m macos.menubar.native_host
+) else (
+  python -m macos.menubar.native_host
+)
+"""
+        path.write_text(script, encoding="utf-8")
+        return path
+
+    path = manager.support_dir() / "native_host.sh"
+    venv_py_unix = home / ".venv" / "bin" / "python"
     script = f"""#!/bin/bash
 export THOTH_ROOT="{home}"
 export PYTHONPATH="{home}${{PYTHONPATH:+:$PYTHONPATH}}"
 cd "{home}"
-if [[ -x "{venv_py}" ]]; then
-  exec "{venv_py}" -m macos.menubar.native_host
+if [[ -x "{venv_py_unix}" ]]; then
+  exec "{venv_py_unix}" -m macos.menubar.native_host
 fi
 exec /usr/bin/python3 -m macos.menubar.native_host
 """
@@ -114,6 +132,17 @@ exec /usr/bin/python3 -m macos.menubar.native_host
 
 
 def _native_messaging_dirs() -> list[Path]:
+    if platform.system() == "Windows":
+        local = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local")))
+        names = (
+            "Google/Chrome/NativeMessagingHosts",
+            "Google/Chrome Beta/NativeMessagingHosts",
+            "Chromium/NativeMessagingHosts",
+            "BraveSoftware/Brave-Browser/NativeMessagingHosts",
+            "Microsoft/Edge/NativeMessagingHosts",
+        )
+        return [local / name for name in names]
+
     base = Path.home() / "Library" / "Application Support"
     return [
         base / "Google" / "Chrome" / "NativeMessagingHosts",
@@ -238,7 +267,10 @@ def prepare_extension_connection(root: Path | None = None) -> dict:
 def diagnose_chrome_extension_install() -> dict:
     """Detect unpacked Thoth installs that use an unstable folder path."""
     stable = str(extension_install_dir().resolve())
-    chrome_root = Path.home() / "Library" / "Application Support" / "Google" / "Chrome"
+    if platform.system() == "Windows":
+        chrome_root = Path(os.environ.get("LOCALAPPDATA", "")) / "Google" / "Chrome" / "User Data"
+    else:
+        chrome_root = Path.home() / "Library" / "Application Support" / "Google" / "Chrome"
     installs: list[dict[str, Any]] = []
     wrong: list[dict[str, Any]] = []
     if not chrome_root.is_dir():

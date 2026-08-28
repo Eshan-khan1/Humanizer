@@ -7,4 +7,6 @@ language-tool-python==2.8.1
 requests
 datasets
 zstandard
+Pillow
+pystray; sys_platform == "win32"
 rumps; sys_platform == "darwin"

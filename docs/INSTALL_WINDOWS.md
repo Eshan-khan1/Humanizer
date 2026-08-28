@@ -1,6 +1,6 @@
 # Install Thoth on Windows
 
-Follow these steps in order.
+Setup matches the Mac experience: a **system tray app** runs the local server in the background (no console window).
 
 ## Step 1: Download these apps
 
@@ -8,93 +8,57 @@ Install each one before you continue:
 
 1. [Google Chrome](https://www.google.com/chrome/)
 2. [Python 3.10+](https://www.python.org/downloads/)  
-   Important: during setup, check **Add python.exe to PATH**
+   Important: during setup, check **Add python.exe to PATH** (and install **py launcher**)
 3. [Ollama for Windows](https://ollama.com/download)  
    Open the Ollama app once after installing
 4. [Java 11+](https://adoptium.net/) (Temurin JRE is fine)
 
-## Step 2: Download Thoth
+## Step 2: Get Thoth
 
-**Option A: Download ZIP (easiest)**
+**Option A — GitHub release (recommended)**
 
-1. Open https://github.com/Eshan-khan1/Thoth
-2. Click **Code**, then **Download ZIP**
-3. Unzip it to a simple folder, for example:
-   `C:\Users\YourName\Thoth`
-4. Open that folder in File Explorer
+1. Open [Thoth Releases](https://github.com/Eshan-khan1/Thoth/releases/latest)
+2. Download **`Thoth-Windows.zip`** (when available) or clone the repo
+3. Unzip to a folder such as `C:\Users\YourName\Thoth`
+4. Double-click **`Start Thoth.bat`** — a tray icon appears (no command window)
 
-**Option B: Git**
-
-Open **Command Prompt** or **PowerShell**, then paste this and press Enter:
+**Option B — Clone from GitHub**
 
 ```bat
 git clone https://github.com/Eshan-khan1/Thoth.git
-```
-
-Then paste this and press Enter:
-
-```bat
 cd Thoth
-```
-
-## Step 3: Paste this into Command Prompt (one-time setup)
-
-1. Open **Command Prompt**
-2. Go into your Thoth folder. Example: paste this and press Enter (change the path if yours is different):
-
-```bat
-cd C:\Users\YourName\Thoth
-```
-
-3. Paste this and press Enter:
-
-```bat
 scripts\install.bat
 ```
 
-Wait until it finishes. Keep the Ollama app open.
+Then double-click **`Start Thoth.bat`** in the repo folder.
 
-If models were not set up yet, paste this and press Enter:
+## Step 3: Tray app
 
-```bat
-scripts\setup_models.bat
-```
+After **`Start Thoth.bat`**:
 
-**No Command Prompt?** In File Explorer, open the `scripts` folder and double-click `install.bat`.
+- Look for the **Thoth icon** in the system tray (notification area)
+- Right-click for: server status, **Restart server**, **Connect Chrome extension**, **Install extension (Chrome Web Store)**, **Start with Windows**, **Quit**
+- The app copies server files to `%LOCALAPPDATA%\Thoth\Home` and creates a local `.venv` on first run
 
-## Step 4: Start the server
+**Legacy console mode:** run `start_server.bat` if you prefer a visible terminal window.
 
-In your Thoth folder, double-click:
+## Step 4: Install the Chrome extension
 
-`Start Thoth.bat`
+**Install from the Chrome Web Store:**
 
-Or in Command Prompt, paste this and press Enter:
-
-```bat
-start_server.bat
-```
-
-Keep that window open while you use Thoth.
-
-Check that it worked: open http://127.0.0.1:8000/health  
-You should see `"ok": true`.
-
-## Step 5: Install the Chrome extension
-
-**Install from the Chrome Web Store (recommended):**
-
-1. Open **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)** on the Chrome Web Store
+1. Open **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)**
 2. Click **Add to Chrome**
-3. Start the local server first (`Start Thoth.bat` or `start_server.bat`) and confirm http://127.0.0.1:8000/health shows `"ok": true`
+3. Keep the Thoth tray app running; check http://127.0.0.1:8000/health shows `"ok": true`
+
+Tray menu → **Connect Chrome extension…** opens Chrome extensions and registers native messaging.
 
 **Developers only — load unpacked:**
 
-1. Open Chrome and go to `chrome://extensions`
-2. Turn on **Developer mode** (top right)
-3. Click **Load unpacked**
-4. Select the `extension` folder inside your Thoth repo folder
+1. Open `chrome://extensions`
+2. Turn on **Developer mode**
+3. **Load unpacked** → select the `extension` folder in your Thoth repo
 
-## Step 6: Try it
+## Step 5: Try it
 
 1. Type in Gmail, Docs, or any text box
 2. Mistakes should get underlines
@@ -105,13 +69,13 @@ You should see `"ok": true`.
 
 | Problem | Fix |
 |---------|-----|
-| `python` not found | Reinstall Python with **Add to PATH**, then open a new Command Prompt |
-| Install fails | Open Command Prompt as Administrator and run `scripts\install.bat` again |
-| Port 8000 in use | Close the other app using 8000, or run `start_server.bat` again |
+| No tray icon | Click the ^ arrow in the taskbar notification area; pin Thoth |
+| `python` not found | Reinstall Python with **Add to PATH**, open a new Command Prompt |
+| Tray app won't start | Run `scripts\install.bat`, then `Start Thoth.bat` again |
+| Port 8000 in use | Tray → **Restart server**, or close the other app on port 8000 |
 | Ollama errors | Open the Ollama app, then run `scripts\setup_models.bat` |
-| No underlines | Install Java, restart the server, reload the extension |
-| Extension cannot connect | Confirm http://127.0.0.1:8000/health works, then reload the extension |
-| `thoth-grammar` / `thoth-writing` missing | Keep Ollama open and run `scripts\setup_models.bat` |
+| No underlines | Install Java, tray → Restart server, reload the extension |
+| Extension cannot connect | Confirm tray shows server online; use **Connect Chrome extension…** |
 
 ## Optional: use a cloud API key
 
@@ -125,3 +89,13 @@ In the extension popup, open **Settings**, then **AI & API keys**, choose **API*
 |-------|----------|
 | `thoth-grammar` | Optional deep grammar fixes |
 | `thoth-writing` | Rewrite & Generate (local) |
+
+## Build the Windows package (developers)
+
+On Windows, from the repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build_windows_app.ps1
+```
+
+Output: `dist\ThothWindows\` and `dist\Thoth-Windows.zip`

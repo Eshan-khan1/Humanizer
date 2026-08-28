@@ -9,6 +9,7 @@ import platform
 import shutil
 import signal
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -17,10 +18,18 @@ from pathlib import Path
 
 logger = logging.getLogger("thoth.menubar")
 
-DEFAULT_PORT = 8000
-HEALTH_URL = f"http://127.0.0.1:{DEFAULT_PORT}/health"
+_IS_WINDOWS = platform.system() == "Windows"
+_DEFAULT_PORT = 8000
+HEALTH_URL = f"http://127.0.0.1:{_DEFAULT_PORT}/health"
 OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
-_DEPS_PROBE = "import fastapi, uvicorn, language_tool_python; import AppKit"
+_DEPS_PROBE = (
+    "import fastapi, uvicorn, language_tool_python"
+    if _IS_WINDOWS
+    else "import fastapi, uvicorn, language_tool_python; import AppKit"
+)
+
+# Backwards-compatible alias used across the menubar package.
+DEFAULT_PORT = _DEFAULT_PORT
 
 
 @dataclass
@@ -31,6 +40,18 @@ class HealthSnapshot:
 
 
 def support_dir() -> Path:
+    if _IS_WINDOWS:
+        base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+        path = Path(base) / "Thoth"
+        legacy = Path(base) / "Humanizer"
+        if not path.exists() and legacy.is_dir():
+            try:
+                legacy.rename(path)
+            except OSError:
+                pass
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
     path = Path.home() / "Library" / "Application Support" / "Thoth"
     legacy = Path.home() / "Library" / "Application Support" / "Humanizer"
     if not path.exists() and legacy.is_dir():
@@ -43,6 +64,11 @@ def support_dir() -> Path:
 
 
 def logs_dir() -> Path:
+    if _IS_WINDOWS:
+        path = support_dir() / "Logs"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
     path = Path.home() / "Library" / "Logs" / "Thoth"
     legacy = Path.home() / "Library" / "Logs" / "Humanizer"
     if not path.exists() and legacy.is_dir():
@@ -97,13 +123,33 @@ def hardware_is_apple_silicon() -> bool:
 
 def _native_argv(argv: list[str]) -> list[str]:
     """Wrap a command so it cannot accidentally run under Rosetta on Apple Silicon."""
+    if _IS_WINDOWS:
+        return argv
     if hardware_is_apple_silicon():
         return ["/usr/bin/arch", "-arm64", *argv]
     return argv
 
 
+def venv_python_path(root: Path) -> Path:
+    if _IS_WINDOWS:
+        return root / ".venv" / "Scripts" / "python.exe"
+    return root / ".venv" / "bin" / "python"
+
+
+def _subprocess_flags() -> int:
+    if _IS_WINDOWS:
+        return subprocess.CREATE_NO_WINDOW  # type: ignore[attr-defined]
+    return 0
+
+
 def preferred_host_python() -> Path:
-    """Pick a native host Python for creating the Application Support venv."""
+    if _IS_WINDOWS:
+        for name in ("pythonw.exe", "python.exe", "python3.exe", "python3"):
+            found = shutil.which(name)
+            if found:
+                return Path(found)
+        return Path(sys.executable)
+
     candidates: list[Path] = []
     if hardware_is_apple_silicon():
         # Prefer stable brew Pythons, then Apple CLT, then whatever `python3` is.
@@ -143,7 +189,7 @@ def preferred_host_python() -> Path:
 
 
 def python_bin(root: Path) -> Path:
-    venv_python = root / ".venv" / "bin" / "python"
+    venv_python = venv_python_path(root)
     if venv_python.is_file():
         return venv_python
     return preferred_host_python()
@@ -182,8 +228,27 @@ def ensure_ollama_running() -> bool:
     if _http_json(OLLAMA_TAGS_URL) is not None:
         return True
 
-    app = Path("/Applications/Ollama.app")
-    if app.is_dir():
+    if _IS_WINDOWS:
+        ollama_exe = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
+        if ollama_exe.is_file():
+            subprocess.Popen(
+                [str(ollama_exe), "serve"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,  # type: ignore[attr-defined]
+            )
+        else:
+            binary = shutil.which("ollama")
+            if not binary:
+                logger.warning("Ollama not installed")
+                return False
+            subprocess.Popen(
+                [binary, "serve"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,  # type: ignore[attr-defined]
+            )
+    elif Path("/Applications/Ollama.app").is_dir():
         subprocess.Popen(
             ["open", "-a", "Ollama"],
             stdout=subprocess.DEVNULL,
@@ -246,6 +311,57 @@ def _pid_alive(pid: int) -> bool:
         return False
 
 
+def _kill_listeners_on_port(port: int) -> None:
+    if _IS_WINDOWS:
+        try:
+            result = subprocess.run(
+                ["netstat", "-ano"],
+                capture_output=True,
+                text=True,
+                check=False,
+                creationflags=_subprocess_flags(),
+            )
+            for line in result.stdout.splitlines():
+                if f":{port}" not in line or "LISTENING" not in line.upper():
+                    continue
+                parts = line.split()
+                if not parts:
+                    continue
+                pid_str = parts[-1]
+                try:
+                    pid = int(pid_str)
+                except ValueError:
+                    continue
+                subprocess.run(
+                    ["taskkill", "/PID", str(pid), "/F"],
+                    check=False,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=_subprocess_flags(),
+                )
+        except OSError:
+            pass
+        return
+
+    try:
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                os.kill(int(line), signal.SIGTERM)
+            except (OSError, ValueError):
+                pass
+    except FileNotFoundError:
+        pass
+
+
 def stop_server() -> None:
     pid = _read_pid()
     if pid and _pid_alive(pid):
@@ -262,24 +378,7 @@ def stop_server() -> None:
             except OSError:
                 pass
 
-    # Also clear anything still bound to the API port.
-    try:
-        result = subprocess.run(
-            ["lsof", "-ti", f":{DEFAULT_PORT}"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        for line in result.stdout.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                os.kill(int(line), signal.SIGTERM)
-            except (OSError, ValueError):
-                pass
-    except FileNotFoundError:
-        pass
+    _kill_listeners_on_port(DEFAULT_PORT)
 
     # Orphan LanguageTool Java servers left by failed/aborted starts block the
     # next boot — clear them so restart can bind a fresh LT instance.
@@ -290,6 +389,26 @@ def stop_server() -> None:
 
 
 def _kill_orphaned_languagetool() -> None:
+    if _IS_WINDOWS:
+        try:
+            subprocess.run(
+                [
+                    "wmic",
+                    "process",
+                    "where",
+                    "CommandLine like '%languagetool-server.jar%'",
+                    "call",
+                    "terminate",
+                ],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=_subprocess_flags(),
+            )
+        except OSError:
+            pass
+        return
+
     try:
         result = subprocess.run(
             ["pgrep", "-f", "languagetool-server.jar"],
@@ -356,7 +475,7 @@ def start_server(root: Path, *, force: bool = False) -> bool:
     env = os.environ.copy()
     env.setdefault("OLLAMA_KEEP_ALIVE", "30m")
     env.setdefault("OLLAMA_FLASH_ATTENTION", "1")
-    if "OLLAMA_LLM_LIBRARY" not in env:
+    if "OLLAMA_LLM_LIBRARY" not in env and not _IS_WINDOWS:
         env["OLLAMA_LLM_LIBRARY"] = "metal"
     try:
         from macos.menubar.settings import apply_to_env
@@ -375,8 +494,9 @@ def start_server(root: Path, *, force: bool = False) -> bool:
         cwd=str(root),
         stdout=log_file,
         stderr=subprocess.STDOUT,
-        start_new_session=True,
+        start_new_session=not _IS_WINDOWS,
         env=env,
+        creationflags=(subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS) if _IS_WINDOWS else 0,  # type: ignore[attr-defined]
     )
     pid_file().write_text(str(process.pid), encoding="utf-8")
 
@@ -412,7 +532,7 @@ def restart_server(root: Path) -> bool:
 
 def ensure_venv(root: Path) -> Path:
     venv = root / ".venv"
-    python = venv / "bin" / "python"
+    python = venv_python_path(root)
     marker = venv / ".thoth_deps_ready"
     host = preferred_host_python()
 
@@ -433,7 +553,7 @@ def ensure_venv(root: Path) -> Path:
             check=True,
             cwd=str(root),
         )
-        python = venv / "bin" / "python"
+        python = venv_python_path(root)
 
     if marker.is_file() and _probe_imports(python):
         return python
@@ -445,6 +565,7 @@ def ensure_venv(root: Path) -> Path:
         cwd=str(root),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        creationflags=_subprocess_flags(),
     )
     req = root / "requirements.txt"
     if req.is_file():
@@ -454,14 +575,25 @@ def ensure_venv(root: Path) -> Path:
             cwd=str(root),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            creationflags=_subprocess_flags(),
         )
-    subprocess.run(
-        _native_argv([str(python), "-m", "pip", "install", "rumps", "pyobjc-framework-Cocoa"]),
-        check=False,
-        cwd=str(root),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    if _IS_WINDOWS:
+        subprocess.run(
+            _native_argv([str(python), "-m", "pip", "install", "pystray", "Pillow"]),
+            check=False,
+            cwd=str(root),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=_subprocess_flags(),
+        )
+    else:
+        subprocess.run(
+            _native_argv([str(python), "-m", "pip", "install", "rumps", "pyobjc-framework-Cocoa"]),
+            check=False,
+            cwd=str(root),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
     if _probe_imports(python):
         marker.write_text("ok\n", encoding="utf-8")
     else:
@@ -518,6 +650,7 @@ def ensure_home_payload(resources: Path) -> Path:
             "generate_feature_rules.json",
             "requirements.txt",
             "macos",
+            "windows",
             "extension",
         ):
             s = src / rel

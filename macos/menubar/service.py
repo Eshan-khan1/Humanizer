@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import sys
 from pathlib import Path
 
@@ -51,7 +52,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if cmd == "autostart":
         try:
-            autostart.ensure_login_item()
+            if platform.system() == "Windows":
+                from windows import autostart as win_autostart  # noqa: WPS433
+
+                win_autostart.ensure_login_item()
+            else:
+                autostart.ensure_login_item()
             print(json.dumps({"ok": True, "autostart": True}))
             return 0
         except Exception as exc:  # noqa: BLE001

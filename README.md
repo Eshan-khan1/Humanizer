@@ -23,7 +23,7 @@ Follow the guide for your computer. Each guide is written as simple numbered ste
 | Platform | Full step-by-step guide | Download |
 |----------|-------------------------|----------|
 | **Chrome extension** | [Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) | **Add to Chrome** |
-| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) (local server) |
+| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | **`Start Thoth.bat`** tray app or [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) |
 | **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Thoth/releases/latest) |
 
 Mac users: download **`Thoth-macOS.zip`** from the latest release, drag **Thoth.app** into Applications, and open it once. No Terminal required.
@@ -69,9 +69,11 @@ start_server.bat
 
 Keep that window open.
 
-**Step 5: Install the Chrome extension**
+## Step 5: Install the Chrome extension
 
 **Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) (click **Add to Chrome**).
+
+Or double-click **`Start Thoth.bat`** for the tray app (like Mac **Thoth.app**), then install the extension from the link above.
 
 **Or load unpacked (developers):**
 
