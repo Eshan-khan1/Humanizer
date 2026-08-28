@@ -81,21 +81,20 @@ You should see `"ok": true`.
 
 ## Step 5: Install the Chrome extension
 
-**Recommended (public listing):**
+**Install from the Chrome Web Store (recommended):**
 
-1. Open the Chrome Web Store listing:  
-   **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)**
+1. Open **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)** on the Chrome Web Store
 2. Click **Add to Chrome**
 3. Start the local server first (`Start Thoth.bat` or `start_server.bat`) and confirm http://127.0.0.1:8000/health shows `"ok": true`
 
-**Or load unpacked (developers):**
+You do **not** need to download an extension zip from GitHub Releases.
+
+**Developers only — load unpacked:**
 
 1. Open Chrome and go to `chrome://extensions`
 2. Turn on **Developer mode** (top right)
 3. Click **Load unpacked**
-4. Select the `extension` folder inside your Thoth folder
-
-You can also download **`thoth-extension-windows-….zip`** from [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest), unzip it, and load that folder.
+4. Select the `extension` folder inside your Thoth repo folder
 
 ## Step 6: Try it
 

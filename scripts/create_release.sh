@@ -44,22 +44,25 @@ done
 NOTES="$(cat <<EOF
 # Thoth ${TAG}
 
-Chrome extension + local writing server for **Windows** and **macOS**.
+Local writing server for **Windows** and **macOS** + Chrome extension on the **Chrome Web Store**.
+
+## Chrome extension (all platforms)
+
+**[Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)** — click **Add to Chrome**. You do not need to download an extension zip from this release.
 
 ## macOS — menu bar app (recommended)
 
 1. Download **[Thoth-macOS.zip](https://github.com/Eshan-khan1/Thoth/releases/download/${TAG}/Thoth-macOS.zip)**
-2. Download **[thoth-extension-mac-v${VERSION}.zip](https://github.com/Eshan-khan1/Thoth/releases/download/${TAG}/thoth-extension-mac-v${VERSION}.zip)**
-3. Unzip the app zip → drag **Thoth.app** into **Applications** → open it once
-4. Unzip the extension → Chrome → \`chrome://extensions\` → **Developer mode** → **Load unpacked**
-5. Leave the menu bar icon running; it starts the server and relaunches after login
+2. Unzip → drag **Thoth.app** into **Applications** → open it once
+3. Install the extension from the Chrome Web Store link above
+4. Leave the menu bar icon running; it starts the server and relaunches after login
 
 Full guide: **[Install on Mac](https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_MAC.md)**
 
 ## Windows
 
-1. Download **[thoth-extension-windows-v${VERSION}.zip](https://github.com/Eshan-khan1/Thoth/releases/download/${TAG}/thoth-extension-windows-v${VERSION}.zip)**
-2. Follow **[Install on Windows](https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_WINDOWS.md)** (clone the repo, run \`scripts\\install.bat\`, then \`Start Thoth.bat\`)
+1. Follow **[Install on Windows](https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_WINDOWS.md)** (clone the repo, run \`scripts\\install.bat\`, then \`Start Thoth.bat\`)
+2. Install the extension from the Chrome Web Store link above
 
 ## Health check
 

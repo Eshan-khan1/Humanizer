@@ -50,8 +50,8 @@ Thoth for Windows
 1. Install Python 3.10+ (Add to PATH), Ollama, and Java 11+.
 2. Clone or download the full Thoth repo from GitHub.
 3. Run scripts\\install.bat then Start Thoth.bat
-4. Unzip this extension zip (or use the repo's extension\\ folder).
-5. Chrome → chrome://extensions → Developer mode → Load unpacked → select the unzipped folder.
+4. Install the Chrome extension from the Web Store (do not use a GitHub zip):
+   https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb
 
 Full guide: docs/INSTALL_WINDOWS.md in the repo
 https://github.com/Eshan-khan1/Thoth/blob/main/docs/INSTALL_WINDOWS.md
@@ -62,11 +62,11 @@ Thoth for macOS
 ===================
 
 1. Install Python 3.10+, Ollama, and Java 11+ (e.g. brew install openjdk@17).
-2. From the GitHub release, download Thoth-macOS.zip and thoth-extension-mac-….zip:
+2. Download Thoth-macOS.zip from the GitHub release:
    https://github.com/Eshan-khan1/Thoth/releases/latest
-3. Unzip Thoth-macOS.zip, drag Thoth.app into Applications, and open it once.
-4. Unzip the extension zip.
-5. Chrome → chrome://extensions → Developer mode → Load unpacked → select the unzipped folder.
+3. Unzip, drag Thoth.app into Applications, and open it once.
+4. Install the Chrome extension from the Web Store (do not use a GitHub zip):
+   https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb
 
 The menu bar app starts the local server and relaunches after login.
 

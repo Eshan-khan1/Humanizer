@@ -239,7 +239,7 @@ These must not bleed into each other. Post-generation filters enforce structure,
 
 ## 6. Chrome extension
 
-**Public listing:** [Thoth on the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
+**Public listing:** [Thoth on the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)
 
 ### Files
 
@@ -386,8 +386,8 @@ chmod +x scripts/install.sh
 
 **Chrome:**
 
-1. **Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
-2. **Developers:** open `chrome://extensions` → **Developer mode** → **Load unpacked** → select `extension/` (or Application Support `ChromeExtension` on Mac)
+1. **Install from the Chrome Web Store:** [Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) (click **Add to Chrome**)
+2. **Developers only:** `chrome://extensions` → **Developer mode** → **Load unpacked** → select `extension/` (or Application Support `ChromeExtension` on Mac)
 
 **Verify:** open http://127.0.0.1:8000/health
 

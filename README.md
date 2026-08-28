@@ -4,9 +4,9 @@
 
 **Privacy-first writing assistant** — drafts stay on your machine by default (Ollama + LanguageTool). Optional Groq/OpenAI for faster rewrite and generate.
 
-**Chrome extension (public):** [Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
+**Chrome extension (public):** [Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)
 
-[![Chrome Extension](https://img.shields.io/badge/Chrome-Web%20Store-FF4D8D)](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)
+[![Chrome Extension](https://img.shields.io/badge/Chrome-Web%20Store-FF4D8D)](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB)](https://www.python.org/)
 [![Local First](https://img.shields.io/badge/Privacy-Local%20First-9B6BFF)](#privacy)
 [![Ollama](https://img.shields.io/badge/AI-Ollama%20local-000000)](https://ollama.com)
@@ -22,9 +22,9 @@ Follow the guide for your computer. Each guide is written as simple numbered ste
 
 | Platform | Full step-by-step guide | Download |
 |----------|-------------------------|----------|
-| **Chrome extension** | [Chrome Web Store listing](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn) | Install in Chrome (needs local Thoth server) |
-| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) (extension zip) |
-| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Thoth/releases/latest) (menu bar app + extension) |
+| **Chrome extension** | [Chrome Web Store listing](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) | **Add to Chrome** (needs local Thoth server) |
+| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) (server only — extension is on Chrome Web Store) |
+| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Thoth/releases/latest) (menu bar app — extension on Chrome Web Store) |
 
 Mac users: download **`Thoth-macOS.zip`** from the latest release, drag **Thoth.app** into Applications, and open it once. No Terminal required.
 
@@ -71,7 +71,7 @@ Keep that window open.
 
 **Step 5: Install the Chrome extension**
 
-**Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn) (click **Add to Chrome**).
+**Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) (click **Add to Chrome**).
 
 **Or load unpacked (developers):**
 
@@ -100,8 +100,7 @@ Open the latest GitHub release and download the Mac app:
 **[Download Thoth for Mac](https://github.com/Eshan-khan1/Thoth/releases/latest)**
 
 1. Download **`Thoth-macOS.zip`** from **Assets**
-2. Also download **`thoth-extension-mac-….zip`** for Chrome
-3. Unzip both files
+2. Unzip the file
 
 **Step 3: Install the app (no Terminal)**
 
@@ -112,9 +111,9 @@ Open the latest GitHub release and download the Mac app:
 
 **Step 4: Install the Chrome extension**
 
-**Recommended:** [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn) (click **Add to Chrome**). Then open Thoth.app so the local server is running.
+[Install Thoth from the Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) (click **Add to Chrome**). You do **not** need to download an extension zip from GitHub. Keep **Thoth.app** running so the local server stays online.
 
-**Or load unpacked (Mac app connect / developers):**
+**Developers only — load unpacked:**
 
 1. In Thoth, use **Connect Chrome Extension…** (or follow the one-time setup sheet)
 2. Open Chrome → `chrome://extensions`
@@ -416,7 +415,6 @@ Contributions are welcome.
 
 Ideas for contributors:
 
-- Chrome Web Store listing
 - More language support
 - Additional Generate formats
 - Benchmark coverage
@@ -432,8 +430,8 @@ Open source — use, study, and modify on your own machine. See the repository f
 ## Links
 
 - **Repository:** https://github.com/Eshan-khan1/Thoth
-- **Chrome Web Store:** https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn
-- **Download Mac app + extension:** https://github.com/Eshan-khan1/Thoth/releases/latest
+- **Chrome Web Store (extension):** https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb
+- **Download Mac app:** https://github.com/Eshan-khan1/Thoth/releases/latest
 - **Releases:** https://github.com/Eshan-khan1/Thoth/releases
 - **Issues:** https://github.com/Eshan-khan1/Thoth/issues
 

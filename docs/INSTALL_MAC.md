@@ -18,8 +18,9 @@ Open the latest release page:
 **[Download Thoth for Mac](https://github.com/Eshan-khan1/Thoth/releases/latest)**
 
 1. Under **Assets**, download `Thoth-macOS.zip` (or `Thoth-macOS-v….zip`)
-2. Also download `thoth-extension-mac-….zip` for the Chrome extension
-3. Unzip both downloads
+2. Unzip the download
+
+The **Chrome extension** is published on the Chrome Web Store — you do **not** need an extension zip from GitHub.
 
 ## Step 3: Install the menu bar app
 
@@ -37,21 +38,20 @@ Menu bar actions:
 - **Status** shows whether the server is healthy
 - **Restart server** if something looks stuck
 - **Settings** for local models, features, hardware, Chrome connect, and **Privacy & Policy**
-- **Connect Chrome Extension…** copies the extension into a stable folder and registers the native host
+- **Connect Chrome Extension…** copies the extension into a stable folder and registers the native host (developers / native messaging only)
 - **Quit Thoth** leaves the Chrome extension for later (the local server may stay running)
 
 The icon changes when the server is online vs offline.
 
 ## Step 4: Install the Chrome extension
 
-**Recommended (public listing):**
+**Install from the Chrome Web Store (recommended):**
 
-1. Open the Chrome Web Store listing:  
-   **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn)**
+1. Open **[Thoth: Local Writing Assistant](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb)** on the Chrome Web Store
 2. Click **Add to Chrome**
 3. Keep **Thoth.app** running so the local server stays online
 
-**Or load unpacked (from the app):**
+**Developers only — load unpacked (from the app):**
 
 1. In Thoth, open **Connect Chrome Extension…** (or follow the one-time setup sheet)
 2. Open Chrome → `chrome://extensions`
@@ -60,15 +60,9 @@ The icon changes when the server is online vs offline.
 5. Select the folder the app opened/copied (usually  
    `~/Library/Application Support/Thoth/ChromeExtension`)
 
-**Or from the release zip:**
-
-1. Unzip `thoth-extension-mac-….zip`
-2. Chrome → `chrome://extensions` → **Developer mode** → **Load unpacked**
-3. Select that unzipped folder
-
 After the first connect, the extension can talk to Thoth via native messaging whenever the app is running. Reload the extension after updating Thoth.
 
-**Keep it installed across Chrome quits**
+**Keep it installed across Chrome quits (developer mode only)**
 
 - Always load from  
   `~/Library/Application Support/Thoth/ChromeExtension`  
