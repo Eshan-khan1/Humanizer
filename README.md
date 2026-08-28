@@ -22,9 +22,9 @@ Follow the guide for your computer. Each guide is written as simple numbered ste
 
 | Platform | Full step-by-step guide | Download |
 |----------|-------------------------|----------|
-| **Chrome extension** | [Chrome Web Store listing](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) | **Add to Chrome** (needs local Thoth server) |
-| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) (server only — extension is on Chrome Web Store) |
-| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Thoth/releases/latest) (menu bar app — extension on Chrome Web Store) |
+| **Chrome extension** | [Chrome Web Store](https://chromewebstore.google.com/detail/begfbbjincimcjcimpfpkoilbhjphppn?utm_source=item-share-cb) | **Add to Chrome** |
+| **Windows** | [Install on Windows](docs/INSTALL_WINDOWS.md) | [Releases](https://github.com/Eshan-khan1/Thoth/releases/latest) (local server) |
+| **macOS** | [Install on Mac](docs/INSTALL_MAC.md) | [**Thoth.app**](https://github.com/Eshan-khan1/Thoth/releases/latest) |
 
 Mac users: download **`Thoth-macOS.zip`** from the latest release, drag **Thoth.app** into Applications, and open it once. No Terminal required.
 
